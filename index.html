@@ -1,0 +1,2138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Hospitality Flow — AI-powered operations for independent and boutique hotels. Simplify daily operations with practical AI tools, templates, and automation.">
+  <title>Hospitality Flow — AI-Powered Operations for Independent Hotels</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy-950: #070e1a;
+      --navy-900: #0c1829;
+      --navy-800: #122240;
+      --navy-700: #1a3055;
+      --navy-600: #243d6b;
+      --blue-400: #5b9fd4;
+      --blue-500: #4a8fc4;
+      --blue-600: #3a7ab0;
+      --white: #ffffff;
+      --gray-50: #f8fafc;
+      --gray-100: #eef2f7;
+      --gray-200: #d8e0ea;
+      --gray-300: #a8b4c4;
+      --gray-400: #7a8799;
+      --gray-500: #5a6578;
+      --radius: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 20px;
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.12);
+      --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.18);
+      --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.24);
+      --transition: 0.25s ease;
+      --max-width: 1200px;
+      --header-height: 72px;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: var(--header-height);
+    }
+
+    body {
+      font-family: "Inter", system-ui, -apple-system, sans-serif;
+      background: var(--navy-950);
+      color: var(--white);
+      line-height: 1.6;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    img {
+      max-width: 100%;
+      display: block;
+    }
+
+    ul {
+      list-style: none;
+    }
+
+    button {
+      font-family: inherit;
+      cursor: pointer;
+      border: none;
+      background: none;
+    }
+
+    .container {
+      width: 100%;
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ── Header ── */
+    .header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      height: var(--header-height);
+      background: rgba(7, 14, 26, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      transition: background var(--transition);
+    }
+
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 100%;
+    }
+
+    .logo {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--white);
+    }
+
+    .logo span {
+      color: var(--blue-400);
+    }
+
+    .nav-desktop {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+    }
+
+    .nav-desktop a {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--gray-300);
+      transition: color var(--transition);
+    }
+
+    .nav-desktop a:hover,
+    .nav-desktop a:focus-visible {
+      color: var(--white);
+      outline: none;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 24px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border-radius: var(--radius);
+      transition: all var(--transition);
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: var(--blue-500);
+      color: var(--white);
+      box-shadow: 0 4px 16px rgba(74, 143, 196, 0.3);
+    }
+
+    .btn-primary:hover,
+    .btn-primary:focus-visible {
+      background: var(--blue-600);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(74, 143, 196, 0.4);
+      outline: 2px solid var(--blue-400);
+      outline-offset: 2px;
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--white);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-secondary:hover,
+    .btn-secondary:focus-visible {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.35);
+      outline: 2px solid var(--blue-400);
+      outline-offset: 2px;
+    }
+
+    .btn-lg {
+      padding: 14px 28px;
+      font-size: 0.95rem;
+    }
+
+    .btn-nav {
+      padding: 10px 20px;
+      font-size: 0.875rem;
+    }
+
+    .menu-toggle {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      padding: 8px;
+      border-radius: 8px;
+    }
+
+    .menu-toggle span {
+      display: block;
+      width: 22px;
+      height: 2px;
+      background: var(--white);
+      border-radius: 2px;
+      transition: all var(--transition);
+    }
+
+    .menu-toggle[aria-expanded="true"] span:nth-child(1) {
+      transform: translateY(7px) rotate(45deg);
+    }
+
+    .menu-toggle[aria-expanded="true"] span:nth-child(2) {
+      opacity: 0;
+    }
+
+    .menu-toggle[aria-expanded="true"] span:nth-child(3) {
+      transform: translateY(-7px) rotate(-45deg);
+    }
+
+    .nav-mobile {
+      display: none;
+      position: fixed;
+      top: var(--header-height);
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: var(--navy-900);
+      padding: 24px;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 999;
+      overflow-y: auto;
+    }
+
+    .nav-mobile.open {
+      display: flex;
+    }
+
+    .nav-mobile a {
+      display: block;
+      padding: 16px;
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--gray-200);
+      border-radius: var(--radius);
+      transition: background var(--transition);
+    }
+
+    .nav-mobile a:hover,
+    .nav-mobile a:focus-visible {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--white);
+      outline: none;
+    }
+
+    .nav-mobile .btn {
+      margin-top: 16px;
+      width: 100%;
+    }
+
+    /* ── Sections ── */
+    section {
+      padding: 96px 0;
+    }
+
+    .section-label {
+      display: inline-block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--blue-400);
+      margin-bottom: 16px;
+    }
+
+    .section-heading {
+      font-size: clamp(1.75rem, 4vw, 2.5rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.2;
+      margin-bottom: 16px;
+    }
+
+    .section-text {
+      font-size: 1.05rem;
+      color: var(--gray-300);
+      max-width: 640px;
+      line-height: 1.7;
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 56px;
+    }
+
+    .section-header .section-text {
+      margin: 0 auto;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      padding-top: calc(var(--header-height) + 80px);
+      padding-bottom: 72px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      top: -200px;
+      right: -200px;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(74, 143, 196, 0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 64px;
+      align-items: center;
+    }
+
+    .hero-content {
+      animation: fadeUp 0.8s ease forwards;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      background: rgba(74, 143, 196, 0.12);
+      border: 1px solid rgba(74, 143, 196, 0.25);
+      border-radius: 100px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--blue-400);
+      margin-bottom: 24px;
+    }
+
+    .hero-badge::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      background: var(--blue-400);
+      border-radius: 50%;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.25rem, 5.5vw, 3.35rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.12;
+      margin-bottom: 22px;
+      max-width: 420px;
+    }
+
+    .hero-desc {
+      font-size: 1.1rem;
+      color: var(--gray-300);
+      line-height: 1.7;
+      margin-bottom: 16px;
+      max-width: 520px;
+    }
+
+    .hero-trust {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--gray-300);
+      margin-bottom: 28px;
+      padding: 8px 0;
+    }
+
+    .hero-trust::before {
+      content: "";
+      width: 20px;
+      height: 1px;
+      background: var(--blue-400);
+      flex-shrink: 0;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .hero-visual {
+      position: relative;
+      animation: fadeUp 0.8s ease 0.2s forwards;
+      opacity: 0;
+    }
+
+    .dashboard-preview {
+      background: var(--navy-800);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-xl);
+      padding: 24px;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .dashboard-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .dashboard-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--gray-200);
+    }
+
+    .dashboard-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      color: var(--blue-400);
+    }
+
+    .dashboard-status::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      background: var(--blue-400);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    .dashboard-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .dash-card {
+      background: var(--navy-900);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+
+    .dash-card-label {
+      font-size: 0.7rem;
+      color: var(--gray-400);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+
+    .dash-card-value {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .dash-card-value.accent {
+      color: var(--blue-400);
+    }
+
+    .checklist-preview {
+      background: var(--navy-900);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+
+    .checklist-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: var(--gray-200);
+    }
+
+    .checklist-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+      font-size: 0.8rem;
+      color: var(--gray-300);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .checklist-item:last-child {
+      border-bottom: none;
+    }
+
+    .check-box {
+      width: 16px;
+      height: 16px;
+      border: 1.5px solid var(--navy-600);
+      border-radius: 4px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .check-box.done {
+      background: var(--blue-500);
+      border-color: var(--blue-500);
+    }
+
+    .check-box.done::after {
+      content: "✓";
+      font-size: 10px;
+      color: white;
+    }
+
+    .float-note {
+      position: absolute;
+      background: var(--navy-700);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      font-size: 0.75rem;
+      box-shadow: var(--shadow-md);
+      animation: float 4s ease-in-out infinite;
+    }
+
+    .float-note.top-right {
+      top: -16px;
+      right: -16px;
+    }
+
+    .float-note.bottom-left {
+      bottom: -12px;
+      left: -12px;
+      animation-delay: 1s;
+    }
+
+    .float-note strong {
+      display: block;
+      color: var(--white);
+      margin-bottom: 2px;
+    }
+
+    .float-note span {
+      color: var(--gray-400);
+    }
+
+    /* ── Statement Banner ── */
+    .statement-banner {
+      padding: 24px 0 40px;
+      background: var(--navy-950);
+    }
+
+    .statement-banner__inner {
+      max-width: 820px;
+      margin: 0 auto;
+      text-align: center;
+      padding: 28px 36px;
+      background: linear-gradient(135deg, rgba(18, 34, 64, 0.9) 0%, rgba(12, 24, 41, 0.95) 100%);
+      border: 1px solid rgba(74, 143, 196, 0.22);
+      border-radius: var(--radius-lg);
+      font-size: clamp(1rem, 2.2vw, 1.2rem);
+      font-weight: 500;
+      color: var(--gray-200);
+      line-height: 1.65;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    }
+
+    .statement-banner__inner strong {
+      color: var(--white);
+      font-weight: 600;
+    }
+
+    /* ── Why Hospitality Flow ── */
+    .why-hf {
+      background: var(--navy-900);
+      padding-top: 72px;
+    }
+
+    .why-hf-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .why-card {
+      background: var(--navy-800);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: var(--radius-lg);
+      padding: 32px 28px;
+      transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
+    }
+
+    .why-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(74, 143, 196, 0.22);
+      box-shadow: var(--shadow-md);
+    }
+
+    .why-card-icon {
+      width: 44px;
+      height: 44px;
+      background: rgba(74, 143, 196, 0.12);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 18px;
+      font-size: 1.15rem;
+    }
+
+    .why-card h3 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin-bottom: 10px;
+      line-height: 1.35;
+    }
+
+    .why-card p {
+      font-size: 0.875rem;
+      color: var(--gray-400);
+      line-height: 1.65;
+    }
+
+    /* ── Problems ── */
+    .problems {
+      background: var(--navy-900);
+    }
+
+    .problems-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+    }
+
+    .problem-card {
+      background: var(--navy-800);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: var(--radius-lg);
+      padding: 28px 24px;
+      transition: transform var(--transition), border-color var(--transition);
+    }
+
+    .problem-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(74, 143, 196, 0.2);
+    }
+
+    .problem-icon {
+      width: 44px;
+      height: 44px;
+      background: rgba(74, 143, 196, 0.12);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      font-size: 1.2rem;
+    }
+
+    .problem-card h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+      line-height: 1.4;
+    }
+
+    .problem-card p {
+      font-size: 0.875rem;
+      color: var(--gray-400);
+      line-height: 1.6;
+    }
+
+    /* ── Platform / Features ── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .feature-card {
+      background: var(--navy-800);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: var(--radius-lg);
+      padding: 28px 24px;
+      position: relative;
+      transition: transform var(--transition), border-color var(--transition);
+    }
+
+    .feature-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(74, 143, 196, 0.2);
+    }
+
+    .feature-card.featured {
+      border-color: rgba(74, 143, 196, 0.3);
+      background: linear-gradient(135deg, var(--navy-800) 0%, rgba(26, 48, 85, 0.8) 100%);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      border-radius: 100px;
+    }
+
+    .badge-soon {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--gray-300);
+    }
+
+    .badge-dev {
+      background: rgba(74, 143, 196, 0.15);
+      color: var(--blue-400);
+    }
+
+    .badge-first {
+      background: rgba(74, 143, 196, 0.2);
+      color: var(--blue-400);
+    }
+
+    .feature-card h3 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin: 12px 0 8px;
+    }
+
+    .feature-card p {
+      font-size: 0.875rem;
+      color: var(--gray-400);
+      line-height: 1.6;
+    }
+
+    /* ── Handover Demo ── */
+    .handover {
+      background: var(--navy-900);
+    }
+
+    .handover-wrapper {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 24px;
+      align-items: center;
+    }
+
+    .handover-panel {
+      background: var(--navy-800);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .handover-panel-header {
+      padding: 16px 20px;
+      background: rgba(0, 0, 0, 0.2);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--gray-300);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .handover-panel-header .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .dot-red { background: #e85d5d; }
+    .dot-yellow { background: #e8b84d; }
+    .dot-green { background: #5dce8a; }
+
+    .handover-panel-body {
+      padding: 24px;
+    }
+
+    .handover-input-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 10px 0;
+      font-size: 0.875rem;
+      color: var(--gray-300);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .handover-input-item:last-child {
+      border-bottom: none;
+    }
+
+    .handover-input-item::before {
+      content: "•";
+      color: var(--gray-500);
+    }
+
+    .handover-output {
+      font-size: 0.875rem;
+      line-height: 1.8;
+      color: var(--gray-200);
+    }
+
+    .handover-output h4 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--white);
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .handover-output section {
+      padding: 0;
+      margin-bottom: 16px;
+    }
+
+    .handover-output section:last-child {
+      margin-bottom: 0;
+    }
+
+    .handover-output .section-name {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--blue-400);
+      margin-bottom: 8px;
+    }
+
+    .handover-output ul {
+      padding-left: 16px;
+    }
+
+    .handover-output li {
+      list-style: disc;
+      color: var(--gray-300);
+      margin-bottom: 4px;
+    }
+
+    .handover-arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px 0;
+    }
+
+    .handover-arrow svg {
+      color: var(--blue-400);
+    }
+
+    /* ── Founding Member ── */
+    .founding {
+      position: relative;
+      overflow: hidden;
+      padding: 104px 0;
+    }
+
+    .founding::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 70% 60% at 50% 0%, rgba(74, 143, 196, 0.1) 0%, transparent 65%),
+        linear-gradient(180deg, var(--navy-900) 0%, var(--navy-950) 100%);
+      z-index: 0;
+    }
+
+    .founding-card {
+      position: relative;
+      z-index: 1;
+      background: linear-gradient(160deg, var(--navy-800) 0%, rgba(18, 34, 64, 0.98) 100%);
+      border: 1px solid rgba(74, 143, 196, 0.38);
+      border-radius: var(--radius-xl);
+      padding: 64px 56px;
+      box-shadow:
+        0 0 0 1px rgba(74, 143, 196, 0.08),
+        0 0 80px rgba(74, 143, 196, 0.14),
+        var(--shadow-lg);
+      max-width: 720px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .founding-label {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--blue-400);
+      padding: 6px 14px;
+      background: rgba(74, 143, 196, 0.12);
+      border: 1px solid rgba(74, 143, 196, 0.28);
+      border-radius: 100px;
+      margin-bottom: 28px;
+    }
+
+    .founding-price-block {
+      margin-bottom: 12px;
+    }
+
+    .founding-price {
+      font-size: clamp(2.75rem, 7vw, 4rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--white);
+      line-height: 1.05;
+    }
+
+    .founding-price-life {
+      font-size: 1.15rem;
+      font-weight: 500;
+      color: var(--gray-300);
+      margin-top: 6px;
+    }
+
+    .founding-availability {
+      font-size: 0.95rem;
+      color: var(--gray-300);
+      margin-bottom: 36px;
+      font-weight: 500;
+    }
+
+    .founding-benefits {
+      text-align: left;
+      max-width: 560px;
+      margin: 0 auto 32px;
+    }
+
+    .founding-benefits li {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 10px 0;
+      font-size: 0.9rem;
+      color: var(--gray-200);
+    }
+
+    .founding-benefits li::before {
+      content: "✓";
+      flex-shrink: 0;
+      width: 22px;
+      height: 22px;
+      background: rgba(74, 143, 196, 0.15);
+      color: var(--blue-400);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+    }
+
+    .founding-disclaimer {
+      font-size: 0.8rem;
+      color: var(--gray-400);
+      max-width: 560px;
+      margin: 0 auto 24px;
+      padding: 16px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: var(--radius);
+      line-height: 1.6;
+    }
+
+    .founding-waitlist-note {
+      font-size: 0.875rem;
+      color: var(--gray-400);
+      max-width: 480px;
+      margin: 18px auto 0;
+      line-height: 1.55;
+    }
+
+    /* ── How It Works ── */
+    .how-it-works {
+      background: var(--navy-900);
+    }
+
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+    }
+
+    .step-card {
+      text-align: center;
+      padding: 32px 24px;
+    }
+
+    .step-number {
+      width: 48px;
+      height: 48px;
+      background: rgba(74, 143, 196, 0.15);
+      color: var(--blue-400);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin: 0 auto 20px;
+    }
+
+    .step-card h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    .step-card p {
+      font-size: 0.9rem;
+      color: var(--gray-400);
+      line-height: 1.6;
+    }
+
+    /* ── Audience ── */
+    .audience-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 16px;
+      margin-bottom: 40px;
+    }
+
+    .audience-card {
+      background: var(--navy-800);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: var(--radius-lg);
+      padding: 28px 20px;
+      text-align: center;
+      transition: transform var(--transition), border-color var(--transition);
+    }
+
+    .audience-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(74, 143, 196, 0.2);
+    }
+
+    .audience-icon {
+      font-size: 1.75rem;
+      margin-bottom: 12px;
+    }
+
+    .audience-card h3 {
+      font-size: 0.9rem;
+      font-weight: 600;
+      line-height: 1.4;
+    }
+
+    .audience-statement {
+      text-align: center;
+      font-size: 0.95rem;
+      color: var(--gray-400);
+      max-width: 680px;
+      margin: 0 auto;
+      line-height: 1.7;
+    }
+
+    /* ── Founder ── */
+    .founder {
+      background: var(--navy-900);
+    }
+
+    .founder-content {
+      max-width: 720px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .founder-content p {
+      font-size: 1.05rem;
+      color: var(--gray-300);
+      line-height: 1.8;
+      margin-bottom: 16px;
+    }
+
+    .founder-content p:last-child {
+      margin-bottom: 0;
+      color: var(--gray-200);
+      font-weight: 500;
+    }
+
+    /* ── Waitlist Form ── */
+    .waitlist-form-wrapper {
+      max-width: 560px;
+      margin: 0 auto;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 500;
+      margin-bottom: 8px;
+      color: var(--gray-200);
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 14px 16px;
+      background: var(--navy-800);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius);
+      color: var(--white);
+      font-family: inherit;
+      font-size: 0.95rem;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+
+    .form-group input::placeholder,
+    .form-group textarea::placeholder {
+      color: var(--gray-500);
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--blue-500);
+      box-shadow: 0 0 0 3px rgba(74, 143, 196, 0.15);
+    }
+
+    .form-group select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%237a8799' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 16px center;
+      padding-right: 40px;
+    }
+
+    .form-group select option {
+      background: var(--navy-800);
+      color: var(--white);
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    .form-group.optional label::after {
+      content: " (optional)";
+      font-weight: 400;
+      color: var(--gray-500);
+    }
+
+    .form-submit {
+      width: 100%;
+      margin-top: 8px;
+    }
+
+    .form-success {
+      display: none;
+      text-align: center;
+      padding: 32px;
+      background: rgba(74, 143, 196, 0.1);
+      border: 1px solid rgba(74, 143, 196, 0.25);
+      border-radius: var(--radius-lg);
+    }
+
+    .form-success.show {
+      display: block;
+      animation: fadeUp 0.5s ease;
+    }
+
+    .form-success-icon {
+      width: 56px;
+      height: 56px;
+      background: rgba(74, 143, 196, 0.2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+      font-size: 1.5rem;
+      color: var(--blue-400);
+    }
+
+    .form-success p {
+      font-size: 1.05rem;
+      color: var(--gray-200);
+    }
+
+    /* ── FAQ ── */
+    .faq {
+      background: var(--navy-900);
+    }
+
+    .faq-list {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    .faq-item {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .faq-question {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 20px 0;
+      text-align: left;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--white);
+      transition: color var(--transition);
+    }
+
+    .faq-question:hover,
+    .faq-question:focus-visible {
+      color: var(--blue-400);
+      outline: none;
+    }
+
+    .faq-icon {
+      flex-shrink: 0;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--gray-400);
+      transition: transform var(--transition);
+    }
+
+    .faq-item.open .faq-icon {
+      transform: rotate(45deg);
+      color: var(--blue-400);
+    }
+
+    .faq-answer {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.35s ease;
+    }
+
+    .faq-item.open .faq-answer {
+      max-height: 300px;
+    }
+
+    .faq-answer p {
+      padding-bottom: 20px;
+      font-size: 0.9rem;
+      color: var(--gray-400);
+      line-height: 1.7;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      padding: 64px 0 32px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 48px;
+      margin-bottom: 48px;
+    }
+
+    .footer-brand .logo {
+      margin-bottom: 12px;
+      display: inline-block;
+    }
+
+    .footer-tagline {
+      font-size: 0.9rem;
+      color: var(--gray-400);
+      max-width: 280px;
+      line-height: 1.6;
+    }
+
+    .footer-col h4 {
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--gray-400);
+      margin-bottom: 16px;
+    }
+
+    .footer-col a {
+      display: block;
+      font-size: 0.9rem;
+      color: var(--gray-300);
+      padding: 6px 0;
+      transition: color var(--transition);
+    }
+
+    .footer-col a:hover,
+    .footer-col a:focus-visible {
+      color: var(--white);
+      outline: none;
+    }
+
+    .footer-bottom {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding-top: 32px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      font-size: 0.85rem;
+      color: var(--gray-500);
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 24px;
+    }
+
+    .footer-links a {
+      color: var(--gray-500);
+      transition: color var(--transition);
+    }
+
+    .footer-links a:hover,
+    .footer-links a:focus-visible {
+      color: var(--gray-300);
+      outline: none;
+    }
+
+    /* ── Animations ── */
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(24px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 1024px) {
+      .hero-grid {
+        grid-template-columns: 1fr;
+        gap: 40px;
+      }
+
+      .why-hf-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .hero-visual {
+        max-width: 520px;
+        margin: 0 auto;
+      }
+
+      .problems-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .features-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .handover-wrapper {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+
+      .handover-arrow {
+        transform: rotate(90deg);
+        padding: 8px 0;
+      }
+
+      .steps-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+
+      .audience-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .footer-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      section {
+        padding: 72px 0;
+      }
+
+      .nav-desktop {
+        display: none;
+      }
+
+      .menu-toggle {
+        display: flex;
+      }
+
+      .problems-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .features-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .audience-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .why-hf-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .statement-banner__inner {
+        padding: 24px 20px;
+      }
+
+      .founding {
+        padding: 80px 0;
+      }
+
+      .founding-card {
+        padding: 44px 24px;
+      }
+
+      .hero h1 {
+        max-width: none;
+      }
+
+      .float-note.top-right {
+        right: 0;
+        top: -8px;
+      }
+
+      .float-note.bottom-left {
+        left: 0;
+        bottom: -8px;
+      }
+
+      .footer-grid {
+        grid-template-columns: 1fr;
+        gap: 32px;
+      }
+
+      .footer-bottom {
+        flex-direction: column;
+        text-align: center;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .hero-actions {
+        flex-direction: column;
+      }
+
+      .hero-actions .btn {
+        width: 100%;
+      }
+
+      .dashboard-cards {
+        grid-template-columns: 1fr;
+      }
+
+      .audience-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <header class="header" role="banner">
+    <div class="container header-inner">
+      <a href="#" class="logo" aria-label="Hospitality Flow home">Hospitality <span>Flow</span></a>
+
+      <nav class="nav-desktop" aria-label="Main navigation">
+        <a href="#how-it-works">How It Works</a>
+        <a href="#features">Features</a>
+        <a href="#founding">Founding Members</a>
+        <a href="#faq">FAQ</a>
+        <a href="#waitlist" class="btn btn-primary btn-nav">Join the Waitlist</a>
+      </nav>
+
+      <button class="menu-toggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="mobile-menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+
+    <nav class="nav-mobile" id="mobile-menu" aria-label="Mobile navigation">
+      <a href="#how-it-works">How It Works</a>
+      <a href="#features">Features</a>
+      <a href="#founding">Founding Members</a>
+      <a href="#faq">FAQ</a>
+      <a href="#waitlist" class="btn btn-primary">Join the Waitlist</a>
+    </nav>
+  </header>
+
+  <main>
+
+    <!-- Hero -->
+    <section class="hero" id="hero">
+      <div class="container">
+        <div class="hero-grid">
+          <div class="hero-content">
+            <div class="hero-badge">Currently in development</div>
+            <h1>AI That Helps Hotels Run Better</h1>
+            <p class="hero-desc">Helping boutique hotels, guest houses, serviced apartments, and new hotel openings simplify daily operations with practical AI tools, templates, and automation.</p>
+            <p class="hero-trust">Built from 15+ years of real hospitality experience.</p>
+            <div class="hero-actions">
+              <a href="#waitlist" class="btn btn-primary btn-lg">Join the Waitlist</a>
+              <a href="#features" class="btn btn-secondary btn-lg">Explore the Platform</a>
+            </div>
+          </div>
+
+          <div class="hero-visual">
+            <div class="dashboard-preview">
+              <div class="dashboard-header">
+                <span class="dashboard-title">Operations Dashboard</span>
+                <span class="dashboard-status">Live preview</span>
+              </div>
+              <div class="dashboard-cards">
+                <div class="dash-card">
+                  <div class="dash-card-label">Today's Arrivals</div>
+                  <div class="dash-card-value">18</div>
+                </div>
+                <div class="dash-card">
+                  <div class="dash-card-label">Pending Tasks</div>
+                  <div class="dash-card-value accent">7</div>
+                </div>
+                <div class="dash-card">
+                  <div class="dash-card-label">Shift Handover</div>
+                  <div class="dash-card-value accent">Ready</div>
+                </div>
+                <div class="dash-card">
+                  <div class="dash-card-label">Open Issues</div>
+                  <div class="dash-card-value">3</div>
+                </div>
+              </div>
+              <div class="checklist-preview">
+                <div class="checklist-title">Morning Opening Checklist</div>
+                <div class="checklist-item">
+                  <span class="check-box done"></span>
+                  Review overnight notes
+                </div>
+                <div class="checklist-item">
+                  <span class="check-box done"></span>
+                  Check VIP arrivals
+                </div>
+                <div class="checklist-item">
+                  <span class="check-box"></span>
+                  Confirm maintenance requests
+                </div>
+                <div class="checklist-item">
+                  <span class="check-box"></span>
+                  Update shift handover
+                </div>
+              </div>
+            </div>
+            <div class="float-note top-right">
+              <strong>Shift Handover</strong>
+              <span>Generated in 4 seconds</span>
+            </div>
+            <div class="float-note bottom-left">
+              <strong>Room 12</strong>
+              <span>AC issue flagged</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Highlighted Statement -->
+    <section class="statement-banner" aria-label="Value proposition">
+      <div class="container">
+        <p class="statement-banner__inner reveal">
+          <strong>Hotels waste hours every week on repetitive admin.</strong> Hospitality Flow is being built to change that.
+        </p>
+      </div>
+    </section>
+
+    <!-- Why Hospitality Flow -->
+    <section class="why-hf" id="why-hf">
+      <div class="container">
+        <div class="section-header reveal">
+          <h2 class="section-heading">Why Hospitality Flow?</h2>
+          <p class="section-text">Practical outcomes for teams who need operations to run smoothly every day.</p>
+        </div>
+        <div class="why-hf-grid">
+          <div class="why-card reveal">
+            <div class="why-card-icon">⏱️</div>
+            <h3>Save hours every week</h3>
+            <p>Reduce time spent rewriting handovers, preparing documents, and repeating routine administrative tasks.</p>
+          </div>
+          <div class="why-card reveal">
+            <div class="why-card-icon">✓</div>
+            <h3>Reduce operational mistakes</h3>
+            <p>Create clearer processes, more consistent information, and fewer missed details between shifts.</p>
+          </div>
+          <div class="why-card reveal">
+            <div class="why-card-icon">📋</div>
+            <h3>Keep every shift consistent</h3>
+            <p>Give teams practical tools, templates, and guidance that support the same operational standards every day.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Problems -->
+    <section class="problems" id="problems">
+      <div class="container">
+        <div class="section-header reveal">
+          <h2 class="section-heading">Hotel operations should not feel this complicated.</h2>
+          <p class="section-text">Small hotel teams often rely on disconnected documents, manual processes, and information passed between shifts.</p>
+        </div>
+        <div class="problems-grid">
+          <div class="problem-card reveal">
+            <div class="problem-icon">📋</div>
+            <h3>Missed handover information</h3>
+            <p>Critical details about guests, rooms, and issues get lost between shifts, leading to service gaps and repeated questions.</p>
+          </div>
+          <div class="problem-card reveal">
+            <div class="problem-icon">✅</div>
+            <h3>Inconsistent checklists and procedures</h3>
+            <p>Without standardised processes, tasks are completed differently each time, making quality and accountability hard to maintain.</p>
+          </div>
+          <div class="problem-card reveal">
+            <div class="problem-icon">⏱️</div>
+            <h3>Repetitive administrative work</h3>
+            <p>Staff spend valuable time on manual documentation and formatting that could be handled more efficiently.</p>
+          </div>
+          <div class="problem-card reveal">
+            <div class="problem-icon">💬</div>
+            <h3>Communication gaps between departments</h3>
+            <p>Information silos between reception, housekeeping, and maintenance cause delays and missed guest requests.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Platform / Features -->
+    <section class="features" id="features">
+      <div class="container">
+        <div class="section-header reveal">
+          <span class="section-label">The Platform</span>
+          <h2 class="section-heading">One platform for smoother hotel operations.</h2>
+          <p class="section-text">Hospitality Flow is being built to bring essential operational tools into one practical system.</p>
+        </div>
+        <div class="features-grid">
+          <div class="feature-card featured reveal">
+            <span class="badge badge-dev">In Development</span>
+            <h3>AI Shift Handover Assistant</h3>
+            <p>Turn rough shift notes into clear, professional handovers in seconds.</p>
+          </div>
+          <div class="feature-card reveal">
+            <span class="badge badge-soon">Coming Soon</span>
+            <h3>Smart Operational Checklists</h3>
+            <p>Digital checklists that adapt to your property's daily routines and opening procedures.</p>
+          </div>
+          <div class="feature-card reveal">
+            <span class="badge badge-soon">Coming Soon</span>
+            <h3>SOP and Template Library</h3>
+            <p>Ready-to-use standard operating procedures and document templates for common hotel tasks.</p>
+          </div>
+          <div class="feature-card reveal">
+            <span class="badge badge-soon">Coming Soon</span>
+            <h3>Guest Complaint Support</h3>
+            <p>Structured tools to log, track, and respond to guest complaints consistently.</p>
+          </div>
+          <div class="feature-card reveal">
+            <span class="badge badge-soon">Coming Soon</span>
+            <h3>AI Review Assistant</h3>
+            <p>Help drafting thoughtful, professional responses to guest reviews.</p>
+          </div>
+          <div class="feature-card reveal">
+            <span class="badge badge-soon">Coming Soon</span>
+            <h3>Hotel Opening Tools</h3>
+            <p>Practical resources and checklists for teams preparing to launch a new property.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Featured First Product -->
+    <section class="handover" id="handover-demo">
+      <div class="container">
+        <div class="section-header reveal">
+          <span class="badge badge-first">First tool in development</span>
+          <h2 class="section-heading" style="margin-top: 16px;">AI Shift Handover Assistant</h2>
+          <p class="section-text">Turn rough shift notes into a clear, professional handover in seconds.</p>
+        </div>
+
+        <div class="handover-wrapper reveal">
+          <div>
+            <div class="handover-panel">
+              <div class="handover-panel-header">
+                <span class="dot dot-red"></span>
+                <span class="dot dot-yellow"></span>
+                <span class="dot dot-green"></span>
+                &nbsp; Shift Notes — Input
+              </div>
+              <div class="handover-panel-body">
+                <div class="handover-input-item">VIP arrival at 14:00 — Mr Henderson, Suite 8, prefers quiet room away from lift</div>
+                <div class="handover-input-item">Room 12 air-conditioning issue — guest reported at 22:30, maintenance notified</div>
+                <div class="handover-input-item">Payment required for Room 24 — outstanding balance of £145, guest checking out tomorrow</div>
+                <div class="handover-input-item">Early breakfast requested — Room 15, needs breakfast at 06:30 for airport transfer</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="handover-arrow" aria-hidden="true">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </div>
+
+          <div>
+            <div class="handover-panel">
+              <div class="handover-panel-header">
+                <span class="dot dot-red"></span>
+                <span class="dot dot-yellow"></span>
+                <span class="dot dot-green"></span>
+                &nbsp; Professional Handover — Output
+              </div>
+              <div class="handover-panel-body">
+                <div class="handover-output">
+                  <h4>Shift Handover — Night to Morning</h4>
+                  <section>
+                    <div class="section-name">VIP Arrivals</div>
+                    <ul>
+                      <li>Mr Henderson arriving 14:00, Suite 8. Prefers quiet room away from lift.</li>
+                    </ul>
+                  </section>
+                  <section>
+                    <div class="section-name">Maintenance &amp; Room Issues</div>
+                    <ul>
+                      <li>Room 12: Air-conditioning issue reported at 22:30. Maintenance has been notified — follow up required.</li>
+                    </ul>
+                  </section>
+                  <section>
+                    <div class="section-name">Payments &amp; Departures</div>
+                    <ul>
+                      <li>Room 24: Outstanding balance of £145. Guest checking out tomorrow — payment required before departure.</li>
+                    </ul>
+                  </section>
+                  <section>
+                    <div class="section-name">Special Requests</div>
+                    <ul>
+                      <li>Room 15: Early breakfast at 06:30 required for airport transfer.</li>
+                    </ul>
+                  </section>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Founding Member -->
+    <section class="founding" id="founding">
+      <div class="container">
+        <div class="founding-card reveal">
+          <span class="founding-label">Founding Member</span>
+
+          <div class="founding-price-block">
+            <div class="founding-price">£4.99/month</div>
+            <p class="founding-price-life">for life</p>
+          </div>
+
+          <p class="founding-availability">Available to the first 250 eligible members.</p>
+
+          <ul class="founding-benefits">
+            <li>Your Founding Member plan price will never increase while your membership remains active</li>
+            <li>Early access to Hospitality Flow</li>
+            <li>Operational templates and tools included in the Founding Member plan</li>
+            <li>Opportunity to help shape future features</li>
+            <li>Priority access to tools included within the plan</li>
+          </ul>
+
+          <p class="founding-disclaimer">Advanced AI tools, enterprise features, usage-based services, and future premium modules may be offered separately.</p>
+
+          <a href="#waitlist" class="btn btn-primary btn-lg">Join the Founding Member Waitlist</a>
+
+          <p class="founding-waitlist-note">No payment is taken when joining the waitlist.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="how-it-works" id="how-it-works">
+      <div class="container">
+        <div class="section-header reveal">
+          <h2 class="section-heading">How it works</h2>
+        </div>
+        <div class="steps-grid">
+          <div class="step-card reveal">
+            <div class="step-number">1</div>
+            <h3>Join the waitlist</h3>
+            <p>Register your interest with no payment required.</p>
+          </div>
+          <div class="step-card reveal">
+            <div class="step-number">2</div>
+            <h3>Help shape the platform</h3>
+            <p>Share feedback about the operational problems your property faces.</p>
+          </div>
+          <div class="step-card reveal">
+            <div class="step-number">3</div>
+            <h3>Lock in your Founding Member price</h3>
+            <p>When Hospitality Flow launches, eligible early members can activate the £4.99 monthly plan.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Who It Is For -->
+    <section class="audience" id="audience">
+      <div class="container">
+        <div class="section-header reveal">
+          <h2 class="section-heading">Built for smaller hospitality teams.</h2>
+        </div>
+        <div class="audience-grid">
+          <div class="audience-card reveal">
+            <div class="audience-icon">🏨</div>
+            <h3>Independent hotels</h3>
+          </div>
+          <div class="audience-card reveal">
+            <div class="audience-icon">✨</div>
+            <h3>Boutique hotels</h3>
+          </div>
+          <div class="audience-card reveal">
+            <div class="audience-icon">🏡</div>
+            <h3>Guest houses</h3>
+          </div>
+          <div class="audience-card reveal">
+            <div class="audience-icon">🏢</div>
+            <h3>Serviced apartments</h3>
+          </div>
+          <div class="audience-card reveal">
+            <div class="audience-icon">🚀</div>
+            <h3>New hotel openings</h3>
+          </div>
+        </div>
+        <p class="audience-statement reveal">Hospitality Flow is initially focused on smaller properties and teams where time, staffing, and operational consistency matter most.</p>
+      </div>
+    </section>
+
+    <!-- Founder -->
+    <section class="founder" id="founder">
+      <div class="container">
+        <div class="founder-content reveal">
+          <h2 class="section-heading">Built by hospitality, for hospitality.</h2>
+          <p>Hospitality Flow is being created from years of real experience across boutique hotels, guest houses, serviced apartments, large hotels, night operations, reception, reservations, and hotel openings.</p>
+          <p>The goal is simple: create practical tools that solve real operational problems rather than adding more complexity.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Waitlist Form -->
+    <section class="waitlist" id="waitlist">
+      <div class="container">
+        <div class="section-header reveal">
+          <h2 class="section-heading">Join the Hospitality Flow waitlist</h2>
+        </div>
+
+        <div class="waitlist-form-wrapper reveal">
+          <form id="waitlist-form" novalidate>
+            <div class="form-group">
+              <label for="first-name">First name</label>
+              <input type="text" id="first-name" name="first-name" required autocomplete="given-name" placeholder="Your first name">
+            </div>
+            <div class="form-group">
+              <label for="email">Email address</label>
+              <input type="email" id="email" name="email" required autocomplete="email" placeholder="you@yourhotel.com">
+            </div>
+            <div class="form-group">
+              <label for="property-name">Property or company name</label>
+              <input type="text" id="property-name" name="property-name" required autocomplete="organization" placeholder="Your property or company">
+            </div>
+            <div class="form-group">
+              <label for="property-type">Property type</label>
+              <select id="property-type" name="property-type" required>
+                <option value="" disabled selected>Select property type</option>
+                <option value="independent-hotel">Independent hotel</option>
+                <option value="boutique-hotel">Boutique hotel</option>
+                <option value="guest-house">Guest house</option>
+                <option value="serviced-apartment">Serviced apartment</option>
+                <option value="new-hotel-opening">New hotel opening</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div class="form-group optional">
+              <label for="challenge">What is your biggest operational challenge?</label>
+              <textarea id="challenge" name="challenge" placeholder="Tell us about the operational challenges you face…"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg form-submit">Join the Waitlist</button>
+          </form>
+
+          <div class="form-success" id="form-success" role="status" aria-live="polite">
+            <div class="form-success-icon">✓</div>
+            <p>Thank you. You've joined the Hospitality Flow waitlist.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="faq" id="faq">
+      <div class="container">
+        <div class="section-header reveal">
+          <h2 class="section-heading">Frequently asked questions</h2>
+        </div>
+        <div class="faq-list">
+          <div class="faq-item reveal">
+            <button class="faq-question" aria-expanded="false">
+              Is Hospitality Flow available now?
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              <p>Hospitality Flow is currently in development. The waitlist gives you early updates and the opportunity to help shape the platform.</p>
+            </div>
+          </div>
+          <div class="faq-item reveal">
+            <button class="faq-question" aria-expanded="false">
+              When will I be charged?
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              <p>No payment is taken when joining the waitlist. Payment will only begin if you choose to activate a paid plan after launch.</p>
+            </div>
+          </div>
+          <div class="faq-item reveal">
+            <button class="faq-question" aria-expanded="false">
+              What does £4.99 per month for life mean?
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              <p>Eligible Founding Members can keep the £4.99 monthly price for the Founding Member plan while their membership remains continuously active.</p>
+            </div>
+          </div>
+          <div class="faq-item reveal">
+            <button class="faq-question" aria-expanded="false">
+              Will every future feature be included?
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              <p>No. Features included in the Founding Member plan will remain available under that plan, but advanced AI tools, enterprise features, usage-based services, and premium modules may be sold separately.</p>
+            </div>
+          </div>
+          <div class="faq-item reveal">
+            <button class="faq-question" aria-expanded="false">
+              Who is Hospitality Flow designed for?
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              <p>Hospitality Flow is initially designed for independent hotels, boutique hotels, guest houses, serviced apartments, and new hotel openings.</p>
+            </div>
+          </div>
+          <div class="faq-item reveal">
+            <button class="faq-question" aria-expanded="false">
+              Are the 250 places guaranteed?
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              <p>Joining the waitlist registers your interest. Final eligibility and activation details will be confirmed before launch.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer" role="contentinfo">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <span class="logo">Hospitality <span>Flow</span></span>
+          <p class="footer-tagline">Making hospitality smoother, smarter, and less stressful.</p>
+        </div>
+        <div class="footer-col">
+          <h4>Platform</h4>
+          <a href="#features">Features</a>
+          <a href="#how-it-works">How It Works</a>
+          <a href="#founding">Founding Members</a>
+        </div>
+        <div class="footer-col">
+          <h4>Contact</h4>
+          <a href="https://hospitalityflow.co.uk">hospitalityflow.co.uk</a>
+          <a href="#waitlist">Join the Waitlist</a>
+          <a href="#faq">FAQ</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>&copy; 2026 Hospitality Flow</span>
+        <div class="footer-links">
+          <a href="#">Privacy Policy</a>
+          <a href="#">Terms</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      /* Mobile menu */
+      var menuToggle = document.querySelector('.menu-toggle');
+      var mobileMenu = document.getElementById('mobile-menu');
+      var mobileLinks = mobileMenu.querySelectorAll('a');
+
+      menuToggle.addEventListener('click', function () {
+        var expanded = menuToggle.getAttribute('aria-expanded') === 'true';
+        menuToggle.setAttribute('aria-expanded', !expanded);
+        mobileMenu.classList.toggle('open');
+        document.body.style.overflow = expanded ? '' : 'hidden';
+      });
+
+      mobileLinks.forEach(function (link) {
+        link.addEventListener('click', function () {
+          menuToggle.setAttribute('aria-expanded', 'false');
+          mobileMenu.classList.remove('open');
+          document.body.style.overflow = '';
+        });
+      });
+
+      /* FAQ accordion */
+      document.querySelectorAll('.faq-question').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var item = btn.closest('.faq-item');
+          var isOpen = item.classList.contains('open');
+
+          document.querySelectorAll('.faq-item').forEach(function (el) {
+            el.classList.remove('open');
+            el.querySelector('.faq-question').setAttribute('aria-expanded', 'false');
+          });
+
+          if (!isOpen) {
+            item.classList.add('open');
+            btn.setAttribute('aria-expanded', 'true');
+          }
+        });
+      });
+
+      /* Waitlist form */
+      var form = document.getElementById('waitlist-form');
+      var success = document.getElementById('form-success');
+
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        if (!form.checkValidity()) {
+          form.reportValidity();
+          return;
+        }
+
+        form.style.display = 'none';
+        success.classList.add('show');
+        success.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+
+      /* Scroll reveal */
+      var revealElements = document.querySelectorAll('.reveal');
+
+      if ('IntersectionObserver' in window) {
+        var observer = new IntersectionObserver(function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('visible');
+              observer.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+        revealElements.forEach(function (el) {
+          observer.observe(el);
+        });
+      } else {
+        revealElements.forEach(function (el) {
+          el.classList.add('visible');
+        });
+      }
+
+      /* Smooth scroll offset for fixed header */
+      document.querySelectorAll('a[href^="#"]').forEach(function (anchor) {
+        anchor.addEventListener('click', function (e) {
+          var targetId = this.getAttribute('href');
+          if (targetId === '#') return;
+
+          var target = document.querySelector(targetId);
+          if (target) {
+            e.preventDefault();
+            target.scrollIntoView({ behavior: 'smooth' });
+          }
+        });
+      });
+    })();
+  </script>
+
+</body>
+</html>
