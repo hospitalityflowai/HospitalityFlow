@@ -1,0 +1,1672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Hospitality Flow — AI Shift Handover Assistant. Turn messy shift notes into professional handovers in seconds.">
+  <title>AI Shift Handover Assistant — Hospitality Flow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy-950: #070e1a;
+      --navy-900: #0c1829;
+      --navy-800: #122240;
+      --navy-700: #1a3055;
+      --navy-600: #243d6b;
+      --blue-400: #5b9fd4;
+      --blue-500: #4a8fc4;
+      --blue-600: #3a7ab0;
+      --blue-50: #eef6fc;
+      --blue-100: #d9ebf8;
+      --white: #ffffff;
+      --gray-50: #f8fafc;
+      --gray-100: #eef2f7;
+      --gray-200: #d8e0ea;
+      --gray-300: #a8b4c4;
+      --gray-400: #7a8799;
+      --gray-500: #5a6578;
+      --gray-600: #3d4654;
+      --red-500: #e85d5d;
+      --red-50: #fef2f2;
+      --amber-500: #e8b84d;
+      --amber-50: #fffbeb;
+      --green-500: #5dce8a;
+      --green-50: #f0fdf4;
+      --radius: 10px;
+      --radius-lg: 14px;
+      --radius-xl: 18px;
+      --shadow-sm: 0 1px 2px rgba(7, 14, 26, 0.04), 0 1px 3px rgba(7, 14, 26, 0.03);
+      --shadow-md: 0 4px 16px rgba(7, 14, 26, 0.07);
+      --shadow-lg: 0 12px 40px rgba(7, 14, 26, 0.1);
+      --shadow-card: 0 1px 2px rgba(7, 14, 26, 0.04), 0 2px 8px rgba(7, 14, 26, 0.03);
+      --shadow-card-hover: 0 4px 12px rgba(7, 14, 26, 0.06), 0 8px 28px rgba(7, 14, 26, 0.05);
+      --shadow-summary: 0 1px 2px rgba(74, 143, 196, 0.06), 0 4px 24px rgba(74, 143, 196, 0.1), 0 12px 48px rgba(7, 14, 26, 0.05);
+      --shadow-summary-hover: 0 2px 4px rgba(74, 143, 196, 0.08), 0 8px 32px rgba(74, 143, 196, 0.14), 0 16px 56px rgba(7, 14, 26, 0.07);
+      --card-gap: 12px;
+      --transition: 0.22s ease;
+      --transition-smooth: 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+      --max-width: 920px;
+      --nav-height: 64px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; scroll-padding-top: calc(var(--nav-height) + 16px); }
+
+    body {
+      font-family: "Inter", system-ui, -apple-system, sans-serif;
+      background: var(--gray-50);
+      color: var(--navy-900);
+      line-height: 1.6;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      font-size: 15px;
+    }
+
+    button, input, select, textarea { font-family: inherit; }
+    button { cursor: pointer; border: none; background: none; }
+
+    /* ── Top Nav ── */
+    .topnav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      height: var(--nav-height);
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--gray-200);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .topnav-inner {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 0 24px;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 11px;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 9px;
+      background: linear-gradient(135deg, var(--navy-800) 0%, var(--navy-700) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(18, 34, 64, 0.18);
+      flex-shrink: 0;
+    }
+
+    .logo-icon svg { width: 20px; height: 20px; fill: var(--blue-400); }
+
+    .logo-text {
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      color: var(--navy-900);
+      line-height: 1.2;
+    }
+
+    .logo-text span { color: var(--blue-500); }
+
+    .logo-sub {
+      display: block;
+      font-size: 0.7rem;
+      font-weight: 500;
+      color: var(--gray-400);
+      letter-spacing: 0;
+    }
+
+    .nav-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: var(--blue-50);
+      border: 1px solid rgba(74, 143, 196, 0.18);
+      border-radius: 100px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--blue-600);
+      white-space: nowrap;
+    }
+
+    .nav-badge-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--blue-500);
+      animation: pulse 2s ease infinite;
+    }
+
+    /* ── Page ── */
+    .page { min-height: 100vh; display: flex; flex-direction: column; }
+
+    .container {
+      width: 100%;
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    .main { flex: 1; padding: 32px 0 72px; }
+
+    .page-header {
+      margin-bottom: 28px;
+      animation: fadeDown 0.5s ease both;
+    }
+
+    .page-title {
+      font-size: clamp(1.4rem, 3.5vw, 1.75rem);
+      font-weight: 700;
+      letter-spacing: -0.035em;
+      color: var(--navy-900);
+      line-height: 1.2;
+      margin-bottom: 6px;
+    }
+
+    .page-subtitle {
+      font-size: 0.95rem;
+      color: var(--gray-500);
+      max-width: 520px;
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--gray-100);
+    }
+
+    .card-header-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .card-header-icon svg { width: 16px; height: 16px; }
+
+    .card-header-icon.navy { background: var(--navy-800); color: var(--blue-400); }
+    .card-header-icon.blue { background: var(--blue-50); color: var(--blue-600); }
+    .card-header-icon.purple { background: #f3f0ff; color: #7c5cbf; }
+
+    .card-header-text h2 {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--navy-900);
+      letter-spacing: -0.01em;
+    }
+
+    .card-header-text p {
+      font-size: 0.78rem;
+      color: var(--gray-400);
+      margin-top: 1px;
+    }
+
+    .card-body { padding: 24px; }
+
+    .dashboard-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* ── Hotel Info ── */
+    .hotel-card { animation: fadeUp 0.5s ease 0.05s both; }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group.full { grid-column: 1 / -1; }
+
+    .form-label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--gray-500);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .form-input {
+      padding: 11px 14px;
+      font-size: 0.92rem;
+      color: var(--navy-900);
+      background: var(--gray-50);
+      border: 1.5px solid var(--gray-200);
+      border-radius: var(--radius);
+      transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
+    }
+
+    .form-input:focus {
+      outline: none;
+      background: var(--white);
+      border-color: var(--blue-500);
+      box-shadow: 0 0 0 3px rgba(74, 143, 196, 0.12);
+    }
+
+    .shift-selector {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .shift-btn {
+      flex: 1;
+      min-width: 72px;
+      padding: 10px 14px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--gray-500);
+      background: var(--gray-50);
+      border: 1.5px solid var(--gray-200);
+      border-radius: var(--radius);
+      transition: all var(--transition);
+    }
+
+    .shift-btn:hover { border-color: var(--gray-300); color: var(--navy-700); }
+
+    .shift-btn.active {
+      background: var(--navy-800);
+      border-color: var(--navy-800);
+      color: var(--white);
+      box-shadow: 0 2px 8px rgba(18, 34, 64, 0.2);
+    }
+
+    .shift-btn:focus-visible {
+      outline: 2px solid var(--blue-400);
+      outline-offset: 2px;
+    }
+
+    /* ── Notes Input ── */
+    .input-card { animation: fadeUp 0.5s ease 0.1s both; }
+
+    .input-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .char-count { font-size: 0.78rem; color: var(--gray-400); }
+
+    .notes-textarea {
+      width: 100%;
+      min-height: 200px;
+      padding: 16px 18px;
+      font-size: 0.92rem;
+      line-height: 1.7;
+      color: var(--navy-900);
+      background: var(--gray-50);
+      border: 1.5px solid var(--gray-200);
+      border-radius: var(--radius);
+      resize: vertical;
+      transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
+    }
+
+    .notes-textarea::placeholder { color: var(--gray-400); }
+
+    .notes-textarea:focus {
+      outline: none;
+      background: var(--white);
+      border-color: var(--blue-500);
+      box-shadow: 0 0 0 3px rgba(74, 143, 196, 0.12);
+    }
+
+    /* ── Buttons ── */
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      animation: fadeUp 0.5s ease 0.15s both;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 14px 24px;
+      font-size: 0.92rem;
+      font-weight: 600;
+      border-radius: var(--radius);
+      transition: all var(--transition);
+      white-space: nowrap;
+    }
+
+    .btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+    .btn-primary {
+      width: 100%;
+      background: linear-gradient(135deg, var(--blue-500) 0%, var(--blue-600) 100%);
+      color: var(--white);
+      box-shadow: 0 3px 12px rgba(74, 143, 196, 0.32);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(74, 143, 196, 0.4);
+    }
+
+    .btn-primary:focus-visible:not(:disabled) {
+      outline: 2px solid var(--blue-400);
+      outline-offset: 2px;
+    }
+
+    .btn-primary:disabled { opacity: 0.65; cursor: not-allowed; }
+
+    .btn-primary .spinner {
+      display: none;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: var(--white);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    .btn-primary.loading .spinner { display: block; }
+
+    .secondary-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    .btn-secondary {
+      flex: 1;
+      min-width: 130px;
+      padding: 11px 18px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--navy-700);
+      background: var(--white);
+      border: 1.5px solid var(--gray-200);
+    }
+
+    .btn-secondary:hover {
+      background: var(--gray-50);
+      border-color: var(--gray-300);
+      color: var(--navy-900);
+    }
+
+    .btn-secondary:focus-visible {
+      outline: 2px solid var(--blue-400);
+      outline-offset: 2px;
+    }
+
+    .btn-secondary.copied {
+      border-color: var(--green-500);
+      color: #2d8a5e;
+      background: var(--green-50);
+    }
+
+    /* ── Output ── */
+    .output-section {
+      display: none;
+      animation: fadeUp 0.45s ease both;
+    }
+
+    .output-section.visible { display: block; }
+
+    .output-panel {
+      margin-top: 32px;
+      padding-top: 28px;
+      border-top: 1px solid var(--gray-200);
+    }
+
+    .output-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .output-panel-header h2 {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--gray-500);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .output-timestamp {
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--gray-400);
+      padding: 4px 10px;
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: 100px;
+    }
+
+    .handover-results {
+      display: flex;
+      flex-direction: column;
+      gap: var(--card-gap);
+    }
+
+    /* ── AI Summary ── */
+    .summary-card {
+      position: relative;
+      overflow: hidden;
+      display: none;
+      border: 1px solid rgba(74, 143, 196, 0.28);
+      border-radius: var(--radius-xl);
+      background: linear-gradient(135deg, #d4e8f7 0%, #eaf4fc 28%, #f5faff 55%, var(--white) 100%);
+      box-shadow: var(--shadow-summary);
+      transition: transform var(--transition-smooth), box-shadow var(--transition-smooth), border-color var(--transition-smooth);
+    }
+
+    .summary-card.is-visible {
+      display: block;
+      animation: summaryReveal 0.55s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    @keyframes summaryReveal {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .summary-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--navy-700) 0%, var(--blue-500) 40%, var(--blue-400) 70%, #9ecef0 100%);
+      z-index: 1;
+    }
+
+    .summary-card::after {
+      content: "";
+      position: absolute;
+      top: -80px;
+      right: -60px;
+      width: 260px;
+      height: 260px;
+      background: radial-gradient(circle, rgba(74, 143, 196, 0.16) 0%, transparent 65%);
+      pointer-events: none;
+    }
+
+    .summary-card.is-visible:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-summary-hover);
+      border-color: rgba(74, 143, 196, 0.38);
+    }
+
+    .summary-card .card-body {
+      position: relative;
+      z-index: 2;
+      padding: 28px 30px;
+      background: transparent;
+    }
+
+    .summary-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 18px;
+    }
+
+    .summary-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: linear-gradient(145deg, var(--blue-600) 0%, var(--blue-500) 50%, var(--blue-400) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 6px 20px rgba(74, 143, 196, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+      transition: transform var(--transition-smooth), box-shadow var(--transition-smooth);
+    }
+
+    .summary-card.is-visible:hover .summary-icon {
+      transform: scale(1.05);
+      box-shadow: 0 8px 24px rgba(74, 143, 196, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    }
+
+    .summary-icon svg { width: 22px; height: 22px; color: var(--white); }
+
+    .summary-content { flex: 1; min-width: 0; }
+
+    .summary-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      color: var(--blue-600);
+      margin-bottom: 10px;
+    }
+
+    .summary-label::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--blue-500);
+      box-shadow: 0 0 0 3px rgba(74, 143, 196, 0.22);
+      animation: pulse 2.5s ease infinite;
+    }
+
+    .summary-text {
+      font-size: 1rem;
+      font-weight: 400;
+      color: var(--navy-800);
+      line-height: 1.75;
+      letter-spacing: -0.015em;
+    }
+
+    .summary-stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 18px;
+      padding-top: 18px;
+      border-top: 1px solid rgba(7, 14, 26, 0.06);
+    }
+
+    .stat-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 12px;
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid rgba(7, 14, 26, 0.08);
+      border-radius: 100px;
+      font-size: 0.74rem;
+      font-weight: 600;
+      color: var(--gray-500);
+      box-shadow: 0 1px 2px rgba(7, 14, 26, 0.03);
+      transition: transform var(--transition-smooth), border-color var(--transition-smooth), box-shadow var(--transition-smooth);
+    }
+
+    .stat-pill:hover {
+      transform: translateY(-1px);
+      border-color: rgba(7, 14, 26, 0.12);
+      box-shadow: 0 2px 6px rgba(7, 14, 26, 0.05);
+    }
+
+    .stat-pill.urgent {
+      border-color: rgba(232, 93, 93, 0.25);
+      color: #b91c1c;
+      background: var(--red-50);
+    }
+
+    /* ── Collapsible Sections ── */
+    .sections-grid {
+      display: flex;
+      flex-direction: column;
+      gap: var(--card-gap);
+    }
+
+    .section-card {
+      overflow: hidden;
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(7, 14, 26, 0.07);
+      background: var(--white);
+      box-shadow: var(--shadow-card);
+      opacity: 0;
+      transform: translateY(12px);
+      animation: cardReveal 0.4s ease forwards;
+      transition: transform var(--transition-smooth), box-shadow var(--transition-smooth), border-color var(--transition-smooth);
+    }
+
+    .section-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-card-hover);
+      border-color: rgba(7, 14, 26, 0.11);
+    }
+
+    .section-card:nth-child(1) { animation-delay: 0.1s; }
+    .section-card:nth-child(2) { animation-delay: 0.15s; }
+    .section-card:nth-child(3) { animation-delay: 0.2s; }
+    .section-card:nth-child(4) { animation-delay: 0.25s; }
+    .section-card:nth-child(5) { animation-delay: 0.3s; }
+    .section-card:nth-child(6) { animation-delay: 0.35s; }
+
+    .section-card.empty { display: none; }
+
+    .section-toggle {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 18px 22px;
+      text-align: left;
+      transition: background var(--transition-smooth);
+    }
+
+    .section-toggle:hover { background: rgba(248, 250, 252, 0.9); }
+
+    .section-toggle:focus-visible {
+      outline: 2px solid var(--blue-400);
+      outline-offset: -2px;
+    }
+
+    .section-icon-wrap {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: transform var(--transition-smooth);
+    }
+
+    .section-card:hover .section-icon-wrap { transform: scale(1.05); }
+
+    .section-icon-wrap svg { width: 18px; height: 18px; }
+
+    .section-card[data-section="urgent"] .section-icon-wrap { background: var(--red-50); color: var(--red-500); }
+    .section-card[data-section="guest"] .section-icon-wrap { background: var(--blue-50); color: var(--blue-500); }
+    .section-card[data-section="maintenance"] .section-icon-wrap { background: var(--amber-50); color: var(--amber-500); }
+    .section-card[data-section="payments"] .section-icon-wrap { background: var(--green-50); color: var(--green-500); }
+    .section-card[data-section="tasks"] .section-icon-wrap { background: var(--gray-100); color: var(--navy-600); }
+    .section-card[data-section="general"] .section-icon-wrap { background: var(--gray-100); color: var(--gray-500); }
+
+    .section-toggle-text { flex: 1; min-width: 0; }
+
+    .section-title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-emoji { font-size: 1rem; line-height: 1; }
+
+    .section-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--navy-900);
+      letter-spacing: -0.01em;
+    }
+
+    .section-card[data-section="urgent"] .section-title { color: #c0392b; }
+
+    .section-count {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--gray-400);
+      background: var(--gray-50);
+      padding: 2px 8px;
+      border-radius: 100px;
+      border: 1px solid var(--gray-200);
+    }
+
+    .section-chevron {
+      width: 20px;
+      height: 20px;
+      color: var(--gray-300);
+      transition: transform var(--transition-smooth), color var(--transition-smooth);
+      flex-shrink: 0;
+    }
+
+    .section-card:hover .section-chevron { color: var(--gray-400); }
+
+    .section-card.is-open .section-chevron { transform: rotate(180deg); }
+
+    .section-body {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .section-card.is-open .section-body { max-height: 800px; }
+
+    .section-body-inner {
+      padding: 0 20px 18px 68px;
+    }
+
+    .section-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .section-list li {
+      position: relative;
+      padding: 11px 14px 11px 28px;
+      font-size: 0.88rem;
+      color: var(--gray-600);
+      line-height: 1.55;
+      background: var(--gray-50);
+      border-radius: 10px;
+      border: 1px solid rgba(7, 14, 26, 0.05);
+      transition: background var(--transition-smooth), border-color var(--transition-smooth), transform var(--transition-smooth);
+    }
+
+    .section-list li:hover {
+      background: var(--white);
+      border-color: rgba(7, 14, 26, 0.09);
+      transform: translateX(2px);
+    }
+
+    .section-list li::before {
+      content: "";
+      position: absolute;
+      left: 12px;
+      top: 1.05em;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--blue-400);
+    }
+
+    .section-card[data-section="urgent"] .section-list li::before { background: var(--red-500); }
+    .section-card[data-section="guest"] .section-list li::before { background: var(--blue-500); }
+    .section-card[data-section="maintenance"] .section-list li::before { background: var(--amber-500); }
+    .section-card[data-section="payments"] .section-list li::before { background: var(--green-500); }
+    .section-card[data-section="tasks"] .section-list li::before { background: var(--navy-600); }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      padding: 12px 22px;
+      background: var(--navy-900);
+      color: var(--white);
+      font-size: 0.88rem;
+      font-weight: 500;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
+      opacity: 0;
+      transition: transform 0.35s ease, opacity 0.35s ease;
+      z-index: 1000;
+      pointer-events: none;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      padding: 20px 0;
+      text-align: center;
+      font-size: 0.78rem;
+      color: var(--gray-400);
+      border-top: 1px solid var(--gray-200);
+      background: var(--white);
+    }
+
+    .footer a { color: var(--blue-500); text-decoration: none; font-weight: 500; }
+    .footer a:hover { text-decoration: underline; }
+
+    /* ── Animations ── */
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes cardReveal {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.35; }
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Responsive ── */
+    @media (min-width: 640px) {
+      .actions { flex-direction: row; align-items: stretch; }
+      .btn-primary { flex: 2; width: auto; }
+      .secondary-actions { flex: 1; }
+    }
+
+    @media (max-width: 600px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .form-group.half { grid-column: 1; }
+      .logo-sub { display: none; }
+      .nav-badge span.label { display: none; }
+      .section-body-inner { padding-left: 20px; }
+      .card-body { padding: 18px; }
+      .card-header { padding: 14px 18px; }
+    }
+
+    @media (max-width: 400px) {
+      .main { padding: 24px 0 56px; }
+      .secondary-actions { flex-direction: column; }
+      .btn-secondary { width: 100%; }
+      .shift-btn { min-width: 60px; padding: 9px 10px; font-size: 0.8rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <nav class="topnav" aria-label="Main navigation">
+      <div class="topnav-inner">
+        <a class="logo" href="index.html">
+          <div class="logo-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2L2 7v10l10 5 10-5V7L12 2zm0 2.18l7.5 3.75v7.14L12 18.82l-7.5-3.75V7.93L12 4.18zM12 8l-5 2.5v5L12 18l5-2.5v-5L12 8z"/>
+            </svg>
+          </div>
+          <div>
+            <span class="logo-text">Hospitality <span>Flow</span></span>
+            <span class="logo-sub">AI Shift Handover Assistant</span>
+          </div>
+        </a>
+        <div class="nav-badge">
+          <span class="nav-badge-dot" aria-hidden="true"></span>
+          <span class="label">AI Powered</span>
+        </div>
+      </div>
+    </nav>
+
+    <main class="main">
+      <div class="container">
+        <div class="page-header">
+          <h1 class="page-title">AI Shift Handover Assistant</h1>
+          <p class="page-subtitle">Turn messy shift notes into professional handovers in seconds.</p>
+        </div>
+
+        <div class="dashboard-grid">
+          <!-- Hotel Information -->
+          <div class="card hotel-card">
+            <div class="card-header">
+              <div class="card-header-icon navy" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><path d="M9 9h1"/><path d="M9 13h1"/><path d="M9 17h1"/>
+                </svg>
+              </div>
+              <div class="card-header-text">
+                <h2>Hotel Information</h2>
+                <p>Details included in your exported handover</p>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="form-grid">
+                <div class="form-group full">
+                  <label class="form-label" for="hotelName">Hotel Name</label>
+                  <input class="form-input" type="text" id="hotelName" placeholder="e.g. The Grand Boutique Hotel">
+                </div>
+                <div class="form-group half">
+                  <label class="form-label" for="handoverDate">Date</label>
+                  <input class="form-input" type="date" id="handoverDate">
+                </div>
+                <div class="form-group half">
+                  <span class="form-label" id="shiftLabel">Shift</span>
+                  <div class="shift-selector" role="group" aria-labelledby="shiftLabel">
+                    <button class="shift-btn active" type="button" data-shift="AM">AM</button>
+                    <button class="shift-btn" type="button" data-shift="PM">PM</button>
+                    <button class="shift-btn" type="button" data-shift="Night">Night</button>
+                  </div>
+                </div>
+                <div class="form-group full">
+                  <label class="form-label" for="preparedBy">Prepared By</label>
+                  <input class="form-input" type="text" id="preparedBy" placeholder="e.g. Sarah Mitchell — Front Desk">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Shift Notes -->
+          <div class="card input-card">
+            <div class="card-header">
+              <div class="card-header-icon blue" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+                </svg>
+              </div>
+              <div class="card-header-text">
+                <h2>Paste your shift notes</h2>
+                <p>One note per line works best</p>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="input-meta">
+                <span class="char-count" id="charCount">0 characters</span>
+              </div>
+              <textarea
+                class="notes-textarea"
+                id="notesInput"
+                placeholder="Room 12 AC leaking.&#10;Guest in 18 requested late checkout.&#10;PDQ machine not charging.&#10;PM accounts completed.&#10;VIP arriving tomorrow."
+                aria-label="Paste your shift notes"
+              ></textarea>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="actions">
+            <button class="btn btn-primary" id="generateBtn" type="button">
+              <span class="spinner" aria-hidden="true"></span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 2a4 4 0 0 1 4 4c0 1.95-1.4 3.58-3.25 3.93"/><path d="M8.5 10.5A4 4 0 0 1 12 2"/><path d="M12 12v4"/><path d="M8 22h8"/><path d="M12 18v4"/>
+              </svg>
+              <span class="btn-text">Generate AI Handover</span>
+            </button>
+            <div class="secondary-actions">
+              <button class="btn btn-secondary" id="copyBtn" type="button" disabled>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                </svg>
+                Copy Handover
+              </button>
+              <button class="btn btn-secondary" id="clearBtn" type="button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                </svg>
+                Clear Notes
+              </button>
+            </div>
+          </div>
+
+          <!-- Output -->
+          <section class="output-section" id="outputSection" aria-live="polite">
+            <div class="output-panel">
+              <div class="output-panel-header">
+                <h2>Organised Handover</h2>
+                <span class="output-timestamp" id="timestamp"></span>
+              </div>
+
+              <div class="handover-results">
+                <div class="card summary-card" id="summaryCard">
+                  <div class="card-body">
+                    <div class="summary-header">
+                      <div class="summary-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M12 2a4 4 0 0 1 4 4c0 1.95-1.4 3.58-3.25 3.93"/><path d="M8.5 10.5A4 4 0 0 1 12 2"/><path d="M12 12v4"/><path d="M8 22h8"/><path d="M12 18v4"/>
+                        </svg>
+                      </div>
+                      <div class="summary-content">
+                        <div class="summary-label">AI Summary</div>
+                        <p class="summary-text" id="summaryText"></p>
+                        <div class="summary-stats" id="summaryStats"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="sections-grid" id="sectionsGrid"></div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="container">
+        <p>&copy; 2026 <a href="index.html">Hospitality Flow</a> — AI-powered operations for independent hotels</p>
+      </div>
+    </footer>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      var SECTIONS = [
+        {
+          id: "urgent",
+          emoji: "🚨",
+          title: "Urgent Issues",
+          keywords: [
+            "urgent", "emergency", "asap", "immediately", "critical", "alarm",
+            "fire", "flood", "leak", "leaking", "broken", "not working",
+            "complaint", "angry", "escalat", "security", "police", "ambulance",
+            "evacuat", "power cut", "no hot water", "no water", "gas smell"
+          ],
+          icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
+        },
+        {
+          id: "guest",
+          emoji: "🏨",
+          title: "Guest Information",
+          keywords: [
+            "guest", "room", "checkout", "check out", "check-in", "checkin",
+            "check in", "arrival", "arriving", "departure", "departing",
+            "vip", "suite", "occupancy", "stay", "reservation", "booking",
+            "late checkout", "early check", "no show", "walk-in", "walk in",
+            "breakfast", "dietary", "allergy", "wheelchair", "celebration",
+            "honeymoon", "anniversary", "corporate", "group"
+          ],
+          icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M9 8h1"/><path d="M9 12h1"/><path d="M9 16h1"/><path d="M14 8h1"/><path d="M14 12h1"/><path d="M14 16h1"/><path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"/></svg>'
+        },
+        {
+          id: "maintenance",
+          emoji: "🔧",
+          title: "Maintenance",
+          keywords: [
+            "maintenance", "repair", "fix", "hvac", "ac ", " a/c", "air con",
+            "plumb", "electric", "lift", "elevator", "boiler", "heating",
+            "light", "bulb", "tap", "toilet", "shower", "drain", "paint",
+            "carpet", "door lock", "key card", "wifi", "wi-fi", "internet",
+            "tv", "television", "fridge", "minibar", "equipment", "faulty",
+            "engineer", "contractor", "work order"
+          ],
+          icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>'
+        },
+        {
+          id: "payments",
+          emoji: "💳",
+          title: "Payments",
+          keywords: [
+            "payment", "pay ", "paid", "card", "pdq", "pos", "charge",
+            "charging", "refund", "deposit", "invoice", "bill", "billing",
+            "account", "pm account", "accounts", "folio", "pre-auth",
+            "preauth", "settlement", "cash", "credit", "debit", "transaction",
+            "receipt", "outstanding balance", "minibar charge", "no show charge"
+          ],
+          icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>'
+        },
+        {
+          id: "tasks",
+          emoji: "📋",
+          title: "Outstanding Tasks",
+          keywords: [
+            "task", "todo", "to do", "to-do", "outstanding", "pending",
+            "follow up", "follow-up", "followup", "remind", "schedule",
+            "complete", "completed", "incomplete", "outstanding task",
+            "action", "assign", "handover to", "need to", "must", "ensure",
+            "check back", "callback", "call back", "arrange", "organise",
+            "organize", "prepare", "stock", "order", "deliver", "collect"
+          ],
+          icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14l2 2 4-4"/></svg>'
+        },
+        {
+          id: "general",
+          emoji: "📝",
+          title: "General Notes",
+          keywords: [],
+          icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>'
+        }
+      ];
+
+      var notesInput = document.getElementById("notesInput");
+      var charCount = document.getElementById("charCount");
+      var generateBtn = document.getElementById("generateBtn");
+      var copyBtn = document.getElementById("copyBtn");
+      var clearBtn = document.getElementById("clearBtn");
+      var outputSection = document.getElementById("outputSection");
+      var sectionsGrid = document.getElementById("sectionsGrid");
+      var timestamp = document.getElementById("timestamp");
+      var toast = document.getElementById("toast");
+      var hotelName = document.getElementById("hotelName");
+      var handoverDate = document.getElementById("handoverDate");
+      var preparedBy = document.getElementById("preparedBy");
+      var summaryText = document.getElementById("summaryText");
+      var summaryStats = document.getElementById("summaryStats");
+      var summaryCard = document.getElementById("summaryCard");
+      var shiftButtons = document.querySelectorAll(".shift-btn");
+
+      var selectedShift = "AM";
+      var lastHandoverText = "";
+      var lastSummaryText = "";
+
+      function initDate() {
+        var today = new Date();
+        var yyyy = today.getFullYear();
+        var mm = String(today.getMonth() + 1).padStart(2, "0");
+        var dd = String(today.getDate()).padStart(2, "0");
+        handoverDate.value = yyyy + "-" + mm + "-" + dd;
+      }
+
+      shiftButtons.forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          shiftButtons.forEach(function (b) { b.classList.remove("active"); });
+          btn.classList.add("active");
+          selectedShift = btn.getAttribute("data-shift");
+        });
+      });
+
+      function updateCharCount() {
+        var len = notesInput.value.length;
+        charCount.textContent = len + " character" + (len === 1 ? "" : "s");
+      }
+
+      function showToast(message) {
+        toast.textContent = message;
+        toast.classList.add("show");
+        clearTimeout(showToast._timer);
+        showToast._timer = setTimeout(function () {
+          toast.classList.remove("show");
+        }, 2800);
+      }
+
+      function parseNotes(text) {
+        return text
+          .split(/\n+/)
+          .map(function (line) { return line.trim(); })
+          .filter(function (line) { return line.length > 0; });
+      }
+
+      function matchesKeyword(line, keyword) {
+        var lower = line.toLowerCase();
+        var kw = keyword.toLowerCase().trim();
+        if (!kw) return false;
+        if (kw.indexOf(" ") !== -1) return lower.indexOf(kw) !== -1;
+        var pattern = new RegExp("(?:^|[^a-z0-9])" + kw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "(?:[^a-z0-9]|$)", "i");
+        return pattern.test(lower) || lower.indexOf(kw) !== -1;
+      }
+
+      function classifyLine(line) {
+        var scores = {};
+        var priority = ["urgent", "guest", "maintenance", "payments", "tasks"];
+
+        SECTIONS.forEach(function (section) {
+          if (section.id === "general") return;
+          scores[section.id] = 0;
+          section.keywords.forEach(function (keyword) {
+            if (matchesKeyword(line, keyword)) {
+              scores[section.id] += keyword.length > 6 ? 2 : 1;
+            }
+          });
+        });
+
+        var bestId = null;
+        var bestScore = 0;
+        priority.forEach(function (id) {
+          if (scores[id] > bestScore) {
+            bestScore = scores[id];
+            bestId = id;
+          }
+        });
+        return bestId || "general";
+      }
+
+      function classifyNotes(lines) {
+        var classified = {};
+        SECTIONS.forEach(function (section) { classified[section.id] = []; });
+        lines.forEach(function (line) {
+          classified[classifyLine(line)].push(line);
+        });
+        return classified;
+      }
+
+      function formatDisplayDate(dateValue) {
+        if (!dateValue) return "Not specified";
+        var parts = dateValue.split("-");
+        var d = new Date(parts[0], parts[1] - 1, parts[2]);
+        return d.toLocaleDateString("en-GB", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric"
+        });
+      }
+
+      function getHotelMeta() {
+        return {
+          hotel: hotelName.value.trim() || "Not specified",
+          shift: selectedShift,
+          date: formatDisplayDate(handoverDate.value),
+          preparedBy: preparedBy.value.trim() || "Not specified"
+        };
+      }
+
+      function noteContains(line, terms) {
+        var lower = line.toLowerCase();
+        return terms.some(function (term) { return lower.indexOf(term) !== -1; });
+      }
+
+      function capitalize(str) {
+        if (!str) return str;
+        return str.charAt(0).toUpperCase() + str.slice(1);
+      }
+
+      function getShiftLabel() {
+        if (selectedShift === "Night") return "night";
+        return selectedShift.toLowerCase() + " shift";
+      }
+
+      function isMaintenanceNote(line) {
+        return noteContains(line, [
+          "maintenance", "repair", "fix", "leak", "leaking", "ac ", "a/c",
+          "air con", "broken", "hvac", "plumb", "lift", "boiler", "faulty"
+        ]);
+      }
+
+      function buildOpeningSentence(urgent, maintenance) {
+        var shift = getShiftLabel();
+        var urgentMaint = urgent.filter(isMaintenanceNote).length;
+
+        if (urgent.length > 0 && urgentMaint === urgent.length) {
+          return "Overall the " + shift + (urgent.length === 1
+            ? " had one urgent maintenance issue."
+            : " had " + urgent.length + " urgent maintenance issues.");
+        }
+
+        if (urgent.length > 0) {
+          var maintExtra = maintenance.filter(function (m) {
+            return urgent.indexOf(m) === -1;
+          }).length;
+          if (urgentMaint > 0 && maintExtra === 0) {
+            return "Overall the " + shift + (urgent.length === 1
+              ? " had one urgent maintenance issue."
+              : " had " + urgent.length + " urgent issues, including maintenance matters.");
+          }
+          return "Overall the " + shift + (urgent.length === 1
+            ? " had one urgent issue requiring immediate attention."
+            : " had " + urgent.length + " urgent issues requiring immediate attention.");
+        }
+
+        if (maintenance.length > 0) {
+          return "Overall the " + shift + " ran relatively smoothly, with " +
+            maintenance.length + " maintenance " + (maintenance.length === 1 ? "item" : "items") + " noted.";
+        }
+
+        return "Overall the " + shift + " ran smoothly with no urgent issues flagged.";
+      }
+
+      function buildGuestSentence(items) {
+        if (!items.length) return "";
+
+        var hasVip = items.some(function (i) { return noteContains(i, ["vip"]); });
+        var hasArrival = items.some(function (i) { return noteContains(i, ["arriv", "tomorrow", "tonight", "due in"]); });
+        var checkoutItems = items.filter(function (i) { return noteContains(i, ["checkout", "check out", "check-in", "checkin", "check in"]); });
+        var breakfastItems = items.filter(function (i) { return noteContains(i, ["breakfast"]); });
+        var parts = [];
+
+        if (hasVip && hasArrival) {
+          parts.push("One VIP guest is arriving tomorrow");
+        } else if (hasVip) {
+          var vipCount = items.filter(function (i) { return noteContains(i, ["vip"]); }).length;
+          parts.push(vipCount + " VIP guest matter" + (vipCount === 1 ? " was" : "s were") + " noted");
+        } else if (hasArrival) {
+          parts.push("Guest arrivals are scheduled and have been noted");
+        }
+
+        if (checkoutItems.length === 1) {
+          parts.push("one guest requested late checkout");
+        } else if (checkoutItems.length > 1) {
+          parts.push(checkoutItems.length + " guests have checkout-related requests");
+        }
+
+        if (breakfastItems.length && !parts.length) {
+          return capitalize(breakfastItems.length === 1
+            ? "Breakfast arrangements were noted for a guest."
+            : "Breakfast arrangements were noted for multiple guests.");
+        }
+
+        if (!parts.length) {
+          return items.length === 1
+            ? "One guest-related note was recorded during the shift."
+            : items.length + " guest-related notes were recorded during the shift.";
+        }
+
+        return capitalize(parts.join(" and ")) + ".";
+      }
+
+      function buildMaintenanceSentence(items, urgent) {
+        if (!items.length) return "";
+
+        var nonUrgent = items.filter(function (i) {
+          return !urgent.some(function (u) { return u === i; });
+        });
+
+        if (!nonUrgent.length) return "";
+
+        if (nonUrgent.length === 1) {
+          return "One additional maintenance item was logged for follow-up.";
+        }
+        return nonUrgent.length + " maintenance items were logged for follow-up.";
+      }
+
+      function buildPaymentsSentence(items) {
+        if (!items.length) return "";
+
+        var completed = items.filter(function (i) {
+          return noteContains(i, ["completed", "complete", "done", "settled", "processed", "reconciled"]);
+        });
+        var issues = items.filter(function (i) {
+          return noteContains(i, ["not charging", "not working", "failed", "declined", "error", "issue", "problem", "outstanding"]);
+        });
+        var hasPmAccount = items.some(function (i) { return noteContains(i, ["pm account", "accounts"]); });
+
+        if (completed.length && issues.length) {
+          var donePart = hasPmAccount ? "Payments and PM accounts were completed successfully" : "Payments were processed successfully";
+          return donePart + ", though " + (issues.length === 1 ? "one payment issue still needs attention" : "some payment issues still need attention") + ".";
+        }
+
+        if (completed.length || hasPmAccount) {
+          if (hasPmAccount && completed.length) return "Payments and PM accounts were completed successfully.";
+          if (hasPmAccount) return "PM accounts were completed successfully.";
+          return "Payments were completed successfully.";
+        }
+
+        if (issues.length) {
+          return issues.length === 1
+            ? "One payment issue was flagged and needs follow-up."
+            : issues.length + " payment issues were flagged and need follow-up.";
+        }
+
+        return items.length === 1
+          ? "One payment-related note was logged."
+          : items.length + " payment-related notes were logged.";
+      }
+
+      function buildTasksSentence(tasks, general) {
+        var combined = tasks.concat(general);
+        var completed = combined.filter(function (i) {
+          return noteContains(i, ["completed", "complete", "done", "finished", "setup", "set up", "prepared", "ready"]);
+        });
+
+        if (!completed.length) return "";
+
+        var breakfast = completed.filter(function (i) { return noteContains(i, ["breakfast"]); });
+        if (breakfast.length) return "Breakfast setup has been completed.";
+
+        var stock = completed.filter(function (i) { return noteContains(i, ["stock", "inventory"]); });
+        if (stock.length) return "Stocking and inventory tasks have been completed.";
+
+        if (completed.length === 1) {
+          var line = completed[0].replace(/\.$/, "").toLowerCase();
+          if (line.length < 80) return capitalize(line) + (line.indexOf("completed") !== -1 || line.indexOf("complete") !== -1 ? "." : " has been completed.");
+          return "One outstanding task was completed during the shift.";
+        }
+
+        return completed.length + " outstanding tasks were completed during the shift.";
+      }
+
+      function generateSummary(classified) {
+        var urgent = classified.urgent || [];
+        var guest = classified.guest || [];
+        var maintenance = classified.maintenance || [];
+        var payments = classified.payments || [];
+        var tasks = classified.tasks || [];
+        var general = classified.general || [];
+        var sentences = [];
+
+        sentences.push(buildOpeningSentence(urgent, maintenance));
+
+        var guestSentence = buildGuestSentence(guest);
+        if (guestSentence) sentences.push(guestSentence);
+
+        var maintSentence = buildMaintenanceSentence(maintenance, urgent);
+        if (maintSentence) sentences.push(maintSentence);
+
+        var paySentence = buildPaymentsSentence(payments);
+        if (paySentence) sentences.push(paySentence);
+
+        var taskSentence = buildTasksSentence(tasks, general);
+        if (taskSentence && sentences.indexOf(taskSentence) === -1) sentences.push(taskSentence);
+
+        if (sentences.length < 2) {
+          var total = urgent.length + guest.length + maintenance.length + payments.length + tasks.length + general.length;
+          if (total > 0) {
+            sentences.push("A total of " + total + " note" + (total === 1 ? " was" : "s were") + " captured and organised for the incoming team.");
+          }
+        }
+
+        return sentences.slice(0, 4).join(" ");
+      }
+
+      function showSummaryCard() {
+        summaryCard.classList.remove("is-visible");
+        void summaryCard.offsetWidth;
+        summaryCard.classList.add("is-visible");
+      }
+
+      function renderSummaryStats(classified) {
+        summaryStats.innerHTML = "";
+        var pills = [
+          { id: "urgent", label: "Urgent", urgent: true },
+          { id: "guest", label: "Guests" },
+          { id: "maintenance", label: "Maintenance" },
+          { id: "payments", label: "Payments" },
+          { id: "tasks", label: "Tasks" },
+          { id: "general", label: "General" }
+        ];
+
+        pills.forEach(function (pill) {
+          var count = (classified[pill.id] || []).length;
+          if (count === 0) return;
+          var el = document.createElement("span");
+          el.className = "stat-pill" + (pill.urgent ? " urgent" : "");
+          el.textContent = count + " " + pill.label;
+          summaryStats.appendChild(el);
+        });
+      }
+
+      function formatHandoverText(classified) {
+        var parts = [];
+        var meta = getHotelMeta();
+        var now = new Date();
+        var timeStr = now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+
+        parts.push("SHIFT HANDOVER — Hospitality Flow");
+        parts.push("════════════════════════════════");
+        parts.push("Hotel:       " + meta.hotel);
+        parts.push("Shift:       " + meta.shift);
+        parts.push("Date:        " + meta.date);
+        parts.push("Prepared by: " + meta.preparedBy);
+        parts.push("Generated:   " + timeStr);
+        parts.push("");
+        parts.push("AI SUMMARY");
+        parts.push(lastSummaryText);
+        parts.push("");
+
+        SECTIONS.forEach(function (section) {
+          var items = classified[section.id];
+          if (!items || items.length === 0) return;
+          parts.push(section.emoji + " " + section.title.toUpperCase());
+          items.forEach(function (item) { parts.push("• " + item); });
+          parts.push("");
+        });
+
+        return parts.join("\n").trim();
+      }
+
+      function toggleSection(card) {
+        var isOpen = card.classList.contains("is-open");
+        card.classList.toggle("is-open", !isOpen);
+        card.querySelector(".section-toggle").setAttribute("aria-expanded", !isOpen);
+      }
+
+      function renderSections(classified) {
+        sectionsGrid.innerHTML = "";
+
+        SECTIONS.forEach(function (section, index) {
+          var items = classified[section.id] || [];
+          if (items.length === 0) return;
+
+          var card = document.createElement("article");
+          card.className = "card section-card is-open";
+          card.setAttribute("data-section", section.id);
+
+          var toggle = document.createElement("button");
+          toggle.className = "section-toggle";
+          toggle.type = "button";
+          toggle.setAttribute("aria-expanded", "true");
+          toggle.innerHTML =
+            '<span class="section-icon-wrap" aria-hidden="true">' + section.icon + "</span>" +
+            '<span class="section-toggle-text">' +
+              '<span class="section-title-row">' +
+                '<span class="section-emoji" aria-hidden="true">' + section.emoji + "</span>" +
+                '<span class="section-title">' + section.title + "</span>" +
+                '<span class="section-count">' + items.length + " item" + (items.length === 1 ? "" : "s") + "</span>" +
+              "</span>" +
+            "</span>" +
+            '<svg class="section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>';
+
+          var body = document.createElement("div");
+          body.className = "section-body";
+
+          var bodyInner = document.createElement("div");
+          bodyInner.className = "section-body-inner";
+
+          var list = document.createElement("ul");
+          list.className = "section-list";
+          items.forEach(function (item) {
+            var li = document.createElement("li");
+            li.textContent = item;
+            list.appendChild(li);
+          });
+
+          bodyInner.appendChild(list);
+          body.appendChild(bodyInner);
+          card.appendChild(toggle);
+          card.appendChild(body);
+          sectionsGrid.appendChild(card);
+
+          toggle.addEventListener("click", function () { toggleSection(card); });
+        });
+      }
+
+      function generateHandover() {
+        var text = notesInput.value.trim();
+        if (!text) {
+          showToast("Please paste your shift notes first.");
+          notesInput.focus();
+          return;
+        }
+
+        generateBtn.classList.add("loading");
+        generateBtn.disabled = true;
+
+        setTimeout(function () {
+          var lines = parseNotes(text);
+          var classified = classifyNotes(lines);
+          var now = new Date();
+
+          lastSummaryText = generateSummary(classified);
+          summaryText.textContent = lastSummaryText;
+          renderSummaryStats(classified);
+          renderSections(classified);
+          showSummaryCard();
+
+          timestamp.textContent = "Generated " + now.toLocaleString("en-GB", {
+            day: "numeric", month: "short", year: "numeric",
+            hour: "2-digit", minute: "2-digit"
+          });
+
+          lastHandoverText = formatHandoverText(classified);
+          outputSection.classList.add("visible");
+          copyBtn.disabled = false;
+
+          generateBtn.classList.remove("loading");
+          generateBtn.disabled = false;
+          showToast("Handover generated successfully!");
+
+          document.getElementById("summaryCard").scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }, 650);
+      }
+
+      function copyHandover() {
+        if (!lastHandoverText) {
+          showToast("Generate a handover first.");
+          return;
+        }
+
+        var doCopy = function () {
+          copyBtn.classList.add("copied");
+          copyBtn.innerHTML =
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
+          showToast("Handover copied to clipboard.");
+          setTimeout(function () {
+            copyBtn.classList.remove("copied");
+            copyBtn.innerHTML =
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy Handover';
+          }, 2000);
+        };
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(lastHandoverText).then(doCopy).catch(fallbackCopy);
+        } else {
+          fallbackCopy();
+        }
+      }
+
+      function fallbackCopy() {
+        var textarea = document.createElement("textarea");
+        textarea.value = lastHandoverText;
+        textarea.style.position = "fixed";
+        textarea.style.left = "-9999px";
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+          document.execCommand("copy");
+          showToast("Handover copied to clipboard.");
+        } catch (e) {
+          showToast("Unable to copy. Please select and copy manually.");
+        }
+        document.body.removeChild(textarea);
+      }
+
+      function clearNotes() {
+        notesInput.value = "";
+        updateCharCount();
+        outputSection.classList.remove("visible");
+        sectionsGrid.innerHTML = "";
+        summaryText.textContent = "";
+        summaryStats.innerHTML = "";
+        summaryCard.classList.remove("is-visible");
+        lastHandoverText = "";
+        lastSummaryText = "";
+        copyBtn.disabled = true;
+        copyBtn.classList.remove("copied");
+        copyBtn.innerHTML =
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy Handover';
+        timestamp.textContent = "";
+        notesInput.focus();
+        showToast("Notes cleared.");
+      }
+
+      notesInput.addEventListener("input", updateCharCount);
+      generateBtn.addEventListener("click", generateHandover);
+      copyBtn.addEventListener("click", copyHandover);
+      clearBtn.addEventListener("click", clearNotes);
+
+      notesInput.addEventListener("keydown", function (e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+          e.preventDefault();
+          generateHandover();
+        }
+      });
+
+      initDate();
+      updateCharCount();
+    })();
+  </script>
+</body>
+</html>
