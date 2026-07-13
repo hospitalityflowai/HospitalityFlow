@@ -198,7 +198,7 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      padding: 18px 24px;
+      padding: 20px 26px;
       border-bottom: 1px solid var(--gray-100);
     }
 
@@ -219,44 +219,78 @@
     .card-header-icon.purple { background: #f3f0ff; color: #7c5cbf; }
 
     .card-header-text h2 {
-      font-size: 0.9rem;
+      font-size: 0.98rem;
       font-weight: 700;
       color: var(--navy-900);
-      letter-spacing: -0.01em;
+      letter-spacing: -0.015em;
+      line-height: 1.3;
     }
 
     .card-header-text p {
-      font-size: 0.78rem;
+      font-size: 0.74rem;
       color: var(--gray-400);
-      margin-top: 1px;
+      margin-top: 3px;
+      line-height: 1.45;
+      max-width: 56ch;
     }
 
-    .card-body { padding: 24px; }
+    .card-body { padding: 26px; }
 
     .dashboard-grid {
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 28px;
     }
 
-    /* ── Hotel Info ── */
+    /* ── Handover Details ── */
     .hotel-card { animation: fadeUp 0.5s ease 0.05s both; }
 
     .form-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 16px;
+      gap: 18px;
     }
 
-    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group { display: flex; flex-direction: column; gap: 7px; }
     .form-group.full { grid-column: 1 / -1; }
 
-    .form-label {
-      font-size: 0.78rem;
+    .handover-meta {
+      display: none;
+      padding: 14px 16px;
+      background: var(--gray-100);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-lg);
+    }
+
+    .handover-meta.is-visible { display: block; }
+
+    .handover-meta-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px 16px;
+    }
+
+    .handover-meta-item dt {
+      font-size: 0.72rem;
       font-weight: 600;
       color: var(--gray-500);
       text-transform: uppercase;
       letter-spacing: 0.04em;
+    }
+
+    .handover-meta-item dd {
+      margin: 2px 0 0;
+      font-size: 0.9rem;
+      color: var(--navy-900);
+    }
+
+    .handover-meta-item.full { grid-column: 1 / -1; }
+
+    .form-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--gray-500);
+      letter-spacing: 0.01em;
     }
 
     .form-input {
@@ -274,6 +308,10 @@
       background: var(--white);
       border-color: var(--blue-500);
       box-shadow: 0 0 0 3px rgba(74, 143, 196, 0.12);
+    }
+
+    select.form-input {
+      cursor: pointer;
     }
 
     .shift-selector {
@@ -348,7 +386,8 @@
     .actions {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 14px;
+      margin-top: 4px;
       animation: fadeUp 0.5s ease 0.15s both;
     }
 
@@ -357,7 +396,8 @@
       align-items: center;
       justify-content: center;
       gap: 8px;
-      padding: 14px 24px;
+      min-height: 46px;
+      padding: 0 22px;
       font-size: 0.92rem;
       font-weight: 600;
       border-radius: var(--radius);
@@ -403,8 +443,7 @@
     .btn-secondary {
       flex: 1;
       min-width: 130px;
-      padding: 11px 18px;
-      font-size: 0.85rem;
+      font-size: 0.92rem;
       font-weight: 600;
       color: var(--navy-700);
       background: var(--white);
@@ -1204,8 +1243,10 @@
       .logo-sub { display: none; }
       .nav-badge span.label { display: none; }
       .section-body-inner { padding-left: 20px; }
-      .card-body { padding: 18px; }
-      .card-header { padding: 14px 18px; }
+      .card-body { padding: 20px; }
+      .card-header { padding: 16px 20px; }
+      .card-header-text p { max-width: none; }
+      .dashboard-grid { gap: 24px; }
     }
 
     @media (max-width: 400px) {
@@ -1213,6 +1254,143 @@
       .secondary-actions { flex-direction: column; }
       .btn-secondary { width: 100%; }
       .shift-btn { min-width: 60px; padding: 9px 10px; font-size: 0.8rem; }
+    }
+
+    /* ── Saved Handovers ── */
+    .saved-handovers-section {
+      margin-top: 32px;
+      padding-top: 28px;
+      border-top: 1px solid var(--gray-200);
+    }
+
+    .saved-handovers-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .saved-handovers-header h2 {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--gray-500);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .saved-handovers-count {
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--gray-400);
+      padding: 4px 10px;
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: 100px;
+    }
+
+    .saved-handovers-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: var(--card-gap);
+    }
+
+    .saved-handover-card {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 100%;
+      transition: transform var(--transition-smooth), box-shadow var(--transition-smooth), border-color var(--transition-smooth);
+    }
+
+    .saved-handover-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-card-hover);
+      border-color: rgba(7, 14, 26, 0.11);
+    }
+
+    .saved-handover-body {
+      padding: 18px 20px 14px;
+    }
+
+    .saved-handover-meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px 16px;
+    }
+
+    .saved-handover-field {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
+    }
+
+    .saved-handover-field.full {
+      grid-column: 1 / -1;
+    }
+
+    .saved-handover-label {
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--gray-400);
+    }
+
+    .saved-handover-value {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--navy-800);
+      line-height: 1.35;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .saved-handover-actions {
+      display: flex;
+      gap: 8px;
+      padding: 0 16px 16px;
+    }
+
+    .saved-handover-actions .btn-secondary {
+      flex: 1;
+      min-width: 0;
+      min-height: 38px;
+      font-size: 0.85rem;
+    }
+
+    .saved-handover-delete {
+      color: var(--red-500);
+      border-color: rgba(232, 93, 93, 0.25);
+    }
+
+    .saved-handover-delete:hover {
+      background: var(--red-50);
+      border-color: rgba(232, 93, 93, 0.45);
+      color: #c94a4a;
+    }
+
+    .saved-handovers-empty {
+      font-size: 0.9rem;
+      color: var(--gray-400);
+      text-align: center;
+      padding: 28px 16px;
+      background: var(--white);
+      border: 1px dashed var(--gray-200);
+      border-radius: var(--radius-lg);
+    }
+
+    @media (max-width: 480px) {
+      .saved-handover-meta {
+        grid-template-columns: 1fr;
+      }
+
+      .saved-handover-actions {
+        flex-direction: column;
+      }
     }
   </style>
 </head>
@@ -1246,7 +1424,7 @@
         </div>
 
         <div class="dashboard-grid">
-          <!-- Hotel Information -->
+          <!-- Handover Details -->
           <div class="card hotel-card">
             <div class="card-header">
               <div class="card-header-icon navy" aria-hidden="true">
@@ -1255,21 +1433,34 @@
                 </svg>
               </div>
               <div class="card-header-text">
-                <h2>Hotel Information</h2>
-                <p>Details included in your exported handover</p>
+                <h2>Handover Details</h2>
+                <p>Information included in this handover report.</p>
               </div>
             </div>
             <div class="card-body">
               <div class="form-grid">
                 <div class="form-group full">
                   <label class="form-label" for="hotelName">Hotel Name</label>
-                  <input class="form-input" type="text" id="hotelName" placeholder="e.g. The Grand Boutique Hotel">
+                  <input class="form-input" type="text" id="hotelName" placeholder="The Zetter Marylebone">
                 </div>
-                <div class="form-group half">
-                  <label class="form-label" for="handoverDate">Date</label>
-                  <input class="form-input" type="date" id="handoverDate">
+                <div class="form-group full">
+                  <label class="form-label" for="department">Department</label>
+                  <select class="form-input" id="department">
+                    <option value="Reception" selected>Reception</option>
+                    <option value="Housekeeping">Housekeeping</option>
+                    <option value="Food &amp; Beverage">Food &amp; Beverage</option>
+                    <option value="Maintenance">Maintenance</option>
+                    <option value="Night Team">Night Team</option>
+                    <option value="Duty Manager">Duty Manager</option>
+                    <option value="Management">Management</option>
+                    <option value="Other">Other</option>
+                  </select>
                 </div>
-                <div class="form-group half">
+                <div class="form-group full">
+                  <label class="form-label" for="preparedBy">Prepared By</label>
+                  <input class="form-input" type="text" id="preparedBy" placeholder="Sarah Mitchell">
+                </div>
+                <div class="form-group full">
                   <span class="form-label" id="shiftLabel">Shift</span>
                   <div class="shift-selector" role="group" aria-labelledby="shiftLabel">
                     <button class="shift-btn active" type="button" data-shift="AM">AM</button>
@@ -1277,15 +1468,15 @@
                     <button class="shift-btn" type="button" data-shift="Night">Night</button>
                   </div>
                 </div>
-                <div class="form-group full">
-                  <label class="form-label" for="preparedBy">Prepared By</label>
-                  <input class="form-input" type="text" id="preparedBy" placeholder="e.g. Sarah Mitchell — Front Desk">
+                <div class="form-group half">
+                  <label class="form-label" for="handoverDate">Date</label>
+                  <input class="form-input" type="date" id="handoverDate">
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Shift Notes -->
+          <!-- Raw Shift Notes -->
           <div class="card input-card">
             <div class="card-header">
               <div class="card-header-icon blue" aria-hidden="true">
@@ -1294,8 +1485,8 @@
                 </svg>
               </div>
               <div class="card-header-text">
-                <h2>Paste your shift notes</h2>
-                <p>One note per line works best</p>
+                <h2>Raw Shift Notes</h2>
+                <p>Paste notes copied from your PMS, emails, WhatsApp, logbook, or written during the shift.</p>
               </div>
             </div>
             <div class="card-body">
@@ -1306,7 +1497,7 @@
                 class="notes-textarea"
                 id="notesInput"
                 placeholder="Room 12 AC leaking.&#10;Guest in 18 requested late checkout.&#10;PDQ machine not charging.&#10;PM accounts completed.&#10;VIP arriving tomorrow."
-                aria-label="Paste your shift notes"
+                aria-label="Raw shift notes"
               ></textarea>
             </div>
           </div>
@@ -1318,7 +1509,7 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M12 2a4 4 0 0 1 4 4c0 1.95-1.4 3.58-3.25 3.93"/><path d="M8.5 10.5A4 4 0 0 1 12 2"/><path d="M12 12v4"/><path d="M8 22h8"/><path d="M12 18v4"/>
               </svg>
-              <span class="btn-text">Generate AI Handover</span>
+              <span class="btn-text">Generate Handover</span>
             </button>
             <div class="secondary-actions">
               <button class="btn btn-secondary" id="copyBtn" type="button" disabled>
@@ -1332,6 +1523,12 @@
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/>
                 </svg>
                 Export to PDF
+              </button>
+              <button class="btn btn-secondary" id="saveHandoverBtn" type="button" disabled>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+                </svg>
+                Save Handover
               </button>
               <button class="btn btn-secondary" id="clearBtn" type="button">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -1351,6 +1548,10 @@
               </div>
 
               <div class="handover-results">
+                <div class="handover-meta" id="handoverMeta">
+                  <dl class="handover-meta-grid" id="handoverMetaGrid"></dl>
+                </div>
+
                 <div class="shift-glance" id="shiftGlance">
                   <div class="shift-glance-header">
                     <h3>Today's Shift at a Glance</h3>
@@ -1395,6 +1596,18 @@
               </div>
             </div>
           </section>
+
+          <!-- Saved Handovers -->
+          <section class="saved-handovers-section" id="savedHandoversSection" aria-label="Saved handovers">
+            <div class="saved-handovers-panel">
+              <div class="saved-handovers-header">
+                <h2>Saved Handovers</h2>
+                <span class="saved-handovers-count" id="savedHandoversCount"></span>
+              </div>
+              <div class="saved-handovers-grid" id="savedHandoversGrid"></div>
+              <p class="saved-handovers-empty" id="savedHandoversEmpty">No saved handovers yet. Generate a handover and click Save Handover to keep it locally.</p>
+            </div>
+          </section>
         </div>
       </div>
     </main>
@@ -1410,6 +1623,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="handover-pdf.js"></script>
+  <script src="handover-saved.js"></script>
   <script>
     (function () {
       "use strict";
@@ -1496,12 +1710,14 @@
       var generateBtn = document.getElementById("generateBtn");
       var copyBtn = document.getElementById("copyBtn");
       var exportPdfBtn = document.getElementById("exportPdfBtn");
+      var saveHandoverBtn = document.getElementById("saveHandoverBtn");
       var clearBtn = document.getElementById("clearBtn");
       var outputSection = document.getElementById("outputSection");
       var sectionsGrid = document.getElementById("sectionsGrid");
       var timestamp = document.getElementById("timestamp");
       var toast = document.getElementById("toast");
       var hotelName = document.getElementById("hotelName");
+      var department = document.getElementById("department");
       var handoverDate = document.getElementById("handoverDate");
       var preparedBy = document.getElementById("preparedBy");
       var summaryText = document.getElementById("summaryText");
@@ -1511,6 +1727,8 @@
       var shiftGlanceGrid = document.getElementById("shiftGlanceGrid");
       var recommendationsCard = document.getElementById("recommendationsCard");
       var recommendationsList = document.getElementById("recommendationsList");
+      var handoverMeta = document.getElementById("handoverMeta");
+      var handoverMetaGrid = document.getElementById("handoverMetaGrid");
       var shiftButtons = document.querySelectorAll(".shift-btn");
 
       var selectedShift = "AM";
@@ -2076,10 +2294,44 @@
       function getHotelMeta() {
         return {
           hotel: hotelName.value.trim() || "Not specified",
+          department: department.value || "Not specified",
           shift: selectedShift,
           date: formatDisplayDate(handoverDate.value),
           preparedBy: preparedBy.value.trim() || "Not specified"
         };
+      }
+
+      function getPdfMeta() {
+        return getHotelMeta();
+      }
+
+      function renderHandoverMeta() {
+        var meta = getHotelMeta();
+        var fields = [
+          { label: "Hotel", value: meta.hotel, full: true },
+          { label: "Department", value: meta.department, full: true },
+          { label: "Prepared by", value: meta.preparedBy, full: false },
+          { label: "Shift", value: meta.shift, full: false },
+          { label: "Date", value: meta.date, full: true }
+        ];
+
+        handoverMetaGrid.innerHTML = "";
+        fields.forEach(function (field) {
+          var item = document.createElement("div");
+          item.className = "handover-meta-item" + (field.full ? " full" : "");
+
+          var dt = document.createElement("dt");
+          dt.textContent = field.label;
+
+          var dd = document.createElement("dd");
+          dd.textContent = field.value;
+
+          item.appendChild(dt);
+          item.appendChild(dd);
+          handoverMetaGrid.appendChild(item);
+        });
+
+        handoverMeta.classList.add("is-visible");
       }
 
       function getShiftLabel() {
@@ -2829,6 +3081,101 @@
         });
       }
 
+      function buildOrganisedHandover(classified) {
+        var organised = {};
+        SECTIONS.forEach(function (section) {
+          organised[section.id] = (classified[section.id] || []).slice();
+        });
+        return organised;
+      }
+
+      function buildSavePayload() {
+        if (!lastClassified) return null;
+
+        var meta = getHotelMeta();
+        return {
+          id: Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8),
+          hotelName: hotelName.value.trim() || "Not specified",
+          department: department.value || "Not specified",
+          preparedBy: preparedBy.value.trim() || "Not specified",
+          shift: selectedShift,
+          date: handoverDate.value,
+          dateDisplay: meta.date,
+          originalNotes: notesInput.value,
+          aiSummary: lastSummaryText,
+          aiRecommendations: lastRecommendations.map(function (item) {
+            return typeof item === "string" ? { text: item, badge: "Low" } : {
+              text: item.text,
+              badge: item.badge,
+              category: item.category
+            };
+          }),
+          dashboardMetrics: getHandoverMetrics(lastClassified),
+          organisedHandover: buildOrganisedHandover(lastClassified),
+          timestamp: new Date().toISOString()
+        };
+      }
+
+      function restoreClassifiedFromSaved(saved) {
+        var classified = {};
+        SECTIONS.forEach(function (section) {
+          classified[section.id] = (saved.organisedHandover && saved.organisedHandover[section.id])
+            ? saved.organisedHandover[section.id].slice()
+            : [];
+        });
+        classified._metrics = saved.dashboardMetrics || {};
+        return classified;
+      }
+
+      function setSelectedShift(shift) {
+        selectedShift = shift || "AM";
+        shiftButtons.forEach(function (btn) {
+          btn.classList.toggle("active", btn.getAttribute("data-shift") === selectedShift);
+        });
+      }
+
+      function restoreSavedHandover(saved) {
+        hotelName.value = saved.hotelName === "Not specified" ? "" : (saved.hotelName || "");
+        department.value = saved.department === "Not specified" ? "Reception" : (saved.department || "Reception");
+        preparedBy.value = saved.preparedBy === "Not specified" ? "" : (saved.preparedBy || "");
+        setSelectedShift(saved.shift || "AM");
+        handoverDate.value = saved.date || handoverDate.value;
+        notesInput.value = saved.originalNotes || "";
+        updateCharCount();
+
+        lastSummaryText = saved.aiSummary || "";
+        lastRecommendations = (saved.aiRecommendations || []).map(function (item) {
+          return typeof item === "string" ? { text: item, badge: "Low" } : item;
+        });
+        lastClassified = restoreClassifiedFromSaved(saved);
+
+        summaryText.textContent = lastSummaryText;
+        renderShiftAtAGlance(lastClassified);
+        renderHandoverMeta();
+        renderSummaryStats(lastClassified);
+        renderRecommendations(lastRecommendations);
+        renderSections(lastClassified);
+        showSummaryCard();
+        showRecommendationsCard();
+
+        var generatedLabel = saved.timestamp
+          ? "Generated " + new Date(saved.timestamp).toLocaleString("en-GB", {
+              day: "numeric", month: "short", year: "numeric",
+              hour: "2-digit", minute: "2-digit"
+            })
+          : "Restored from saved handover";
+        timestamp.textContent = generatedLabel;
+
+        lastHandoverText = formatHandoverText(lastClassified);
+        outputSection.classList.add("visible");
+        copyBtn.disabled = false;
+        exportPdfBtn.disabled = false;
+        saveHandoverBtn.disabled = false;
+
+        outputSection.scrollIntoView({ behavior: "smooth", block: "start" });
+        showToast("Saved handover loaded.");
+      }
+
       function formatHandoverText(classified) {
         var parts = [];
         var meta = getHotelMeta();
@@ -2838,6 +3185,7 @@
         parts.push("SHIFT HANDOVER — Hospitality Flow");
         parts.push("════════════════════════════════");
         parts.push("Hotel:       " + meta.hotel);
+        parts.push("Department:  " + meta.department);
         parts.push("Shift:       " + meta.shift);
         parts.push("Date:        " + meta.date);
         parts.push("Prepared by: " + meta.preparedBy);
@@ -2944,6 +3292,7 @@
           lastRecommendations = generateRecommendations(classified);
           summaryText.textContent = lastSummaryText;
           renderShiftAtAGlance(classified);
+          renderHandoverMeta();
           renderSummaryStats(classified);
           renderRecommendations(lastRecommendations);
           renderSections(classified);
@@ -2960,6 +3309,7 @@
           outputSection.classList.add("visible");
           copyBtn.disabled = false;
           exportPdfBtn.disabled = false;
+          saveHandoverBtn.disabled = false;
 
           generateBtn.classList.remove("loading");
           generateBtn.disabled = false;
@@ -2995,7 +3345,7 @@
         try {
           var now = new Date();
           HandoverPdfExporter.export({
-            meta: getHotelMeta(),
+            meta: getPdfMeta(),
             generatedAt: now.toLocaleString("en-GB", {
               day: "numeric", month: "short", year: "numeric",
               hour: "2-digit", minute: "2-digit"
@@ -3056,6 +3406,8 @@
         notesInput.value = "";
         updateCharCount();
         outputSection.classList.remove("visible");
+        handoverMetaGrid.innerHTML = "";
+        handoverMeta.classList.remove("is-visible");
         sectionsGrid.innerHTML = "";
         shiftGlanceGrid.innerHTML = "";
         shiftGlance.classList.remove("is-visible");
@@ -3070,6 +3422,7 @@
         lastClassified = null;
         copyBtn.disabled = true;
         exportPdfBtn.disabled = true;
+        saveHandoverBtn.disabled = true;
         copyBtn.classList.remove("copied");
         copyBtn.innerHTML =
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy Handover';
@@ -3082,6 +3435,9 @@
       generateBtn.addEventListener("click", generateHandover);
       copyBtn.addEventListener("click", copyHandover);
       exportPdfBtn.addEventListener("click", exportHandoverPdf);
+      saveHandoverBtn.addEventListener("click", function () {
+        if (window.HandoverSaved) HandoverSaved.handleSaveClick();
+      });
       clearBtn.addEventListener("click", clearNotes);
 
       notesInput.addEventListener("keydown", function (e) {
@@ -3093,6 +3449,17 @@
 
       initDate();
       updateCharCount();
+
+      if (window.HandoverSaved) {
+        HandoverSaved.init({
+          gridEl: document.getElementById("savedHandoversGrid"),
+          emptyEl: document.getElementById("savedHandoversEmpty"),
+          countEl: document.getElementById("savedHandoversCount"),
+          showToast: showToast,
+          onSaveRequest: buildSavePayload,
+          onOpen: restoreSavedHandover
+        });
+      }
     })();
   </script>
 </body>

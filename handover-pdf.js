@@ -11,8 +11,13 @@
     marginX: 18,
     marginTop: 18,
     marginBottom: 16,
-    lineHeight: 5.2,
-    sectionGap: 10
+    lineHeight: 5.8,
+    sectionGap: 14,
+    metaPaddingX: 8,
+    metaRowHeight: 12,
+    summaryFontSize: 10.5,
+    summaryLineHeight: 6.5,
+    summaryPadding: 9
   };
 
   var COLORS = {
@@ -145,43 +150,46 @@
   PdfDocument.prototype.drawMetaBlock = function (meta, generatedAt) {
     var doc = this.doc;
     var width = contentWidth();
-    var blockHeight = 34;
+    var blockHeight = 44;
+    var metaTopPad = 10;
 
-    this.ensureSpace(blockHeight + 4);
+    this.ensureSpace(blockHeight + 6);
 
     setFill(doc, COLORS.gray100);
     setDraw(doc, COLORS.gray200);
     doc.setLineWidth(0.3);
     doc.roundedRect(LAYOUT.marginX, this.y, width, blockHeight, 2, 2, "FD");
 
-    var leftX = LAYOUT.marginX + 6;
-    var rightX = LAYOUT.marginX + width / 2 + 2;
-    var row1Y = this.y + 9;
-    var row2Y = this.y + 19;
-    var row3Y = this.y + 29;
+    var leftX = LAYOUT.marginX + LAYOUT.metaPaddingX;
+    var rightX = LAYOUT.marginX + width / 2 + 4;
+    var row1Y = this.y + metaTopPad;
+    var row2Y = row1Y + LAYOUT.metaRowHeight;
+    var row3Y = row2Y + LAYOUT.metaRowHeight;
 
-    this.drawMetaRow(leftX, row1Y, "Hotel", meta.hotel);
-    this.drawMetaRow(rightX, row1Y, "Date", meta.date);
-    this.drawMetaRow(leftX, row2Y, "Shift", meta.shift);
-    this.drawMetaRow(rightX, row2Y, "Prepared by", meta.preparedBy);
-    this.drawMetaRow(leftX, row3Y, "Generated", generatedAt);
+    this.drawMetaRow(leftX, row1Y, "Hotel", meta.hotel || "Not specified");
+    this.drawMetaRow(rightX, row1Y, "Department", meta.department || "Not specified");
+    this.drawMetaRow(leftX, row2Y, "Prepared by", meta.preparedBy || "Not specified");
+    this.drawMetaRow(rightX, row2Y, "Shift", meta.shift || "Not specified");
+    this.drawMetaRow(leftX, row3Y, "Date", meta.date || "Not specified");
+    this.drawMetaRow(rightX, row3Y, "Generated", generatedAt);
 
     this.y += blockHeight + LAYOUT.sectionGap;
   };
 
   PdfDocument.prototype.drawMetaRow = function (x, y, label, value) {
     var doc = this.doc;
-    var labelWidth = 26;
+    var labelWidth = 28;
+    var valueWidth = contentWidth() / 2 - labelWidth - LAYOUT.metaPaddingX - 2;
 
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
+    doc.setFontSize(7.5);
     setText(doc, COLORS.gray500);
-    doc.text(label + ":", x, y);
+    doc.text(label.toUpperCase(), x, y);
 
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
+    doc.setFontSize(9.5);
     setText(doc, COLORS.navy900);
-    var lines = wrapText(doc, value, contentWidth() / 2 - labelWidth - 8);
+    var lines = wrapText(doc, value, valueWidth);
     doc.text(lines, x + labelWidth, y);
   };
 
@@ -194,12 +202,12 @@
     setText(doc, COLORS.navy700);
     doc.text(title, LAYOUT.marginX, this.y);
 
-    this.y += 2;
+    this.y += 3;
     setDraw(doc, COLORS.blue500);
     doc.setLineWidth(0.6);
     doc.line(LAYOUT.marginX, this.y, LAYOUT.marginX + 42, this.y);
 
-    this.y += LAYOUT.sectionGap - 2;
+    this.y += LAYOUT.sectionGap;
   };
 
   PdfDocument.prototype.drawMetrics = function (metrics) {
@@ -207,12 +215,12 @@
 
     var doc = this.doc;
     var width = contentWidth();
-    var gap = 3;
+    var gap = 4;
     var cols = 5;
     var cardWidth = (width - gap * (cols - 1)) / cols;
-    var cardHeight = 22;
+    var cardHeight = 25;
 
-    this.ensureSpace(cardHeight + 4);
+    this.ensureSpace(cardHeight + 6);
 
     METRIC_LABELS.forEach(function (metric, index) {
       var x = LAYOUT.marginX + index * (cardWidth + gap);
@@ -229,16 +237,16 @@
       doc.setFont("helvetica", "bold");
       doc.setFontSize(14);
       setText(doc, COLORS.navy900);
-      doc.text(String(count), x + cardWidth / 2, this.y + 12, { align: "center" });
+      doc.text(String(count), x + cardWidth / 2, this.y + 13, { align: "center" });
 
       doc.setFont("helvetica", "normal");
       doc.setFontSize(6.5);
       setText(doc, COLORS.gray500);
       var labelLines = wrapText(doc, metric.label, cardWidth - 4);
-      doc.text(labelLines, x + cardWidth / 2, this.y + 17, { align: "center" });
+      doc.text(labelLines, x + cardWidth / 2, this.y + 19, { align: "center" });
     }, this);
 
-    this.y += cardHeight + LAYOUT.sectionGap;
+    this.y += cardHeight + LAYOUT.sectionGap + 2;
   };
 
   PdfDocument.prototype.drawSummary = function (summary) {
@@ -248,24 +256,28 @@
 
     var doc = this.doc;
     var width = contentWidth();
-    var padding = 6;
+    var padding = LAYOUT.summaryPadding;
     var textWidth = width - padding * 2;
-    var lines = wrapText(doc, summary, textWidth);
-    var boxHeight = lines.length * LAYOUT.lineHeight + padding * 2 + 2;
+    var lineHeight = LAYOUT.summaryLineHeight;
 
-    this.ensureSpace(boxHeight + 2);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(LAYOUT.summaryFontSize);
+    var lines = wrapText(doc, summary, textWidth);
+    var boxHeight = lines.length * lineHeight + padding * 2 + 4;
+
+    this.ensureSpace(boxHeight + 4);
 
     setFill(doc, COLORS.blue50);
     setDraw(doc, COLORS.blue500);
     doc.setLineWidth(0.3);
     doc.roundedRect(LAYOUT.marginX, this.y, width, boxHeight, 2, 2, "FD");
 
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9.5);
     setText(doc, COLORS.gray600);
-    doc.text(lines, LAYOUT.marginX + padding, this.y + padding + 4);
+    lines.forEach(function (line, index) {
+      doc.text(line, LAYOUT.marginX + padding, this.y + padding + 5 + index * lineHeight);
+    }, this);
 
-    this.y += boxHeight + LAYOUT.sectionGap;
+    this.y += boxHeight + LAYOUT.sectionGap + 2;
   };
 
   PdfDocument.prototype.drawRecommendations = function (recommendations) {
@@ -287,9 +299,9 @@
       var textStartX = LAYOUT.marginX + 6;
       var textWidth = width - 12;
       var lines = wrapText(doc, numberPrefix + badgeLabel + rec.text, textWidth);
-      var blockHeight = lines.length * LAYOUT.lineHeight + 6;
+      var blockHeight = lines.length * LAYOUT.lineHeight + 8;
 
-      this.ensureSpace(blockHeight + 3);
+      this.ensureSpace(blockHeight + 5);
 
       setFill(doc, COLORS.white);
       setDraw(doc, COLORS.gray200);
@@ -302,12 +314,12 @@
       doc.setFont("helvetica", "normal");
       doc.setFontSize(9);
       setText(doc, COLORS.gray600);
-      doc.text(lines, textStartX, this.y + 5);
+      doc.text(lines, textStartX, this.y + 6);
 
-      this.y += blockHeight + 3;
+      this.y += blockHeight + 5;
     }, this);
 
-    this.y += LAYOUT.sectionGap - 3;
+    this.y += LAYOUT.sectionGap;
   };
 
   PdfDocument.prototype.drawHandoverSections = function (sections) {
@@ -325,27 +337,27 @@
       var items = section.items || [];
       if (!items.length) return;
 
-      this.ensureSpace(10);
+      this.ensureSpace(12);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(10);
       setText(doc, COLORS.navy900);
       doc.text(title.toUpperCase(), LAYOUT.marginX, this.y);
-      this.y += 6;
+      this.y += 7;
 
       items.forEach(function (item) {
         var lines = wrapText(doc, item, textWidth);
-        var blockHeight = lines.length * LAYOUT.lineHeight + 2;
-        this.ensureSpace(blockHeight + 1);
+        var blockHeight = lines.length * LAYOUT.lineHeight + 3;
+        this.ensureSpace(blockHeight + 2);
 
         doc.setFont("helvetica", "normal");
         doc.setFontSize(9);
         setText(doc, COLORS.gray600);
         doc.text("•", LAYOUT.marginX + 1, this.y);
         doc.text(lines, LAYOUT.marginX + bulletIndent, this.y);
-        this.y += blockHeight;
+        this.y += blockHeight + 1;
       }, this);
 
-      this.y += 4;
+      this.y += 6;
     }, this);
   };
 
