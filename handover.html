@@ -1479,6 +1479,47 @@
     .footer a { color: var(--blue-500); text-decoration: none; font-weight: 500; }
     .footer a:hover { text-decoration: underline; }
 
+    @media print {
+      .topnav, .page-header, .dashboard-grid, .actions, .footer,
+      .saved-handovers-section, .toast, .handover-item-toolbar,
+      .snapshot-edit-actions, .glance-snapshot-hint { display: none !important; }
+
+      body {
+        background: var(--white);
+        color: var(--navy-900);
+      }
+
+      .main { padding: 0; }
+      .container { max-width: none; padding: 0; }
+
+      .output-section {
+        display: block !important;
+      }
+
+      .output-panel {
+        margin: 0;
+        padding: 0;
+        border: none;
+      }
+
+      .handover-meta,
+      .shift-glance,
+      .summary-card,
+      .section-card {
+        break-inside: avoid;
+        page-break-inside: avoid;
+        box-shadow: none;
+      }
+
+      .summary-card.is-visible {
+        display: block !important;
+      }
+
+      .section-card:hover {
+        transform: none;
+      }
+    }
+
     /* ── Animations ── */
     @keyframes fadeDown {
       from { opacity: 0; transform: translateY(-10px); }
@@ -1807,6 +1848,12 @@
                 </svg>
                 Export to PDF
               </button>
+              <button class="btn btn-secondary" id="printHandoverBtn" type="button" disabled title="Print handover">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>
+                </svg>
+                Print
+              </button>
               <button class="btn btn-secondary" id="saveHandoverBtn" type="button" disabled>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
@@ -1994,6 +2041,7 @@
       var generateBtn = document.getElementById("generateBtn");
       var copyBtn = document.getElementById("copyBtn");
       var exportPdfBtn = document.getElementById("exportPdfBtn");
+      var printHandoverBtn = document.getElementById("printHandoverBtn");
       var saveHandoverBtn = document.getElementById("saveHandoverBtn");
       var clearBtn = document.getElementById("clearBtn");
       var outputSection = document.getElementById("outputSection");
@@ -4113,6 +4161,7 @@
         outputSection.classList.add("visible");
         copyBtn.disabled = false;
         exportPdfBtn.disabled = false;
+        printHandoverBtn.disabled = false;
         saveHandoverBtn.disabled = false;
 
         outputSection.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -4250,6 +4299,7 @@
           outputSection.classList.add("visible");
           copyBtn.disabled = false;
           exportPdfBtn.disabled = false;
+          printHandoverBtn.disabled = false;
           saveHandoverBtn.disabled = false;
 
           generateBtn.classList.remove("loading");
@@ -4298,6 +4348,14 @@
             })
           };
         }).filter(function (section) { return section; });
+      }
+
+      function printHandover() {
+        if (!lastClassified) {
+          showToast("Generate a handover before printing.");
+          return;
+        }
+        window.print();
       }
 
       function exportHandoverPdf() {
@@ -4401,6 +4459,7 @@
         renderPreHandoverSnapshot();
         copyBtn.disabled = true;
         exportPdfBtn.disabled = true;
+        printHandoverBtn.disabled = true;
         saveHandoverBtn.disabled = true;
         copyBtn.classList.remove("copied");
         copyBtn.innerHTML =
@@ -4413,6 +4472,7 @@
       generateBtn.addEventListener("click", generateHandover);
       copyBtn.addEventListener("click", copyHandover);
       exportPdfBtn.addEventListener("click", exportHandoverPdf);
+      printHandoverBtn.addEventListener("click", printHandover);
       saveHandoverBtn.addEventListener("click", function () {
         if (window.HandoverSaved) HandoverSaved.handleSaveClick();
       });
