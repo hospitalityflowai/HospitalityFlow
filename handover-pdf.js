@@ -8,16 +8,27 @@
   var LAYOUT = {
     pageWidth: 210,
     pageHeight: 297,
-    marginX: 18,
-    marginTop: 18,
-    marginBottom: 16,
-    lineHeight: 5.8,
-    sectionGap: 14,
-    metaPaddingX: 8,
-    metaRowHeight: 12,
-    summaryFontSize: 10.5,
-    summaryLineHeight: 6.5,
-    summaryPadding: 9
+    marginX: 16,
+    marginTop: 14,
+    marginBottom: 14,
+    lineHeight: 5.4,
+    sectionGap: 6,
+    sectionTitleGap: 5,
+    metaPaddingX: 6,
+    metaRowHeight: 10,
+    metaBlockHeight: 36,
+    headerHeight: 18,
+    summaryFontSize: 9.5,
+    summaryOverviewSize: 9.5,
+    summaryRowHeadingSize: 7.5,
+    summaryRowTextSize: 9,
+    summaryLineHeight: 5.2,
+    summaryPadding: 6,
+    summaryRowGap: 4,
+    snapshotCellHeight: 15,
+    snapshotCellGap: 3,
+    metricCardHeight: 17,
+    metricCardGap: 3
   };
 
   var COLORS = {
@@ -32,30 +43,25 @@
     white: [255, 255, 255],
     red500: [232, 93, 93],
     amber500: [232, 184, 77],
-    green500: [93, 206, 138]
+    green500: [93, 206, 138],
+    purple500: [124, 92, 191]
   };
 
   var METRIC_LABELS = [
     { key: "urgent", label: "Urgent Issues", accent: COLORS.red500 },
     { key: "vip", label: "VIP Arrivals", accent: COLORS.blue500 },
-    { key: "maintenance", label: "Maintenance", accent: COLORS.amber500 },
+    { key: "maintenance", label: "Maintenance Tasks", accent: COLORS.amber500 },
     { key: "payments", label: "Payment Issues", accent: COLORS.navy700 },
+    { key: "events", label: "Events", accent: COLORS.purple500 },
     { key: "tasks", label: "Outstanding Tasks", accent: COLORS.green500 }
   ];
-
-  var PRIORITY_COLORS = {
-    critical: COLORS.red500,
-    high: COLORS.amber500,
-    medium: COLORS.blue500,
-    low: COLORS.green500
-  };
 
   function contentWidth() {
     return LAYOUT.pageWidth - LAYOUT.marginX * 2;
   }
 
   function bottomLimit() {
-    return LAYOUT.pageHeight - LAYOUT.marginBottom - 10;
+    return LAYOUT.pageHeight - LAYOUT.marginBottom - 8;
   }
 
   function setFill(doc, rgb) {
@@ -89,6 +95,14 @@
     return doc.splitTextToSize(String(text || ""), maxWidth);
   }
 
+  function normalizeSnapshotValue(value) {
+    if (value === null || value === undefined || value === "" || value === "undefined" || value === "null" ||
+        (typeof value === "number" && isNaN(value))) {
+      return "—";
+    }
+    return String(value);
+  }
+
   function PdfDocument(jsPDF) {
     this.doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
     this.y = LAYOUT.marginTop;
@@ -114,15 +128,20 @@
   PdfDocument.prototype.drawFooter = function () {
     var doc = this.doc;
     var footerY = LAYOUT.pageHeight - LAYOUT.marginBottom;
+
     setDraw(doc, COLORS.gray200);
     doc.setLineWidth(0.2);
-    doc.line(LAYOUT.marginX, footerY - 4, LAYOUT.pageWidth - LAYOUT.marginX, footerY - 4);
+    doc.line(LAYOUT.marginX, footerY - 3, LAYOUT.pageWidth - LAYOUT.marginX, footerY - 3);
 
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
+    doc.setFontSize(7.5);
     setText(doc, COLORS.gray500);
     doc.text("Hospitality Flow — AI Shift Handover Assistant", LAYOUT.marginX, footerY);
     doc.text("Page " + this.pageNumber, LAYOUT.pageWidth - LAYOUT.marginX, footerY, { align: "right" });
+  };
+
+  PdfDocument.prototype.sectionTitleHeight = function () {
+    return 3 + LAYOUT.sectionTitleGap;
   };
 
   PdfDocument.prototype.drawHeader = function (meta, generatedAt) {
@@ -130,38 +149,37 @@
     var width = contentWidth();
 
     setFill(doc, COLORS.navy900);
-    doc.roundedRect(LAYOUT.marginX, this.y, width, 22, 2, 2, "F");
+    doc.roundedRect(LAYOUT.marginX, this.y, width, LAYOUT.headerHeight, 2, 2, "F");
 
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(16);
+    doc.setFontSize(14);
     setText(doc, COLORS.white);
-    doc.text("Shift Handover Report", LAYOUT.marginX + 6, this.y + 9);
+    doc.text("Shift Handover Report", LAYOUT.marginX + 5, this.y + 7.5);
 
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
+    doc.setFontSize(8);
     setText(doc, [200, 215, 230]);
-    doc.text("Hospitality Flow", LAYOUT.marginX + 6, this.y + 16);
+    doc.text("Hospitality Flow", LAYOUT.marginX + 5, this.y + 13.5);
 
-    this.y += 28;
-
+    this.y += LAYOUT.headerHeight + 6;
     this.drawMetaBlock(meta, generatedAt);
   };
 
   PdfDocument.prototype.drawMetaBlock = function (meta, generatedAt) {
     var doc = this.doc;
     var width = contentWidth();
-    var blockHeight = 44;
-    var metaTopPad = 10;
+    var blockHeight = LAYOUT.metaBlockHeight;
+    var metaTopPad = 7;
 
-    this.ensureSpace(blockHeight + 6);
+    this.ensureSpace(blockHeight + 4);
 
     setFill(doc, COLORS.gray100);
     setDraw(doc, COLORS.gray200);
-    doc.setLineWidth(0.3);
+    doc.setLineWidth(0.25);
     doc.roundedRect(LAYOUT.marginX, this.y, width, blockHeight, 2, 2, "FD");
 
     var leftX = LAYOUT.marginX + LAYOUT.metaPaddingX;
-    var rightX = LAYOUT.marginX + width / 2 + 4;
+    var rightX = LAYOUT.marginX + width / 2 + 3;
     var row1Y = this.y + metaTopPad;
     var row2Y = row1Y + LAYOUT.metaRowHeight;
     var row3Y = row2Y + LAYOUT.metaRowHeight;
@@ -178,49 +196,89 @@
 
   PdfDocument.prototype.drawMetaRow = function (x, y, label, value) {
     var doc = this.doc;
-    var labelWidth = 28;
+    var labelWidth = 26;
     var valueWidth = contentWidth() / 2 - labelWidth - LAYOUT.metaPaddingX - 2;
 
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(7.5);
+    doc.setFontSize(6.5);
     setText(doc, COLORS.gray500);
     doc.text(label.toUpperCase(), x, y);
 
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(9.5);
+    doc.setFontSize(8.5);
     setText(doc, COLORS.navy900);
-    var lines = wrapText(doc, value, valueWidth);
-    doc.text(lines, x + labelWidth, y);
+    doc.text(wrapText(doc, value, valueWidth), x + labelWidth, y);
   };
 
-  PdfDocument.prototype.drawSectionTitle = function (title) {
+  PdfDocument.prototype.drawSectionTitle = function (title, followingHeight) {
     var doc = this.doc;
-    this.ensureSpace(12);
+    var reserve = followingHeight || 0;
+
+    this.ensureSpace(this.sectionTitleHeight() + reserve);
 
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
+    doc.setFontSize(10);
     setText(doc, COLORS.navy700);
     doc.text(title, LAYOUT.marginX, this.y);
 
-    this.y += 3;
+    this.y += 2.5;
     setDraw(doc, COLORS.blue500);
-    doc.setLineWidth(0.6);
-    doc.line(LAYOUT.marginX, this.y, LAYOUT.marginX + 42, this.y);
+    doc.setLineWidth(0.5);
+    doc.line(LAYOUT.marginX, this.y, LAYOUT.marginX + 38, this.y);
 
-    this.y += LAYOUT.sectionGap;
+    this.y += LAYOUT.sectionTitleGap;
   };
 
-  PdfDocument.prototype.drawMetrics = function (metrics) {
-    this.drawSectionTitle("Dashboard Metrics");
+  PdfDocument.prototype.drawHotelSnapshot = function (rows) {
+    if (!rows || !rows.length) return;
 
     var doc = this.doc;
     var width = contentWidth();
-    var gap = 4;
-    var cols = 5;
-    var cardWidth = (width - gap * (cols - 1)) / cols;
-    var cardHeight = 25;
+    var cols = 3;
+    var gap = LAYOUT.snapshotCellGap;
+    var cellWidth = (width - gap * (cols - 1)) / cols;
+    var cellHeight = LAYOUT.snapshotCellHeight;
+    var gridHeight = cellHeight * 2 + gap;
+    var gridRows = [rows.slice(0, 3), rows.slice(3, 6)];
 
-    this.ensureSpace(cardHeight + 6);
+    this.drawSectionTitle("Hotel Snapshot", gridHeight + 2);
+
+    gridRows.forEach(function (rowCells, rowIndex) {
+      var rowY = this.y + rowIndex * (cellHeight + gap);
+
+      rowCells.forEach(function (cell, colIndex) {
+        var x = LAYOUT.marginX + colIndex * (cellWidth + gap);
+        var value = normalizeSnapshotValue(cell.value);
+
+        setFill(doc, COLORS.white);
+        setDraw(doc, COLORS.gray200);
+        doc.setLineWidth(0.25);
+        doc.roundedRect(x, rowY, cellWidth, cellHeight, 1.5, 1.5, "FD");
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(5.8);
+        setText(doc, COLORS.gray500);
+        doc.text(String(cell.label || "").toUpperCase(), x + cellWidth / 2, rowY + 4.8, { align: "center" });
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10.5);
+        setText(doc, COLORS.navy900);
+        doc.text(value, x + cellWidth / 2, rowY + 11.5, { align: "center" });
+      }, this);
+    }, this);
+
+    this.y += gridHeight + LAYOUT.sectionGap;
+  };
+
+  PdfDocument.prototype.drawMetrics = function (metrics) {
+    var doc = this.doc;
+    var width = contentWidth();
+    var gap = LAYOUT.metricCardGap;
+    var cols = 6;
+    var cardWidth = (width - gap * (cols - 1)) / cols;
+    var cardHeight = LAYOUT.metricCardHeight;
+
+    this.drawSectionTitle("Dashboard Metrics", cardHeight + 2);
 
     METRIC_LABELS.forEach(function (metric, index) {
       var x = LAYOUT.marginX + index * (cardWidth + gap);
@@ -228,136 +286,183 @@
 
       setFill(doc, COLORS.white);
       setDraw(doc, COLORS.gray200);
-      doc.setLineWidth(0.3);
-      doc.roundedRect(x, this.y, cardWidth, cardHeight, 1.5, 1.5, "FD");
+      doc.setLineWidth(0.25);
+      doc.roundedRect(x, this.y, cardWidth, cardHeight, 1.2, 1.2, "FD");
 
       setFill(doc, metric.accent);
-      doc.roundedRect(x, this.y, cardWidth, 2.5, 1.5, 1.5, "F");
+      doc.roundedRect(x, this.y, cardWidth, 2, 1.2, 1.2, "F");
 
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(14);
+      doc.setFontSize(11);
       setText(doc, COLORS.navy900);
-      doc.text(String(count), x + cardWidth / 2, this.y + 13, { align: "center" });
+      doc.text(String(count), x + cardWidth / 2, this.y + 8.5, { align: "center" });
 
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(6.5);
+      doc.setFontSize(5.5);
       setText(doc, COLORS.gray500);
-      var labelLines = wrapText(doc, metric.label, cardWidth - 4);
-      doc.text(labelLines, x + cardWidth / 2, this.y + 19, { align: "center" });
+      doc.text(wrapText(doc, metric.label, cardWidth - 3), x + cardWidth / 2, this.y + 13.5, { align: "center" });
     }, this);
 
-    this.y += cardHeight + LAYOUT.sectionGap + 2;
+    this.y += cardHeight + LAYOUT.sectionGap;
+  };
+
+  PdfDocument.prototype.buildSummaryLayout = function (summary) {
+    var doc = this.doc;
+    var width = contentWidth();
+    var padding = LAYOUT.summaryPadding;
+    var textWidth = width - padding * 2;
+    var overview = "";
+    var rows = [];
+
+    if (typeof summary === "string") {
+      overview = summary;
+    } else if (summary && typeof summary === "object") {
+      overview = summary.overview || "";
+      rows = summary.rows || [];
+    }
+
+    var layout = {
+      overviewLines: [],
+      rowBlocks: [],
+      boxHeight: 0
+    };
+
+    if (overview) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(LAYOUT.summaryOverviewSize);
+      layout.overviewLines = wrapText(doc, overview, textWidth);
+    }
+
+    rows.forEach(function (row) {
+      if (!row || !row.text) return;
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(LAYOUT.summaryRowTextSize);
+      var textLines = wrapText(doc, row.text, textWidth - 2);
+
+      layout.rowBlocks.push({
+        heading: row.heading || "Summary",
+        textLines: textLines
+      });
+    });
+
+    var contentHeight = 0;
+    if (layout.overviewLines.length) {
+      contentHeight += layout.overviewLines.length * LAYOUT.summaryLineHeight + 2;
+    }
+    if (layout.overviewLines.length && layout.rowBlocks.length) {
+      contentHeight += 2;
+    }
+
+    layout.rowBlocks.forEach(function (block, index) {
+      contentHeight += 3.2 + block.textLines.length * LAYOUT.summaryLineHeight;
+      if (index < layout.rowBlocks.length - 1) {
+        contentHeight += LAYOUT.summaryRowGap;
+      }
+    });
+
+    layout.boxHeight = contentHeight + padding * 2 + 2;
+    return layout;
   };
 
   PdfDocument.prototype.drawSummary = function (summary) {
     if (!summary) return;
 
-    this.drawSectionTitle("AI Summary");
-
     var doc = this.doc;
     var width = contentWidth();
     var padding = LAYOUT.summaryPadding;
-    var textWidth = width - padding * 2;
-    var lineHeight = LAYOUT.summaryLineHeight;
+    var layout = this.buildSummaryLayout(summary);
 
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(LAYOUT.summaryFontSize);
-    var lines = wrapText(doc, summary, textWidth);
-    var boxHeight = lines.length * lineHeight + padding * 2 + 4;
+    if (!layout.overviewLines.length && !layout.rowBlocks.length) return;
 
-    this.ensureSpace(boxHeight + 4);
+    this.drawSectionTitle("AI Summary", layout.boxHeight + 2);
 
+    var boxTop = this.y;
     setFill(doc, COLORS.blue50);
     setDraw(doc, COLORS.blue500);
-    doc.setLineWidth(0.3);
-    doc.roundedRect(LAYOUT.marginX, this.y, width, boxHeight, 2, 2, "FD");
+    doc.setLineWidth(0.25);
+    doc.roundedRect(LAYOUT.marginX, boxTop, width, layout.boxHeight, 2, 2, "FD");
 
-    setText(doc, COLORS.gray600);
-    lines.forEach(function (line, index) {
-      doc.text(line, LAYOUT.marginX + padding, this.y + padding + 5 + index * lineHeight);
-    }, this);
+    var cursorY = boxTop + padding + 3.5;
 
-    this.y += boxHeight + LAYOUT.sectionGap + 2;
-  };
+    if (layout.overviewLines.length) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(LAYOUT.summaryOverviewSize);
+      setText(doc, COLORS.gray600);
+      layout.overviewLines.forEach(function (line) {
+        doc.text(line, LAYOUT.marginX + padding, cursorY);
+        cursorY += LAYOUT.summaryLineHeight;
+      });
+      cursorY += 1;
+    }
 
-  PdfDocument.prototype.drawRecommendations = function (recommendations) {
-    if (!recommendations || !recommendations.length) return;
-
-    this.drawSectionTitle("AI Recommendations");
-
-    var doc = this.doc;
-    var width = contentWidth();
-
-    recommendations.forEach(function (item, index) {
-      var rec = typeof item === "string" ? { text: item, badge: "Low" } : item;
-      var badge = String(rec.badge || "Low");
-      var badgeKey = badge.toLowerCase();
-      var badgeColor = PRIORITY_COLORS[badgeKey] || COLORS.gray500;
-
-      var numberPrefix = (index + 1) + ". ";
-      var badgeLabel = "[" + badge + "] ";
-      var textStartX = LAYOUT.marginX + 6;
-      var textWidth = width - 12;
-      var lines = wrapText(doc, numberPrefix + badgeLabel + rec.text, textWidth);
-      var blockHeight = lines.length * LAYOUT.lineHeight + 8;
-
-      this.ensureSpace(blockHeight + 5);
-
-      setFill(doc, COLORS.white);
-      setDraw(doc, COLORS.gray200);
-      doc.setLineWidth(0.2);
-      doc.roundedRect(LAYOUT.marginX, this.y, width, blockHeight, 1.5, 1.5, "FD");
-
-      setFill(doc, badgeColor);
-      doc.roundedRect(LAYOUT.marginX, this.y, 3, blockHeight, 1.5, 1.5, "F");
+    layout.rowBlocks.forEach(function (block, index) {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(LAYOUT.summaryRowHeadingSize);
+      setText(doc, COLORS.navy700);
+      doc.text(block.heading.toUpperCase(), LAYOUT.marginX + padding, cursorY);
+      cursorY += 3.2;
 
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
+      doc.setFontSize(LAYOUT.summaryRowTextSize);
       setText(doc, COLORS.gray600);
-      doc.text(lines, textStartX, this.y + 6);
+      block.textLines.forEach(function (line) {
+        doc.text(line, LAYOUT.marginX + padding + 1, cursorY);
+        cursorY += LAYOUT.summaryLineHeight;
+      });
 
-      this.y += blockHeight + 5;
-    }, this);
+      if (index < layout.rowBlocks.length - 1) {
+        cursorY += LAYOUT.summaryRowGap;
+      }
+    });
 
-    this.y += LAYOUT.sectionGap;
+    this.y = boxTop + layout.boxHeight + LAYOUT.sectionGap;
   };
 
   PdfDocument.prototype.drawHandoverSections = function (sections) {
     if (!sections || !sections.length) return;
 
-    this.drawSectionTitle("Organised Handover");
-
     var doc = this.doc;
     var width = contentWidth();
     var bulletIndent = 5;
     var textWidth = width - bulletIndent - 8;
+    var visibleSections = sections.filter(function (section) {
+      return section && section.items && section.items.length;
+    });
 
-    sections.forEach(function (section) {
+    if (!visibleSections.length) return;
+
+    var firstSection = visibleSections[0];
+    var firstItemLines = wrapText(doc, firstSection.items[0], textWidth);
+    var firstBlockHeight = 7 + firstItemLines.length * LAYOUT.lineHeight + 3;
+    this.drawSectionTitle("Organised Handover", firstBlockHeight + 4);
+
+    visibleSections.forEach(function (section) {
       var title = section.title || "Section";
       var items = section.items || [];
-      if (!items.length) return;
 
-      this.ensureSpace(12);
+      this.ensureSpace(7 + LAYOUT.lineHeight + 2);
+
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(10);
+      doc.setFontSize(9.5);
       setText(doc, COLORS.navy900);
       doc.text(title.toUpperCase(), LAYOUT.marginX, this.y);
-      this.y += 7;
+      this.y += 6;
 
       items.forEach(function (item) {
         var lines = wrapText(doc, item, textWidth);
-        var blockHeight = lines.length * LAYOUT.lineHeight + 3;
-        this.ensureSpace(blockHeight + 2);
+        var blockHeight = lines.length * LAYOUT.lineHeight + 2;
+        this.ensureSpace(blockHeight + 1);
 
         doc.setFont("helvetica", "normal");
-        doc.setFontSize(9);
+        doc.setFontSize(8.5);
         setText(doc, COLORS.gray600);
         doc.text("•", LAYOUT.marginX + 1, this.y);
         doc.text(lines, LAYOUT.marginX + bulletIndent, this.y);
-        this.y += blockHeight + 1;
+        this.y += blockHeight + 0.5;
       }, this);
 
-      this.y += 6;
+      this.y += 4;
     }, this);
   };
 
@@ -378,9 +483,9 @@
     var generatedAt = payload.generatedAt || new Date().toLocaleString("en-GB");
 
     pdf.drawHeader(payload.meta, generatedAt);
+    pdf.drawHotelSnapshot(payload.hotelSnapshot);
     pdf.drawMetrics(payload.metrics || {});
     pdf.drawSummary(payload.summary);
-    pdf.drawRecommendations(payload.recommendations);
     pdf.drawHandoverSections(payload.sections);
     pdf.save(buildFilename(payload.meta));
   }
