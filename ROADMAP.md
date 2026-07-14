@@ -1,23 +1,25 @@
 # Hospitality Flow — Product Roadmap
 
-## Version 1.0 — Completed
+## Version 1.0 — Shipped (July 2026)
 
-Rule-based AI Shift Handover Assistant with:
+**AI Shift Handover Assistant** — first public release:
 
-- Hotel information section
-- Shift notes parser
-- Automatic classification
-- Summary generation
-- Dashboard metrics
-- Recommendations
+- Hotel information and shift metadata
+- Shift notes parser and automatic classification
+- AI Summary with structured category breakdown
+- Hotel Snapshot and Shift Alerts dashboard
+- Events, Maintenance Tasks, and editable handover items
+- Copy Handover and PDF export
+- Saved Handovers (browser local storage)
 - Professional responsive UI
+
+[Try the assistant →](handover.html)
 
 ## Next Milestones
 
 | Version | Feature |
 |---------|---------|
-| **1.1** | Export to PDF |
-| **1.2** | Save handover history |
-| **1.3** | OpenAI integration |
-| **1.4** | Hotel profiles |
+| **1.1** | OpenAI integration, email export, hotel settings |
+| **1.2** | Search handover history, logo upload |
+| **1.3** | Multi-property support |
 | **2.0** | PMS integration (Opera, Mews, Cloudbeds) |
