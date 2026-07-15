@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Hospitality Flow — AI Rota Generator. Create fair, compliant staff schedules in minutes.">
+  <title>AI Rota Generator — Hospitality Flow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy-950: #070e1a; --navy-900: #0c1829; --navy-800: #122240; --navy-700: #1a3055;
+      --blue-400: #5b9fd4; --blue-500: #4a8fc4; --blue-600: #3a7ab0; --blue-50: #eef6fc; --blue-100: #d9ebf8;
+      --white: #ffffff; --gray-50: #f8fafc; --gray-100: #eef2f7; --gray-200: #d8e0ea;
+      --gray-300: #a8b4c4; --gray-400: #7a8799; --gray-500: #5a6578; --gray-600: #3d4654;
+      --red-500: #e85d5d; --red-50: #fef2f2; --amber-500: #e8b84d; --amber-50: #fffbeb;
+      --green-500: #5dce8a; --green-50: #f0fdf4;
+      --radius: 10px; --radius-lg: 14px; --radius-xl: 18px;
+      --shadow-sm: 0 1px 2px rgba(7,14,26,.04), 0 1px 3px rgba(7,14,26,.03);
+      --shadow-md: 0 4px 16px rgba(7,14,26,.07); --shadow-lg: 0 12px 40px rgba(7,14,26,.1);
+      --shadow-summary: 0 1px 2px rgba(74,143,196,.06), 0 4px 24px rgba(74,143,196,.1), 0 12px 48px rgba(7,14,26,.05);
+      --transition: .22s ease; --max-width: 1140px; --nav-height: 64px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; scroll-padding-top: calc(var(--nav-height) + 16px); }
+    body { font-family: "Inter", system-ui, -apple-system, sans-serif; background: var(--gray-50); color: var(--navy-900); line-height: 1.6; min-height: 100vh; -webkit-font-smoothing: antialiased; font-size: 15px; }
+    button, input, select, textarea { font-family: inherit; }
+    button { cursor: pointer; border: none; background: none; }
+    .topnav { position: sticky; top: 0; z-index: 100; height: var(--nav-height); background: rgba(255,255,255,.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--gray-200); box-shadow: var(--shadow-sm); }
+    .topnav-inner { max-width: var(--max-width); margin: 0 auto; padding: 0 24px; height: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .logo { display: inline-flex; align-items: center; gap: 11px; text-decoration: none; color: inherit; }
+    .logo-icon { width: 36px; height: 36px; border-radius: 9px; background: linear-gradient(135deg, var(--navy-800), var(--navy-700)); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(18,34,64,.18); flex-shrink: 0; }
+    .logo-icon svg { width: 20px; height: 20px; fill: var(--blue-400); }
+    .logo-text { font-size: 1.05rem; font-weight: 700; letter-spacing: -.025em; color: var(--navy-900); line-height: 1.2; }
+    .logo-text span { color: var(--blue-500); }
+    .logo-sub { display: block; font-size: .7rem; font-weight: 500; color: var(--gray-400); }
+    .nav-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: var(--blue-50); border: 1px solid rgba(74,143,196,.18); border-radius: 100px; font-size: .75rem; font-weight: 600; color: var(--blue-600); white-space: nowrap; }
+    .nav-badge-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--blue-500); animation: pulse 2s ease infinite; }
+    .page { min-height: 100vh; display: flex; flex-direction: column; }
+    .container { width: 100%; max-width: var(--max-width); margin: 0 auto; padding: 0 24px; }
+    .main { flex: 1; padding: 32px 0 72px; }
+    .page-header { margin-bottom: 28px; animation: fadeDown .5s ease both; }
+    .page-title { font-size: clamp(1.4rem, 3.5vw, 1.75rem); font-weight: 700; letter-spacing: -.035em; color: var(--navy-900); line-height: 1.2; margin-bottom: 6px; }
+    .page-subtitle { font-size: .95rem; color: var(--gray-500); max-width: 520px; margin-bottom: 8px; }
+    .page-tagline { font-size: .78rem; font-weight: 500; color: var(--gray-400); }
+    .card { background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); }
+    .card-header { display: flex; align-items: center; gap: 10px; padding: 20px 26px; border-bottom: 1px solid var(--gray-100); }
+    .card-header-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .card-header-icon svg { width: 16px; height: 16px; }
+    .card-header-icon.navy { background: var(--navy-800); color: var(--blue-400); }
+    .card-header-icon.blue { background: var(--blue-50); color: var(--blue-600); }
+    .card-header-icon.purple { background: #f3f0ff; color: #7c5cbf; }
+    .card-header-icon.green { background: var(--green-50); color: #2d8a5e; }
+    .card-header-text h2 { font-size: .98rem; font-weight: 700; color: var(--navy-900); letter-spacing: -.015em; }
+    .card-header-text p { font-size: .74rem; color: var(--gray-400); margin-top: 3px; max-width: 56ch; }
+    .card-body { padding: 26px; }
+    .dashboard-grid { display: flex; flex-direction: column; gap: 28px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .form-group { display: flex; flex-direction: column; gap: 7px; }
+    .form-group.full { grid-column: 1 / -1; }
+    .form-label { font-size: .8rem; font-weight: 600; color: var(--gray-500); }
+    .form-helper { font-size: .74rem; color: var(--gray-400); }
+    .form-input { padding: 11px 14px; font-size: .92rem; color: var(--navy-900); background: var(--gray-50); border: 1.5px solid var(--gray-200); border-radius: var(--radius); transition: border-color var(--transition), box-shadow var(--transition); }
+    .form-input:focus { outline: none; background: var(--white); border-color: var(--blue-500); box-shadow: 0 0 0 3px rgba(74,143,196,.12); }
+    .form-input.is-invalid { border-color: var(--red-500); background: var(--red-50); }
+    select.form-input { cursor: pointer; }
+    .shift-selector { display: flex; gap: 8px; flex-wrap: wrap; }
+    .shift-btn { flex: 1; min-width: 100px; padding: 10px 14px; font-size: .85rem; font-weight: 600; color: var(--gray-500); background: var(--gray-50); border: 1.5px solid var(--gray-200); border-radius: var(--radius); transition: all var(--transition); text-align: center; }
+    .shift-btn:hover { border-color: var(--gray-300); color: var(--navy-700); }
+    .shift-btn.active { background: var(--navy-800); border-color: var(--navy-800); color: var(--white); box-shadow: 0 2px 8px rgba(18,34,64,.2); }
+    .shift-btn small { display: block; font-size: .68rem; font-weight: 500; opacity: .85; margin-top: 2px; }
+    .shift-pattern-detail { margin-top: 14px; padding: 14px 16px; background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: var(--radius); }
+    .shift-pattern-detail h4 { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--gray-500); margin-bottom: 10px; }
+    .shift-chip-list { display: flex; flex-wrap: wrap; gap: 8px; }
+    .shift-chip { padding: 6px 12px; font-size: .78rem; font-weight: 600; background: var(--white); border: 1px solid var(--gray-200); border-radius: 100px; color: var(--navy-700); }
+    .manage-shifts-block { margin-bottom: 22px; }
+    .manage-shifts-block:last-child { margin-bottom: 0; }
+    .manage-shifts-block h4 { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--gray-500); margin-bottom: 10px; }
+    .shift-catalog-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+    .shift-catalog-table th, .shift-catalog-table td { border: 1px solid var(--gray-200); padding: 8px 10px; text-align: left; vertical-align: middle; }
+    .shift-catalog-table th { background: var(--gray-50); font-weight: 700; color: var(--navy-700); font-size: .68rem; text-transform: uppercase; letter-spacing: .04em; }
+    .shift-catalog-table td { background: var(--white); }
+    .shift-catalog-table input { width: 100%; padding: 7px 8px; font-size: .82rem; border: 1px solid var(--gray-200); border-radius: 6px; background: var(--gray-50); min-width: 0; }
+    .shift-catalog-table input:focus { outline: none; border-color: var(--blue-500); background: var(--white); }
+    .shift-row-default td { color: var(--navy-800); }
+    .shift-code-badge { display: inline-block; padding: 3px 8px; font-size: .72rem; font-weight: 700; background: var(--navy-800); color: var(--white); border-radius: 6px; }
+    .shift-lock { font-size: .72rem; font-weight: 600; color: var(--gray-400); }
+    .icon-btn { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--gray-200); border-radius: var(--radius); background: var(--white); color: var(--gray-500); transition: all var(--transition); }
+    .icon-btn:hover { background: var(--red-50); color: #c94a4a; border-color: #f5c2c2; }
+    .icon-btn svg { width: 14px; height: 14px; }
+    .add-row-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; font-size: .82rem; font-weight: 600; color: var(--blue-600); background: var(--blue-50); border: 1px dashed rgba(74,143,196,.35); border-radius: var(--radius); margin-top: 8px; transition: all var(--transition); }
+    .add-row-btn:hover { background: var(--blue-100); border-color: var(--blue-500); }
+    .add-row-btn svg { width: 14px; height: 14px; }
+    .staff-table-wrap { overflow-x: auto; margin: 0 -4px; padding: 0 4px; }
+    .staff-table { width: 100%; border-collapse: collapse; font-size: .82rem; min-width: 880px; }
+    .staff-table th, .staff-table td { border: 1px solid var(--gray-200); padding: 8px 10px; text-align: left; vertical-align: middle; }
+    .staff-table th { background: var(--gray-50); font-weight: 700; color: var(--navy-700); font-size: .7rem; text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; }
+    .staff-table td { background: var(--white); }
+    .staff-table input, .staff-table select { width: 100%; padding: 7px 8px; font-size: .82rem; border: 1px solid var(--gray-200); border-radius: 6px; background: var(--gray-50); min-width: 0; }
+    .staff-table input:focus, .staff-table select:focus { outline: none; border-color: var(--blue-500); background: var(--white); }
+    .rules-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 24px; }
+    .rule-item { display: flex; align-items: flex-start; gap: 10px; }
+    .rule-item input[type="checkbox"] { width: 18px; height: 18px; margin-top: 2px; accent-color: var(--blue-500); flex-shrink: 0; cursor: pointer; }
+    .rule-item label { font-size: .88rem; font-weight: 500; color: var(--navy-800); cursor: pointer; line-height: 1.4; }
+    .rule-item .rule-input { margin-top: 6px; width: 72px; padding: 6px 8px; font-size: .82rem; border: 1.5px solid var(--gray-200); border-radius: 6px; }
+    .coverage-mode { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; }
+    .coverage-mode label { display: flex; align-items: center; gap: 10px; font-size: .88rem; font-weight: 500; color: var(--navy-800); cursor: pointer; }
+    .coverage-mode input[type="radio"] { width: 16px; height: 16px; accent-color: var(--blue-500); flex-shrink: 0; }
+    .coverage-day-nav { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+    .coverage-day-btn { padding: 6px 10px; font-size: .72rem; font-weight: 600; color: var(--gray-500); background: var(--gray-50); border: 1.5px solid var(--gray-200); border-radius: var(--radius); transition: all var(--transition); }
+    .coverage-day-btn:hover { border-color: var(--gray-300); color: var(--navy-700); }
+    .coverage-day-btn.active { background: var(--navy-800); border-color: var(--navy-800); color: var(--white); }
+    .coverage-day-btn.weekend { border-color: rgba(74,143,196,.25); }
+    .coverage-staff-input { width: 56px; padding: 6px 8px; font-size: .82rem; border: 1.5px solid var(--gray-200); border-radius: 6px; text-align: center; background: var(--white); }
+    .coverage-staff-input:disabled { opacity: .45; background: var(--gray-50); }
+    .coverage-rows { display: flex; flex-direction: column; gap: 8px; }
+    .coverage-row { display: flex; align-items: center; gap: 12px; padding: 10px 12px; background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: var(--radius); }
+    .coverage-row-info { flex: 1; min-width: 0; }
+    .coverage-row-name { font-size: .88rem; font-weight: 700; color: var(--navy-800); }
+    .coverage-row-time { font-size: .72rem; color: var(--gray-400); margin-top: 2px; }
+    .coverage-row-controls { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .coverage-row-controls label { display: flex; align-items: center; gap: 6px; font-size: .78rem; font-weight: 600; color: var(--gray-500); white-space: nowrap; }
+    .coverage-row-controls input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--blue-500); }
+    .active-shifts-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+    .shift-row-compact { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 14px; background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: var(--radius); }
+    .shift-row-compact-info { min-width: 0; }
+    .shift-row-compact-name { font-size: .9rem; font-weight: 700; color: var(--navy-800); }
+    .shift-row-compact-time { font-size: .74rem; color: var(--gray-400); margin-top: 2px; }
+    .shift-row-compact-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .btn-compact { padding: 6px 12px; font-size: .78rem; font-weight: 600; color: var(--navy-700); background: var(--white); border: 1.5px solid var(--gray-200); border-radius: var(--radius); transition: all var(--transition); }
+    .btn-compact:hover { background: var(--gray-50); border-color: var(--gray-300); }
+    .btn-compact--ghost { color: var(--gray-500); border-color: transparent; background: transparent; }
+    .btn-compact--ghost:hover { color: #c94a4a; background: var(--red-50); border-color: #f5c2c2; }
+    .btn-expand { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; font-size: .82rem; font-weight: 600; color: var(--blue-600); background: var(--blue-50); border: 1px dashed rgba(74,143,196,.35); border-radius: var(--radius); transition: all var(--transition); }
+    .btn-expand:hover { background: var(--blue-100); border-color: var(--blue-500); }
+    .expand-panel { margin-top: 12px; padding: 14px; background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: var(--radius-lg); }
+    .expand-panel[hidden] { display: none !important; }
+    .advanced-shift-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+    .advanced-shift-btn { padding: 8px 12px; font-size: .78rem; font-weight: 600; color: var(--navy-700); background: var(--white); border: 1.5px solid var(--gray-200); border-radius: var(--radius); transition: all var(--transition); }
+    .advanced-shift-btn:hover:not(:disabled) { border-color: var(--blue-500); color: var(--blue-600); background: var(--blue-50); }
+    .advanced-shift-btn:disabled { opacity: .45; cursor: default; }
+    .custom-shifts-inline { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+    .custom-shift-inline { display: grid; grid-template-columns: 64px 1fr 88px 88px auto; gap: 8px; align-items: center; padding: 10px 12px; background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius); }
+    .custom-shift-inline input { padding: 7px 8px; font-size: .82rem; border: 1px solid var(--gray-200); border-radius: 6px; background: var(--gray-50); min-width: 0; }
+    .custom-shift-inline input:focus { outline: none; border-color: var(--blue-500); background: var(--white); }
+    .shift-edit-panel { margin-top: 10px; padding: 14px; background: var(--white); border: 1px solid rgba(74,143,196,.22); border-radius: var(--radius); box-shadow: var(--shadow-sm); }
+    .shift-edit-panel[hidden] { display: none !important; }
+    .shift-edit-meta { font-size: .82rem; color: var(--gray-500); line-height: 1.55; }
+    .shift-edit-meta strong { color: var(--navy-800); }
+    .panel-subheading { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--gray-400); margin-bottom: 10px; }
+    @media (max-width: 640px) {
+      .custom-shift-inline { grid-template-columns: 1fr 1fr; }
+      .coverage-row { flex-wrap: wrap; }
+    }
+    .notes-textarea { width: 100%; min-height: 120px; padding: 16px 18px; font-size: .92rem; line-height: 1.7; color: var(--navy-900); background: var(--gray-50); border: 1.5px solid var(--gray-200); border-radius: var(--radius); resize: vertical; transition: border-color var(--transition), box-shadow var(--transition); }
+    .notes-textarea:focus { outline: none; background: var(--white); border-color: var(--blue-500); box-shadow: 0 0 0 3px rgba(74,143,196,.12); }
+    .actions { display: flex; flex-direction: column; gap: 14px; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 46px; padding: 0 22px; font-size: .92rem; font-weight: 600; border-radius: var(--radius); transition: all var(--transition); white-space: nowrap; }
+    .btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+    .btn-primary { width: 100%; background: linear-gradient(135deg, var(--blue-500), var(--blue-600)); color: var(--white); box-shadow: 0 3px 12px rgba(74,143,196,.32); }
+    .btn-primary:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(74,143,196,.4); }
+    .btn-primary:disabled { opacity: .65; cursor: not-allowed; }
+    .btn-primary .spinner { display: none; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.3); border-top-color: var(--white); border-radius: 50%; animation: spin .7s linear infinite; }
+    .btn-primary.loading .spinner { display: block; }
+    .btn-primary.loading svg:not(.spinner) { display: none; }
+    .secondary-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .btn-secondary { flex: 1; min-width: 120px; font-size: .88rem; font-weight: 600; color: var(--navy-700); background: var(--white); border: 1.5px solid var(--gray-200); }
+    .btn-secondary:hover:not(:disabled) { background: var(--gray-50); border-color: var(--gray-300); }
+    .btn-secondary:disabled { opacity: .5; cursor: not-allowed; }
+    .save-status { font-size: .74rem; font-weight: 500; color: var(--gray-400); min-height: 1.1em; }
+    .save-status.is-saving { color: var(--blue-500); }
+    .save-status.is-saved { color: var(--gray-500); }
+    .save-status.is-restored { color: var(--blue-600); }
+    .output-section { display: none; animation: fadeUp .45s ease both; }
+    .output-section.visible { display: block; }
+    .output-panel { margin-top: 8px; padding-top: 28px; border-top: 1px solid var(--gray-200); }
+    .output-panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+    .output-panel-header h2 { font-size: .82rem; font-weight: 600; color: var(--gray-500); letter-spacing: .04em; text-transform: uppercase; }
+    .rota-meta { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 20px; }
+    .rota-meta-item { padding: 12px 14px; background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius); }
+    .rota-meta-label { font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--gray-400); margin-bottom: 4px; }
+    .rota-meta-value { font-size: .92rem; font-weight: 600; color: var(--navy-900); }
+    .rota-card { position: relative; overflow: hidden; border: 1px solid rgba(74,143,196,.28); border-radius: var(--radius-xl); background: linear-gradient(135deg, #d4e8f7, #eaf4fc 28%, #f5faff 55%, var(--white)); box-shadow: var(--shadow-summary); }
+    .rota-card::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--navy-700), var(--blue-500) 40%, var(--blue-400)); z-index: 1; }
+    .rota-card-body { position: relative; z-index: 2; padding: 24px 26px; }
+    .rota-table-wrap { overflow-x: auto; margin-top: 16px; }
+    .rota-table { width: 100%; border-collapse: collapse; font-size: .78rem; min-width: 700px; background: var(--white); border-radius: var(--radius); overflow: hidden; }
+    .rota-table th, .rota-table td { border: 1px solid var(--gray-200); padding: 8px 6px; text-align: center; vertical-align: middle; }
+    .rota-table th { background: var(--navy-800); color: var(--white); font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+    .rota-table th.staff-col, .rota-table td.staff-col { text-align: left; padding-left: 12px; min-width: 120px; font-weight: 600; background: var(--gray-50); position: sticky; left: 0; z-index: 2; }
+    .rota-table th.weekend { background: var(--navy-700); }
+    .rota-table td.weekend { background: rgba(238,246,252,.5); }
+    .rota-table td.day-cell { min-width: 64px; max-width: 84px; padding: 6px 3px; vertical-align: middle; }
+    .rota-cell-wrap { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 42px; gap: 2px; }
+    .rota-cell-display { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; pointer-events: none; line-height: 1.15; padding-bottom: 2px; }
+    .rota-cell-code { font-size: .68rem; font-weight: 700; color: var(--navy-800); }
+    .rota-cell-time { font-size: .56rem; font-weight: 500; color: var(--gray-500); white-space: nowrap; }
+    .rota-table select.rota-cell-select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: .68rem; }
+    .rota-table .cell-off .rota-cell-code { color: var(--gray-400); font-weight: 500; }
+    .rota-table .cell-night { background: rgba(26,48,85,.06); }
+    .rota-table .cell-holiday { background: var(--amber-50); color: #9a7b2e; }
+    .rota-table .cell-training { background: #f0fdf4; color: #2d6a4a; }
+    .rota-table .cell-sick { background: var(--red-50); color: #c94a4a; }
+    .rota-table .cell-warning { box-shadow: inset 0 0 0 2px var(--red-500); }
+    .totals-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; margin-top: 20px; }
+    .total-card { padding: 14px 16px; background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius-lg); }
+    .total-card h4 { font-size: .82rem; font-weight: 700; color: var(--navy-800); margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--gray-100); }
+    .total-row { display: flex; justify-content: space-between; font-size: .78rem; padding: 4px 0; color: var(--gray-600); }
+    .total-row strong { color: var(--navy-900); font-weight: 600; }
+    .total-row.overtime strong { color: var(--red-500); }
+    .warnings-panel { margin-top: 20px; padding: 16px 18px; background: var(--amber-50); border: 1px solid rgba(232,184,77,.45); border-radius: var(--radius-lg); }
+    .warnings-panel.no-warnings { background: var(--green-50); border-color: rgba(93,206,138,.45); }
+    .warnings-panel h3 { font-size: .82rem; font-weight: 700; color: var(--navy-800); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+    .warnings-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+    .warnings-list li { font-size: .82rem; color: var(--navy-800); padding-left: 18px; position: relative; }
+    .warnings-list li::before { content: "⚠"; position: absolute; left: 0; font-size: .75rem; }
+    .warnings-panel.no-warnings .warnings-list li::before { content: "✓"; color: #2d8a5e; }
+    .rota-print-header { display: none; }
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); padding: 12px 22px; background: var(--navy-900); color: var(--white); font-size: .88rem; font-weight: 500; border-radius: var(--radius); box-shadow: var(--shadow-lg); opacity: 0; transition: transform .35s ease, opacity .35s ease; z-index: 1000; pointer-events: none; }
+    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    .footer { padding: 20px 0; text-align: center; font-size: .78rem; color: var(--gray-400); border-top: 1px solid var(--gray-200); background: var(--white); }
+    .footer a { color: var(--blue-500); text-decoration: none; font-weight: 500; }
+    @keyframes fadeDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @media print {
+      .topnav, .dashboard-grid > .card, .dashboard-grid > .actions, .page-header, .footer, .toast, .warnings-panel, .totals-grid, .output-panel-header, .save-status { display: none !important; }
+      body { background: #fff; color: #000; font-size: 10pt; }
+      .main { padding: 0; }
+      .container { max-width: none; padding: 0; }
+      .output-section { display: block !important; }
+      .output-panel { border: none; padding: 0; margin: 0; }
+      .rota-card { box-shadow: none; border: none; background: #fff; }
+      .rota-card::before { display: none; }
+      .rota-card-body { padding: 0; }
+      .rota-meta { grid-template-columns: repeat(4, 1fr); margin-bottom: 12px; }
+      .rota-print-header { display: block; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid var(--navy-800); }
+      .rota-print-header h1 { font-size: 16pt; font-weight: 700; color: var(--navy-900); }
+      .rota-print-header p { font-size: 9pt; color: var(--gray-500); margin-top: 4px; }
+      .rota-table select.rota-cell-select { display: none !important; }
+      .rota-cell-display { padding: 0 !important; }
+      .rota-cell-code { font-size: 8pt; }
+      .rota-cell-time { font-size: 7pt; }
+      .rota-table .cell-warning { box-shadow: none; }
+    }
+    @media (max-width: 768px) {
+      .form-grid, .rules-grid { grid-template-columns: 1fr; }
+      .rota-meta { grid-template-columns: 1fr 1fr; }
+      .custom-shift-row { grid-template-columns: 1fr 1fr; }
+      .custom-shift-row .icon-btn { grid-column: 2; justify-self: end; }
+      .logo-sub { display: none; }
+      .nav-badge span.label { display: none; }
+      .card-body, .rota-card-body { padding: 20px; }
+      .btn-primary { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <nav class="topnav" aria-label="Main navigation">
+      <div class="topnav-inner">
+        <a class="logo" href="index.html">
+          <div class="logo-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L2 7v10l10 5 10-5V7L12 2zm0 2.18l7.5 3.75v7.14L12 18.82l-7.5-3.75V7.93L12 4.18zM12 8l-5 2.5v5L12 18l5-2.5v-5L12 8z"/></svg>
+          </div>
+          <div>
+            <span class="logo-text">Hospitality <span>Flow</span></span>
+            <span class="logo-sub">AI Rota Generator</span>
+          </div>
+        </a>
+        <div class="nav-badge"><span class="nav-badge-dot" aria-hidden="true"></span><span class="label">Rota Tool</span></div>
+      </div>
+    </nav>
+
+    <main class="main">
+      <div class="container">
+        <div class="page-header">
+          <h1 class="page-title">AI Rota Generator</h1>
+          <p class="page-subtitle">Create fair, compliant staff schedules in minutes.</p>
+          <p class="page-tagline">Built for boutique and independent hotel operations.</p>
+        </div>
+
+        <div class="dashboard-grid">
+          <!-- Setup -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-header-icon navy" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/></svg>
+              </div>
+              <div class="card-header-text">
+                <h2>Rota Setup</h2>
+                <p>Configure your hotel, department, and scheduling period.</p>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="form-grid">
+                <div class="form-group full">
+                  <label class="form-label" for="hotelName">Hotel Name</label>
+                  <input class="form-input" type="text" id="hotelName" placeholder="Enter hotel name">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="department">Department</label>
+                  <select class="form-input" id="department">
+                    <option value="">Select department</option>
+                    <option value="Reception">Reception</option>
+                    <option value="Housekeeping">Housekeeping</option>
+                    <option value="Food &amp; Beverage">Food &amp; Beverage</option>
+                    <option value="Maintenance">Maintenance</option>
+                    <option value="Night Team">Night Team</option>
+                    <option value="Duty Manager">Duty Manager</option>
+                    <option value="Management">Management</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="periodType">Period</label>
+                  <select class="form-input" id="periodType">
+                    <option value="week">Weekly Rota</option>
+                    <option value="month">Monthly Rota</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="periodStart">Start Date</label>
+                  <input class="form-input" type="date" id="periodStart">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="staffCount">Number of Staff</label>
+                  <input class="form-input" type="number" id="staffCount" min="1" max="50" value="4">
+                  <span class="form-helper">Used to suggest team size and coverage.</span>
+                </div>
+                <div class="form-group full">
+                  <span class="form-label" id="shiftPatternLabel">Shift Pattern</span>
+                  <div class="shift-selector" role="group" aria-labelledby="shiftPatternLabel">
+                    <button type="button" class="shift-btn active" data-pattern="8hour">8 Hour Shifts<small>AM · PM · Night</small></button>
+                    <button type="button" class="shift-btn" data-pattern="12hour">12 Hour Shifts<small>Day · Night</small></button>
+                    <button type="button" class="shift-btn" data-pattern="custom">Custom<small>Define your own</small></button>
+                  </div>
+                  <div class="shift-pattern-detail" id="shiftPatternDetail"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Staff -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-header-icon blue" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </div>
+              <div class="card-header-text">
+                <h2>Staff Team</h2>
+                <p>Add employees with contract details, preferences, and holiday requests.</p>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="staff-table-wrap">
+                <table class="staff-table" id="staffTable">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Position</th>
+                      <th>Contract Hrs</th>
+                      <th>Preferred Shift</th>
+                      <th>Hours</th>
+                      <th>Holiday Requested</th>
+                      <th>Notes</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="staffTableBody"></tbody>
+                </table>
+              </div>
+              <button type="button" class="add-row-btn" id="addStaffBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add Employee
+              </button>
+            </div>
+          </div>
+
+          <!-- Manage Shifts -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-header-icon blue" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              </div>
+              <div class="card-header-text">
+                <h2>Manage Shifts</h2>
+                <p>Your active shifts for this rota. AM, PM and Night are ready by default.</p>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="active-shifts-list" id="activeShiftsList"></div>
+              <div id="shiftEditPanel" class="shift-edit-panel" hidden></div>
+              <button type="button" class="btn-expand" id="toggleAddShiftsBtn">Add another shift</button>
+              <div class="expand-panel" id="addShiftsPanel" hidden>
+                <p class="panel-subheading">Add a standard shift</p>
+                <div class="advanced-shift-grid" id="advancedShiftPicker"></div>
+                <p class="panel-subheading">Custom shifts</p>
+                <div class="custom-shifts-inline" id="customShiftsInline"></div>
+                <button type="button" class="btn-expand" id="addCustomShiftBtn" style="margin-top:10px">Create custom shift</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Rules -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-header-icon purple" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              </div>
+              <div class="card-header-text">
+                <h2>Scheduling Rules</h2>
+                <p>Set compliance and fairness constraints for the generated rota.</p>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="rules-grid">
+                <div class="rule-item">
+                  <input type="checkbox" id="ruleConsecutive" checked>
+                  <div>
+                    <label for="ruleConsecutive">Maximum consecutive working days</label>
+                    <input type="number" class="rule-input" id="maxConsecutiveDays" min="1" max="14" value="5">
+                  </div>
+                </div>
+                <div class="rule-item">
+                  <input type="checkbox" id="ruleMinRest" checked>
+                  <div>
+                    <label for="ruleMinRest">Minimum rest between shifts (hours)</label>
+                    <input type="number" class="rule-input" id="minRestHours" min="0" max="24" value="11">
+                  </div>
+                </div>
+                <div class="rule-item">
+                  <input type="checkbox" id="ruleWeekendRotation" checked>
+                  <label for="ruleWeekendRotation">Weekend rotation — spread weekend shifts fairly</label>
+                </div>
+                <div class="rule-item">
+                  <input type="checkbox" id="ruleNoDouble" checked>
+                  <label for="ruleNoDouble">Avoid double shifts on the same day</label>
+                </div>
+                <div class="rule-item">
+                  <input type="checkbox" id="ruleContractHours" checked>
+                  <label for="ruleContractHours">Respect contracted hours</label>
+                </div>
+                <div class="rule-item">
+                  <input type="checkbox" id="ruleBalanceNights" checked>
+                  <label for="ruleBalanceNights">Balance night shifts fairly</label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Coverage Settings -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-header-icon purple" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>
+              </div>
+              <div class="card-header-text">
+                <h2>Coverage Settings</h2>
+                <p>Mark which active shifts must be covered and how many staff you need.</p>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="coverage-rows" id="coverageEditor"></div>
+              <p class="form-helper" style="margin-top:10px">Only checked shifts trigger understaffing warnings.</p>
+              <button type="button" class="btn-expand" id="toggleDailyCoverage" style="margin-top:14px">Set coverage by individual day</button>
+              <div class="expand-panel" id="dailyCoveragePanel" hidden>
+                <div class="coverage-day-nav" id="coverageDayNav"></div>
+                <p class="form-helper">Choose a day, then set required shifts for that day only.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- AI Instructions -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-header-icon green" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a4 4 0 0 1 4 4c0 1.95-1.4 3.58-3.25 3.93"/><path d="M8.5 10.5A4 4 0 0 1 12 2"/><path d="M12 12v4"/><path d="M8 22h8"/><path d="M12 18v4"/></svg>
+              </div>
+              <div class="card-header-text">
+                <h2>AI Instructions</h2>
+                <p>Describe additional scheduling requirements in plain language.</p>
+              </div>
+            </div>
+            <div class="card-body">
+              <textarea class="notes-textarea" id="aiInstructions" placeholder="Example:&#10;Keep experienced staff on Friday and Saturday nights.&#10;Avoid assigning two new starters to the same shift.&#10;Ensure one supervisor is scheduled every morning."></textarea>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="actions">
+            <p class="save-status" id="saveStatus" aria-live="polite"></p>
+            <button type="button" class="btn btn-primary" id="generateBtn">
+              <span class="spinner" aria-hidden="true"></span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span id="generateBtnText">Generate Rota</span>
+            </button>
+            <div class="secondary-actions">
+              <button type="button" class="btn btn-secondary" id="saveDraftBtn">Save Draft</button>
+              <button type="button" class="btn btn-secondary" id="clearDraftBtn">Clear Draft</button>
+              <button type="button" class="btn btn-secondary" id="exportPdfBtn" disabled>Export PDF</button>
+              <button type="button" class="btn btn-secondary" id="printBtn" disabled>Print</button>
+              <button type="button" class="btn btn-secondary" id="generateNewBtn" disabled>Generate New</button>
+            </div>
+          </div>
+
+          <!-- Output -->
+          <section class="output-section" id="outputSection" aria-live="polite">
+            <div class="output-panel">
+              <div class="output-panel-header"><h2>Generated Rota</h2></div>
+              <div class="rota-card" id="rotaCard">
+                <div class="rota-card-body">
+                  <div class="rota-print-header" id="rotaPrintHeader"></div>
+                  <div class="rota-meta" id="rotaMeta"></div>
+                  <div class="rota-table-wrap">
+                    <table class="rota-table" id="rotaTable">
+                      <thead id="rotaTableHead"></thead>
+                      <tbody id="rotaTableBody"></tbody>
+                    </table>
+                  </div>
+                  <div class="totals-grid" id="totalsGrid"></div>
+                  <div class="warnings-panel" id="warningsPanel">
+                    <h3>Schedule Warnings</h3>
+                    <ul class="warnings-list" id="warningsList"></ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="container">&copy; Hospitality Flow — <a href="index.html">hospitalityflow.com</a></div>
+    </footer>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="rota-app.js"></script>
+</body>
+</html>

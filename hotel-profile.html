@@ -44,6 +44,9 @@
     .btn-save { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 16px; font-size: .82rem; font-weight: 600; color: var(--white); background: linear-gradient(135deg, var(--blue-500), var(--blue-600)); border-radius: var(--radius); box-shadow: 0 2px 8px rgba(74,143,196,.28); transition: all var(--transition); }
     .btn-save:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(74,143,196,.36); }
     .btn-save svg { width: 14px; height: 14px; }
+    .btn-nav-secondary { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px; font-size: .78rem; font-weight: 600; color: var(--gray-500); background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius); transition: all var(--transition); white-space: nowrap; }
+    .btn-nav-secondary:hover { color: var(--navy-800); border-color: var(--gray-300); background: var(--gray-50); }
+    .btn-nav-secondary svg { width: 13px; height: 13px; flex-shrink: 0; }
     .page { min-height: 100vh; display: flex; flex-direction: column; }
     .container { width: 100%; max-width: var(--max-width); margin: 0 auto; padding: 0 24px; }
     .main { flex: 1; padding: 32px 0 72px; }
@@ -205,7 +208,11 @@
     .inventory-toggle { display: flex; align-items: center; gap: 6px; padding: 7px 9px; font-size: .78rem; font-weight: 500; color: var(--navy-800); background: var(--white); border: 1px solid var(--gray-200); border-radius: 6px; cursor: pointer; white-space: nowrap; }
     .inventory-toggle input { width: 14px; height: 14px; accent-color: var(--blue-500); flex-shrink: 0; cursor: pointer; }
     .inventory-toggle:has(input:checked) { background: var(--blue-50); border-color: rgba(74,143,196,.35); color: var(--blue-600); }
-    .save-status { font-size: .74rem; font-weight: 500; color: var(--gray-400); text-align: right; min-height: 1.1em; }
+    .save-status { font-size: .74rem; font-weight: 500; color: var(--gray-400); text-align: right; min-height: 1.1em; max-width: 320px; line-height: 1.45; }
+    .save-status.is-unsaved { color: var(--amber-600); }
+    .save-status.is-saving { color: var(--blue-500); }
+    .save-status.is-saved { color: var(--green-600); font-weight: 600; }
+    .save-status.is-error { color: var(--red-500); }
     .footer { padding: 20px 0; text-align: center; font-size: .78rem; color: var(--gray-400); border-top: 1px solid var(--gray-200); background: var(--white); }
     .footer a { color: var(--blue-500); text-decoration: none; font-weight: 500; }
     .mobile-nav { display: none; overflow-x: auto; gap: 6px; padding-bottom: 4px; margin-bottom: 20px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
@@ -231,6 +238,8 @@
     @media (max-width: 600px) {
       .logo-sub { display: none; }
       .nav-badge span.label { display: none; }
+      .btn-nav-secondary { padding: 0 10px; font-size: .72rem; }
+      .btn-nav-secondary svg { display: none; }
       .profile-card-body, .profile-card-header { padding: 18px 20px; }
       .dept-grid { grid-template-columns: 1fr; }
       .inventory-grid, .inventory-grid--flags { grid-template-columns: 1fr 1fr; }
@@ -252,6 +261,15 @@
         </a>
         <div class="nav-actions">
           <div class="nav-badge"><span class="nav-badge-dot" aria-hidden="true"></span><span class="label">Knowledge Layer</span></div>
+          <button type="button" class="btn-nav-secondary" id="exportProfileBtn" aria-label="Export Profile JSON">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export Profile JSON
+          </button>
+          <button type="button" class="btn-nav-secondary" id="importProfileBtn" aria-label="Import Profile JSON">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Import Profile JSON
+          </button>
+          <input type="file" id="importProfileInput" accept=".json,application/json" hidden>
           <button type="button" class="btn-save" id="saveBtn" aria-label="Save profile">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
             Save
@@ -1135,15 +1153,21 @@
   <script>
     (function () {
       var STORAGE_KEY = 'hospitalityFlow_hotelProfile';
+      var AUTO_SAVE_DELAY = 800;
       var LOGO_MAX_BYTES = 2 * 1024 * 1024;
       var LOGO_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/svg+xml'];
       var LOGO_EXTS = ['.png', '.jpg', '.jpeg', '.webp', '.svg'];
 
       var saveStatus = document.getElementById('saveStatus');
       var saveBtn = document.getElementById('saveBtn');
+      var exportProfileBtn = document.getElementById('exportProfileBtn');
+      var importProfileBtn = document.getElementById('importProfileBtn');
+      var importProfileInput = document.getElementById('importProfileInput');
       var sectionLinks = document.querySelectorAll('.section-nav-link, .mobile-nav-link');
       var sections = document.querySelectorAll('.profile-card[id]');
       var isRestoring = false;
+      var isDirty = false;
+      var autoSaveTimer = null;
       var lastSavedAt = null;
       var currentLogoDataUrl = '';
 
@@ -1198,21 +1222,42 @@
         });
       }
 
+      function setSaveStatusState(state) {
+        saveStatus.className = 'save-status' + (state ? ' is-' + state : '');
+      }
+
       function markUnsaved() {
         if (isRestoring) return;
+        isDirty = true;
         saveStatus.textContent = 'Unsaved changes';
-        saveStatus.style.color = '';
+        setSaveStatusState('unsaved');
+        scheduleAutoSave();
       }
 
       function markSaved(iso) {
+        isDirty = false;
+        clearTimeout(autoSaveTimer);
         lastSavedAt = iso || new Date().toISOString();
-        saveStatus.textContent = 'Saved · ' + formatSavedTime(lastSavedAt);
-        saveStatus.style.color = 'var(--green-600)';
+        saveStatus.textContent = 'Hotel profile saved successfully · ' + formatSavedTime(lastSavedAt);
+        setSaveStatusState('saved');
       }
 
       function setSaving() {
         saveStatus.textContent = 'Saving…';
-        saveStatus.style.color = '';
+        setSaveStatusState('saving');
+      }
+
+      function showSaveError(message) {
+        saveStatus.textContent = message;
+        setSaveStatusState('error');
+      }
+
+      function scheduleAutoSave() {
+        if (isRestoring) return;
+        clearTimeout(autoSaveTimer);
+        autoSaveTimer = setTimeout(function () {
+          if (isDirty) saveProfile(true);
+        }, AUTO_SAVE_DELAY);
       }
 
       function getInputValue(id) {
@@ -1233,11 +1278,53 @@
         colorPresets.forEach(function (p) { p.classList.remove('active'); });
       }
 
-      function persistToStorage() {
-        try {
-          var data = collectProfileData();
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-        } catch (e) { /* ignore quota errors */ }
+      function writeToStorage(data) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      }
+
+      function isValidProfileData(data) {
+        return !!(data && typeof data === 'object' && (data.general || data.departments || data.rooms || data.shifts));
+      }
+
+      function exportProfileJson() {
+        var data = collectProfileData();
+        var hotelSlug = (getInputValue('hotelName') || 'hotel-profile').trim()
+          .replace(/[^\w\-]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').toLowerCase() || 'hotel-profile';
+        var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        var url = URL.createObjectURL(blob);
+        var link = document.createElement('a');
+        link.href = url;
+        link.download = hotelSlug + '-profile.json';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+      }
+
+      function importProfileJson(file) {
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function () {
+          try {
+            var data = JSON.parse(reader.result);
+            if (!isValidProfileData(data)) {
+              showSaveError('Invalid profile file — expected hotel profile JSON');
+              return;
+            }
+            if (!window.confirm('Import this profile? This will replace your current hotel profile.')) return;
+            restoreProfileData(data);
+            saveProfile(false);
+          } catch (err) {
+            showSaveError('Could not import — invalid JSON file');
+          } finally {
+            importProfileInput.value = '';
+          }
+        };
+        reader.onerror = function () {
+          showSaveError('Could not read the selected file');
+          importProfileInput.value = '';
+        };
+        reader.readAsText(file);
       }
 
       function setBrandColor(hex, silent) {
@@ -1248,7 +1335,6 @@
         colorPresets.forEach(function (p) {
           p.classList.toggle('active', p.getAttribute('data-color').toLowerCase() === hex.toLowerCase());
         });
-        if (!silent) persistToStorage();
       }
 
       function removeLogo() {
@@ -1258,7 +1344,6 @@
         logoRemove.hidden = true;
         logoInput.value = '';
         logoError.textContent = '';
-        persistToStorage();
         markUnsaved();
       }
 
@@ -1274,7 +1359,6 @@
           logoRemove.hidden = true;
         }
         logoError.textContent = '';
-        if (!silent) persistToStorage();
       }
 
       function showLogoError(message) {
@@ -1585,18 +1669,19 @@
         setInputValue('customFacilities', facilities.custom);
 
         isRestoring = false;
+        isDirty = false;
+        clearTimeout(autoSaveTimer);
         if (data.savedAt) markSaved(data.savedAt);
       }
 
-      function saveProfile() {
+      function saveProfile(isAuto) {
         setSaving();
         var data = collectProfileData();
         try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+          writeToStorage(data);
           markSaved(data.savedAt);
         } catch (e) {
-          saveStatus.textContent = 'Could not save — storage limit reached';
-          saveStatus.style.color = 'var(--red-500)';
+          showSaveError('Could not save — storage limit reached');
         }
       }
 
@@ -1635,7 +1720,21 @@
         if (e.target.matches('input, select, textarea')) markUnsaved();
       });
 
-      saveBtn.addEventListener('click', saveProfile);
+      saveBtn.addEventListener('click', function () { saveProfile(false); });
+
+      exportProfileBtn.addEventListener('click', exportProfileJson);
+      importProfileBtn.addEventListener('click', function () { importProfileInput.click(); });
+      importProfileInput.addEventListener('change', function () {
+        if (importProfileInput.files && importProfileInput.files[0]) {
+          importProfileJson(importProfileInput.files[0]);
+        }
+      });
+
+      window.addEventListener('beforeunload', function (e) {
+        if (!isDirty) return;
+        e.preventDefault();
+        e.returnValue = '';
+      });
 
       document.getElementById('addRoomRow').addEventListener('click', function () {
         roomBody.appendChild(buildRoomRow());
@@ -1687,7 +1786,6 @@
         var val = brandColorHex.value.trim();
         if (!val) {
           clearBrandColor();
-          persistToStorage();
           markUnsaved();
           return;
         }
