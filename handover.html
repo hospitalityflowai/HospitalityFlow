@@ -114,6 +114,17 @@
 
     .logo-icon svg { width: 20px; height: 20px; fill: var(--blue-400); }
 
+    .logo-icon img {
+      display: none;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      border-radius: 9px;
+    }
+
+    .logo-icon.has-hotel-logo svg { display: none; }
+    .logo-icon.has-hotel-logo img { display: block; }
+
     .logo-text {
       font-size: 1.05rem;
       font-weight: 700;
@@ -184,6 +195,27 @@
       font-size: 0.95rem;
       color: var(--gray-500);
       max-width: 520px;
+    }
+
+    .profile-hint {
+      margin-top: 10px;
+      padding: 8px 12px;
+      font-size: 0.82rem;
+      color: var(--gray-500);
+      background: var(--amber-50);
+      border: 1px solid rgba(232, 184, 77, 0.35);
+      border-radius: var(--radius);
+      max-width: 520px;
+    }
+
+    .profile-hint a {
+      color: var(--blue-600);
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .profile-hint a:hover {
+      text-decoration: underline;
     }
 
     /* ── Cards ── */
@@ -420,9 +452,56 @@
     .actions {
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 12px;
       margin-top: 4px;
       animation: fadeUp 0.5s ease 0.15s both;
+    }
+
+    .actions .btn-primary {
+      width: 100%;
+    }
+
+    .secondary-actions {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: 1fr;
+    }
+
+    .secondary-actions .btn-secondary {
+      flex: none;
+      min-width: 0;
+      width: 100%;
+    }
+
+    .actions-clear {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .actions-clear .btn-clear {
+      min-height: 36px;
+      padding: 0 10px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--gray-500);
+      background: transparent;
+      border: none;
+      gap: 6px;
+    }
+
+    .actions-clear .btn-clear:hover {
+      color: var(--navy-700);
+      background: var(--gray-50);
+    }
+
+    .actions-clear .btn-clear:focus-visible {
+      outline: 2px solid var(--blue-400);
+      outline-offset: 2px;
+    }
+
+    .actions-clear .btn-clear svg {
+      width: 14px;
+      height: 14px;
     }
 
     .btn {
@@ -471,8 +550,6 @@
     }
 
     .btn-primary.loading .spinner { display: block; }
-
-    .secondary-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 
     .btn-secondary {
       flex: 1;
@@ -1479,6 +1556,47 @@
     .footer a { color: var(--blue-500); text-decoration: none; font-weight: 500; }
     .footer a:hover { text-decoration: underline; }
 
+    @media print {
+      .topnav, .page-header, .dashboard-grid, .actions, .footer,
+      .saved-handovers-section, .toast, .handover-item-toolbar,
+      .snapshot-edit-actions, .glance-snapshot-hint { display: none !important; }
+
+      body {
+        background: var(--white);
+        color: var(--navy-900);
+      }
+
+      .main { padding: 0; }
+      .container { max-width: none; padding: 0; }
+
+      .output-section {
+        display: block !important;
+      }
+
+      .output-panel {
+        margin: 0;
+        padding: 0;
+        border: none;
+      }
+
+      .handover-meta,
+      .shift-glance,
+      .summary-card,
+      .section-card {
+        break-inside: avoid;
+        page-break-inside: avoid;
+        box-shadow: none;
+      }
+
+      .summary-card.is-visible {
+        display: block !important;
+      }
+
+      .section-card:hover {
+        transform: none;
+      }
+    }
+
     /* ── Animations ── */
     @keyframes fadeDown {
       from { opacity: 0; transform: translateY(-10px); }
@@ -1502,10 +1620,16 @@
     @keyframes spin { to { transform: rotate(360deg); } }
 
     /* ── Responsive ── */
-    @media (min-width: 640px) {
-      .actions { flex-direction: row; align-items: stretch; }
-      .btn-primary { flex: 2; width: auto; }
-      .secondary-actions { flex: 1; }
+    @media (min-width: 480px) {
+      .secondary-actions {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (min-width: 768px) {
+      .secondary-actions {
+        grid-template-columns: repeat(4, 1fr);
+      }
     }
 
     @media (max-width: 600px) {
@@ -1529,8 +1653,6 @@
 
     @media (max-width: 400px) {
       .main { padding: 24px 0 56px; }
-      .secondary-actions { flex-direction: column; }
-      .btn-secondary { width: 100%; }
       .shift-btn { min-width: 60px; padding: 9px 10px; font-size: 0.8rem; }
     }
 
@@ -1684,7 +1806,7 @@
           </div>
           <div>
             <span class="logo-text">Hospitality <span>Flow</span></span>
-            <span class="logo-sub">AI Shift Handover Assistant</span>
+            <span class="logo-sub" id="navHotelLabel">AI Shift Handover Assistant</span>
           </div>
         </a>
         <div class="nav-badge">
@@ -1697,8 +1819,9 @@
     <main class="main">
       <div class="container">
         <div class="page-header">
-          <h1 class="page-title">AI Shift Handover Assistant</h1>
-          <p class="page-subtitle">Turn messy shift notes into professional handovers in seconds.</p>
+          <h1 class="page-title" id="pageTitle">AI Shift Handover Assistant</h1>
+          <p class="page-subtitle" id="pageSubtitle">Turn messy shift notes into professional handovers in seconds.</p>
+          <p class="profile-hint" id="profileHint" hidden><a href="hotel-profile.html">Complete Hotel Profile</a> to personalise Hospitality Flow.</p>
         </div>
 
         <div class="dashboard-grid">
@@ -1711,8 +1834,8 @@
                 </svg>
               </div>
               <div class="card-header-text">
-                <h2>Handover Details</h2>
-                <p>Information included in this handover report.</p>
+                <h2 id="detailsCardTitle">Handover Details</h2>
+                <p id="detailsCardDesc">Information included in this handover report.</p>
               </div>
             </div>
             <div class="card-body">
@@ -1740,7 +1863,7 @@
                 </div>
                 <div class="form-group full">
                   <span class="form-label" id="shiftLabel">Shift</span>
-                  <div class="shift-selector" role="group" aria-labelledby="shiftLabel">
+                  <div class="shift-selector" id="shiftSelector" role="group" aria-labelledby="shiftLabel">
                     <button class="shift-btn active" type="button" data-shift="AM">AM</button>
                     <button class="shift-btn" type="button" data-shift="PM">PM</button>
                     <button class="shift-btn" type="button" data-shift="Night">Night</button>
@@ -1768,8 +1891,8 @@
                 </svg>
               </div>
               <div class="card-header-text">
-                <h2>Shift Handover Notes</h2>
-                <p>Add the key information from your shift. Hospitality Flow will organise it into a clear, professional handover.</p>
+                <h2 id="notesCardTitle">Shift Handover Notes</h2>
+                <p id="notesCardSubtitle">Add the key information from your shift. Hospitality Flow will organise it into a clear, professional handover.</p>
               </div>
             </div>
             <div class="card-body">
@@ -1792,14 +1915,20 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M12 2a4 4 0 0 1 4 4c0 1.95-1.4 3.58-3.25 3.93"/><path d="M8.5 10.5A4 4 0 0 1 12 2"/><path d="M12 12v4"/><path d="M8 22h8"/><path d="M12 18v4"/>
               </svg>
-              <span class="btn-text">Generate Handover</span>
+              <span class="btn-text" id="generateBtnText">Generate Handover</span>
             </button>
             <div class="secondary-actions">
               <button class="btn btn-secondary" id="copyBtn" type="button" disabled>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
                 </svg>
-                Copy Handover
+                <span id="copyBtnText">Copy Handover</span>
+              </button>
+              <button class="btn btn-secondary" id="saveHandoverBtn" type="button" disabled>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+                </svg>
+                <span id="saveHandoverBtnText">Save Handover</span>
               </button>
               <button class="btn btn-secondary" id="exportPdfBtn" type="button" disabled>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -1807,13 +1936,15 @@
                 </svg>
                 Export to PDF
               </button>
-              <button class="btn btn-secondary" id="saveHandoverBtn" type="button" disabled>
+              <button class="btn btn-secondary" id="printHandoverBtn" type="button" disabled title="Print handover">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+                  <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>
                 </svg>
-                Save Handover
+                Print
               </button>
-              <button class="btn btn-secondary" id="clearBtn" type="button">
+            </div>
+            <div class="actions-clear">
+              <button class="btn btn-clear" id="clearBtn" type="button">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                 </svg>
@@ -1826,7 +1957,7 @@
           <section class="output-section" id="outputSection" aria-live="polite">
             <div class="output-panel">
               <div class="output-panel-header">
-                <h2>Organised Handover</h2>
+                <h2 id="organisedOutputTitle">Organised Handover</h2>
               </div>
 
               <div class="handover-results">
@@ -1857,7 +1988,7 @@
                         </svg>
                       </div>
                       <div class="summary-content">
-                        <div class="summary-label">AI Summary</div>
+                        <div class="summary-label" id="summaryLabel">AI Summary</div>
                         <p class="summary-text" id="summaryOverview"></p>
                         <div class="summary-rows" id="summaryRows"></div>
                         <div class="summary-stats" id="summaryStats" hidden></div>
@@ -1875,7 +2006,7 @@
           <section class="saved-handovers-section" id="savedHandoversSection" aria-label="Saved handovers">
             <div class="saved-handovers-panel">
               <div class="saved-handovers-header">
-                <h2>Saved Handovers</h2>
+                <h2 id="savedHandoversTitle">Saved Handovers</h2>
                 <span class="saved-handovers-count" id="savedHandoversCount"></span>
               </div>
               <div class="saved-handovers-grid" id="savedHandoversGrid"></div>
@@ -1994,6 +2125,7 @@
       var generateBtn = document.getElementById("generateBtn");
       var copyBtn = document.getElementById("copyBtn");
       var exportPdfBtn = document.getElementById("exportPdfBtn");
+      var printHandoverBtn = document.getElementById("printHandoverBtn");
       var saveHandoverBtn = document.getElementById("saveHandoverBtn");
       var clearBtn = document.getElementById("clearBtn");
       var outputSection = document.getElementById("outputSection");
@@ -2014,9 +2146,576 @@
       var shiftAlertsGroup = document.getElementById("shiftAlertsGroup");
       var handoverMeta = document.getElementById("handoverMeta");
       var handoverMetaGrid = document.getElementById("handoverMetaGrid");
+      var shiftSelector = document.getElementById("shiftSelector");
       var shiftButtons = document.querySelectorAll(".shift-btn");
+      var navHotelLabel = document.getElementById("navHotelLabel");
+      var pageTitle = document.getElementById("pageTitle");
+      var pageSubtitle = document.getElementById("pageSubtitle");
+      var profileHint = document.getElementById("profileHint");
+      var notesCardTitle = document.getElementById("notesCardTitle");
+      var notesCardSubtitle = document.getElementById("notesCardSubtitle");
+      var detailsCardTitle = document.getElementById("detailsCardTitle");
+      var generateBtnText = document.getElementById("generateBtnText");
+      var copyBtnText = document.getElementById("copyBtnText");
+      var saveHandoverBtnText = document.getElementById("saveHandoverBtnText");
+      var organisedOutputTitle = document.getElementById("organisedOutputTitle");
+      var summaryLabel = document.getElementById("summaryLabel");
+      var savedHandoversTitle = document.getElementById("savedHandoversTitle");
+      var savedHandoversEmpty = document.getElementById("savedHandoversEmpty");
+      var detailsCardDesc = document.getElementById("detailsCardDesc");
+      var hotelSnapshotHint = document.querySelector(".hotel-snapshot-pre-hint");
+      var logoIcon = document.querySelector(".logo-icon");
 
-      var selectedShift = "AM";
+      var HOTEL_PROFILE_KEY = "hospitalityFlow_hotelProfile";
+      var DEFAULT_DEPARTMENTS = [
+        "Reception", "Housekeeping", "Food & Beverage", "Maintenance",
+        "Night Team", "Duty Manager", "Management", "Other"
+      ];
+      var DEFAULT_SHIFTS = [
+        { code: "AM", name: "AM", start: "07:00", end: "15:00" },
+        { code: "PM", name: "PM", start: "15:00", end: "23:00" },
+        { code: "Night", name: "Night", start: "23:00", end: "07:00" }
+      ];
+      var UI_LABEL_SPECS = {
+        handover: {
+          aliases: [
+            "shift handover", "handover report", "handover document",
+            "end-of-shift handover", "shift briefing", "daily lineup"
+          ]
+        },
+        notes: {
+          aliases: [
+            "operations notes", "shift notes", "handover notes",
+            "shift handover notes", "daily lineup notes"
+          ]
+        },
+        details: {
+          aliases: ["handover details", "shift details", "lineup details"]
+        },
+        aiSummary: {
+          aliases: ["ai summary", "summary section"]
+        },
+        assistant: {
+          aliases: ["shift handover assistant", "handover assistant", "daily lineup assistant", "night manager assistant"]
+        }
+      };
+      var PLATFORM_LABELS = {
+        handover: "Shift Handover",
+        notes: "Shift Handover Notes",
+        details: "Handover Details",
+        organised: "Organised Handover",
+        generate: "Generate Handover",
+        copy: "Copy Handover",
+        save: "Save Handover",
+        saved: "Saved Handovers",
+        aiSummary: "AI Summary",
+        assistant: "AI Shift Handover Assistant"
+      };
+      var FIXED_ACTION_LABELS = {
+        copy: "Copy Handover",
+        save: "Save Handover",
+        organised: "Organised Handover",
+        saved: "Saved Handovers"
+      };
+
+      /**
+       * Converts a Hotel Profile handover/role term into a document phrase that
+       * always ends with "Handover" (e.g. "Night Manager" → "Night Handover").
+       * Assistant names may stay role-specific; document actions must not.
+       */
+      function toDocumentHandoverPhrase(handoverTerm) {
+        var term = (handoverTerm || "").trim();
+        if (!term) return "Handover";
+        if (/\bhandover\b/i.test(term)) return term;
+        if (/\bmanager$/i.test(term)) {
+          var prefix = term.replace(/\s+manager$/i, "").trim();
+          return prefix ? prefix + " Handover" : "Handover";
+        }
+        return term + " Handover";
+      }
+
+      function buildDocumentActionLabels(documentPhrase) {
+        return {
+          handover: documentPhrase,
+          generate: "Generate " + documentPhrase,
+          copy: FIXED_ACTION_LABELS.copy,
+          save: FIXED_ACTION_LABELS.save,
+          organised: FIXED_ACTION_LABELS.organised,
+          saved: FIXED_ACTION_LABELS.saved
+        };
+      }
+
+      var hotelProfile = null;
+      var uiLabels = clonePlatformLabels();
+      var handoverTermLabel = "Shift Handover";
+      var configuredDepartments = DEFAULT_DEPARTMENTS.slice();
+      var configuredShifts = DEFAULT_SHIFTS.slice();
+      var hotelLogoDataUrl = "";
+      var aiPrefs = {
+        tone: "professional",
+        detail: "standard",
+        language: "British English",
+        dateFormat: "DD/MM/YYYY (24-hour)",
+        instructions: ""
+      };
+      var dateLocale = { locale: "en-GB", hour12: false };
+      var currencySymbol = "£";
+      var terminologyMap = {};
+
+      function clonePlatformLabels() {
+        var copy = {};
+        Object.keys(PLATFORM_LABELS).forEach(function (key) {
+          copy[key] = PLATFORM_LABELS[key];
+        });
+        return copy;
+      }
+
+      function loadHotelProfileFromStorage() {
+        try {
+          var raw = localStorage.getItem(HOTEL_PROFILE_KEY);
+          if (!raw) return null;
+          var parsed = JSON.parse(raw);
+          if (!parsed || typeof parsed !== "object") return null;
+          return parsed;
+        } catch (e) {
+          return null;
+        }
+      }
+
+      function resolveUiLabels(terminology) {
+        var resolved = {};
+        var explicit = {};
+        Object.keys(PLATFORM_LABELS).forEach(function (key) {
+          resolved[key] = PLATFORM_LABELS[key];
+        });
+
+        (terminology || []).forEach(function (entry) {
+          var term = (entry.term || "").trim();
+          var definition = (entry.definition || "").trim().toLowerCase();
+          if (!term || !definition) return;
+
+          Object.keys(UI_LABEL_SPECS).forEach(function (key) {
+            if (explicit[key]) return;
+            var matched = UI_LABEL_SPECS[key].aliases.some(function (alias) {
+              return definition.indexOf(alias) !== -1;
+            });
+            if (matched) {
+              resolved[key] = term;
+              explicit[key] = true;
+            }
+          });
+        });
+
+        var rawHandoverTerm = explicit.handover ? resolved.handover : PLATFORM_LABELS.handover;
+        if (!explicit.handover && explicit.assistant) {
+          var assistantRole = resolved.assistant.match(/^AI\s+(.+?)\s+Assistant$/i);
+          if (assistantRole && assistantRole[1]) rawHandoverTerm = assistantRole[1];
+        }
+        var documentPhrase = toDocumentHandoverPhrase(rawHandoverTerm);
+        var actionLabels = buildDocumentActionLabels(documentPhrase);
+
+        resolved.handover = actionLabels.handover;
+        resolved.generate = actionLabels.generate;
+        resolved.copy = actionLabels.copy;
+        resolved.save = actionLabels.save;
+        resolved.organised = actionLabels.organised;
+        resolved.saved = actionLabels.saved;
+
+        if (!explicit.notes) resolved.notes = documentPhrase + " Notes";
+        if (!explicit.details) {
+          resolved.details = documentPhrase === "Shift Handover"
+            ? PLATFORM_LABELS.details
+            : documentPhrase + " Details";
+        }
+        if (!explicit.assistant) resolved.assistant = "AI " + rawHandoverTerm + " Assistant";
+        if (!explicit.aiSummary) resolved.aiSummary = PLATFORM_LABELS.aiSummary;
+
+        return resolved;
+      }
+
+      function buildTerminologyMap(terminology) {
+        var map = {};
+        (terminology || []).forEach(function (entry) {
+          var term = (entry.term || "").trim();
+          var definition = (entry.definition || "").trim();
+          if (term && definition) map[term.toLowerCase()] = { term: term, definition: definition };
+        });
+        return map;
+      }
+
+      function resolveDateLocale(prefs) {
+        var fmt = (prefs && prefs.dateFormat) || "DD/MM/YYYY (24-hour)";
+        var language = (prefs && prefs.language) || "British English";
+
+        if (fmt.indexOf("MM/DD") === 0 || language === "American English") {
+          return { locale: "en-US", hour12: fmt.indexOf("12-hour") !== -1 };
+        }
+        if (fmt.indexOf("YYYY-MM-DD") === 0) {
+          return { locale: "en-GB", hour12: false, isoDate: true };
+        }
+        return { locale: "en-GB", hour12: fmt.indexOf("12-hour") !== -1 };
+      }
+
+      function resolveCurrencySymbol(language) {
+        if (language === "American English") return "$";
+        if (language === "British English") return "£";
+        return "£";
+      }
+
+      function applyHotelProfileConfig(profile) {
+        if (!profile) {
+          uiLabels = clonePlatformLabels();
+          handoverTermLabel = PLATFORM_LABELS.handover;
+          configuredDepartments = DEFAULT_DEPARTMENTS.slice();
+          configuredShifts = DEFAULT_SHIFTS.slice();
+          hotelLogoDataUrl = "";
+          terminologyMap = {};
+          return;
+        }
+
+        var terminology = profile.terminology || [];
+        uiLabels = resolveUiLabels(terminology);
+        handoverTermLabel = uiLabels.handover;
+        terminologyMap = buildTerminologyMap(terminology);
+
+        var depts = (profile.departments || [])
+          .map(function (d) { return (d.name || "").trim(); })
+          .filter(Boolean);
+        configuredDepartments = depts.length ? depts : DEFAULT_DEPARTMENTS.slice();
+
+        var shiftRows = profile.shifts && profile.shifts.rows ? profile.shifts.rows : [];
+        var validShifts = shiftRows
+          .map(function (row) {
+            return {
+              code: (row.code || "").trim(),
+              name: (row.name || row.code || "").trim(),
+              start: row.start || "",
+              end: row.end || ""
+            };
+          })
+          .filter(function (row) { return row.code; });
+        if (validShifts.length) configuredShifts = validShifts;
+
+        if (profile.general && profile.general.logo) {
+          hotelLogoDataUrl = profile.general.logo;
+        }
+
+        if (profile.aiPrefs) {
+          aiPrefs = {
+            tone: profile.aiPrefs.tone || aiPrefs.tone,
+            detail: profile.aiPrefs.detail || aiPrefs.detail,
+            language: profile.aiPrefs.language || aiPrefs.language,
+            dateFormat: profile.aiPrefs.dateFormat || aiPrefs.dateFormat,
+            instructions: profile.aiPrefs.instructions || ""
+          };
+        }
+
+        dateLocale = resolveDateLocale(aiPrefs);
+        currencySymbol = resolveCurrencySymbol(aiPrefs.language);
+      }
+
+      function applyHotelLogo(logoDataUrl) {
+        if (!logoIcon) return;
+
+        var img = document.getElementById("hotelLogoImg");
+        if (!logoDataUrl) {
+          if (img) img.remove();
+          logoIcon.classList.remove("has-hotel-logo");
+          return;
+        }
+
+        if (!img) {
+          img = document.createElement("img");
+          img.id = "hotelLogoImg";
+          img.alt = "Hotel logo";
+          logoIcon.appendChild(img);
+        }
+        img.src = logoDataUrl;
+        logoIcon.classList.add("has-hotel-logo");
+      }
+
+      function applyUiLabelsToPage() {
+        if (navHotelLabel) navHotelLabel.textContent = uiLabels.assistant;
+        if (pageTitle) pageTitle.textContent = uiLabels.assistant;
+        if (detailsCardTitle) detailsCardTitle.textContent = uiLabels.details;
+        if (notesCardTitle) notesCardTitle.textContent = uiLabels.notes;
+        if (generateBtnText) generateBtnText.textContent = uiLabels.generate;
+        if (copyBtnText) copyBtnText.textContent = uiLabels.copy;
+        if (saveHandoverBtnText) saveHandoverBtnText.textContent = uiLabels.save;
+        if (organisedOutputTitle) organisedOutputTitle.textContent = uiLabels.organised;
+        if (summaryLabel) summaryLabel.textContent = uiLabels.aiSummary;
+        if (savedHandoversTitle) savedHandoversTitle.textContent = uiLabels.saved;
+        if (savedHandoversEmpty) {
+          savedHandoversEmpty.textContent =
+            "No saved handovers yet. " + uiLabels.generate + " and click " + uiLabels.save + " to keep it locally.";
+        }
+        if (detailsCardDesc) {
+          detailsCardDesc.textContent = "Information included in this " + handoverTermLabel.toLowerCase() + " report.";
+        }
+        if (hotelSnapshotHint) {
+          hotelSnapshotHint.textContent =
+            "Enter metrics manually, or leave blank to extract from notes when you generate the " +
+            handoverTermLabel.toLowerCase() + ".";
+        }
+        if (notesCardSubtitle) {
+          notesCardSubtitle.textContent =
+            "Add the key information from your shift. Hospitality Flow will organise it into a clear, professional " +
+            handoverTermLabel.toLowerCase() + ".";
+        }
+        if (notesInput) {
+          notesInput.setAttribute("aria-label", uiLabels.notes);
+        }
+        document.title = uiLabels.assistant + " — Hospitality Flow";
+      }
+
+      function mergeTerminologyKeywords() {
+        if (!hotelProfile || !terminologyMap) return;
+        Object.keys(terminologyMap).forEach(function (key) {
+          var entry = terminologyMap[key];
+          if (!entry.term) return;
+          SECTIONS.forEach(function (section) {
+            if (section.id === "general" || section.id === "guest") {
+              if (section.keywords.indexOf(entry.term.toLowerCase()) === -1) {
+                section.keywords.push(entry.term.toLowerCase());
+              }
+            }
+          });
+        });
+      }
+
+      function populateDepartmentSelect() {
+        var current = department.value;
+        department.innerHTML = "";
+        configuredDepartments.forEach(function (name, index) {
+          var opt = document.createElement("option");
+          opt.value = name;
+          opt.textContent = name;
+          if (name === current || (!current && index === 0)) opt.selected = true;
+          department.appendChild(opt);
+        });
+        if (current && configuredDepartments.indexOf(current) === -1) {
+          var extra = document.createElement("option");
+          extra.value = current;
+          extra.textContent = current;
+          extra.selected = true;
+          department.insertBefore(extra, department.firstChild);
+        }
+      }
+
+      function getShiftButtonLabel(shift) {
+        var label = shift.name || shift.code;
+        if (shift.name && shift.code && shift.name !== shift.code) {
+          return shift.name + " (" + shift.code + ")";
+        }
+        return label;
+      }
+
+      function renderShiftSelector() {
+        if (!shiftSelector) return;
+        shiftSelector.innerHTML = "";
+        configuredShifts.forEach(function (shift, index) {
+          var btn = document.createElement("button");
+          btn.className = "shift-btn" + (index === 0 ? " active" : "");
+          btn.type = "button";
+          btn.setAttribute("data-shift", shift.code);
+          btn.textContent = getShiftButtonLabel(shift);
+          if (shift.start && shift.end) {
+            btn.title = shift.start + " – " + shift.end;
+          }
+          shiftSelector.appendChild(btn);
+        });
+        wireShiftButtons();
+      }
+
+      function wireShiftButtons() {
+        shiftButtons = document.querySelectorAll(".shift-btn");
+        shiftButtons.forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            shiftButtons.forEach(function (b) { b.classList.remove("active"); });
+            btn.classList.add("active");
+            selectedShift = btn.getAttribute("data-shift");
+          });
+        });
+      }
+
+      function restoreCopyButtonHtml() {
+        copyBtn.innerHTML =
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+          '<rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> ' +
+          '<span id="copyBtnText">' + uiLabels.copy + "</span>";
+        copyBtnText = document.getElementById("copyBtnText");
+      }
+
+      function getDefaultDepartment() {
+        return configuredDepartments[0] || "Reception";
+      }
+
+      function applyHotelProfileToUI() {
+        if (!hotelProfile) {
+          if (profileHint) profileHint.hidden = false;
+          applyHotelLogo("");
+          populateDepartmentSelect();
+          wireShiftButtons();
+          return;
+        }
+
+        if (profileHint) profileHint.hidden = true;
+
+        var general = hotelProfile.general || {};
+        if (general.hotelName && !hotelName.value.trim()) {
+          hotelName.value = general.hotelName;
+        }
+
+        applyHotelLogo(hotelLogoDataUrl);
+        populateDepartmentSelect();
+        renderShiftSelector();
+        selectedShift = configuredShifts[0] ? configuredShifts[0].code : "AM";
+        applyUiLabelsToPage();
+
+        if (general.hotelName) {
+          if (navHotelLabel) navHotelLabel.textContent = general.hotelName;
+          if (pageTitle) pageTitle.textContent = general.hotelName + " — " + uiLabels.assistant;
+          document.title = general.hotelName + " — " + uiLabels.assistant + " — Hospitality Flow";
+        }
+      }
+
+      function getShiftDisplayName(code) {
+        var match = configuredShifts.filter(function (s) { return s.code === code; })[0];
+        return match ? (match.name || match.code) : code;
+      }
+
+      function getDetailSentenceLimit() {
+        if (aiPrefs.detail === "brief") return 3;
+        if (aiPrefs.detail === "comprehensive") return 9;
+        return 6;
+      }
+
+      function applyToneToText(text) {
+        if (aiPrefs.tone === "friendly") {
+          return text
+            .replace(/\brequire immediate attention\b/gi, "need a quick look from the team")
+            .replace(/\brequires immediate management attention\b/gi, "needs management to take a look")
+            .replace(/\bshould be prioritised\b/gi, "should be top of the list")
+            .replace(/\bOverall the\b/g, "All in all, the");
+        }
+        if (aiPrefs.tone === "concise") {
+          return text
+            .replace(/\bOverall the\b/gi, "The")
+            .replace(/\bthat should be prioritised\b/gi, "to prioritise")
+            .replace(/\brequiring immediate attention\b/gi, "needing attention")
+            .replace(/\bfor the incoming team\b/gi, "next shift")
+            .replace(/\s+/g, " ")
+            .trim();
+        }
+        return text;
+      }
+
+      function applyLanguageVariant(text) {
+        var lang = aiPrefs.language || "British English";
+        if (lang === "American English") {
+          return text
+            .replace(/\bprioritised\b/gi, "prioritized")
+            .replace(/\borganised\b/gi, "organized")
+            .replace(/\brecognised\b/gi, "recognized")
+            .replace(/\bcentre\b/gi, "center");
+        }
+        if (lang === "British English") {
+          return text
+            .replace(/\bprioritized\b/gi, "prioritised")
+            .replace(/\borganized\b/gi, "organised")
+            .replace(/\brecognized\b/gi, "recognised")
+            .replace(/\bcenter\b/gi, "centre");
+        }
+        return text;
+      }
+
+      function applyCustomInstructions(text) {
+        var instructions = (aiPrefs.instructions || "").trim();
+        if (!instructions) return text;
+
+        instructions.split(/\n+/).forEach(function (line) {
+          var trimmed = line.trim();
+          if (!trimmed) return;
+
+          var useNotMatch = trimmed.match(/use\s+['"]?([^'"]+?)['"]?\s+not\s+['"]?([^'".]+?)['"]?/i);
+          if (useNotMatch) {
+            var preferred = useNotMatch[1].trim();
+            var avoid = useNotMatch[2].trim();
+            if (preferred && avoid) {
+              var re = new RegExp("\\b" + avoid.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\b", "gi");
+              text = text.replace(re, preferred);
+            }
+          }
+
+          var alwaysUseMatch = trimmed.match(/always\s+(?:refer to|use|call)\s+['"]?([^'"]+?)['"]?/i);
+          if (alwaysUseMatch && alwaysUseMatch[1]) {
+            var phrase = alwaysUseMatch[1].trim();
+            if (/guest/i.test(phrase) && /customer/i.test(trimmed)) {
+              text = text.replace(/\bcustomers?\b/gi, phrase.match(/guest/i) ? "guest" : phrase);
+            }
+          }
+        });
+
+        return text;
+      }
+
+      function applyTerminologyToText(text) {
+        if (!text) return text;
+        var result = text;
+
+        Object.keys(PLATFORM_LABELS).forEach(function (key) {
+          var platform = PLATFORM_LABELS[key];
+          var hotel = uiLabels[key];
+          if (platform && hotel && platform !== hotel) {
+            var re = new RegExp(platform.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
+            result = result.replace(re, hotel);
+          }
+        });
+
+        Object.keys(terminologyMap).forEach(function (key) {
+          var entry = terminologyMap[key];
+          if (!entry.term) return;
+          var re = new RegExp("\\b" + entry.term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\b", "gi");
+          if (re.test(result)) {
+            result = result.replace(re, entry.term);
+          }
+        });
+
+        return result;
+      }
+
+      function applyAiPreferencesToSummary(text) {
+        var processed = applyToneToText(text);
+        processed = applyLanguageVariant(processed);
+        processed = applyCustomInstructions(processed);
+        processed = applyTerminologyToText(processed);
+        return processed;
+      }
+
+      function formatTimestamp(date) {
+        if (dateLocale.isoDate) {
+          var yyyy = date.getFullYear();
+          var mm = String(date.getMonth() + 1).padStart(2, "0");
+          var dd = String(date.getDate()).padStart(2, "0");
+          var hh = String(date.getHours()).padStart(2, "0");
+          var min = String(date.getMinutes()).padStart(2, "0");
+          return yyyy + "-" + mm + "-" + dd + " " + hh + ":" + min;
+        }
+        return date.toLocaleString(dateLocale.locale, {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: dateLocale.hour12
+        });
+      }
+
+      hotelProfile = loadHotelProfileFromStorage();
+      applyHotelProfileConfig(hotelProfile);
+      mergeTerminologyKeywords();
+
+      var selectedShift = configuredShifts[0] ? configuredShifts[0].code : "AM";
       var lastHandoverText = "";
       var lastSummaryText = "";
       var lastGeneratedTime = "";
@@ -2073,12 +2772,19 @@
 
       function normalizeAdrInText(text) {
         if (!text || typeof text !== "string") return text;
+        var sym = currencySymbol;
         return text
           .replace(/\b(adr\s*[:\-]?\s*)\$\s*(\d+(?:\.\d+)?)/gi, function (_match, prefix, amount) {
-            return prefix + "£" + amount;
+            return prefix + sym + amount;
+          })
+          .replace(/\b(adr\s*[:\-]?\s*)£\s*(\d+(?:\.\d+)?)/gi, function (_match, prefix, amount) {
+            return prefix + sym + amount;
           })
           .replace(/\b\$\s*(\d+(?:\.\d+)?)\s+adr\b/gi, function (_match, amount) {
-            return "£" + amount + " ADR";
+            return sym + amount + " ADR";
+          })
+          .replace(/\b£\s*(\d+(?:\.\d+)?)\s+adr\b/gi, function (_match, amount) {
+            return sym + amount + " ADR";
           });
       }
 
@@ -2261,14 +2967,6 @@
         var dd = String(today.getDate()).padStart(2, "0");
         handoverDate.value = yyyy + "-" + mm + "-" + dd;
       }
-
-      shiftButtons.forEach(function (btn) {
-        btn.addEventListener("click", function () {
-          shiftButtons.forEach(function (b) { b.classList.remove("active"); });
-          btn.classList.add("active");
-          selectedShift = btn.getAttribute("data-shift");
-        });
-      });
 
       function updateCharCount() {
         var len = notesInput.value.length;
@@ -2824,7 +3522,12 @@
         if (!dateValue) return "Not specified";
         var parts = dateValue.split("-");
         var d = new Date(parts[0], parts[1] - 1, parts[2]);
-        return d.toLocaleDateString("en-GB", {
+        if (dateLocale.isoDate) {
+          var dd = String(d.getDate()).padStart(2, "0");
+          var mm = String(d.getMonth() + 1).padStart(2, "0");
+          return d.getFullYear() + "-" + mm + "-" + dd;
+        }
+        return d.toLocaleDateString(dateLocale.locale, {
           weekday: "long",
           day: "numeric",
           month: "long",
@@ -2836,7 +3539,7 @@
         return {
           hotel: hotelName.value.trim() || "Not specified",
           department: department.value || "Not specified",
-          shift: selectedShift,
+          shift: getShiftDisplayName(selectedShift),
           date: formatDisplayDate(handoverDate.value),
           preparedBy: preparedBy.value.trim() || "Not specified"
         };
@@ -2863,8 +3566,10 @@
       }
 
       function getShiftMetaIcon(shift) {
-        if (shift === "AM") return META_FIELD_ICONS.shiftAM;
-        if (shift === "Night") return META_FIELD_ICONS.shiftNight;
+        var code = String(shift || "").toLowerCase();
+        var displayName = getShiftDisplayName(shift).toLowerCase();
+        if (code === "am" || displayName.indexOf("morning") !== -1) return META_FIELD_ICONS.shiftAM;
+        if (code === "night" || code === "nt" || displayName.indexOf("night") !== -1) return META_FIELD_ICONS.shiftNight;
         return META_FIELD_ICONS.shiftPM;
       }
 
@@ -2911,8 +3616,12 @@
       }
 
       function getShiftLabel() {
-        if (selectedShift === "Night") return "night";
-        return selectedShift.toLowerCase() + " shift";
+        var name = getShiftDisplayName(selectedShift);
+        var lower = name.toLowerCase();
+        if (lower.indexOf("night") !== -1 || lower === "nt") return "night";
+        if (lower === "am" || lower.indexOf("morning") !== -1) return "morning shift";
+        if (lower === "pm" || lower.indexOf("afternoon") !== -1 || lower.indexOf("evening") !== -1) return "afternoon shift";
+        return lower + " shift";
       }
 
       function buildManagementAttentionSentence(managementNotes) {
@@ -3243,7 +3952,9 @@
         var sentences = [];
 
         sentences.push(buildOpeningSentence(metrics, analyzed));
-        sentences.push(buildGlanceSummarySentence(metrics));
+        if (aiPrefs.detail !== "brief") {
+          sentences.push(buildGlanceSummarySentence(metrics));
+        }
 
         var carriedSentence = buildCarriedOverSentence(analyzed.filter(function (n) {
           return n.isCarriedOver && isActiveNote(n);
@@ -3268,7 +3979,9 @@
         var roomSentence = buildRoomSummarySentence(analyzed);
         if (roomSentence && getUniqueRooms(analyzed).length >= 2) sentences.push(roomSentence);
 
-        return sentences.slice(0, 6).join(" ");
+        var limit = getDetailSentenceLimit();
+        var summary = sentences.slice(0, limit).join(" ");
+        return applyAiPreferencesToSummary(summary);
       }
 
       function showSummaryCard() {
@@ -3398,7 +4111,7 @@
           case "adr": {
             var adrText = trimmed.replace(/^adr\s*[:\-]?\s*/i, "").replace(/^[£$€]\s*/, "").trim();
             if (!adrText || !/\d/.test(adrText)) return "";
-            return "£" + adrText;
+            return currencySymbol + adrText;
           }
           default:
             return trimmed;
@@ -3460,7 +4173,7 @@
             var numeric = text.replace(/^[£$€]\s*/, "").replace(/,/g, "").trim();
             var num = parseFloat(numeric);
             if (isNaN(num)) return SNAPSHOT_EMPTY;
-            return "£" + num.toFixed(2);
+            return currencySymbol + num.toFixed(2);
           }
           case "occupancy": {
             var occNum = parseOccupancyNumber(text);
@@ -3902,7 +4615,7 @@
       function buildSummaryOverview(classified) {
         var metrics = getHandoverMetrics(classified);
         var analyzed = classified._analyzed || [];
-        return buildOpeningSentence(metrics, analyzed);
+        return applyAiPreferencesToSummary(buildOpeningSentence(metrics, analyzed));
       }
 
       function buildSummaryRowSentence(rowId, classified, metrics) {
@@ -3985,6 +4698,7 @@
 
           var sentence = buildSummaryRowSentence(row.id, classified, metrics);
           if (!sentence) return;
+          sentence = applyAiPreferencesToSummary(sentence);
 
           var el = document.createElement("div");
           el.className = "summary-row";
@@ -4074,7 +4788,7 @@
       }
 
       function setSelectedShift(shift) {
-        selectedShift = shift || "AM";
+        selectedShift = shift || (configuredShifts[0] ? configuredShifts[0].code : "AM");
         shiftButtons.forEach(function (btn) {
           btn.classList.toggle("active", btn.getAttribute("data-shift") === selectedShift);
         });
@@ -4082,7 +4796,17 @@
 
       function restoreSavedHandover(saved) {
         hotelName.value = saved.hotelName === "Not specified" ? "" : (saved.hotelName || "");
-        department.value = saved.department === "Not specified" ? "Reception" : (saved.department || "Reception");
+        var dept = saved.department === "Not specified" ? getDefaultDepartment() : (saved.department || getDefaultDepartment());
+        var deptFound = Array.from(department.options).some(function (opt) { return opt.value === dept; });
+        if (deptFound) {
+          department.value = dept;
+        } else {
+          var opt = document.createElement("option");
+          opt.value = dept;
+          opt.textContent = dept;
+          opt.selected = true;
+          department.insertBefore(opt, department.firstChild);
+        }
         preparedBy.value = saved.preparedBy === "Not specified" ? "" : (saved.preparedBy || "");
         setSelectedShift(saved.shift || "AM");
         handoverDate.value = saved.date || handoverDate.value;
@@ -4099,10 +4823,7 @@
         renderShiftAtAGlance(lastClassified);
         renderPreHandoverSnapshot();
         lastGeneratedTime = saved.timestamp
-          ? new Date(saved.timestamp).toLocaleString("en-GB", {
-              day: "numeric", month: "short", year: "numeric",
-              hour: "2-digit", minute: "2-digit"
-            })
+          ? formatTimestamp(new Date(saved.timestamp))
           : "Restored from saved handover";
         renderHandoverMeta(lastGeneratedTime);
         renderSummaryStats(lastClassified);
@@ -4113,6 +4834,7 @@
         outputSection.classList.add("visible");
         copyBtn.disabled = false;
         exportPdfBtn.disabled = false;
+        printHandoverBtn.disabled = false;
         saveHandoverBtn.disabled = false;
 
         outputSection.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -4123,9 +4845,13 @@
         var parts = [];
         var meta = getHotelMeta();
         var now = new Date();
-        var timeStr = now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+        var timeStr = now.toLocaleTimeString(dateLocale.locale, {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: dateLocale.hour12
+        });
 
-        parts.push("SHIFT HANDOVER — Hospitality Flow");
+        parts.push(uiLabels.organised.toUpperCase() + " — Hospitality Flow");
         parts.push("════════════════════════════════");
         parts.push("Hotel:       " + meta.hotel);
         parts.push("Department:  " + meta.department);
@@ -4139,7 +4865,7 @@
           parts.push(line);
         });
         parts.push("");
-        parts.push("AI SUMMARY");
+        parts.push(uiLabels.aiSummary.toUpperCase());
         parts.push(lastSummaryText);
         parts.push("");
 
@@ -4237,10 +4963,7 @@
           renderSummaryUI(classified);
           renderShiftAtAGlance(classified);
           renderPreHandoverSnapshot();
-          lastGeneratedTime = now.toLocaleString("en-GB", {
-            day: "numeric", month: "short", year: "numeric",
-            hour: "2-digit", minute: "2-digit"
-          });
+          lastGeneratedTime = formatTimestamp(now);
           renderHandoverMeta(lastGeneratedTime);
           renderSummaryStats(classified);
           showSummaryCard();
@@ -4250,11 +4973,12 @@
           outputSection.classList.add("visible");
           copyBtn.disabled = false;
           exportPdfBtn.disabled = false;
+          printHandoverBtn.disabled = false;
           saveHandoverBtn.disabled = false;
 
           generateBtn.classList.remove("loading");
           generateBtn.disabled = false;
-          showToast("Handover generated successfully!");
+          showToast(uiLabels.handover + " generated successfully!");
 
           document.getElementById(shiftGlance.classList.contains("is-visible") ? "shiftGlance" : "summaryCard")
             .scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -4277,7 +5001,7 @@
           if (!def.count) return;
           var sentence = buildSummaryRowSentence(def.id, classified, metrics);
           if (!sentence) return;
-          rows.push({ heading: def.heading, text: sentence });
+          rows.push({ heading: def.heading, text: applyAiPreferencesToSummary(sentence) });
         });
 
         return {
@@ -4300,6 +5024,14 @@
         }).filter(function (section) { return section; });
       }
 
+      function printHandover() {
+        if (!lastClassified) {
+          showToast("Generate a handover before printing.");
+          return;
+        }
+        window.print();
+      }
+
       function exportHandoverPdf() {
         if (!lastClassified) {
           showToast("Generate a handover first.");
@@ -4316,10 +5048,7 @@
           var now = new Date();
           HandoverPdfExporter.export({
             meta: getPdfMeta(),
-            generatedAt: now.toLocaleString("en-GB", {
-              day: "numeric", month: "short", year: "numeric",
-              hour: "2-digit", minute: "2-digit"
-            }),
+            generatedAt: formatTimestamp(now),
             metrics: getHandoverMetrics(lastClassified),
             hotelSnapshot: buildHotelSnapshotForPdf(),
             summary: buildPdfSummaryPayload(lastClassified),
@@ -4349,8 +5078,7 @@
           showToast("Handover copied to clipboard.");
           setTimeout(function () {
             copyBtn.classList.remove("copied");
-            copyBtn.innerHTML =
-              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy Handover';
+            restoreCopyButtonHtml();
           }, 2000);
         };
 
@@ -4401,10 +5129,10 @@
         renderPreHandoverSnapshot();
         copyBtn.disabled = true;
         exportPdfBtn.disabled = true;
+        printHandoverBtn.disabled = true;
         saveHandoverBtn.disabled = true;
         copyBtn.classList.remove("copied");
-        copyBtn.innerHTML =
-          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy Handover';
+        restoreCopyButtonHtml();
         notesInput.focus();
         showToast("Notes cleared.");
       }
@@ -4413,6 +5141,7 @@
       generateBtn.addEventListener("click", generateHandover);
       copyBtn.addEventListener("click", copyHandover);
       exportPdfBtn.addEventListener("click", exportHandoverPdf);
+      printHandoverBtn.addEventListener("click", printHandover);
       saveHandoverBtn.addEventListener("click", function () {
         if (window.HandoverSaved) HandoverSaved.handleSaveClick();
       });
@@ -4425,6 +5154,7 @@
         }
       });
 
+      applyHotelProfileToUI();
       initDate();
       updateCharCount();
       renderPreHandoverSnapshot();
