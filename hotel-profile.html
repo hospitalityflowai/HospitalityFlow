@@ -134,8 +134,9 @@
     .dept-card-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
     .dept-card-icon { width: 32px; height: 32px; border-radius: 8px; background: var(--white); border: 1px solid var(--gray-200); display: flex; align-items: center; justify-content: center; color: var(--blue-600); }
     .dept-card-icon svg { width: 15px; height: 15px; }
-    .dept-card input.dept-name { width: 100%; padding: 8px 10px; font-size: .88rem; font-weight: 600; color: var(--navy-900); border: 1px solid transparent; border-radius: 6px; background: transparent; margin-bottom: 8px; }
-    .dept-card input.dept-name:focus { outline: none; background: var(--white); border-color: var(--blue-500); }
+    .dept-card input.dept-name { width: 100%; padding: 8px 10px; font-size: .88rem; font-weight: 600; color: var(--navy-900); border: 1px solid var(--gray-200); border-radius: 6px; background: var(--white); margin-bottom: 8px; }
+    .dept-card input.dept-name:focus { outline: none; border-color: var(--blue-500); box-shadow: 0 0 0 3px rgba(74,143,196,.1); }
+    .dept-card input.dept-name::placeholder { font-weight: 500; color: var(--gray-400); }
     .dept-card input.dept-head { width: 100%; padding: 7px 10px; font-size: .78rem; color: var(--gray-500); border: 1px solid var(--gray-200); border-radius: 6px; background: var(--white); }
     .dept-card input.dept-head:focus { outline: none; border-color: var(--blue-500); }
     .shift-pattern-selector { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
@@ -144,9 +145,22 @@
     .shift-pattern-btn.active { background: var(--navy-800); border-color: var(--navy-800); color: var(--white); box-shadow: 0 2px 8px rgba(18,34,64,.2); }
     .shift-pattern-btn small { display: block; font-size: .68rem; font-weight: 500; opacity: .85; margin-top: 3px; }
     .brand-identity-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; grid-column: 1 / -1; }
-    .logo-upload { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: 130px; padding: 20px; background: var(--gray-50); border: 1.5px dashed var(--gray-300); border-radius: var(--radius-lg); text-align: center; transition: all var(--transition); cursor: pointer; }
+    .logo-upload { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: 130px; padding: 20px; background: var(--gray-50); border: 1.5px dashed var(--gray-300); border-radius: var(--radius-lg); text-align: center; transition: all var(--transition); cursor: pointer; position: relative; }
     .logo-upload:hover { border-color: var(--blue-500); background: var(--blue-50); }
     .logo-upload:focus { outline: none; border-color: var(--blue-500); box-shadow: 0 0 0 3px rgba(74,143,196,.12); }
+    .logo-upload--has-logo { padding: 12px; }
+    .logo-upload-placeholder { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .logo-upload-preview { display: none; max-width: 100%; max-height: 110px; object-fit: contain; border-radius: 6px; pointer-events: none; }
+    .logo-upload--has-logo .logo-upload-placeholder { display: none; }
+    .logo-upload--has-logo .logo-upload-preview { display: block; }
+    .logo-delete-btn { position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; display: none; align-items: center; justify-content: center; border: 1px solid var(--gray-200); border-radius: 8px; background: var(--white); color: var(--gray-500); box-shadow: var(--shadow-sm); transition: all var(--transition); z-index: 1; }
+    .logo-delete-btn:hover { background: var(--red-50); color: #c94a4a; border-color: #f5c2c2; }
+    .logo-delete-btn svg { width: 13px; height: 13px; pointer-events: none; }
+    .logo-upload--has-logo .logo-delete-btn { display: flex; }
+    .logo-error { font-size: .74rem; font-weight: 500; color: var(--red-500); min-height: 1.1em; }
+    .logo-remove-btn { align-self: flex-start; margin-top: 2px; padding: 0; font-size: .78rem; font-weight: 600; color: var(--gray-400); transition: color var(--transition); }
+    .logo-remove-btn:hover { color: #c94a4a; }
+    .brand-color-hex::placeholder { color: var(--gray-300); }
     .logo-upload-icon { width: 40px; height: 40px; border-radius: 10px; background: var(--white); border: 1px solid var(--gray-200); display: flex; align-items: center; justify-content: center; color: var(--gray-400); }
     .logo-upload-icon svg { width: 18px; height: 18px; }
     .logo-upload strong { font-size: .84rem; font-weight: 600; color: var(--navy-800); }
@@ -157,6 +171,9 @@
     .brand-color-swatch input[type="color"] { width: 100%; height: 100%; border: none; padding: 0; cursor: pointer; background: none; }
     .brand-color-swatch input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
     .brand-color-swatch input[type="color"]::-webkit-color-swatch { border: none; border-radius: 6px; }
+    .brand-color-swatch.is-empty input[type="color"] { opacity: 0; position: absolute; }
+    .brand-color-swatch.is-empty { position: relative; background: var(--gray-100); }
+    .brand-color-swatch.is-empty::after { content: ''; position: absolute; inset: 3px; border-radius: 6px; border: 1px dashed var(--gray-300); }
     .brand-color-hex { flex: 1; min-width: 0; }
     .color-presets { display: flex; flex-wrap: wrap; gap: 6px; }
     .color-preset { width: 28px; height: 28px; border-radius: 7px; border: 2px solid var(--white); box-shadow: 0 0 0 1px var(--gray-200); cursor: pointer; transition: transform var(--transition), box-shadow var(--transition); }
@@ -164,6 +181,12 @@
     .color-preset.active { box-shadow: 0 0 0 2px var(--blue-500); }
     .subsection-heading { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--gray-500); margin-bottom: 14px; }
     .subsection-divider { height: 1px; background: var(--gray-100); margin: 28px 0 22px; border: none; }
+    .pet-rooms-section { margin-top: 28px; }
+    .pet-rooms-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; max-width: 320px; }
+    .pet-room-chip { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: var(--radius); }
+    .pet-room-chip-label { font-size: .78rem; font-weight: 600; color: var(--navy-800); white-space: nowrap; }
+    .pet-room-chip input { flex: 1; min-width: 0; padding: 7px 10px; font-size: .84rem; border: 1px solid var(--gray-200); border-radius: 6px; background: var(--white); }
+    .pet-room-chip input:focus { outline: none; border-color: var(--blue-500); box-shadow: 0 0 0 2px rgba(74,143,196,.1); }
     .inventory-list { display: flex; flex-direction: column; gap: 10px; }
     .inventory-item { position: relative; padding: 14px 16px 14px 14px; background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: var(--radius); transition: border-color var(--transition), box-shadow var(--transition); }
     .inventory-item:hover { border-color: var(--gray-300); box-shadow: var(--shadow-sm); }
@@ -200,6 +223,7 @@
       .term-row { grid-template-columns: 1fr; }
       .profile-hero-top { flex-direction: column; }
       .brand-identity-row { grid-template-columns: 1fr; }
+      .pet-rooms-grid { grid-template-columns: 1fr; max-width: none; }
       .inventory-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .inventory-grid--flags { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .inventory-field.span-2 { grid-column: span 1; }
@@ -336,32 +360,42 @@
                     <span class="form-helper">Parent group or management company, if applicable.</span>
                   </div>
                   <div class="form-group">
-                    <label class="form-label" for="propertyCode">Property Code</label>
-                    <input class="form-input" type="text" id="propertyCode" placeholder="e.g. RVB-01" maxlength="16">
+                    <label class="form-label" for="hotelCode">Hotel Code</label>
+                    <input class="form-input" type="text" id="hotelCode" placeholder="e.g. RVB-01" maxlength="16">
                     <span class="form-helper">Short internal identifier for this property.</span>
                   </div>
                   <div class="brand-identity-row">
                     <div class="form-group">
                       <span class="form-label" id="logoLabel">Hotel Logo</span>
+                      <span class="form-helper">Upload your hotel's official logo (PNG, JPG, JPEG, WEBP, or SVG). This logo will be used across Hospitality Flow tools, generated documents, PDF exports, and future branding.</span>
+                      <input type="file" id="logoInput" accept=".png,.jpg,.jpeg,.webp,.svg,image/png,image/jpeg,image/webp,image/svg+xml" hidden>
                       <div class="logo-upload" id="logoUpload" role="button" tabindex="0" aria-labelledby="logoLabel">
-                        <div class="logo-upload-icon" aria-hidden="true">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                        <button type="button" class="logo-delete-btn" id="logoDelete" aria-label="Remove logo" title="Remove logo">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </button>
+                        <div class="logo-upload-placeholder" id="logoPlaceholder">
+                          <div class="logo-upload-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                          </div>
+                          <strong>Click to upload logo</strong>
+                          <small>PNG, JPG, JPEG, WEBP, or SVG · max 2 MB</small>
                         </div>
-                        <strong>Upload hotel logo</strong>
-                        <small>PNG or SVG · max 2 MB</small>
+                        <img class="logo-upload-preview" id="logoPreview" alt="Hotel logo preview">
                       </div>
+                      <p class="logo-error" id="logoError" role="alert"></p>
+                      <button type="button" class="logo-remove-btn" id="logoRemove" hidden>Remove logo</button>
                     </div>
                     <div class="form-group">
                       <label class="form-label" for="brandColor">Primary Brand Colour</label>
                       <div class="brand-color-wrap">
                         <div class="brand-color-input-row">
-                          <label class="brand-color-swatch" for="brandColor" aria-label="Pick brand colour">
-                            <input type="color" id="brandColor" value="#4a8fc4">
+                          <label class="brand-color-swatch is-empty" for="brandColor" aria-label="Pick brand colour">
+                            <input type="color" id="brandColor">
                           </label>
-                          <input class="form-input brand-color-hex" type="text" id="brandColorHex" value="#4a8fc4" placeholder="#4a8fc4" maxlength="7">
+                          <input class="form-input brand-color-hex" type="text" id="brandColorHex" value="" placeholder="" maxlength="7" autocomplete="off">
                         </div>
                         <div class="color-presets" role="group" aria-label="Brand colour presets">
-                          <button type="button" class="color-preset active" data-color="#4a8fc4" style="background:#4a8fc4" aria-label="Blue"></button>
+                          <button type="button" class="color-preset" data-color="#4a8fc4" style="background:#4a8fc4" aria-label="Blue"></button>
                           <button type="button" class="color-preset" data-color="#122240" style="background:#122240" aria-label="Navy"></button>
                           <button type="button" class="color-preset" data-color="#2d8a5e" style="background:#2d8a5e" aria-label="Green"></button>
                           <button type="button" class="color-preset" data-color="#7c5cbf" style="background:#7c5cbf" aria-label="Purple"></button>
@@ -448,8 +482,8 @@
                   <table class="editable-table" id="roomTable">
                     <thead>
                       <tr>
+                        <th>Room Type Code</th>
                         <th>Room Type</th>
-                        <th>Category</th>
                         <th>Count</th>
                         <th>Floor(s)</th>
                         <th>Max Guests</th>
@@ -458,27 +492,35 @@
                     </thead>
                     <tbody id="roomTableBody">
                       <tr>
-                        <td><input type="text" value="Standard Double" placeholder="Type name"></td>
-                        <td><select><option>Standard</option><option>Superior</option><option>Deluxe</option><option>Suite</option><option>Accessible</option></select></td>
-                        <td><input type="number" value="18" min="0"></td>
-                        <td><input type="text" value="1–3" placeholder="e.g. 1–3"></td>
+                        <td><input type="text" value="DDB" placeholder="Code"></td>
+                        <td><input type="text" value="Deluxe Double" placeholder="Type name"></td>
+                        <td><input type="number" value="10" min="0"></td>
+                        <td><input type="text" value="1–4" placeholder="e.g. 1–3"></td>
                         <td><input type="number" value="2" min="1"></td>
                         <td><button type="button" class="icon-btn remove-row" aria-label="Remove row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>
                       </tr>
                       <tr>
+                        <td><input type="text" value="DDK" placeholder="Code"></td>
                         <td><input type="text" value="Deluxe King" placeholder="Type name"></td>
-                        <td><select><option>Standard</option><option>Superior</option><option selected>Deluxe</option><option>Suite</option><option>Accessible</option></select></td>
-                        <td><input type="number" value="12" min="0"></td>
-                        <td><input type="text" value="2–4" placeholder="e.g. 2–4"></td>
+                        <td><input type="number" value="9" min="0"></td>
+                        <td><input type="text" value="Lower Ground" placeholder="e.g. 1–3"></td>
                         <td><input type="number" value="2" min="1"></td>
                         <td><button type="button" class="icon-btn remove-row" aria-label="Remove row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>
                       </tr>
                       <tr>
-                        <td><input type="text" value="Executive Suite" placeholder="Type name"></td>
-                        <td><select><option>Standard</option><option>Superior</option><option>Deluxe</option><option selected>Suite</option><option>Accessible</option></select></td>
+                        <td><input type="text" value="JNS" placeholder="Code"></td>
+                        <td><input type="text" value="Junior Suite" placeholder="Type name"></td>
                         <td><input type="number" value="4" min="0"></td>
-                        <td><input type="text" value="4" placeholder="e.g. 4"></td>
+                        <td><input type="text" value="2–4" placeholder="e.g. 2–4"></td>
                         <td><input type="number" value="3" min="1"></td>
+                        <td><button type="button" class="icon-btn remove-row" aria-label="Remove row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>
+                      </tr>
+                      <tr>
+                        <td><input type="text" value="LL" placeholder="Code"></td>
+                        <td><input type="text" value="Lear's Loft" placeholder="Type name"></td>
+                        <td><input type="number" value="1" min="0"></td>
+                        <td><input type="text" value="4" placeholder="e.g. 4"></td>
+                        <td><input type="number" value="2" min="1"></td>
                         <td><button type="button" class="icon-btn remove-row" aria-label="Remove row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>
                       </tr>
                     </tbody>
@@ -488,6 +530,21 @@
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                   Add room type
                 </button>
+
+                <div class="pet-rooms-section" id="petRooms">
+                  <h3 class="subsection-heading">Pet Rooms</h3>
+                  <p class="form-helper" style="margin-bottom: 12px;">VIP Very Important Pup rooms</p>
+                  <div class="pet-rooms-grid">
+                    <div class="pet-room-chip">
+                      <span class="pet-room-chip-label">Room</span>
+                      <input type="text" id="petRoom1" value="2" placeholder="e.g. 2" aria-label="Pet room number 1">
+                    </div>
+                    <div class="pet-room-chip">
+                      <span class="pet-room-chip-label">Room</span>
+                      <input type="text" id="petRoom2" value="41" placeholder="e.g. 41" aria-label="Pet room number 2">
+                    </div>
+                  </div>
+                </div>
 
                 <hr class="subsection-divider" id="room-inventory">
 
@@ -502,20 +559,19 @@
                     <div class="inventory-grid">
                       <div class="inventory-field">
                         <span class="inventory-field-label">Room No. / Name</span>
-                        <input type="text" value="101" placeholder="e.g. 101">
+                        <input type="text" value="1" placeholder="e.g. 101">
                       </div>
                       <div class="inventory-field">
                         <span class="inventory-field-label">Floor</span>
-                        <input type="text" value="1" placeholder="e.g. 1">
+                        <input type="text" value="Lower Ground Floor" placeholder="e.g. 1">
                       </div>
                       <div class="inventory-field">
                         <span class="inventory-field-label">Room Category</span>
                         <select>
-                          <option selected>Standard</option>
-                          <option>Superior</option>
-                          <option>Deluxe</option>
-                          <option>Suite</option>
-                          <option>Accessible</option>
+                          <option>Deluxe Double</option>
+                          <option selected>Deluxe King</option>
+                          <option>Junior Suite</option>
+                          <option>Lear's Loft</option>
                         </select>
                       </div>
                       <div class="inventory-field">
@@ -553,38 +609,37 @@
                     <div class="inventory-grid">
                       <div class="inventory-field">
                         <span class="inventory-field-label">Room No. / Name</span>
-                        <input type="text" value="408" placeholder="e.g. 408">
+                        <input type="text" value="2" placeholder="e.g. 101">
                       </div>
                       <div class="inventory-field">
                         <span class="inventory-field-label">Floor</span>
-                        <input type="text" value="4" placeholder="e.g. 4">
+                        <input type="text" value="Lower Ground Floor" placeholder="e.g. 1">
                       </div>
                       <div class="inventory-field">
                         <span class="inventory-field-label">Room Category</span>
                         <select>
-                          <option>Standard</option>
-                          <option>Superior</option>
-                          <option>Deluxe</option>
-                          <option selected>Suite</option>
-                          <option>Accessible</option>
+                          <option>Deluxe Double</option>
+                          <option selected>Deluxe King</option>
+                          <option>Junior Suite</option>
+                          <option>Lear's Loft</option>
                         </select>
                       </div>
                       <div class="inventory-field">
                         <span class="inventory-field-label">Bathroom Type</span>
                         <select>
-                          <option>En-suite shower</option>
-                          <option selected>En-suite bath</option>
+                          <option selected>En-suite shower</option>
+                          <option>En-suite bath</option>
                           <option>Wet room</option>
                           <option>Shared</option>
                         </select>
                       </div>
                       <div class="inventory-field">
                         <span class="inventory-field-label">Max Guests</span>
-                        <input type="number" value="3" min="1" max="10">
+                        <input type="number" value="2" min="1" max="10">
                       </div>
                       <div class="inventory-field">
                         <span class="inventory-field-label">Interconnecting</span>
-                        <input type="text" placeholder="e.g. 409" value="409">
+                        <input type="text" placeholder="e.g. 102" value="">
                       </div>
                     </div>
                     <div class="inventory-grid inventory-grid--flags">
@@ -593,7 +648,205 @@
                     </div>
                     <div class="inventory-field inventory-field--notes">
                       <span class="inventory-field-label">Operational Notes</span>
-                      <input type="text" value="Executive Suite — river view, preferred for VIP arrivals">
+                      <input type="text" value="VIP Very Important Pup room">
+                    </div>
+                  </div>
+                  <div class="inventory-item" data-inventory>
+                    <div class="inventory-item-header">
+                      <span class="inventory-item-label">Room entry</span>
+                      <button type="button" class="icon-btn remove-inventory" aria-label="Remove room"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                    </div>
+                    <div class="inventory-grid">
+                      <div class="inventory-field">
+                        <span class="inventory-field-label">Room No. / Name</span>
+                        <input type="text" value="23" placeholder="e.g. 101">
+                      </div>
+                      <div class="inventory-field">
+                        <span class="inventory-field-label">Floor</span>
+                        <input type="text" value="2" placeholder="e.g. 1">
+                      </div>
+                      <div class="inventory-field">
+                        <span class="inventory-field-label">Room Category</span>
+                        <select>
+                          <option selected>Deluxe Double</option>
+                          <option>Deluxe King</option>
+                          <option>Junior Suite</option>
+                          <option>Lear's Loft</option>
+                        </select>
+                      </div>
+                      <div class="inventory-field">
+                        <span class="inventory-field-label">Bathroom Type</span>
+                        <select>
+                          <option selected>En-suite shower</option>
+                          <option>En-suite bath</option>
+                          <option>Wet room</option>
+                          <option>Shared</option>
+                        </select>
+                      </div>
+                      <div class="inventory-field">
+                        <span class="inventory-field-label">Max Guests</span>
+                        <input type="number" value="2" min="1" max="10">
+                      </div>
+                      <div class="inventory-field">
+                        <span class="inventory-field-label">Interconnecting</span>
+                        <input type="text" placeholder="e.g. 102" value="">
+                      </div>
+                    </div>
+                    <div class="inventory-grid inventory-grid--flags">
+                      <label class="inventory-toggle"><input type="checkbox" checked> Accessible</label>
+                      <label class="inventory-toggle"><input type="checkbox"> VIP suitable</label>
+                    </div>
+                    <div class="inventory-field inventory-field--notes">
+                      <span class="inventory-field-label">Operational Notes</span>
+                      <input type="text" placeholder="e.g. Quiet corridor, away from lift">
+                    </div>
+                  </div>
+                  <div class="inventory-item" data-inventory>
+                    <div class="inventory-item-header">
+                      <span class="inventory-item-label">Room entry</span>
+                      <button type="button" class="icon-btn remove-inventory" aria-label="Remove room"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                    </div>
+                    <div class="inventory-grid">
+                      <div class="inventory-field">
+                        <span class="inventory-field-label">Room No. / Name</span>
+                        <input type="text" value="41" placeholder="e.g. 101">
+                      </div>
+                      <div class="inventory-field">
+                        <span class="inventory-field-label">Floor</span>
+                        <input type="text" value="4" placeholder="e.g. 1">
+                      </div>
+                      <div class="inventory-field">
+                        <span class="inventory-field-label">Room Category</span>
+                        <select>
+                          <option>Deluxe Double</option>
+                          <option selected>Deluxe King</option>
+                          <option>Junior Suite</option>
+                          <option>Lear's Loft</option>
+                        </select>
+                      </div>
+                      <div class="inventory-field">
+                        <span class="inventory-field-label">Bathroom Type</span>
+                        <select>
+                          <option selected>En-suite shower</option>
+                          <option>En-suite bath</option>
+                          <option>Wet room</option>
+                          <option>Shared</option>
+                        </select>
+                      </div>
+                      <div class="inventory-field">
+                        <span class="inventory-field-label">Max Guests</span>
+                        <input type="number" value="2" min="1" max="10">
+                      </div>
+                      <div class="inventory-field">
+                        <span class="inventory-field-label">Interconnecting</span>
+                        <input type="text" placeholder="e.g. 102" value="">
+                      </div>
+                    </div>
+                    <div class="inventory-grid inventory-grid--flags">
+                      <label class="inventory-toggle"><input type="checkbox"> Accessible</label>
+                      <label class="inventory-toggle"><input type="checkbox" checked> VIP suitable</label>
+                    </div>
+                    <div class="inventory-field inventory-field--notes">
+                      <span class="inventory-field-label">Operational Notes</span>
+                      <input type="text" value="VIP Very Important Pup room">
+                    </div>
+                  </div>
+                  <div class="inventory-item" data-inventory>
+                    <div class="inventory-item-header">
+                      <span class="inventory-item-label">Room entry</span>
+                      <button type="button" class="icon-btn remove-inventory" aria-label="Remove room"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                    </div>
+                    <div class="inventory-grid">
+                      <div class="inventory-field">
+                        <span class="inventory-field-label">Room No. / Name</span>
+                        <input type="text" value="33" placeholder="e.g. 101">
+                      </div>
+                      <div class="inventory-field">
+                        <span class="inventory-field-label">Floor</span>
+                        <input type="text" value="3" placeholder="e.g. 1">
+                      </div>
+                      <div class="inventory-field">
+                        <span class="inventory-field-label">Room Category</span>
+                        <select>
+                          <option selected>Deluxe Double</option>
+                          <option>Deluxe King</option>
+                          <option>Junior Suite</option>
+                          <option>Lear's Loft</option>
+                        </select>
+                      </div>
+                      <div class="inventory-field">
+                        <span class="inventory-field-label">Bathroom Type</span>
+                        <select>
+                          <option selected>En-suite shower</option>
+                          <option>En-suite bath</option>
+                          <option>Wet room</option>
+                          <option>Shared</option>
+                        </select>
+                      </div>
+                      <div class="inventory-field">
+                        <span class="inventory-field-label">Max Guests</span>
+                        <input type="number" value="2" min="1" max="10">
+                      </div>
+                      <div class="inventory-field">
+                        <span class="inventory-field-label">Interconnecting</span>
+                        <input type="text" placeholder="e.g. 102" value="">
+                      </div>
+                    </div>
+                    <div class="inventory-grid inventory-grid--flags">
+                      <label class="inventory-toggle"><input type="checkbox" checked> Accessible</label>
+                      <label class="inventory-toggle"><input type="checkbox"> VIP suitable</label>
+                    </div>
+                    <div class="inventory-field inventory-field--notes">
+                      <span class="inventory-field-label">Operational Notes</span>
+                      <input type="text" placeholder="e.g. Quiet corridor, away from lift">
+                    </div>
+                  </div>
+                  <div class="inventory-item" data-inventory>
+                    <div class="inventory-item-header">
+                      <span class="inventory-item-label">Room entry</span>
+                      <button type="button" class="icon-btn remove-inventory" aria-label="Remove room"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                    </div>
+                    <div class="inventory-grid">
+                      <div class="inventory-field">
+                        <span class="inventory-field-label">Room No. / Name</span>
+                        <input type="text" value="43" placeholder="e.g. 101">
+                      </div>
+                      <div class="inventory-field">
+                        <span class="inventory-field-label">Floor</span>
+                        <input type="text" value="4" placeholder="e.g. 1">
+                      </div>
+                      <div class="inventory-field">
+                        <span class="inventory-field-label">Room Category</span>
+                        <select>
+                          <option selected>Deluxe Double</option>
+                          <option>Deluxe King</option>
+                          <option>Junior Suite</option>
+                          <option>Lear's Loft</option>
+                        </select>
+                      </div>
+                      <div class="inventory-field">
+                        <span class="inventory-field-label">Bathroom Type</span>
+                        <select>
+                          <option selected>En-suite shower</option>
+                          <option>Shared</option>
+                        </select>
+                      </div>
+                      <div class="inventory-field">
+                        <span class="inventory-field-label">Max Guests</span>
+                        <input type="number" value="2" min="1" max="10">
+                      </div>
+                      <div class="inventory-field">
+                        <span class="inventory-field-label">Interconnecting</span>
+                        <input type="text" placeholder="e.g. 102" value="">
+                      </div>
+                    </div>
+                    <div class="inventory-grid inventory-grid--flags">
+                      <label class="inventory-toggle"><input type="checkbox" checked> Accessible</label>
+                      <label class="inventory-toggle"><input type="checkbox"> VIP suitable</label>
+                    </div>
+                    <div class="inventory-field inventory-field--notes">
+                      <span class="inventory-field-label">Operational Notes</span>
+                      <input type="text" placeholder="e.g. Quiet corridor, away from lift">
                     </div>
                   </div>
                 </div>
@@ -624,7 +877,7 @@
                       <div class="dept-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
                       <button type="button" class="icon-btn remove-dept" aria-label="Remove department"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
                     </div>
-                    <input class="dept-name" type="text" value="Reception" placeholder="Department name">
+                    <input class="dept-name" type="text" value="In Front of House" placeholder="Department name">
                     <input class="dept-head" type="text" placeholder="Head of department">
                   </div>
                   <div class="dept-card" data-dept>
@@ -881,15 +1134,46 @@
 
   <script>
     (function () {
+      var STORAGE_KEY = 'hospitalityFlow_hotelProfile';
+      var LOGO_MAX_BYTES = 2 * 1024 * 1024;
+      var LOGO_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/svg+xml'];
+      var LOGO_EXTS = ['.png', '.jpg', '.jpeg', '.webp', '.svg'];
+
       var saveStatus = document.getElementById('saveStatus');
       var saveBtn = document.getElementById('saveBtn');
       var sectionLinks = document.querySelectorAll('.section-nav-link, .mobile-nav-link');
       var sections = document.querySelectorAll('.profile-card[id]');
+      var isRestoring = false;
+      var lastSavedAt = null;
+      var currentLogoDataUrl = '';
+
+      var roomBody = document.getElementById('roomTableBody');
+      var shiftBody = document.getElementById('shiftTableBody');
+      var termList = document.getElementById('termList');
+      var deptGrid = document.getElementById('deptGrid');
+      var inventoryList = document.getElementById('inventoryList');
+
+      var brandColor = document.getElementById('brandColor');
+      var brandColorHex = document.getElementById('brandColorHex');
+      var brandColorSwatch = document.querySelector('.brand-color-swatch');
+      var colorPresets = document.querySelectorAll('.color-preset');
+
+      var logoInput = document.getElementById('logoInput');
+      var logoUpload = document.getElementById('logoUpload');
+      var logoPreview = document.getElementById('logoPreview');
+      var logoError = document.getElementById('logoError');
+      var logoRemove = document.getElementById('logoRemove');
+      var logoDelete = document.getElementById('logoDelete');
+
+      var roomRowTemplate = '<td><input type="text" placeholder="Code"></td><td><input type="text" placeholder="Type name"></td><td><input type="number" value="1" min="0"></td><td><input type="text" placeholder="e.g. 1–3"></td><td><input type="number" value="2" min="1"></td><td><button type="button" class="icon-btn remove-row" aria-label="Remove row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>';
+      var shiftRowTemplate = '<td><input type="text" placeholder="Code"></td><td><input type="text" placeholder="Name"></td><td><input type="time" value="09:00"></td><td><input type="time" value="17:00"></td><td><input type="text" placeholder="Dept"></td><td><button type="button" class="icon-btn remove-row" aria-label="Remove shift"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>';
+      var termRowTemplate = '<input type="text" placeholder="Term / abbreviation"><input type="text" placeholder="Definition or usage"><button type="button" class="icon-btn remove-term" aria-label="Remove term"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>';
+      var deptCardTemplate = '<div class="dept-card-header"><div class="dept-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div><button type="button" class="icon-btn remove-dept" aria-label="Remove department"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div><input class="dept-name" type="text" placeholder="Department name"><input class="dept-head" type="text" placeholder="Head of department">';
+      var inventoryTemplate = '<div class="inventory-item" data-inventory><div class="inventory-item-header"><span class="inventory-item-label">Room entry</span><button type="button" class="icon-btn remove-inventory" aria-label="Remove room"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div><div class="inventory-grid"><div class="inventory-field"><span class="inventory-field-label">Room No. / Name</span><input type="text" placeholder="e.g. 101"></div><div class="inventory-field"><span class="inventory-field-label">Floor</span><input type="text" placeholder="e.g. 1"></div><div class="inventory-field"><span class="inventory-field-label">Room Category</span><select><option>Deluxe Double</option><option>Deluxe King</option><option>Junior Suite</option><option>Lear\'s Loft</option></select></div><div class="inventory-field"><span class="inventory-field-label">Bathroom Type</span><select><option>En-suite shower</option><option>En-suite bath</option><option>Wet room</option><option>Shared</option></select></div><div class="inventory-field"><span class="inventory-field-label">Max Guests</span><input type="number" value="2" min="1" max="10"></div><div class="inventory-field"><span class="inventory-field-label">Interconnecting</span><input type="text" placeholder="e.g. 102"></div></div><div class="inventory-grid inventory-grid--flags"><label class="inventory-toggle"><input type="checkbox"> Accessible</label><label class="inventory-toggle"><input type="checkbox"> VIP suitable</label></div><div class="inventory-field inventory-field--notes"><span class="inventory-field-label">Operational Notes</span><input type="text" placeholder="e.g. Quiet corridor, away from lift"></div></div>';
 
       function setActiveSection(id) {
         sectionLinks.forEach(function (link) {
-          var href = link.getAttribute('href');
-          link.classList.toggle('active', href === '#' + id);
+          link.classList.toggle('active', link.getAttribute('href') === '#' + id);
         });
       }
 
@@ -904,84 +1188,487 @@
 
       sectionLinks.forEach(function (link) {
         link.addEventListener('click', function () {
-          var id = link.getAttribute('href').slice(1);
-          setActiveSection(id);
+          setActiveSection(link.getAttribute('href').slice(1));
         });
       });
 
-      function bindRemove(container, selector, minCount) {
+      function formatSavedTime(iso) {
+        return new Date(iso).toLocaleString('en-GB', {
+          day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+        });
+      }
+
+      function markUnsaved() {
+        if (isRestoring) return;
+        saveStatus.textContent = 'Unsaved changes';
+        saveStatus.style.color = '';
+      }
+
+      function markSaved(iso) {
+        lastSavedAt = iso || new Date().toISOString();
+        saveStatus.textContent = 'Saved · ' + formatSavedTime(lastSavedAt);
+        saveStatus.style.color = 'var(--green-600)';
+      }
+
+      function setSaving() {
+        saveStatus.textContent = 'Saving…';
+        saveStatus.style.color = '';
+      }
+
+      function getInputValue(id) {
+        var el = document.getElementById(id);
+        return el ? el.value : '';
+      }
+
+      function setInputValue(id, value) {
+        var el = document.getElementById(id);
+        if (el) el.value = value != null ? value : '';
+      }
+
+      function clearBrandColor() {
+        brandColor.removeAttribute('value');
+        brandColor.value = '#000000';
+        brandColorHex.value = '';
+        brandColorSwatch.classList.add('is-empty');
+        colorPresets.forEach(function (p) { p.classList.remove('active'); });
+      }
+
+      function persistToStorage() {
+        try {
+          var data = collectProfileData();
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        } catch (e) { /* ignore quota errors */ }
+      }
+
+      function setBrandColor(hex, silent) {
+        if (!/^#[0-9A-Fa-f]{6}$/.test(hex)) return;
+        brandColor.value = hex;
+        brandColorHex.value = hex.toUpperCase();
+        brandColorSwatch.classList.remove('is-empty');
+        colorPresets.forEach(function (p) {
+          p.classList.toggle('active', p.getAttribute('data-color').toLowerCase() === hex.toLowerCase());
+        });
+        if (!silent) persistToStorage();
+      }
+
+      function removeLogo() {
+        currentLogoDataUrl = '';
+        logoPreview.removeAttribute('src');
+        logoUpload.classList.remove('logo-upload--has-logo');
+        logoRemove.hidden = true;
+        logoInput.value = '';
+        logoError.textContent = '';
+        persistToStorage();
+        markUnsaved();
+      }
+
+      function setLogoPreview(dataUrl, silent) {
+        currentLogoDataUrl = dataUrl || '';
+        if (currentLogoDataUrl) {
+          logoPreview.src = currentLogoDataUrl;
+          logoUpload.classList.add('logo-upload--has-logo');
+          logoRemove.hidden = false;
+        } else {
+          logoPreview.removeAttribute('src');
+          logoUpload.classList.remove('logo-upload--has-logo');
+          logoRemove.hidden = true;
+        }
+        logoError.textContent = '';
+        if (!silent) persistToStorage();
+      }
+
+      function showLogoError(message) {
+        logoError.textContent = message;
+      }
+
+      function isAllowedLogoFile(file) {
+        if (LOGO_TYPES.indexOf(file.type) !== -1) return true;
+        var name = file.name.toLowerCase();
+        return LOGO_EXTS.some(function (ext) { return name.endsWith(ext); });
+      }
+
+      function handleLogoFile(file) {
+        if (!file) return;
+        if (!isAllowedLogoFile(file)) {
+          showLogoError('Please choose a PNG, JPG, JPEG, WEBP, or SVG file.');
+          logoInput.value = '';
+          return;
+        }
+        if (file.size > LOGO_MAX_BYTES) {
+          showLogoError('Logo file must be 2 MB or smaller.');
+          logoInput.value = '';
+          return;
+        }
+        var reader = new FileReader();
+        reader.onload = function () {
+          setLogoPreview(reader.result);
+          markUnsaved();
+        };
+        reader.onerror = function () {
+          showLogoError('Could not read the selected file. Please try again.');
+        };
+        reader.readAsDataURL(file);
+        logoInput.value = '';
+      }
+
+      function collectRoomTypes() {
+        return Array.from(roomBody.querySelectorAll('tr')).map(function (tr) {
+          var inputs = tr.querySelectorAll('input');
+          return {
+            code: inputs[0] ? inputs[0].value : '',
+            type: inputs[1] ? inputs[1].value : '',
+            count: inputs[2] ? inputs[2].value : '',
+            floors: inputs[3] ? inputs[3].value : '',
+            maxGuests: inputs[4] ? inputs[4].value : ''
+          };
+        });
+      }
+
+      function collectPetRooms() {
+        return {
+          room1: getInputValue('petRoom1'),
+          room2: getInputValue('petRoom2')
+        };
+      }
+
+      function collectInventory() {
+        return Array.from(inventoryList.querySelectorAll('[data-inventory]')).map(function (item) {
+          var grid = item.querySelector('.inventory-grid');
+          var fields = grid.querySelectorAll('input, select');
+          var flags = item.querySelectorAll('.inventory-grid--flags input[type="checkbox"]');
+          var notes = item.querySelector('.inventory-field--notes input');
+          return {
+            roomNo: fields[0] ? fields[0].value : '',
+            floor: fields[1] ? fields[1].value : '',
+            category: fields[2] ? fields[2].value : '',
+            bathroom: fields[3] ? fields[3].value : '',
+            maxGuests: fields[4] ? fields[4].value : '',
+            interconnecting: fields[5] ? fields[5].value : '',
+            accessible: flags[0] ? flags[0].checked : false,
+            vip: flags[1] ? flags[1].checked : false,
+            notes: notes ? notes.value : ''
+          };
+        });
+      }
+
+      function collectDepartments() {
+        return Array.from(deptGrid.querySelectorAll('[data-dept]')).map(function (card) {
+          return {
+            name: card.querySelector('.dept-name') ? card.querySelector('.dept-name').value : '',
+            head: card.querySelector('.dept-head') ? card.querySelector('.dept-head').value : ''
+          };
+        });
+      }
+
+      function collectShifts() {
+        var activePattern = document.querySelector('.shift-pattern-btn.active');
+        return {
+          pattern: activePattern ? activePattern.getAttribute('data-pattern') : '8hour',
+          rows: Array.from(shiftBody.querySelectorAll('tr')).map(function (tr) {
+            var inputs = tr.querySelectorAll('input');
+            return {
+              code: inputs[0] ? inputs[0].value : '',
+              name: inputs[1] ? inputs[1].value : '',
+              start: inputs[2] ? inputs[2].value : '',
+              end: inputs[3] ? inputs[3].value : '',
+              dept: inputs[4] ? inputs[4].value : ''
+            };
+          })
+        };
+      }
+
+      function collectTerminology() {
+        return Array.from(termList.querySelectorAll('[data-term]')).map(function (row) {
+          var inputs = row.querySelectorAll('input');
+          return { term: inputs[0] ? inputs[0].value : '', definition: inputs[1] ? inputs[1].value : '' };
+        });
+      }
+
+      function collectAiPrefs() {
+        var tone = document.querySelector('input[name="tone"]:checked');
+        var detail = document.querySelector('input[name="detail"]:checked');
+        return {
+          tone: tone ? tone.value : 'professional',
+          detail: detail ? detail.value : 'standard',
+          language: getInputValue('aiLanguage'),
+          dateFormat: getInputValue('dateFormat'),
+          instructions: getInputValue('aiInstructions')
+        };
+      }
+
+      function collectFacilities() {
+        return {
+          checked: Array.from(document.querySelectorAll('#facilityGrid input[type="checkbox"]:checked')).map(function (cb) { return cb.id; }),
+          custom: getInputValue('customFacilities')
+        };
+      }
+
+      function collectProfileData() {
+        return {
+          savedAt: new Date().toISOString(),
+          general: {
+            hotelName: getInputValue('hotelName'),
+            hotelGroup: getInputValue('hotelGroup'),
+            hotelCode: getInputValue('hotelCode'),
+            hotelType: getInputValue('hotelType'),
+            starRating: getInputValue('starRating'),
+            totalRooms: getInputValue('totalRooms'),
+            totalFloors: getInputValue('totalFloors'),
+            address: getInputValue('address'),
+            city: getInputValue('city'),
+            country: getInputValue('country'),
+            phone: getInputValue('phone'),
+            email: getInputValue('email'),
+            description: getInputValue('description'),
+            brandColor: brandColorHex.value.trim(),
+            logo: currentLogoDataUrl
+          },
+          rooms: collectRoomTypes(),
+          petRooms: collectPetRooms(),
+          inventory: collectInventory(),
+          departments: collectDepartments(),
+          shifts: collectShifts(),
+          terminology: collectTerminology(),
+          aiPrefs: collectAiPrefs(),
+          facilities: collectFacilities()
+        };
+      }
+
+      function buildRoomRow(data) {
+        var tr = document.createElement('tr');
+        tr.innerHTML = roomRowTemplate;
+        var inputs = tr.querySelectorAll('input');
+        if (data) {
+          if (inputs[0]) inputs[0].value = data.code || '';
+          if (inputs[1]) inputs[1].value = data.type || '';
+          if (inputs[2]) inputs[2].value = data.count || '1';
+          if (inputs[3]) inputs[3].value = data.floors || '';
+          if (inputs[4]) inputs[4].value = data.maxGuests || '2';
+        }
+        return tr;
+      }
+
+      function buildInventoryItem(data) {
+        var wrap = document.createElement('div');
+        wrap.innerHTML = inventoryTemplate;
+        var item = wrap.firstElementChild;
+        if (data) {
+          var fields = item.querySelectorAll('.inventory-grid input, .inventory-grid select');
+          if (fields[0]) fields[0].value = data.roomNo || '';
+          if (fields[1]) fields[1].value = data.floor || '';
+          if (fields[2]) fields[2].value = data.category || 'Deluxe Double';
+          if (fields[3]) fields[3].value = data.bathroom || 'En-suite shower';
+          if (fields[4]) fields[4].value = data.maxGuests || '2';
+          if (fields[5]) fields[5].value = data.interconnecting || '';
+          var flags = item.querySelectorAll('.inventory-grid--flags input[type="checkbox"]');
+          if (flags[0]) flags[0].checked = !!data.accessible;
+          if (flags[1]) flags[1].checked = !!data.vip;
+          var notes = item.querySelector('.inventory-field--notes input');
+          if (notes) notes.value = data.notes || '';
+        }
+        return item;
+      }
+
+      function buildDeptCard(dept) {
+        var card = document.createElement('div');
+        card.className = 'dept-card';
+        card.setAttribute('data-dept', '');
+        card.innerHTML = deptCardTemplate;
+        if (dept) {
+          var nameInput = card.querySelector('.dept-name');
+          var headInput = card.querySelector('.dept-head');
+          if (nameInput) nameInput.value = dept.name || '';
+          if (headInput) headInput.value = dept.head || '';
+        }
+        return card;
+      }
+
+      function restoreProfileData(data) {
+        if (!data) return;
+        isRestoring = true;
+
+        var g = data.general || {};
+        setInputValue('hotelName', g.hotelName);
+        setInputValue('hotelGroup', g.hotelGroup);
+        setInputValue('hotelCode', g.hotelCode);
+        setInputValue('hotelType', g.hotelType);
+        setInputValue('starRating', g.starRating);
+        setInputValue('totalRooms', g.totalRooms);
+        setInputValue('totalFloors', g.totalFloors);
+        setInputValue('address', g.address);
+        setInputValue('city', g.city);
+        setInputValue('country', g.country);
+        setInputValue('phone', g.phone);
+        setInputValue('email', g.email);
+        setInputValue('description', g.description);
+
+        if (g.brandColor && /^#[0-9A-Fa-f]{6}$/i.test(g.brandColor)) {
+          setBrandColor(g.brandColor.startsWith('#') ? g.brandColor : '#' + g.brandColor, true);
+        } else {
+          clearBrandColor();
+        }
+
+        setLogoPreview(g.logo || '', true);
+
+        roomBody.innerHTML = '';
+        (data.rooms && data.rooms.length ? data.rooms : [{}]).forEach(function (row) {
+          roomBody.appendChild(buildRoomRow(row));
+        });
+
+        var pet = data.petRooms || {};
+        setInputValue('petRoom1', pet.room1 != null ? pet.room1 : '2');
+        setInputValue('petRoom2', pet.room2 != null ? pet.room2 : '41');
+
+        inventoryList.innerHTML = '';
+        (data.inventory && data.inventory.length ? data.inventory : [{}]).forEach(function (row) {
+          inventoryList.appendChild(buildInventoryItem(row));
+        });
+
+        deptGrid.innerHTML = '';
+        var defaultDepts = [
+          { name: 'In Front of House', head: '' },
+          { name: 'Housekeeping', head: '' },
+          { name: 'Food & Beverage', head: '' },
+          { name: 'Maintenance', head: '' }
+        ];
+        var depts = data.departments && data.departments.length ? data.departments : defaultDepts;
+        depts.forEach(function (dept) {
+          deptGrid.appendChild(buildDeptCard(dept));
+        });
+
+        var shifts = data.shifts || {};
+        document.querySelectorAll('.shift-pattern-btn').forEach(function (btn) {
+          btn.classList.toggle('active', btn.getAttribute('data-pattern') === (shifts.pattern || '8hour'));
+        });
+        shiftBody.innerHTML = '';
+        (shifts.rows && shifts.rows.length ? shifts.rows : [{}]).forEach(function (row) {
+          var tr = document.createElement('tr');
+          tr.innerHTML = shiftRowTemplate;
+          var inputs = tr.querySelectorAll('input');
+          if (row) {
+            if (inputs[0]) inputs[0].value = row.code || '';
+            if (inputs[1]) inputs[1].value = row.name || '';
+            if (inputs[2]) inputs[2].value = row.start || '09:00';
+            if (inputs[3]) inputs[3].value = row.end || '17:00';
+            if (inputs[4]) inputs[4].value = row.dept || '';
+          }
+          shiftBody.appendChild(tr);
+        });
+
+        termList.innerHTML = '';
+        (data.terminology && data.terminology.length ? data.terminology : [{}]).forEach(function (term) {
+          var row = document.createElement('div');
+          row.className = 'term-row';
+          row.setAttribute('data-term', '');
+          row.innerHTML = termRowTemplate;
+          var inputs = row.querySelectorAll('input');
+          if (term) {
+            if (inputs[0]) inputs[0].value = term.term || '';
+            if (inputs[1]) inputs[1].value = term.definition || '';
+          }
+          termList.appendChild(row);
+        });
+
+        var ai = data.aiPrefs || {};
+        var toneInput = document.querySelector('input[name="tone"][value="' + (ai.tone || 'professional') + '"]');
+        if (toneInput) toneInput.checked = true;
+        var detailInput = document.querySelector('input[name="detail"][value="' + (ai.detail || 'standard') + '"]');
+        if (detailInput) detailInput.checked = true;
+        setInputValue('aiLanguage', ai.language);
+        setInputValue('dateFormat', ai.dateFormat);
+        setInputValue('aiInstructions', ai.instructions);
+
+        var facilities = data.facilities || {};
+        document.querySelectorAll('#facilityGrid input[type="checkbox"]').forEach(function (cb) {
+          cb.checked = facilities.checked ? facilities.checked.indexOf(cb.id) !== -1 : cb.checked;
+        });
+        setInputValue('customFacilities', facilities.custom);
+
+        isRestoring = false;
+        if (data.savedAt) markSaved(data.savedAt);
+      }
+
+      function saveProfile() {
+        setSaving();
+        var data = collectProfileData();
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+          markSaved(data.savedAt);
+        } catch (e) {
+          saveStatus.textContent = 'Could not save — storage limit reached';
+          saveStatus.style.color = 'var(--red-500)';
+        }
+      }
+
+      function loadProfile() {
+        try {
+          var raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) return;
+          restoreProfileData(JSON.parse(raw));
+        } catch (e) { /* ignore corrupt data */ }
+      }
+
+      function bindRemove(container, selector, minCount, itemSelector) {
         container.addEventListener('click', function (e) {
           var btn = e.target.closest(selector);
           if (!btn) return;
-          var item = btn.closest('tr, [data-dept], [data-term]');
+          var item = btn.closest(itemSelector || 'tr, [data-dept], [data-term]');
           if (!item) return;
-          var count = container.querySelectorAll(item.tagName === 'TR' ? 'tr' : item.hasAttribute('data-dept') ? '[data-dept]' : '[data-term]').length;
+          var count = container.querySelectorAll(itemSelector || (item.tagName === 'TR' ? 'tr' : item.hasAttribute('data-dept') ? '[data-dept]' : '[data-term]')).length;
           if (count <= minCount) return;
           item.remove();
           markUnsaved();
         });
       }
 
-      function markUnsaved() {
-        saveStatus.textContent = 'Unsaved changes';
-        saveStatus.style.color = '';
-      }
+      var profileSections = document.querySelector('.profile-sections');
 
-      function markSaved() {
-        saveStatus.textContent = 'Profile saved locally';
-        saveStatus.style.color = 'var(--green-600)';
-        setTimeout(function () { saveStatus.textContent = ''; }, 3000);
-      }
-
-      document.querySelectorAll('input, select, textarea').forEach(function (el) {
-        el.addEventListener('input', markUnsaved);
-        el.addEventListener('change', markUnsaved);
+      profileSections.addEventListener('input', function (e) {
+        if (isRestoring) return;
+        if (e.target.id === 'logoInput' || e.target.id === 'brandColor') return;
+        if (e.target.matches('input, select, textarea')) markUnsaved();
       });
 
-      saveBtn.addEventListener('click', function () {
-        saveStatus.textContent = 'Saving…';
-        setTimeout(markSaved, 600);
+      profileSections.addEventListener('change', function (e) {
+        if (isRestoring) return;
+        if (e.target.id === 'logoInput' || e.target.id === 'brandColor') return;
+        if (e.target.matches('input, select, textarea')) markUnsaved();
       });
 
-      var roomBody = document.getElementById('roomTableBody');
+      saveBtn.addEventListener('click', saveProfile);
+
       document.getElementById('addRoomRow').addEventListener('click', function () {
-        var tr = document.createElement('tr');
-        tr.innerHTML = '<td><input type="text" placeholder="Type name"></td><td><select><option>Standard</option><option>Superior</option><option>Deluxe</option><option>Suite</option><option>Accessible</option></select></td><td><input type="number" value="1" min="0"></td><td><input type="text" placeholder="e.g. 1–3"></td><td><input type="number" value="2" min="1"></td><td><button type="button" class="icon-btn remove-row" aria-label="Remove row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>';
-        roomBody.appendChild(tr);
+        roomBody.appendChild(buildRoomRow());
         markUnsaved();
       });
       bindRemove(roomBody, '.remove-row', 1);
 
-      var shiftBody = document.getElementById('shiftTableBody');
       document.getElementById('addShiftRow').addEventListener('click', function () {
         var tr = document.createElement('tr');
-        tr.innerHTML = '<td><input type="text" placeholder="Code"></td><td><input type="text" placeholder="Name"></td><td><input type="time" value="09:00"></td><td><input type="time" value="17:00"></td><td><input type="text" placeholder="Dept"></td><td><button type="button" class="icon-btn remove-row" aria-label="Remove shift"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>';
+        tr.innerHTML = shiftRowTemplate;
         shiftBody.appendChild(tr);
         markUnsaved();
       });
       bindRemove(shiftBody, '.remove-row', 1);
 
-      var termList = document.getElementById('termList');
       document.getElementById('addTerm').addEventListener('click', function () {
         var row = document.createElement('div');
         row.className = 'term-row';
         row.setAttribute('data-term', '');
-        row.innerHTML = '<input type="text" placeholder="Term / abbreviation"><input type="text" placeholder="Definition or usage"><button type="button" class="icon-btn remove-term" aria-label="Remove term"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>';
+        row.innerHTML = termRowTemplate;
         termList.appendChild(row);
         markUnsaved();
       });
       bindRemove(termList, '.remove-term', 1);
 
-      var deptGrid = document.getElementById('deptGrid');
       document.getElementById('addDept').addEventListener('click', function () {
-        var card = document.createElement('div');
-        card.className = 'dept-card';
-        card.setAttribute('data-dept', '');
-        card.innerHTML = '<div class="dept-card-header"><div class="dept-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div><button type="button" class="icon-btn remove-dept" aria-label="Remove department"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div><input class="dept-name" type="text" placeholder="Department name"><input class="dept-head" type="text" placeholder="Head of department">';
+        var card = buildDeptCard();
         deptGrid.appendChild(card);
+        var nameInput = card.querySelector('.dept-name');
+        if (nameInput) nameInput.focus();
         markUnsaved();
       });
-      bindRemove(deptGrid, '.remove-dept', 1);
+      bindRemove(deptGrid, '.remove-dept', 1, '[data-dept]');
 
       document.querySelectorAll('.shift-pattern-btn').forEach(function (btn) {
         btn.addEventListener('click', function () {
@@ -991,19 +1678,6 @@
         });
       });
 
-      var brandColor = document.getElementById('brandColor');
-      var brandColorHex = document.getElementById('brandColorHex');
-      var colorPresets = document.querySelectorAll('.color-preset');
-
-      function setBrandColor(hex) {
-        if (!/^#[0-9A-Fa-f]{6}$/.test(hex)) return;
-        brandColor.value = hex;
-        brandColorHex.value = hex.toUpperCase();
-        colorPresets.forEach(function (p) {
-          p.classList.toggle('active', p.getAttribute('data-color').toLowerCase() === hex.toLowerCase());
-        });
-      }
-
       brandColor.addEventListener('input', function () {
         setBrandColor(brandColor.value);
         markUnsaved();
@@ -1011,6 +1685,12 @@
 
       brandColorHex.addEventListener('input', function () {
         var val = brandColorHex.value.trim();
+        if (!val) {
+          clearBrandColor();
+          persistToStorage();
+          markUnsaved();
+          return;
+        }
         if (!val.startsWith('#')) val = '#' + val;
         if (/^#[0-9A-Fa-f]{6}$/.test(val)) setBrandColor(val);
         markUnsaved();
@@ -1023,28 +1703,36 @@
         });
       });
 
-      var logoUpload = document.getElementById('logoUpload');
-      logoUpload.addEventListener('click', function () { markUnsaved(); });
+      logoUpload.addEventListener('click', function () { logoInput.click(); });
       logoUpload.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); markUnsaved(); }
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); logoInput.click(); }
+      });
+      logoDelete.addEventListener('click', function (e) {
+        e.stopPropagation();
+        removeLogo();
+      });
+      logoInput.addEventListener('change', function () {
+        if (logoInput.files && logoInput.files[0]) handleLogoFile(logoInput.files[0]);
+      });
+      logoRemove.addEventListener('click', function (e) {
+        e.stopPropagation();
+        removeLogo();
       });
 
-      var inventoryList = document.getElementById('inventoryList');
-      var inventoryTemplate = '<div class="inventory-item" data-inventory><div class="inventory-item-header"><span class="inventory-item-label">Room entry</span><button type="button" class="icon-btn remove-inventory" aria-label="Remove room"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div><div class="inventory-grid"><div class="inventory-field"><span class="inventory-field-label">Room No. / Name</span><input type="text" placeholder="e.g. 101"></div><div class="inventory-field"><span class="inventory-field-label">Floor</span><input type="text" placeholder="e.g. 1"></div><div class="inventory-field"><span class="inventory-field-label">Room Category</span><select><option>Standard</option><option>Superior</option><option>Deluxe</option><option>Suite</option><option>Accessible</option></select></div><div class="inventory-field"><span class="inventory-field-label">Bathroom Type</span><select><option>En-suite shower</option><option>En-suite bath</option><option>Wet room</option><option>Shared</option></select></div><div class="inventory-field"><span class="inventory-field-label">Max Guests</span><input type="number" value="2" min="1" max="10"></div><div class="inventory-field"><span class="inventory-field-label">Interconnecting</span><input type="text" placeholder="e.g. 102"></div></div><div class="inventory-grid inventory-grid--flags"><label class="inventory-toggle"><input type="checkbox"> Accessible</label><label class="inventory-toggle"><input type="checkbox"> VIP suitable</label></div><div class="inventory-field inventory-field--notes"><span class="inventory-field-label">Operational Notes</span><input type="text" placeholder="e.g. Quiet corridor, away from lift"></div></div>';
-
       document.getElementById('addInventory').addEventListener('click', function () {
-        inventoryList.insertAdjacentHTML('beforeend', inventoryTemplate);
+        inventoryList.appendChild(buildInventoryItem());
         markUnsaved();
       });
 
       inventoryList.addEventListener('click', function (e) {
         var btn = e.target.closest('.remove-inventory');
         if (!btn) return;
-        var items = inventoryList.querySelectorAll('[data-inventory]');
-        if (items.length <= 1) return;
+        if (inventoryList.querySelectorAll('[data-inventory]').length <= 1) return;
         btn.closest('[data-inventory]').remove();
         markUnsaved();
       });
+
+      loadProfile();
     })();
   </script>
 </body>
