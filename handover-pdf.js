@@ -419,6 +419,38 @@
     this.y = boxTop + layout.boxHeight + LAYOUT.sectionGap;
   };
 
+  PdfDocument.prototype.drawRecommendations = function (recommendations) {
+    if (!recommendations || !recommendations.length) return;
+
+    var doc = this.doc;
+    var width = contentWidth();
+    var bulletIndent = 5;
+    var textWidth = width - bulletIndent - 8;
+
+    this.drawSectionTitle("AI Recommendations", 8 + recommendations.length * LAYOUT.lineHeight);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    setText(doc, COLORS.gray500);
+    doc.text("Suggested actions based on this shift and the Hotel Brain.", LAYOUT.marginX, this.y);
+    this.y += 5;
+
+    recommendations.forEach(function (item) {
+      var lines = wrapText(doc, item, textWidth);
+      var blockHeight = lines.length * LAYOUT.lineHeight + 2;
+      this.ensureSpace(blockHeight + 1);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      setText(doc, COLORS.gray600);
+      doc.text("•", LAYOUT.marginX + 1, this.y);
+      doc.text(lines, LAYOUT.marginX + bulletIndent, this.y);
+      this.y += blockHeight + 0.5;
+    }, this);
+
+    this.y += 4;
+  };
+
   PdfDocument.prototype.drawHandoverSections = function (sections) {
     if (!sections || !sections.length) return;
 
@@ -487,6 +519,7 @@
     pdf.drawMetrics(payload.metrics || {});
     pdf.drawSummary(payload.summary);
     pdf.drawHandoverSections(payload.sections);
+    pdf.drawRecommendations(payload.recommendations);
     pdf.save(buildFilename(payload.meta));
   }
 

@@ -108,6 +108,13 @@
       var shift = escapeHtml(item.shift || "Not specified");
       var date = escapeHtml(item.dateDisplay || formatDisplayDate(item.date));
       var generated = escapeHtml(formatGeneratedTime(item.timestamp));
+      var recCount = Array.isArray(item.recommendations) ? item.recommendations.length : 0;
+      var recLine = recCount
+        ? '<div class="saved-handover-field full">' +
+            '<span class="saved-handover-label">Recommendations</span>' +
+            '<span class="saved-handover-value">' + recCount + ' action' + (recCount === 1 ? '' : 's') + '</span>' +
+          '</div>'
+        : '';
 
       card.innerHTML =
         '<div class="saved-handover-body">' +
@@ -132,6 +139,7 @@
               '<span class="saved-handover-label">Generated</span>' +
               '<span class="saved-handover-value">' + generated + '</span>' +
             '</div>' +
+            recLine +
           '</div>' +
         '</div>' +
         '<div class="saved-handover-actions">' +

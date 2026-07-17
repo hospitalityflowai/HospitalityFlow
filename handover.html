@@ -197,25 +197,101 @@
       max-width: 520px;
     }
 
-    .profile-hint {
-      margin-top: 10px;
-      padding: 8px 12px;
-      font-size: 0.82rem;
-      color: var(--gray-500);
-      background: var(--amber-50);
-      border: 1px solid rgba(232, 184, 77, 0.35);
-      border-radius: var(--radius);
+    .hotel-brain-panel {
+      margin-top: 14px;
       max-width: 520px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--gray-200);
+      background: linear-gradient(135deg, var(--white) 0%, var(--gray-50) 100%);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
     }
 
-    .profile-hint a {
-      color: var(--blue-600);
+    .hotel-brain-panel-inner {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 16px;
+    }
+
+    .hotel-brain-status {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .hotel-brain-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-top: 6px;
+      flex-shrink: 0;
+      background: var(--gray-300);
+      box-shadow: 0 0 0 3px rgba(168, 180, 196, 0.2);
+    }
+
+    .hotel-brain-panel.is-connected .hotel-brain-dot {
+      background: var(--green-500);
+      box-shadow: 0 0 0 3px rgba(93, 206, 138, 0.18);
+    }
+
+    .hotel-brain-panel.is-disconnected .hotel-brain-dot {
+      background: var(--amber-500);
+      box-shadow: 0 0 0 3px rgba(232, 184, 77, 0.18);
+    }
+
+    .hotel-brain-copy {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
+    }
+
+    .hotel-brain-title {
+      font-size: 0.84rem;
+      font-weight: 700;
+      color: var(--navy-900);
+      letter-spacing: -0.01em;
+    }
+
+    .hotel-brain-meta,
+    .hotel-brain-sub {
+      font-size: 0.78rem;
+      color: var(--gray-500);
+      line-height: 1.45;
+    }
+
+    .hotel-brain-link {
+      flex-shrink: 0;
+      align-self: center;
+      font-size: 0.78rem;
       font-weight: 600;
+      color: var(--blue-600);
       text-decoration: none;
+      padding: 6px 10px;
+      border-radius: 100px;
+      border: 1px solid rgba(74, 143, 196, 0.22);
+      background: var(--blue-50);
+      transition: background var(--transition), border-color var(--transition);
+      white-space: nowrap;
     }
 
-    .profile-hint a:hover {
-      text-decoration: underline;
+    .hotel-brain-link:hover {
+      background: var(--blue-100);
+      border-color: rgba(74, 143, 196, 0.35);
+    }
+
+    @media (max-width: 560px) {
+      .hotel-brain-panel-inner {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .hotel-brain-link {
+        align-self: flex-start;
+      }
     }
 
     /* ── Cards ── */
@@ -1556,10 +1632,204 @@
     .footer a { color: var(--blue-500); text-decoration: none; font-weight: 500; }
     .footer a:hover { text-decoration: underline; }
 
+    /* ── AI Recommendations ── */
+    .recommendations-card {
+      margin-top: var(--card-gap);
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity var(--transition-smooth), transform var(--transition-smooth);
+    }
+
+    .recommendations-card.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .recommendations-card .card-body {
+      padding: 20px 26px 22px;
+    }
+
+    .recommendations-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .recommendations-header-text h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--navy-900);
+      margin-bottom: 4px;
+    }
+
+    .recommendations-header-text p {
+      font-size: 0.84rem;
+      color: var(--gray-500);
+      line-height: 1.45;
+      max-width: 480px;
+    }
+
+    .recommendations-badge {
+      flex-shrink: 0;
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: var(--blue-600);
+      background: var(--blue-50);
+      border: 1px solid rgba(74, 143, 196, 0.2);
+      border-radius: 100px;
+      padding: 5px 10px;
+      white-space: nowrap;
+    }
+
+    .recommendations-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .recommendations-empty {
+      font-size: 0.86rem;
+      color: var(--gray-400);
+      text-align: center;
+      padding: 18px 12px;
+      background: var(--gray-50);
+      border: 1px dashed var(--gray-200);
+      border-radius: var(--radius);
+      line-height: 1.5;
+    }
+
+    .recommendation-item {
+      position: relative;
+      padding: 14px 14px 12px 16px;
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius);
+      border-left: 3px solid var(--blue-400);
+      transition: border-color var(--transition), background var(--transition);
+    }
+
+    .recommendation-item.priority-urgent { border-left-color: var(--red-500); }
+    .recommendation-item.priority-high { border-left-color: var(--amber-500); }
+    .recommendation-item.priority-normal { border-left-color: var(--blue-400); }
+
+    .recommendation-item.is-completed {
+      opacity: 0.72;
+      background: var(--gray-50);
+    }
+
+    .recommendation-item.is-completed .recommendation-item-text {
+      text-decoration: line-through;
+      color: var(--gray-400);
+    }
+
+    .recommendation-item.is-in-progress {
+      background: #fffdf8;
+    }
+
+    .recommendation-item.is-editing {
+      padding: 12px;
+      border-color: var(--blue-400);
+      box-shadow: 0 0 0 3px rgba(74, 143, 196, 0.1);
+    }
+
+    .recommendation-item-main {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-right: 4px;
+    }
+
+    .recommendation-item-text {
+      font-size: 0.9rem;
+      color: var(--navy-900);
+      line-height: 1.5;
+    }
+
+    .recommendation-item-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .recommendation-priority,
+    .recommendation-dept {
+      font-size: 0.66rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 3px 7px;
+      border-radius: 100px;
+    }
+
+    .recommendation-priority.priority-urgent {
+      color: #c94a4a;
+      background: var(--red-50);
+    }
+
+    .recommendation-priority.priority-high {
+      color: #9a7200;
+      background: var(--amber-50);
+    }
+
+    .recommendation-priority.priority-normal {
+      color: var(--blue-600);
+      background: var(--blue-50);
+    }
+
+    .recommendation-dept {
+      color: var(--navy-700);
+      background: var(--gray-100);
+      font-weight: 600;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    .recommendation-item-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--gray-100);
+    }
+
+    .recommendation-item-delete-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      border: 1px solid var(--gray-200);
+      background: var(--white);
+      color: var(--gray-400);
+      transition: all var(--transition);
+    }
+
+    .recommendation-item-delete-btn:hover {
+      background: var(--red-50);
+      border-color: rgba(232, 93, 93, 0.35);
+      color: #c94a4a;
+    }
+
+    .recommendation-item-delete-btn svg {
+      width: 14px;
+      height: 14px;
+    }
+
     @media print {
       .topnav, .page-header, .dashboard-grid, .actions, .footer,
       .saved-handovers-section, .toast, .handover-item-toolbar,
-      .snapshot-edit-actions, .glance-snapshot-hint { display: none !important; }
+      .recommendation-item-toolbar, .snapshot-edit-actions, .glance-snapshot-hint { display: none !important; }
 
       body {
         background: var(--white);
@@ -1582,10 +1852,15 @@
       .handover-meta,
       .shift-glance,
       .summary-card,
-      .section-card {
+      .section-card,
+      .recommendations-card {
         break-inside: avoid;
         page-break-inside: avoid;
         box-shadow: none;
+      }
+
+      .recommendations-card.is-visible {
+        display: block !important;
       }
 
       .summary-card.is-visible {
@@ -1821,7 +2096,19 @@
         <div class="page-header">
           <h1 class="page-title" id="pageTitle">AI Shift Handover Assistant</h1>
           <p class="page-subtitle" id="pageSubtitle">Turn messy shift notes into professional handovers in seconds.</p>
-          <p class="profile-hint" id="profileHint" hidden><a href="hotel-profile.html">Complete Hotel Profile</a> to personalise Hospitality Flow.</p>
+          <div class="hotel-brain-panel is-disconnected" id="hotelBrainPanel" aria-live="polite">
+            <div class="hotel-brain-panel-inner">
+              <div class="hotel-brain-status">
+                <span class="hotel-brain-dot" id="hotelBrainDot" aria-hidden="true"></span>
+                <div class="hotel-brain-copy">
+                  <span class="hotel-brain-title" id="hotelBrainTitle">Hotel Brain Not Configured</span>
+                  <span class="hotel-brain-meta" id="hotelBrainMeta">Complete Hotel Brain to personalise Hospitality Flow.</span>
+                  <span class="hotel-brain-sub" id="hotelBrainSub" hidden></span>
+                </div>
+              </div>
+              <a class="hotel-brain-link" id="hotelBrainLink" href="hotel-profile.html">View Hotel Brain</a>
+            </div>
+          </div>
         </div>
 
         <div class="dashboard-grid">
@@ -1998,6 +2285,23 @@
                 </div>
 
                 <div class="sections-grid" id="sectionsGrid"></div>
+
+                <div class="card recommendations-card" id="recommendationsCard" hidden>
+                  <div class="card-body">
+                    <div class="recommendations-header">
+                      <div class="recommendations-header-text">
+                        <h3>AI Recommendations</h3>
+                        <p>Suggested actions based on this shift and the Hotel Brain.</p>
+                      </div>
+                      <span class="recommendations-badge">Powered by Hotel Brain</span>
+                    </div>
+                    <ul class="recommendations-list" id="recommendationsList" hidden></ul>
+                    <p class="recommendations-empty" id="recommendationsEmpty" hidden>
+                      No additional recommendations identified.<br>
+                      Recommendations will appear when the shift contains follow-up actions.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </section>
@@ -2130,6 +2434,9 @@
       var clearBtn = document.getElementById("clearBtn");
       var outputSection = document.getElementById("outputSection");
       var sectionsGrid = document.getElementById("sectionsGrid");
+      var recommendationsCard = document.getElementById("recommendationsCard");
+      var recommendationsList = document.getElementById("recommendationsList");
+      var recommendationsEmpty = document.getElementById("recommendationsEmpty");
       var toast = document.getElementById("toast");
       var hotelName = document.getElementById("hotelName");
       var department = document.getElementById("department");
@@ -2151,7 +2458,11 @@
       var navHotelLabel = document.getElementById("navHotelLabel");
       var pageTitle = document.getElementById("pageTitle");
       var pageSubtitle = document.getElementById("pageSubtitle");
-      var profileHint = document.getElementById("profileHint");
+      var hotelBrainPanel = document.getElementById("hotelBrainPanel");
+      var hotelBrainTitle = document.getElementById("hotelBrainTitle");
+      var hotelBrainMeta = document.getElementById("hotelBrainMeta");
+      var hotelBrainSub = document.getElementById("hotelBrainSub");
+      var hotelBrainLink = document.getElementById("hotelBrainLink");
       var notesCardTitle = document.getElementById("notesCardTitle");
       var notesCardSubtitle = document.getElementById("notesCardSubtitle");
       var detailsCardTitle = document.getElementById("detailsCardTitle");
@@ -2166,7 +2477,8 @@
       var hotelSnapshotHint = document.querySelector(".hotel-snapshot-pre-hint");
       var logoIcon = document.querySelector(".logo-icon");
 
-      var HOTEL_PROFILE_KEY = "hospitalityFlow_hotelProfile";
+      var HOTEL_BRAIN_KEY = "hospitalityFlow_hotelProfile";
+      var HOTEL_PROFILE_KEY = HOTEL_BRAIN_KEY;
       var DEFAULT_DEPARTMENTS = [
         "Reception", "Housekeeping", "Food & Beverage", "Maintenance",
         "Night Team", "Duty Manager", "Management", "Other"
@@ -2246,6 +2558,8 @@
       }
 
       var hotelProfile = null;
+      var hotelBrainContext = null;
+      var hotelBrainInternalInstructions = "";
       var uiLabels = clonePlatformLabels();
       var handoverTermLabel = "Shift Handover";
       var configuredDepartments = DEFAULT_DEPARTMENTS.slice();
@@ -2272,13 +2586,223 @@
 
       function loadHotelProfileFromStorage() {
         try {
-          var raw = localStorage.getItem(HOTEL_PROFILE_KEY);
+          var raw = localStorage.getItem(HOTEL_BRAIN_KEY);
           if (!raw) return null;
           var parsed = JSON.parse(raw);
           if (!parsed || typeof parsed !== "object") return null;
           return parsed;
         } catch (e) {
           return null;
+        }
+      }
+
+      function trimText(value) {
+        return String(value == null ? "" : value).trim();
+      }
+
+      function isHotelBrainConfigured(profile) {
+        if (!profile || typeof profile !== "object") return false;
+        if (profile.savedAt) return true;
+
+        var general = profile.general || {};
+        if (trimText(general.hotelName)) return true;
+        if (trimText(general.hotelType)) return true;
+        if (trimText(general.totalRooms)) return true;
+
+        if ((profile.departments || []).some(function (d) { return trimText(d.name); })) return true;
+        if ((profile.terminology || []).some(function (t) { return trimText(t.term); })) return true;
+        if ((profile.rooms || []).some(function (r) { return trimText(r.type) || trimText(r.code); })) return true;
+
+        var hk = profile.hotelKnowledge || {};
+        if (Object.keys(hk).some(function (key) { return trimText(hk[key]); })) return true;
+
+        if (profile.aiPrefs && (
+          trimText(profile.aiPrefs.language) ||
+          trimText(profile.aiPrefs.instructions) ||
+          profile.aiPrefs.tone ||
+          profile.aiPrefs.detail
+        )) return true;
+
+        if (profile.policies && Object.keys(profile.policies).some(function (key) {
+          return trimText(profile.policies[key]);
+        })) return true;
+
+        if (profile.policiesStructured) {
+          var groups = profile.policiesStructured;
+          return ["guest", "payment", "operational", "custom"].some(function (groupId) {
+            var group = groups[groupId] || {};
+            return Object.keys(group).some(function (key) {
+              var entry = group[key];
+              return entry && (trimText(entry.summary) || trimText(entry.instructions));
+            });
+          });
+        }
+
+        return false;
+      }
+
+      function summarizePoliciesStructured(policiesStructured) {
+        var lines = [];
+        if (!policiesStructured) return lines;
+
+        ["guest", "payment", "operational"].forEach(function (groupId) {
+          var group = policiesStructured[groupId] || {};
+          Object.keys(group).forEach(function (key) {
+            var entry = group[key];
+            if (!entry) return;
+            var summary = trimText(entry.summary);
+            var instructions = trimText(entry.instructions);
+            var text = summary || instructions;
+            if (text) lines.push((entry.title || key) + ": " + text);
+          });
+        });
+
+        return lines;
+      }
+
+      function summarizeLegacyPolicies(policies) {
+        var lines = [];
+        if (!policies) return lines;
+        Object.keys(policies).forEach(function (key) {
+          var text = trimText(policies[key]);
+          if (text) lines.push(key + ": " + text);
+        });
+        return lines;
+      }
+
+      function summarizeRoomTypes(rooms) {
+        return (rooms || [])
+          .map(function (room) {
+            var type = trimText(room.type);
+            var code = trimText(room.code);
+            var count = trimText(room.count);
+            if (!type && !code) return "";
+            var label = type || code;
+            return count ? label + " (" + count + ")" : label;
+          })
+          .filter(Boolean);
+      }
+
+      function buildHotelBrainContext(profile) {
+        if (!profile) return null;
+
+        var general = profile.general || {};
+        var hk = profile.hotelKnowledge || {};
+        var policyLines = summarizePoliciesStructured(profile.policiesStructured);
+        if (!policyLines.length) policyLines = summarizeLegacyPolicies(profile.policies);
+
+        var combinedInstructions = [
+          trimText(profile.aiPrefs && profile.aiPrefs.instructions),
+          trimText(hk.aiInstructions),
+          trimText(hk.commonTerms),
+          trimText(general.brandVoice ? "Brand voice: " + general.brandVoice : "")
+        ].filter(Boolean).join("\n");
+
+        var internalSections = [];
+        if (trimText(general.hotelName)) internalSections.push("Hotel: " + general.hotelName);
+        if (trimText(general.hotelType)) internalSections.push("Hotel type: " + general.hotelType);
+        if (trimText(general.totalRooms)) internalSections.push("Total rooms: " + general.totalRooms);
+        if (trimText(general.operatingNotes)) internalSections.push("Operating notes: " + general.operatingNotes);
+        if (trimText(hk.generalNotes)) internalSections.push("General knowledge: " + hk.generalNotes);
+        if (trimText(hk.hotelStandards)) internalSections.push("Hotel standards: " + hk.hotelStandards);
+        if (trimText(hk.vipRules)) internalSections.push("VIP rules: " + hk.vipRules);
+        if (trimText(hk.operationalNotes)) internalSections.push("Operational notes: " + hk.operationalNotes);
+        if (trimText(hk.localRecommendations)) internalSections.push("Local recommendations: " + hk.localRecommendations);
+        if (policyLines.length) internalSections.push("Policies:\n- " + policyLines.join("\n- "));
+
+        var roomTypeSummary = summarizeRoomTypes(profile.rooms);
+        if (roomTypeSummary.length) internalSections.push("Room types: " + roomTypeSummary.join(", "));
+
+        if ((profile.terminology || []).length) {
+          internalSections.push("Terminology:\n" + profile.terminology.map(function (entry) {
+            return "- " + trimText(entry.term) + ": " + trimText(entry.definition);
+          }).filter(function (line) { return line !== "- :"; }).join("\n"));
+        }
+
+        if (combinedInstructions) internalSections.push("AI instructions:\n" + combinedInstructions);
+
+        internalSections.push(
+          "Generation preferences: tone=" + (profile.aiPrefs && profile.aiPrefs.tone || "professional") +
+          "; detail=" + (profile.aiPrefs && profile.aiPrefs.detail || "standard") +
+          "; language=" + (profile.aiPrefs && profile.aiPrefs.language || "British English") +
+          "; dateFormat=" + (profile.aiPrefs && profile.aiPrefs.dateFormat || "DD/MM/YYYY (24-hour)")
+        );
+        internalSections.push("Only use facts present in shift notes. Never invent guest details, room events, or policy outcomes.");
+
+        return {
+          general: general,
+          hotelKnowledge: hk,
+          aiPrefs: profile.aiPrefs || {},
+          terminology: profile.terminology || [],
+          departments: profile.departments || [],
+          rooms: profile.rooms || [],
+          policies: profile.policies || {},
+          policiesStructured: profile.policiesStructured || null,
+          policyLines: policyLines,
+          roomTypeSummary: roomTypeSummary,
+          combinedInstructions: combinedInstructions,
+          internalInstructions: internalSections.join("\n\n")
+        };
+      }
+
+      function countLoadedKnowledgeSections(context) {
+        if (!context) return 0;
+        var count = 0;
+        var hk = context.hotelKnowledge || {};
+        ["generalNotes", "hotelStandards", "vipRules", "commonTerms", "operationalNotes", "localRecommendations", "aiInstructions"].forEach(function (key) {
+          if (trimText(hk[key])) count += 1;
+        });
+        if (context.policyLines.length) count += 1;
+        if (context.roomTypeSummary.length) count += 1;
+        if ((context.terminology || []).some(function (entry) { return trimText(entry.term); })) count += 1;
+        if (trimText(context.combinedInstructions)) count += 1;
+        return count;
+      }
+
+      function renderHotelBrainPanel() {
+        if (!hotelBrainPanel) return;
+
+        var connected = isHotelBrainConfigured(hotelProfile);
+        hotelBrainPanel.classList.toggle("is-connected", connected);
+        hotelBrainPanel.classList.toggle("is-disconnected", !connected);
+
+        if (!connected) {
+          if (hotelBrainTitle) hotelBrainTitle.textContent = "Hotel Brain Not Configured";
+          if (hotelBrainMeta) hotelBrainMeta.textContent = "Complete Hotel Brain to personalise Hospitality Flow.";
+          if (hotelBrainSub) {
+            hotelBrainSub.textContent = "";
+            hotelBrainSub.hidden = true;
+          }
+          if (hotelBrainLink) {
+            hotelBrainLink.textContent = "View Hotel Brain";
+            hotelBrainLink.setAttribute("href", "hotel-profile.html");
+          }
+          return;
+        }
+
+        var general = (hotelBrainContext && hotelBrainContext.general) || (hotelProfile && hotelProfile.general) || {};
+        var hotelName = trimText(general.hotelName) || "Hotel Brain Connected";
+        var roomCount = trimText(general.totalRooms);
+        var hotelType = trimText(general.hotelType);
+        var language = trimText(aiPrefs.language) || "British English";
+        var knowledgeCount = countLoadedKnowledgeSections(hotelBrainContext);
+
+        if (hotelBrainTitle) hotelBrainTitle.textContent = "Hotel Brain Connected";
+        if (hotelBrainMeta) {
+          var metaParts = [hotelName];
+          if (roomCount) metaParts.push(roomCount + (roomCount === "1" ? " room" : " rooms"));
+          else if (hotelType) metaParts.push(hotelType);
+          hotelBrainMeta.textContent = metaParts.join(" · ");
+        }
+        if (hotelBrainSub) {
+          var subParts = [language];
+          subParts.push(knowledgeCount > 0 ? "Knowledge loaded" : "Preferences loaded");
+          hotelBrainSub.textContent = subParts.join(" · ");
+          hotelBrainSub.hidden = false;
+        }
+        if (hotelBrainLink) {
+          hotelBrainLink.textContent = "View Hotel Brain";
+          hotelBrainLink.setAttribute("href", "hotel-profile.html");
         }
       }
 
@@ -2362,16 +2886,28 @@
         return "£";
       }
 
+      function reloadHotelBrain() {
+        hotelProfile = loadHotelProfileFromStorage();
+        applyHotelProfileConfig(hotelProfile);
+        mergeTerminologyKeywords();
+      }
+
       function applyHotelProfileConfig(profile) {
+        configuredDepartments = DEFAULT_DEPARTMENTS.slice();
+        configuredShifts = DEFAULT_SHIFTS.slice();
+        hotelLogoDataUrl = "";
+        terminologyMap = {};
+        hotelBrainContext = null;
+        hotelBrainInternalInstructions = "";
+
         if (!profile) {
           uiLabels = clonePlatformLabels();
           handoverTermLabel = PLATFORM_LABELS.handover;
-          configuredDepartments = DEFAULT_DEPARTMENTS.slice();
-          configuredShifts = DEFAULT_SHIFTS.slice();
-          hotelLogoDataUrl = "";
-          terminologyMap = {};
           return;
         }
+
+        hotelBrainContext = buildHotelBrainContext(profile);
+        hotelBrainInternalInstructions = hotelBrainContext ? hotelBrainContext.internalInstructions : "";
 
         var terminology = profile.terminology || [];
         uiLabels = resolveUiLabels(terminology);
@@ -2379,26 +2915,20 @@
         terminologyMap = buildTerminologyMap(terminology);
 
         var depts = (profile.departments || [])
-          .map(function (d) { return (d.name || "").trim(); })
+          .map(function (d) { return trimText(d.name); })
           .filter(Boolean);
-        configuredDepartments = depts.length ? depts : DEFAULT_DEPARTMENTS.slice();
-
-        var shiftRows = profile.shifts && profile.shifts.rows ? profile.shifts.rows : [];
-        var validShifts = shiftRows
-          .map(function (row) {
-            return {
-              code: (row.code || "").trim(),
-              name: (row.name || row.code || "").trim(),
-              start: row.start || "",
-              end: row.end || ""
-            };
-          })
-          .filter(function (row) { return row.code; });
-        if (validShifts.length) configuredShifts = validShifts;
+        if (depts.length) configuredDepartments = depts;
 
         if (profile.general && profile.general.logo) {
           hotelLogoDataUrl = profile.general.logo;
         }
+
+        var hk = profile.hotelKnowledge || {};
+        var mergedInstructions = [
+          trimText(profile.aiPrefs && profile.aiPrefs.instructions),
+          trimText(hk.aiInstructions),
+          trimText(hk.commonTerms)
+        ].filter(Boolean).join("\n");
 
         if (profile.aiPrefs) {
           aiPrefs = {
@@ -2406,12 +2936,22 @@
             detail: profile.aiPrefs.detail || aiPrefs.detail,
             language: profile.aiPrefs.language || aiPrefs.language,
             dateFormat: profile.aiPrefs.dateFormat || aiPrefs.dateFormat,
-            instructions: profile.aiPrefs.instructions || ""
+            instructions: mergedInstructions || profile.aiPrefs.instructions || ""
           };
+        } else if (mergedInstructions) {
+          aiPrefs.instructions = mergedInstructions;
         }
 
         dateLocale = resolveDateLocale(aiPrefs);
-        currencySymbol = resolveCurrencySymbol(aiPrefs.language);
+        if (profile.general && trimText(profile.general.currency)) {
+          var currency = trimText(profile.general.currency);
+          if (currency === "USD" || currency === "$") currencySymbol = "$";
+          else if (currency === "GBP" || currency === "£") currencySymbol = "£";
+          else if (currency === "EUR" || currency === "€") currencySymbol = "€";
+          else currencySymbol = resolveCurrencySymbol(aiPrefs.language);
+        } else {
+          currencySymbol = resolveCurrencySymbol(aiPrefs.language);
+        }
       }
 
       function applyHotelLogo(logoDataUrl) {
@@ -2469,7 +3009,8 @@
       }
 
       function mergeTerminologyKeywords() {
-        if (!hotelProfile || !terminologyMap) return;
+        if (!hotelProfile) return;
+
         Object.keys(terminologyMap).forEach(function (key) {
           var entry = terminologyMap[key];
           if (!entry.term) return;
@@ -2480,6 +3021,22 @@
               }
             }
           });
+        });
+
+        var commonTerms = hotelBrainContext && hotelBrainContext.hotelKnowledge
+          ? trimText(hotelBrainContext.hotelKnowledge.commonTerms)
+          : "";
+        if (!commonTerms) return;
+
+        commonTerms.split(/\n|,|;/).forEach(function (chunk) {
+          var term = trimText(chunk.split(/[:=–-]/)[0]);
+          if (term && term.length <= 40) {
+            SECTIONS.forEach(function (section) {
+              if (section.keywords.indexOf(term.toLowerCase()) === -1) {
+                section.keywords.push(term.toLowerCase());
+              }
+            });
+          }
         });
       }
 
@@ -2551,15 +3108,14 @@
       }
 
       function applyHotelProfileToUI() {
-        if (!hotelProfile) {
-          if (profileHint) profileHint.hidden = false;
+        renderHotelBrainPanel();
+
+        if (!isHotelBrainConfigured(hotelProfile)) {
           applyHotelLogo("");
           populateDepartmentSelect();
           wireShiftButtons();
           return;
         }
-
-        if (profileHint) profileHint.hidden = true;
 
         var general = hotelProfile.general || {};
         if (general.hotelName && !hotelName.value.trim()) {
@@ -2568,8 +3124,7 @@
 
         applyHotelLogo(hotelLogoDataUrl);
         populateDepartmentSelect();
-        renderShiftSelector();
-        selectedShift = configuredShifts[0] ? configuredShifts[0].code : "AM";
+        wireShiftButtons();
         applyUiLabelsToPage();
 
         if (general.hotelName) {
@@ -2684,11 +3239,44 @@
         return result;
       }
 
-      function applyAiPreferencesToSummary(text) {
+      function applyHotelBrainContextToSummary(text, classified) {
+        if (!hotelBrainContext || !text) return text;
+
+        var metrics = getHandoverMetrics(classified);
+        var hk = hotelBrainContext.hotelKnowledge || {};
+        var additions = [];
+
+        if (metrics.vip > 0 && trimText(hk.vipRules) && text.toLowerCase().indexOf("vip") === -1) {
+          additions.push("VIP activity noted — follow hotel VIP protocols.");
+        } else if (metrics.vip > 0 && trimText(hk.vipRules) && text.toLowerCase().indexOf("protocol") === -1 && aiPrefs.detail === "comprehensive") {
+          additions.push("Apply hotel VIP rules where relevant.");
+        }
+
+        if (metrics.display.payments > 0 && hotelBrainContext.policyLines.length &&
+            text.toLowerCase().indexOf("policy") === -1 && aiPrefs.detail !== "brief") {
+          additions.push("Check hotel payment policies for flagged items.");
+        }
+
+        if (trimText(hk.operationalNotes) && aiPrefs.detail === "comprehensive" &&
+            text.toLowerCase().indexOf("operational") === -1) {
+          additions.push("Review operational notes for the incoming shift.");
+        }
+
+        if (!additions.length) return text;
+
+        var limit = getDetailSentenceLimit();
+        var currentCount = text.split(/(?<=[.!?])\s+/).filter(Boolean).length;
+        if (currentCount >= limit) return text;
+
+        return text + " " + additions.slice(0, limit - currentCount).join(" ");
+      }
+
+      function applyAiPreferencesToSummary(text, classified) {
         var processed = applyToneToText(text);
         processed = applyLanguageVariant(processed);
         processed = applyCustomInstructions(processed);
         processed = applyTerminologyToText(processed);
+        if (classified) processed = applyHotelBrainContextToSummary(processed, classified);
         return processed;
       }
 
@@ -2711,9 +3299,7 @@
         });
       }
 
-      hotelProfile = loadHotelProfileFromStorage();
-      applyHotelProfileConfig(hotelProfile);
-      mergeTerminologyKeywords();
+      reloadHotelBrain();
 
       var selectedShift = configuredShifts[0] ? configuredShifts[0].code : "AM";
       var lastHandoverText = "";
@@ -2722,6 +3308,8 @@
       var lastClassified = null;
       var lastHotelSnapshotOverrides = {};
       var activeHandoverEditId = null;
+      var lastRecommendations = [];
+      var activeRecommendationEditId = null;
 
       var ACTIONABLE_SECTIONS = ["urgent", "guest", "maintenance", "payments", "events", "tasks"];
       var ITEM_STATUSES = [
@@ -2731,6 +3319,15 @@
       ];
 
       var EDIT_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+      var DELETE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>';
+
+      var RECOMMENDATION_PRIORITIES = [
+        { id: "urgent", label: "Urgent" },
+        { id: "high", label: "High" },
+        { id: "normal", label: "Normal" }
+      ];
+
+      var RECOMMENDATION_PRIORITY_RANK = { urgent: 0, high: 1, normal: 2 };
 
       function createItemId() {
         return Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 7);
@@ -2820,6 +3417,479 @@
       function syncHandoverExports() {
         if (!lastClassified) return;
         lastHandoverText = formatHandoverText(lastClassified);
+      }
+
+      function normalizeRecommendationStatus(status) {
+        if (status === "in-progress") return "in_progress";
+        if (status === "in_progress" || status === "completed" || status === "open") return status;
+        return "open";
+      }
+
+      function normalizeRecommendation(raw) {
+        if (!raw || typeof raw !== "object") {
+          return {
+            id: createItemId(),
+            text: String(raw || ""),
+            priority: "normal",
+            department: getDefaultDepartment(),
+            status: "open"
+          };
+        }
+        return {
+          id: raw.id || createItemId(),
+          text: String(raw.text || ""),
+          priority: raw.priority || "normal",
+          department: raw.department || getDefaultDepartment(),
+          status: normalizeRecommendationStatus(raw.status || "open")
+        };
+      }
+
+      function formatRecommendationPriorityLabel(priority) {
+        var match = RECOMMENDATION_PRIORITIES.filter(function (entry) { return entry.id === priority; })[0];
+        return match ? match.label : "Normal";
+      }
+
+      function formatRecommendationForExport(rec) {
+        var normalized = normalizeRecommendation(rec);
+        return "[" + formatRecommendationPriorityLabel(normalized.priority) +
+          " · " + normalized.department +
+          " · " + formatStatusLabel(normalized.status) + "] " + normalized.text;
+      }
+
+      function resolveRecommendationDepartment(candidates, fallback) {
+        var options = candidates || [];
+        for (var i = 0; i < options.length; i++) {
+          var candidate = options[i];
+          var match = configuredDepartments.filter(function (dept) {
+            var lowerDept = dept.toLowerCase();
+            var lowerCandidate = candidate.toLowerCase();
+            return lowerDept.indexOf(lowerCandidate) !== -1 || lowerCandidate.indexOf(lowerDept) !== -1;
+          })[0];
+          if (match) return match;
+        }
+        return fallback || getDefaultDepartment();
+      }
+
+      function roomPhrase(note) {
+        if (!note.rooms || !note.rooms.length) return "";
+        return note.rooms.length === 1 ? "Room " + note.rooms[0] : "Rooms " + note.rooms.join(", ");
+      }
+
+      function roomInPhrase(note) {
+        if (!note.rooms || !note.rooms.length) return "";
+        return note.rooms.length === 1 ? " in Room " + note.rooms[0] : " in Rooms " + note.rooms.join(", ");
+      }
+
+      function onPhrase(note) {
+        if (!note.rooms || !note.rooms.length) return "";
+        return note.rooms.length === 1 ? " on Room " + note.rooms[0] : " on Rooms " + note.rooms.join(", ");
+      }
+
+      function isQuietShiftLines(lines) {
+        if (!lines.length) return true;
+        return lines.every(function (line) {
+          return noteContains(line, [
+            "quiet shift", "all guests settled", "no outstanding issues", "no outstanding issue",
+            "nothing to report", "uneventful", "all quiet", "no issues", "no follow-up",
+            "no follow up", "smooth shift", "without incident"
+          ]);
+        });
+      }
+
+      function maintenanceNeedsFollowUp(note) {
+        if (!isMaintenanceNote(note.original) && note.section !== "maintenance" && note.section !== "urgent") {
+          return false;
+        }
+        if (isResolvedNote(note.original)) return false;
+        return noteContains(note.original, [
+          "issue", "broken", "fault", "repair", "fix", "not working", "pressure", "leak",
+          "maintenance", "engineer", "shower", "ac ", "air con", "heating", "plumbing"
+        ]);
+      }
+
+      function applyRecommendationPreferences(text) {
+        var processed = applyToneToText(text);
+        processed = applyLanguageVariant(processed);
+        processed = applyCustomInstructions(processed);
+        processed = applyTerminologyToText(processed);
+        return processed;
+      }
+
+      /**
+       * Rule-based recommendation engine — modular surface for future LLM backend.
+       */
+      var HandoverRecommendationEngine = {
+        generate: function (classified, rawNotesText, brainContext) {
+          var analyzed = (classified && classified._analyzed) ? classified._analyzed.slice() : [];
+          var lines = parseNotes(rawNotesText || "");
+          if (isQuietShiftLines(lines)) return [];
+
+          var candidates = [];
+          var seen = {};
+
+          function addCandidate(rec) {
+            if (!rec || !rec.text) return;
+            var signature = (rec.priority + "|" + rec.department + "|" + rec.text).toLowerCase();
+            if (seen[signature]) return;
+            seen[signature] = true;
+            candidates.push(normalizeRecommendation(rec));
+          }
+
+          function nextShiftPhrase() {
+            var shiftName = getShiftDisplayName(selectedShift).toLowerCase();
+            if (shiftName.indexOf("night") !== -1) return "before the AM shift";
+            if (shiftName.indexOf("am") !== -1 || shiftName.indexOf("morning") !== -1) return "before the PM shift";
+            return "for the incoming shift";
+          }
+
+          analyzed.forEach(function (note) {
+            if (isResolvedNote(note.original)) return;
+            var line = note.original;
+            var roomIn = roomInPhrase(note);
+            var roomOn = onPhrase(note);
+
+            if (maintenanceNeedsFollowUp(note)) {
+              var maintPriority = note.maintenancePriority === "Critical" ? "urgent"
+                : note.maintenancePriority === "High" ? "high" : "normal";
+              var maintNotInformed = noteContains(line, [
+                "not yet informed", "not informed", "maintenance not", "awaiting maintenance",
+                "needs informing", "not yet notified", "not notified yet"
+              ]);
+              var maintText = maintNotInformed
+                ? "Follow up with Maintenance" + roomOn + " " + nextShiftPhrase() + "."
+                : "Inform Maintenance" + roomOn + " and confirm resolution " + nextShiftPhrase() + ".";
+              addCandidate({
+                text: maintText,
+                priority: maintPriority,
+                department: resolveRecommendationDepartment(["Maintenance", "Engineering"], "Maintenance")
+              });
+              return;
+            }
+
+            if (note.isVip || (note.section === "guest" && detectVip(line))) {
+              var vipArrival = noteContains(line, ["arriv", "tomorrow", "tonight", "checking in", "due in"]);
+              var vipPrep = noteContains(line, ["welcome", "amenity", "amenities", "prepare", "preparing", "still needs", "card"]);
+              var vipText = vipArrival && vipPrep
+                ? "Prepare VIP welcome amenities and brief the next shift."
+                : vipArrival
+                  ? "Brief the incoming shift on the VIP arrival" + roomIn + " and confirm preparations."
+                  : "Review VIP guest requirements" + roomIn + " and brief the next shift.";
+              addCandidate({
+                text: vipText,
+                priority: "high",
+                department: resolveRecommendationDepartment(["Duty Manager", "Front Office", "Reception", "In Front of House"], "Front Office")
+              });
+              return;
+            }
+
+            if (noteContains(line, ["late checkout", "late check-out", "late check out", "checkout extension", "extended checkout"])) {
+              addCandidate({
+                text: "Inform Housekeeping about the late checkout" + roomIn + ".",
+                priority: "high",
+                department: resolveRecommendationDepartment(["Housekeeping"], "Housekeeping")
+              });
+              return;
+            }
+
+            if (noteContains(line, ["housekeeping"]) &&
+                noteContains(line, ["waiting", "wait for", "waiting for", "held", "release", "released", "dirty"])) {
+              addCandidate({
+                text: "Prioritise" + roomOn + " once it is released for Housekeeping.",
+                priority: "high",
+                department: resolveRecommendationDepartment(["Housekeeping"], "Housekeeping")
+              });
+              return;
+            }
+
+            if (note.section === "payments" || isPaymentIssueLine(line)) {
+              if (noteContains(line, ["outstanding", "payment", "balance", "folio", "unpaid", "owing", "due"])) {
+                addCandidate({
+                  text: "Follow up on the outstanding payment" + roomIn + " before checkout.",
+                  priority: note.section === "urgent" ? "urgent" : "high",
+                  department: resolveRecommendationDepartment(["Front Office", "Reception", "Duty Manager"], "Front Office")
+                });
+                return;
+              }
+            }
+
+            if (noteContains(line, ["complaint", "complain", "unhappy", "dissatisfied", "escalat"]) &&
+                noteContains(line, ["guest", "room"]) && note.section !== "general") {
+              addCandidate({
+                text: "Review the guest complaint" + roomIn + " and escalate to management if unresolved.",
+                priority: note.section === "urgent" ? "urgent" : "high",
+                department: resolveRecommendationDepartment(["Duty Manager", "Front Office", "Management"], "Duty Manager")
+              });
+              return;
+            }
+
+            if (noteContains(line, ["wake-up call", "wakeup call", "wake up call"])) {
+              addCandidate({
+                text: "Confirm the wake-up call" + roomIn + " is scheduled with the Front Office team.",
+                priority: "normal",
+                department: resolveRecommendationDepartment(["Front Office", "Reception"], "Front Office")
+              });
+              return;
+            }
+
+            if (noteContains(line, ["airport transfer", "transfer", "pick up", "pickup", "taxi", "car service"])) {
+              addCandidate({
+                text: "Coordinate the guest transfer" + roomIn + " and confirm arrangements with the incoming shift.",
+                priority: "normal",
+                department: resolveRecommendationDepartment(["Concierge", "Front Office", "Reception"], "Front Office")
+              });
+              return;
+            }
+
+            if (noteContains(line, ["lost property", "lost item", "left item", "missing item"])) {
+              addCandidate({
+                text: "Log the lost property item" + roomIn + " and follow hotel lost property procedures.",
+                priority: "normal",
+                department: resolveRecommendationDepartment(["Front Office", "Reception", "Duty Manager"], "Front Office")
+              });
+              return;
+            }
+
+            if (noteContains(line, ["physical key", "key card", "keycard", "room key", "master key"]) &&
+                noteContains(line, ["lost", "missing", "not working", "faulty", "replacement", "issue"])) {
+              addCandidate({
+                text: "Follow up on the key issue" + roomIn + " with Front Office or Maintenance.",
+                priority: "high",
+                department: resolveRecommendationDepartment(["Front Office", "Maintenance", "Reception"], "Front Office")
+              });
+              return;
+            }
+
+            if ((note.isFollowUp || note.section === "tasks" || note.section === "urgent") &&
+                noteContains(line, ["follow up", "follow-up", "outstanding", "pending", "must", "need to", "ensure"])) {
+              if (note.section === "general" && !note.isFollowUp) return;
+              addCandidate({
+                text: "Action the outstanding task" + roomIn + " and hand over clearly to the next shift.",
+                priority: note.section === "urgent" ? "urgent" : "normal",
+                department: resolveRecommendationDepartment([department.value], department.value || getDefaultDepartment())
+              });
+            }
+          });
+
+          candidates.sort(function (a, b) {
+            var rankA = RECOMMENDATION_PRIORITY_RANK[a.priority] != null ? RECOMMENDATION_PRIORITY_RANK[a.priority] : 9;
+            var rankB = RECOMMENDATION_PRIORITY_RANK[b.priority] != null ? RECOMMENDATION_PRIORITY_RANK[b.priority] : 9;
+            return rankA - rankB;
+          });
+
+          return candidates.slice(0, 6).map(function (rec) {
+            rec.text = applyRecommendationPreferences(rec.text);
+            return rec;
+          });
+        }
+      };
+
+      window.HandoverRecommendationEngine = HandoverRecommendationEngine;
+
+      function generateRecommendations(classified, rawNotesText) {
+        return HandoverRecommendationEngine.generate(classified, rawNotesText, hotelBrainContext);
+      }
+
+      function findRecommendationById(id) {
+        for (var i = 0; i < lastRecommendations.length; i++) {
+          if (lastRecommendations[i].id === id) return { index: i, item: lastRecommendations[i] };
+        }
+        return null;
+      }
+
+      function renderRecommendations() {
+        if (!recommendationsCard) return;
+
+        recommendationsCard.hidden = false;
+        recommendationsCard.classList.add("is-visible");
+
+        if (!lastRecommendations.length) {
+          if (recommendationsList) {
+            recommendationsList.innerHTML = "";
+            recommendationsList.hidden = true;
+          }
+          if (recommendationsEmpty) recommendationsEmpty.hidden = false;
+          return;
+        }
+
+        if (recommendationsEmpty) recommendationsEmpty.hidden = true;
+        if (!recommendationsList) return;
+
+        recommendationsList.hidden = false;
+        recommendationsList.innerHTML = "";
+
+        lastRecommendations.forEach(function (rec) {
+          recommendationsList.appendChild(buildRecommendationItemElement(rec));
+        });
+      }
+
+      function buildRecommendationItemElement(rec) {
+        var normalized = normalizeRecommendation(rec);
+        var li = document.createElement("li");
+        li.className = "recommendation-item priority-" + normalized.priority;
+        li.setAttribute("data-recommendation-id", normalized.id);
+
+        if (normalized.status === "completed") li.classList.add("is-completed");
+        if (normalized.status === "in_progress") li.classList.add("is-in-progress");
+
+        var main = document.createElement("div");
+        main.className = "recommendation-item-main";
+
+        var text = document.createElement("div");
+        text.className = "recommendation-item-text";
+        text.textContent = normalized.text;
+
+        var meta = document.createElement("div");
+        meta.className = "recommendation-item-meta";
+
+        var priority = document.createElement("span");
+        priority.className = "recommendation-priority priority-" + normalized.priority;
+        priority.textContent = formatRecommendationPriorityLabel(normalized.priority);
+
+        var dept = document.createElement("span");
+        dept.className = "recommendation-dept";
+        dept.textContent = normalized.department;
+
+        meta.appendChild(priority);
+        meta.appendChild(dept);
+        main.appendChild(text);
+        main.appendChild(meta);
+        li.appendChild(main);
+
+        var toolbar = document.createElement("div");
+        toolbar.className = "recommendation-item-toolbar";
+
+        var editBtn = document.createElement("button");
+        editBtn.type = "button";
+        editBtn.className = "handover-item-edit-btn";
+        editBtn.setAttribute("aria-label", "Edit recommendation");
+        editBtn.innerHTML = EDIT_ICON;
+        editBtn.addEventListener("click", function (event) {
+          event.stopPropagation();
+          openRecommendationEditor(li, normalized);
+        });
+
+        var deleteBtn = document.createElement("button");
+        deleteBtn.type = "button";
+        deleteBtn.className = "recommendation-item-delete-btn";
+        deleteBtn.setAttribute("aria-label", "Delete recommendation");
+        deleteBtn.innerHTML = DELETE_ICON;
+        deleteBtn.addEventListener("click", function (event) {
+          event.stopPropagation();
+          deleteRecommendation(normalized.id);
+        });
+
+        var statusSelect = document.createElement("select");
+        statusSelect.className = "handover-item-status-select status-" + normalized.status.replace(/_/g, "-");
+        statusSelect.setAttribute("aria-label", "Recommendation status");
+        ITEM_STATUSES.forEach(function (entry) {
+          var option = document.createElement("option");
+          option.value = entry.id;
+          option.textContent = entry.label;
+          if (entry.id === normalized.status) option.selected = true;
+          statusSelect.appendChild(option);
+        });
+        statusSelect.addEventListener("change", function () {
+          setRecommendationStatus(normalized.id, statusSelect.value);
+        });
+
+        toolbar.appendChild(editBtn);
+        toolbar.appendChild(deleteBtn);
+        toolbar.appendChild(statusSelect);
+        li.appendChild(toolbar);
+        return li;
+      }
+
+      function openRecommendationEditor(li, item) {
+        if (activeRecommendationEditId && activeRecommendationEditId !== item.id) {
+          renderRecommendations();
+        }
+
+        activeRecommendationEditId = item.id;
+        li.classList.add("is-editing");
+        li.innerHTML = "";
+
+        var input = document.createElement("textarea");
+        input.className = "handover-item-edit-input";
+        input.value = item.text;
+        input.setAttribute("aria-label", "Edit recommendation");
+
+        var actions = document.createElement("div");
+        actions.className = "handover-item-edit-actions";
+
+        var saveBtn = document.createElement("button");
+        saveBtn.type = "button";
+        saveBtn.className = "handover-item-edit-save";
+        saveBtn.textContent = "Save";
+
+        var cancelBtn = document.createElement("button");
+        cancelBtn.type = "button";
+        cancelBtn.className = "handover-item-edit-cancel";
+        cancelBtn.textContent = "Cancel";
+
+        function closeEditor(restore) {
+          activeRecommendationEditId = null;
+          if (restore) renderRecommendations();
+        }
+
+        saveBtn.addEventListener("click", function () {
+          saveRecommendationEdit(item.id, input.value);
+        });
+        cancelBtn.addEventListener("click", function () {
+          closeEditor(true);
+        });
+        input.addEventListener("keydown", function (event) {
+          if (event.key === "Escape") closeEditor(true);
+        });
+
+        actions.appendChild(saveBtn);
+        actions.appendChild(cancelBtn);
+        li.appendChild(input);
+        li.appendChild(actions);
+        input.focus();
+      }
+
+      function saveRecommendationEdit(id, newText) {
+        var trimmed = String(newText || "").trim();
+        if (!trimmed) {
+          showToast("Recommendation text cannot be empty.");
+          return;
+        }
+        var found = findRecommendationById(id);
+        if (!found) return;
+        found.item.text = trimmed;
+        lastRecommendations[found.index] = found.item;
+        activeRecommendationEditId = null;
+        renderRecommendations();
+        syncHandoverExports();
+        showToast("Recommendation updated.");
+      }
+
+      function setRecommendationStatus(id, status) {
+        var found = findRecommendationById(id);
+        if (!found) return;
+        found.item.status = normalizeRecommendationStatus(status);
+        lastRecommendations[found.index] = found.item;
+        renderRecommendations();
+        syncHandoverExports();
+      }
+
+      function deleteRecommendation(id) {
+        lastRecommendations = lastRecommendations.filter(function (rec) { return rec.id !== id; });
+        activeRecommendationEditId = null;
+        renderRecommendations();
+        syncHandoverExports();
+        showToast("Recommendation removed.");
+      }
+
+      function hideRecommendationsPanel() {
+        if (!recommendationsCard) return;
+        recommendationsCard.classList.remove("is-visible");
+        recommendationsCard.hidden = true;
+        if (recommendationsList) {
+          recommendationsList.innerHTML = "";
+          recommendationsList.hidden = true;
+        }
+        if (recommendationsEmpty) recommendationsEmpty.hidden = true;
       }
 
       function saveHandoverItemEdit(itemId, newText) {
@@ -3981,7 +5051,7 @@
 
         var limit = getDetailSentenceLimit();
         var summary = sentences.slice(0, limit).join(" ");
-        return applyAiPreferencesToSummary(summary);
+        return applyAiPreferencesToSummary(summary, classified);
       }
 
       function showSummaryCard() {
@@ -4615,7 +5685,7 @@
       function buildSummaryOverview(classified) {
         var metrics = getHandoverMetrics(classified);
         var analyzed = classified._analyzed || [];
-        return applyAiPreferencesToSummary(buildOpeningSentence(metrics, analyzed));
+        return applyAiPreferencesToSummary(buildOpeningSentence(metrics, analyzed), classified);
       }
 
       function buildSummaryRowSentence(rowId, classified, metrics) {
@@ -4698,7 +5768,7 @@
 
           var sentence = buildSummaryRowSentence(row.id, classified, metrics);
           if (!sentence) return;
-          sentence = applyAiPreferencesToSummary(sentence);
+          sentence = applyAiPreferencesToSummary(sentence, classified);
 
           var el = document.createElement("div");
           el.className = "summary-row";
@@ -4770,6 +5840,7 @@
           dashboardMetrics: getHandoverMetrics(lastClassified),
           organisedHandover: buildOrganisedHandover(lastClassified),
           hotelSnapshot: Object.assign({}, lastHotelSnapshotOverrides),
+          recommendations: lastRecommendations.map(normalizeRecommendation),
           timestamp: new Date().toISOString()
         };
       }
@@ -4815,6 +5886,9 @@
 
         lastSummaryText = saved.aiSummary || "";
         lastClassified = restoreClassifiedFromSaved(saved);
+        lastRecommendations = Array.isArray(saved.recommendations)
+          ? saved.recommendations.map(normalizeRecommendation)
+          : [];
         lastHotelSnapshotOverrides = saved.hotelSnapshot
           ? Object.assign({}, saved.hotelSnapshot)
           : {};
@@ -4828,6 +5902,7 @@
         renderHandoverMeta(lastGeneratedTime);
         renderSummaryStats(lastClassified);
         renderSections(lastClassified);
+        renderRecommendations();
         showSummaryCard();
 
         lastHandoverText = formatHandoverText(lastClassified);
@@ -4878,6 +5953,15 @@
           });
           parts.push("");
         });
+
+        if (lastRecommendations.length) {
+          parts.push("AI RECOMMENDATIONS");
+          parts.push("Suggested actions based on this shift and the Hotel Brain.");
+          lastRecommendations.forEach(function (rec) {
+            parts.push("• " + formatRecommendationForExport(rec));
+          });
+          parts.push("");
+        }
 
         return parts.join("\n").trim();
       }
@@ -4946,6 +6030,9 @@
           return;
         }
 
+        reloadHotelBrain();
+        renderHotelBrainPanel();
+
         captureHotelSnapshotInputs();
 
         generateBtn.classList.add("loading");
@@ -4963,6 +6050,8 @@
           renderSummaryUI(classified);
           renderShiftAtAGlance(classified);
           renderPreHandoverSnapshot();
+          lastRecommendations = generateRecommendations(classified, text);
+          renderRecommendations();
           lastGeneratedTime = formatTimestamp(now);
           renderHandoverMeta(lastGeneratedTime);
           renderSummaryStats(classified);
@@ -5001,7 +6090,7 @@
           if (!def.count) return;
           var sentence = buildSummaryRowSentence(def.id, classified, metrics);
           if (!sentence) return;
-          rows.push({ heading: def.heading, text: applyAiPreferencesToSummary(sentence) });
+          rows.push({ heading: def.heading, text: applyAiPreferencesToSummary(sentence, classified) });
         });
 
         return {
@@ -5052,7 +6141,10 @@
             metrics: getHandoverMetrics(lastClassified),
             hotelSnapshot: buildHotelSnapshotForPdf(),
             summary: buildPdfSummaryPayload(lastClassified),
-            sections: buildPdfSections(lastClassified)
+            sections: buildPdfSections(lastClassified),
+            recommendations: lastRecommendations.map(function (rec) {
+              return formatRecommendationForExport(normalizeRecommendation(rec));
+            })
           });
           showToast("PDF downloaded successfully.");
         } catch (err) {
@@ -5124,8 +6216,11 @@
         lastSummaryText = "";
         lastGeneratedTime = "";
         lastClassified = null;
+        lastRecommendations = [];
         lastHotelSnapshotOverrides = {};
         activeHandoverEditId = null;
+        activeRecommendationEditId = null;
+        hideRecommendationsPanel();
         renderPreHandoverSnapshot();
         copyBtn.disabled = true;
         exportPdfBtn.disabled = true;
@@ -5155,6 +6250,12 @@
       });
 
       applyHotelProfileToUI();
+      window.addEventListener("storage", function (event) {
+        if (event.key !== HOTEL_BRAIN_KEY) return;
+        reloadHotelBrain();
+        applyHotelProfileToUI();
+      });
+
       initDate();
       updateCharCount();
       renderPreHandoverSnapshot();
