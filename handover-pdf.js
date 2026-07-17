@@ -432,7 +432,7 @@
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     setText(doc, COLORS.gray500);
-    doc.text("Suggested actions based on this shift and the Hotel Brain.", LAYOUT.marginX, this.y);
+    doc.text("What should the next shift do?", LAYOUT.marginX, this.y);
     this.y += 5;
 
     recommendations.forEach(function (item) {
@@ -444,6 +444,38 @@
       doc.setFontSize(8.5);
       setText(doc, COLORS.gray600);
       doc.text("•", LAYOUT.marginX + 1, this.y);
+      doc.text(lines, LAYOUT.marginX + bulletIndent, this.y);
+      this.y += blockHeight + 0.5;
+    }, this);
+
+    this.y += 4;
+  };
+
+  PdfDocument.prototype.drawIntelligenceChecklist = function (checklistItems) {
+    if (!checklistItems || !checklistItems.length) return;
+
+    var doc = this.doc;
+    var width = contentWidth();
+    var bulletIndent = 5;
+    var textWidth = width - bulletIndent - 8;
+
+    this.drawSectionTitle("Shift Intelligence Checklist", 8 + checklistItems.length * LAYOUT.lineHeight);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    setText(doc, COLORS.gray500);
+    doc.text("What might the team have forgotten?", LAYOUT.marginX, this.y);
+    this.y += 5;
+
+    checklistItems.forEach(function (item) {
+      var lines = wrapText(doc, item, textWidth);
+      var blockHeight = lines.length * LAYOUT.lineHeight + 2;
+      this.ensureSpace(blockHeight + 1);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      setText(doc, COLORS.gray600);
+      doc.text("□", LAYOUT.marginX + 1, this.y);
       doc.text(lines, LAYOUT.marginX + bulletIndent, this.y);
       this.y += blockHeight + 0.5;
     }, this);
@@ -520,6 +552,7 @@
     pdf.drawSummary(payload.summary);
     pdf.drawHandoverSections(payload.sections);
     pdf.drawRecommendations(payload.recommendations);
+    pdf.drawIntelligenceChecklist(payload.intelligenceChecklist);
     pdf.save(buildFilename(payload.meta));
   }
 
