@@ -16,7 +16,7 @@
     { id: 'guest-services', label: 'Guest Services', shortLabel: 'Guest Services', icon: 'concierge' },
     { id: 'inventory', label: 'Inventory', shortLabel: 'Inventory', icon: 'box' },
     { id: 'operations', label: 'Operations', shortLabel: 'Operations', icon: 'activity' },
-    { id: 'academy', label: 'Hospitality Academy', shortLabel: 'Academy', icon: 'academy' },
+    { id: 'hotel-knowledge', label: 'Hotel Knowledge', shortLabel: 'Hotel Knowledge', icon: 'knowledge' },
     { id: 'advanced-settings', label: 'Advanced Settings', shortLabel: 'Advanced', icon: 'settings' }
   ];
 
@@ -35,6 +35,7 @@
     box: '<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>',
     activity: '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',
     academy: '<path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>',
+    knowledge: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>',
     settings: '<circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>'
   };
 
@@ -240,6 +241,39 @@
     if (ac.trainingTone == null) ac.trainingTone = '';
     if (ac.passScore == null) ac.passScore = '';
     if (ac.autoGenerate == null) ac.autoGenerate = false;
+
+    if (!d.hotelKnowledge || typeof d.hotelKnowledge !== 'object') {
+      d.hotelKnowledge = {
+        generalNotes: '', hotelStandards: '', vipRules: '', commonTerms: '',
+        operationalNotes: '', localRecommendations: '', aiInstructions: ''
+      };
+    } else {
+      var hk = d.hotelKnowledge;
+      if (hk.generalNotes == null) hk.generalNotes = '';
+      if (hk.hotelStandards == null) hk.hotelStandards = '';
+      if (hk.vipRules == null) hk.vipRules = '';
+      if (hk.commonTerms == null) hk.commonTerms = '';
+      if (hk.operationalNotes == null) hk.operationalNotes = '';
+      if (hk.localRecommendations == null) hk.localRecommendations = '';
+      if (hk.aiInstructions == null) hk.aiInstructions = '';
+    }
+
+    if (!d.facilities || typeof d.facilities !== 'object') d.facilities = { checked: [], custom: '', customItems: [] };
+    if (!Array.isArray(d.facilities.checked)) d.facilities.checked = [];
+    if (d.facilities.custom == null) d.facilities.custom = '';
+    if (!Array.isArray(d.facilities.customItems)) d.facilities.customItems = [];
+    if (d.facilities.custom && !d.facilities.customItems.length) {
+      d.facilities.custom.split(/\n|,/).forEach(function (line) {
+        line = String(line || '').trim().replace(/^[-•]\s*/, '');
+        if (!line) return;
+        var slug = line.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'item';
+        d.facilities.customItems.push({
+          id: 'fac-custom-' + slug,
+          label: line,
+          checked: d.facilities.checked.indexOf('fac-custom-' + slug) !== -1 || true
+        });
+      });
+    }
 
     if (Array.isArray(d.departments)) {
       d.departments.forEach(function (dept) {
@@ -578,6 +612,11 @@
     document.querySelectorAll('.section-nav-link, .mobile-nav-link').forEach(function (link) {
       link.addEventListener('click', function (e) {
         var id = link.getAttribute('href').slice(1);
+        var target = document.getElementById(id);
+        if (target) {
+          e.preventDefault();
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
         setActive(id);
       });
     });
@@ -640,7 +679,7 @@
       case 'rooms-facilities':
         return (document.querySelectorAll('#roomsTableBody [data-room-row]').length > 0) ||
           Array.from(document.querySelectorAll('#facilityGrid input[type="checkbox"]:checked')).length > 0 ||
-          fieldHasText('customFacilities');
+          Array.from(document.querySelectorAll('#facilityCustomList input[type="checkbox"]:checked')).length > 0;
       case 'departments-shifts':
         return document.querySelectorAll('#deptGrid [data-dept]').length > 0 ||
           document.querySelectorAll('#shiftTableBody tr').length > 0 ||
@@ -665,6 +704,11 @@
           var cb = card.querySelector('[data-f="enabled"]');
           return cb && cb.checked;
         }) || document.querySelectorAll('#emailRecipientList [data-email-recipient]').length > 0;
+      case 'hotel-knowledge':
+        return anyFieldHasText([
+          'hkGeneralNotes', 'hkHotelStandards', 'hkVipRules', 'hkCommonTerms',
+          'hkOperationalNotes', 'hkLocalRecommendations', 'hkAiInstructions'
+        ]);
       case 'academy':
       case 'advanced-settings':
         return false;
@@ -686,11 +730,9 @@
   }
 
   function updateSectionStatuses() {
-    var progress = computeProfileProgress();
-    document.querySelectorAll('.section-nav-link, .mobile-nav-link').forEach(function (link) {
+    document.querySelectorAll('.section-nav-link').forEach(function (link) {
       var id = link.getAttribute('data-section');
-      if (!id) return;
-      link.classList.toggle('is-complete', !!progress.sections[id]);
+      if (id) link.classList.toggle('is-complete', isSectionComplete(id));
     });
   }
 
@@ -700,12 +742,12 @@
     var fillEl = document.getElementById('profileProgressFill');
     var countEl = document.getElementById('profileProgressCount');
     var barEl = document.getElementById('profileProgressBar');
-    if (pctEl) pctEl.textContent = progress.overall + '% Complete';
+    if (pctEl) pctEl.textContent = progress.overall + '%';
     if (fillEl) fillEl.style.width = progress.overall + '%';
-    if (countEl) countEl.textContent = progress.completed + ' of ' + progress.total + ' sections started';
+    if (countEl) countEl.textContent = progress.completed + ' / ' + progress.total;
     if (barEl) {
       barEl.setAttribute('aria-valuenow', String(progress.overall));
-      barEl.setAttribute('aria-label', 'Hotel profile ' + progress.overall + ' percent complete');
+      barEl.setAttribute('aria-label', 'Hotel Brain ' + progress.overall + ' percent complete');
     }
     updateSectionStatuses();
   }

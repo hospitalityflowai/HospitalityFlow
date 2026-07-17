@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Hospitality Flow — Hotel Profile. The central knowledge layer powering every AI tool in your hotel operations.">
-  <title>Hotel Profile — Hospitality Flow</title>
+  <meta name="description" content="Hospitality Flow — Hotel Brain. The intelligence behind every AI tool in your hotel operations.">
+  <title>Hotel Brain — Hospitality Flow</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -24,6 +24,7 @@
       --shadow-card-hover: 0 4px 12px rgba(7,14,26,.06), 0 8px 28px rgba(7,14,26,.05);
       --transition: .22s ease; --transition-smooth: .28s cubic-bezier(.4,0,.2,1);
       --max-width: 1080px; --nav-height: 64px; --sidebar-width: 252px;
+      --input-height: 42px; --input-radius: var(--radius); --input-padding: 11px 14px;
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; scroll-padding-top: calc(var(--nav-height) + 20px); }
@@ -41,10 +42,13 @@
     .nav-actions { display: flex; align-items: center; gap: 10px; }
     .nav-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: var(--purple-50); border: 1px solid rgba(124,92,191,.2); border-radius: 100px; font-size: .75rem; font-weight: 600; color: var(--purple-600); white-space: nowrap; }
     .nav-badge-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--purple-600); animation: pulse 2s ease infinite; }
-    .btn-save { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 16px; font-size: .82rem; font-weight: 600; color: var(--white); background: linear-gradient(135deg, var(--blue-500), var(--blue-600)); border-radius: var(--radius); box-shadow: 0 2px 8px rgba(74,143,196,.28); transition: all var(--transition); position: relative; }
+    .btn-save { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 16px; font-size: .82rem; font-weight: 600; color: var(--white); background: linear-gradient(135deg, var(--blue-500), var(--blue-600)); border-radius: var(--radius); box-shadow: 0 2px 8px rgba(74,143,196,.28); transition: transform var(--transition), box-shadow var(--transition), opacity var(--transition); position: relative; }
     .btn-save:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(74,143,196,.36); }
+    .btn-save:active { transform: translateY(0); box-shadow: 0 2px 6px rgba(74,143,196,.24); }
     .btn-save.is-unsaved { box-shadow: 0 0 0 2px var(--white), 0 0 0 4px var(--amber-600), 0 2px 8px rgba(74,143,196,.28); }
-    .btn-save.is-unsaved::after { content: ""; position: absolute; top: 6px; right: 6px; width: 7px; height: 7px; border-radius: 50%; background: var(--amber-600); border: 1.5px solid var(--white); }
+    .btn-save.is-unsaved::after { content: ""; position: absolute; top: 6px; right: 6px; width: 7px; height: 7px; border-radius: 50%; background: var(--amber-600); border: 1.5px solid var(--white); transition: transform var(--transition); }
+    .btn-save.is-save-flash { animation: saveBtnFlash .38s ease; }
+    @keyframes saveBtnFlash { 0%, 100% { transform: scale(1); } 45% { transform: scale(.97); box-shadow: 0 2px 12px rgba(45,138,94,.35); } }
     .btn-save svg { width: 14px; height: 14px; }
     .btn-nav-secondary { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px; font-size: .78rem; font-weight: 600; color: var(--gray-500); background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius); transition: all var(--transition); white-space: nowrap; }
     .btn-nav-secondary:hover { color: var(--navy-800); border-color: var(--gray-300); background: var(--gray-50); }
@@ -64,17 +68,20 @@
     .nav-more-item--danger svg { color: var(--red-500); }
     .save-status-wrap { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; min-width: 0; }
     .profile-save-bar { display: none; }
-    .profile-progress-panel { padding: 20px 22px; margin-bottom: 28px; background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); animation: fadeDown .5s ease both; }
-    .profile-progress-header { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
-    .profile-progress-title { font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--gray-500); }
-    .profile-progress-pct { font-size: 1.05rem; font-weight: 700; color: var(--navy-900); letter-spacing: -.02em; white-space: nowrap; }
-    .profile-progress-bar { height: 8px; background: var(--gray-100); border-radius: 100px; overflow: hidden; margin-bottom: 10px; }
+    .profile-progress-panel { padding: 16px 20px; margin-bottom: 20px; background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); animation: fadeDown .45s ease both; }
+    .profile-progress-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+    .profile-progress-title { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--gray-400); }
+    .save-confirm-badge { display: inline-flex; align-items: center; gap: 5px; font-size: .72rem; font-weight: 700; color: var(--green-600); padding: 4px 10px; background: var(--green-50); border-radius: 100px; border: 1px solid rgba(45,138,94,.22); opacity: 0; transform: scale(.94); transition: opacity .22s ease, transform .22s ease; }
+    .save-confirm-badge.is-visible { opacity: 1; transform: scale(1); }
+    .save-confirm-badge[hidden] { display: none !important; }
+    .profile-progress-bar { height: 6px; background: var(--gray-100); border-radius: 100px; overflow: hidden; margin-bottom: 12px; }
     .profile-progress-fill { height: 100%; background: linear-gradient(90deg, var(--blue-500), var(--green-600)); border-radius: 100px; transition: width .45s cubic-bezier(.4,0,.2,1); width: 0; }
-    .profile-progress-meta { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-    .profile-progress-count { font-size: .76rem; font-weight: 500; color: var(--gray-400); margin: 0; }
-    .profile-progress-saved { font-size: .76rem; font-weight: 500; color: var(--gray-400); margin: 0; }
-    .profile-progress-saved.is-empty { font-style: italic; }
-    .profile-progress-saved.is-unsaved { color: var(--amber-600); font-weight: 600; }
+    .progress-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 16px; }
+    .progress-stat-label { display: block; font-size: .62rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--gray-400); margin-bottom: 3px; line-height: 1.2; }
+    .progress-stat-value { display: block; font-size: .86rem; font-weight: 700; color: var(--navy-900); letter-spacing: -.02em; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .progress-stat-value--muted { font-weight: 600; font-size: .8rem; color: var(--gray-500); }
+    .progress-stat-value.is-error { color: var(--red-500); font-size: .76rem; font-weight: 600; white-space: normal; }
+    .profile-progress-pct, .profile-progress-count, .profile-progress-saved, .profile-progress-header, .profile-progress-meta { display: none; }
     .field-group { padding: 20px 22px; background: var(--gray-50); border: 1px solid var(--gray-100); border-radius: var(--radius-lg); margin-bottom: 20px; }
     .field-group:last-child { margin-bottom: 0; }
     .field-group-title { font-size: .74rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--navy-700); margin-bottom: 16px; }
@@ -109,11 +116,11 @@
     .save-changes-status--unsaved span { animation: saveDotPulse 1.6s ease infinite; }
     .page { min-height: 100vh; display: flex; flex-direction: column; }
     .container { width: 100%; max-width: var(--max-width); margin: 0 auto; padding: 0 24px; }
-    .main { flex: 1; padding: 32px 0 72px; }
-    .profile-hero { margin-bottom: 32px; animation: fadeDown .5s ease both; }
-    .profile-hero-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-bottom: 20px; }
-    .page-title { font-size: clamp(1.4rem, 3.5vw, 1.85rem); font-weight: 700; letter-spacing: -.035em; color: var(--navy-900); line-height: 1.2; margin-bottom: 6px; }
-    .page-subtitle { font-size: .95rem; color: var(--gray-500); max-width: 560px; }
+    .main { flex: 1; padding: 24px 0 64px; }
+    .profile-hero { margin-bottom: 20px; animation: fadeDown .45s ease both; }
+    .profile-hero-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
+    .page-title { font-size: clamp(1.35rem, 3.2vw, 1.72rem); font-weight: 700; letter-spacing: -.035em; color: var(--navy-900); line-height: 1.2; margin-bottom: 4px; }
+    .page-subtitle { font-size: .88rem; color: var(--gray-500); max-width: 48ch; line-height: 1.5; }
     .page-tagline { font-size: .78rem; font-weight: 500; color: var(--gray-400); margin-top: 6px; }
     .knowledge-banner { position: relative; overflow: hidden; padding: 22px 26px; border-radius: var(--radius-xl); border: 1px solid rgba(74,143,196,.28); background: linear-gradient(135deg, #d4e8f7, #eaf4fc 30%, #f5faff 60%, var(--white)); box-shadow: var(--shadow-sm); }
     .knowledge-banner::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--navy-700), var(--blue-500) 45%, var(--blue-400)); }
@@ -125,20 +132,20 @@
     .knowledge-tools { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
     .knowledge-tool-chip { padding: 4px 10px; font-size: .7rem; font-weight: 600; color: var(--blue-600); background: rgba(255,255,255,.75); border: 1px solid rgba(74,143,196,.22); border-radius: 100px; }
     .profile-layout { display: grid; grid-template-columns: var(--sidebar-width) 1fr; gap: 36px; align-items: start; }
-    .section-nav { position: sticky; top: calc(var(--nav-height) + 24px); display: flex; flex-direction: column; gap: 3px; animation: fadeUp .5s ease .05s both; max-height: calc(100vh - var(--nav-height) - 48px); overflow-y: auto; padding-right: 4px; }
-    .section-nav-label { font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--gray-400); padding: 0 14px; margin-bottom: 10px; }
-    .section-nav-link { display: flex; align-items: center; gap: 10px; padding: 10px 14px; font-size: .82rem; font-weight: 500; color: var(--gray-500); text-decoration: none; border-radius: var(--radius); border: 1px solid transparent; transition: all var(--transition); }
-    .section-nav-link:hover { background: var(--white); color: var(--navy-800); box-shadow: var(--shadow-sm); }
-    .section-nav-link.active { background: var(--white); color: var(--navy-900); font-weight: 600; box-shadow: var(--shadow-sm); border-color: var(--gray-200); border-left: 3px solid var(--blue-500); padding-left: 12px; }
-    .section-nav-link .nav-icon { width: 18px; height: 18px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: var(--gray-400); }
-    .section-nav-link .nav-icon svg { width: 16px; height: 16px; }
+    .section-nav { position: sticky; top: calc(var(--nav-height) + 20px); display: flex; flex-direction: column; gap: 2px; animation: fadeUp .45s ease .05s both; max-height: calc(100vh - var(--nav-height) - 40px); overflow-y: auto; padding-right: 4px; scrollbar-width: thin; }
+    .section-nav-label { font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--gray-400); padding: 0 12px; margin-bottom: 8px; }
+    .section-nav-link { display: flex; align-items: center; gap: 10px; padding: 9px 12px; font-size: .82rem; font-weight: 500; color: var(--gray-500); text-decoration: none; border-radius: var(--radius); border: 1px solid transparent; transition: background var(--transition), color var(--transition), transform var(--transition-smooth), box-shadow var(--transition), border-color var(--transition); }
+    .section-nav-link:hover { background: var(--white); color: var(--navy-800); box-shadow: var(--shadow-sm); transform: translateX(2px); }
+    .section-nav-link.active { background: linear-gradient(90deg, rgba(238,246,252,.95), var(--white)); color: var(--navy-900); font-weight: 600; box-shadow: 0 1px 4px rgba(7,14,26,.05); border-color: var(--gray-200); border-left: 3px solid var(--blue-500); padding-left: 10px; }
+    .section-nav-link .nav-icon { width: 20px; height: 20px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: var(--gray-400); transition: color var(--transition); }
+    .section-nav-link .nav-icon svg { width: 16px; height: 16px; display: block; }
     .section-nav-link.active .nav-icon { color: var(--blue-500); }
     .section-nav-link .nav-label { flex: 1; min-width: 0; line-height: 1.35; }
-    .section-nav-link .nav-check { font-size: .72rem; font-weight: 700; color: var(--green-600); opacity: 0; transform: scale(.85); transition: opacity var(--transition), transform var(--transition); flex-shrink: 0; }
+    .section-nav-link .nav-check { width: 16px; font-size: .7rem; font-weight: 700; color: var(--green-600); opacity: 0; transform: scale(.85); transition: opacity var(--transition), transform var(--transition); flex-shrink: 0; text-align: center; line-height: 1; }
     .section-nav-link.is-complete .nav-check { opacity: 1; transform: scale(1); }
     .profile-sections { display: flex; flex-direction: column; gap: 32px; }
-    .profile-card { background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); transition: box-shadow var(--transition-smooth); scroll-margin-top: calc(var(--nav-height) + 20px); animation: fadeUp .5s ease both; }
-    .profile-card:hover { box-shadow: var(--shadow-card-hover); }
+    .profile-card { background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); transition: box-shadow var(--transition-smooth), transform var(--transition-smooth); scroll-margin-top: calc(var(--nav-height) + 20px); animation: fadeUp .45s ease both; }
+    .profile-card:hover { box-shadow: var(--shadow-card-hover); transform: translateY(-1px); }
     .profile-card-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 24px 30px; border-bottom: 1px solid var(--gray-100); }
     .profile-card-header-left { display: flex; align-items: center; gap: 14px; min-width: 0; }
     .card-header-icon { width: 40px; height: 40px; border-radius: 11px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
@@ -158,10 +165,10 @@
     .form-group.full { grid-column: 1 / -1; }
     .form-label { font-size: .8rem; font-weight: 600; color: var(--gray-500); }
     .form-helper { font-size: .74rem; color: var(--gray-400); }
-    .form-input { padding: 11px 14px; font-size: .92rem; color: var(--navy-900); background: var(--gray-50); border: 1.5px solid var(--gray-200); border-radius: var(--radius); transition: border-color var(--transition), box-shadow var(--transition), background var(--transition); }
+    .form-input { min-height: var(--input-height); padding: var(--input-padding, 11px 14px); font-size: .92rem; color: var(--navy-900); background: var(--gray-50); border: 1.5px solid var(--gray-200); border-radius: var(--input-radius); transition: border-color var(--transition), box-shadow var(--transition), background var(--transition); }
     .form-input:focus { outline: none; background: var(--white); border-color: var(--blue-500); box-shadow: 0 0 0 3px rgba(74,143,196,.12); }
     select.form-input { cursor: pointer; }
-    .notes-textarea { width: 100%; min-height: 100px; padding: 14px 16px; font-size: .92rem; line-height: 1.65; color: var(--navy-900); background: var(--gray-50); border: 1.5px solid var(--gray-200); border-radius: var(--radius); resize: vertical; transition: border-color var(--transition), box-shadow var(--transition); }
+    .notes-textarea { width: 100%; min-height: 100px; padding: 14px 16px; font-size: .92rem; line-height: 1.65; color: var(--navy-900); background: var(--gray-50); border: 1.5px solid var(--gray-200); border-radius: var(--input-radius); resize: vertical; transition: border-color var(--transition), box-shadow var(--transition), background var(--transition); }
     .notes-textarea:focus { outline: none; background: var(--white); border-color: var(--blue-500); box-shadow: 0 0 0 3px rgba(74,143,196,.12); }
     .editable-table-wrap { overflow-x: auto; margin: 0 -4px; padding: 0 4px; }
     .editable-table { width: 100%; border-collapse: collapse; font-size: .84rem; }
@@ -176,11 +183,18 @@
     .add-row-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; font-size: .82rem; font-weight: 600; color: var(--blue-600); background: var(--blue-50); border: 1px dashed rgba(74,143,196,.35); border-radius: var(--radius); margin-top: 12px; transition: all var(--transition); }
     .add-row-btn:hover { background: var(--blue-100); border-color: var(--blue-500); }
     .add-row-btn svg { width: 14px; height: 14px; }
-    .chip-grid { display: flex; flex-wrap: wrap; gap: 8px; }
-    .facility-chip { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; font-size: .82rem; font-weight: 500; color: var(--navy-800); background: var(--gray-50); border: 1.5px solid var(--gray-200); border-radius: var(--radius); transition: all var(--transition); }
-    .facility-chip input { width: 16px; height: 16px; accent-color: var(--blue-500); cursor: pointer; flex-shrink: 0; }
-    .facility-chip:has(input:checked) { background: var(--blue-50); border-color: rgba(74,143,196,.35); color: var(--blue-600); }
-    .facility-chip label { cursor: pointer; }
+    .chip-grid { display: flex; flex-wrap: wrap; gap: 10px; align-items: stretch; }
+    .facility-chips-wrap { display: flex; flex-direction: column; gap: 10px; }
+    .facility-chip { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 14px; font-size: .82rem; font-weight: 500; color: var(--navy-800); background: var(--gray-50); border: 1.5px solid var(--gray-200); border-radius: var(--radius); transition: background var(--transition), border-color var(--transition), color var(--transition), box-shadow var(--transition); user-select: none; }
+    .facility-chip:hover { border-color: var(--gray-300); background: var(--white); }
+    .facility-chip input { width: 16px; height: 16px; accent-color: var(--blue-500); cursor: pointer; flex-shrink: 0; margin: 0; }
+    .facility-chip:has(input:checked) { background: var(--blue-50); border-color: rgba(74,143,196,.4); color: var(--blue-600); box-shadow: 0 0 0 1px rgba(74,143,196,.08); }
+    .facility-chip label { cursor: pointer; line-height: 1.3; padding: 8px 0; }
+    .facility-chip--custom { padding-right: 6px; }
+    .facility-chip--custom .facility-remove { width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; color: var(--gray-400); font-size: 1.05rem; line-height: 1; margin-left: 0; opacity: 0; transition: opacity var(--transition), background var(--transition), color var(--transition); flex-shrink: 0; }
+    .facility-chip--custom:hover .facility-remove, .facility-chip--custom:focus-within .facility-remove { opacity: 1; }
+    .facility-chip--custom .facility-remove:hover { background: var(--red-50); color: #c94a4a; }
+    .facility-add-row { margin-top: 4px; }
     .pref-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     .pref-card { padding: 16px 18px; background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: var(--radius-lg); }
     .pref-card h3 { font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--gray-500); margin-bottom: 12px; }
@@ -442,16 +456,52 @@
     .settings-panel--muted { padding: 16px 18px; background: var(--gray-50); border-radius: var(--radius); border: 1px solid var(--gray-100); }
     .settings-panel--muted code { font-size: .78rem; color: var(--navy-700); background: var(--white); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--gray-200); }
     .settings-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
-    .rooms-table .col-check { width: 52px; text-align: center; }
-    .rooms-table .col-actions { width: 44px; }
+    .rooms-table .col-type { min-width: 168px; width: 168px; }
+    .rooms-table .col-type input { min-width: 148px; font-weight: 600; letter-spacing: .03em; text-align: center; }
+    .rooms-table th, .rooms-table td { padding: 10px 12px; vertical-align: middle; height: 52px; }
+    .rooms-table tbody tr[data-room-row] { height: 52px; }
+    .rooms-table input, .rooms-table select { padding: 0 11px; font-size: .86rem; height: 38px; min-height: 38px; box-sizing: border-box; border-radius: 8px; transition: border-color var(--transition), box-shadow var(--transition), background var(--transition); }
+    .rooms-table .col-check { width: 58px; text-align: center; }
+    .rooms-table .col-check input { width: 16px; height: 16px; margin: 0 auto; display: block; accent-color: var(--blue-500); }
+    .rooms-table .col-notes { width: 88px; text-align: center; white-space: nowrap; }
+    .rooms-table .col-actions { width: 100px; white-space: nowrap; }
+    .rooms-table .btn-text { min-height: 32px; display: inline-flex; align-items: center; justify-content: center; transition: background var(--transition), color var(--transition); }
+    .room-notes-indicator { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--blue-500); margin-left: 4px; vertical-align: middle; opacity: 0; transition: opacity var(--transition); }
+    .room-notes-indicator.has-notes { opacity: 1; }
+    .modal-overlay { position: fixed; inset: 0; z-index: 600; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(7,14,26,.38); backdrop-filter: blur(4px); animation: modalFadeIn .22s ease both; }
+    @keyframes modalFadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .modal-overlay[hidden] { display: none !important; }
+    .modal-panel { width: min(600px, 100%); background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); padding: 26px 28px; animation: modalPanelIn .26s cubic-bezier(.4,0,.2,1) both; }
+    @keyframes modalPanelIn { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    .modal-panel h3 { font-size: 1.05rem; font-weight: 700; color: var(--navy-900); margin-bottom: 10px; letter-spacing: -.02em; }
+    .modal-room-label { display: inline-block; font-size: .78rem; font-weight: 700; color: var(--navy-700); margin-bottom: 16px; padding: 5px 12px; background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 100px; letter-spacing: .02em; }
+    .modal-panel .notes-textarea { min-height: 240px; margin-bottom: 20px; font-size: .94rem; line-height: 1.7; }
+    .modal-actions { display: flex; justify-content: flex-end; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .modal-actions .btn-save, .modal-actions .btn-nav-secondary { min-width: 108px; justify-content: center; }
+    .knowledge-field { margin-bottom: 24px; }
+    .knowledge-field:last-child { margin-bottom: 0; }
+    .knowledge-field .form-label { margin-bottom: 2px; }
+    .knowledge-field .form-helper { margin-top: 8px; line-height: 1.55; }
+    .knowledge-field .notes-textarea { min-height: 120px; font-size: .94rem; line-height: 1.7; padding: 16px 18px; }
+    .knowledge-field .notes-textarea--large { min-height: 140px; }
+    .textarea-wrap { position: relative; }
+    .char-counter { display: block; margin-top: 6px; font-size: .72rem; font-weight: 500; color: var(--gray-400); text-align: right; }
     .room-details-row td { background: var(--blue-50); padding: 14px 16px !important; }
     .room-details-panel { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-    .btn-text { font-size: .76rem; font-weight: 600; color: var(--blue-600); padding: 4px 8px; border-radius: 6px; }
+    .btn-text { font-size: .76rem; font-weight: 600; color: var(--blue-600); padding: 4px 8px; border-radius: 6px; transition: background var(--transition), color var(--transition); }
     .btn-text:hover { background: var(--blue-50); }
-    .profile-hero--calm { margin-bottom: 24px; }
-    .profile-hero--calm .page-subtitle { max-width: 52ch; }
+    .profile-hero--calm { margin-bottom: 18px; }
+    .profile-hero--calm .page-subtitle { max-width: 46ch; }
+    .add-row-btn { transition: background var(--transition), border-color var(--transition), transform var(--transition); }
+    .add-row-btn:hover { transform: translateY(-1px); }
+    .add-row-btn:active { transform: translateY(0); }
     @media (max-width: 860px) {
       .entry-card-grid, .supplier-row { grid-template-columns: 1fr; }
+      .progress-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px; }
+      .rooms-table .col-type { min-width: 140px; width: 140px; }
+    }
+    @media (max-width: 520px) {
+      .progress-stats { grid-template-columns: 1fr 1fr; }
     }
   </style>
 </head>
@@ -465,14 +515,14 @@
           </div>
           <div>
             <span class="logo-text">Hospitality <span>Flow</span></span>
-            <span class="logo-sub">Hotel Profile</span>
+            <span class="logo-sub">Hotel Brain</span>
           </div>
         </a>
         <div class="nav-actions">
-          <div class="nav-badge"><span class="nav-badge-dot" aria-hidden="true"></span><span class="label">Knowledge Layer</span></div>
-          <button type="button" class="btn-save" id="saveBtn" aria-label="Save profile">
+          <div class="nav-badge"><span class="nav-badge-dot" aria-hidden="true"></span><span class="label">Hotel Brain</span></div>
+          <button type="button" class="btn-save" id="saveBtn" aria-label="Save Hotel Brain">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-            <span class="btn-label">Save Profile</span>
+            <span class="btn-label">Save Hotel Brain</span>
           </button>
         </div>
       </div>
@@ -483,21 +533,35 @@
         <div class="profile-hero profile-hero--calm">
           <div class="profile-hero-top">
             <div>
-              <h1 class="page-title">Hotel Profile</h1>
-              <p class="page-subtitle">Your hotel's central brain — set it up once. Every AI tool in Hospitality Flow reads from this profile.</p>
+              <h1 class="page-title">Hotel Brain</h1>
+              <p class="page-subtitle">The intelligence behind every Hospitality Flow AI tool.</p>
             </div>
           </div>
           <div class="profile-progress-panel" id="profileProgressPanel" aria-live="polite">
-            <div class="profile-progress-header">
-              <span class="profile-progress-title">Hotel Profile Progress</span>
-              <span class="profile-progress-pct" id="profileProgressPct">0% Complete</span>
+            <div class="profile-progress-top">
+              <span class="profile-progress-title">Hotel Brain Progress</span>
+              <span class="save-confirm-badge" id="saveConfirmBadge" hidden aria-live="polite"><span aria-hidden="true">✓</span> Saved</span>
             </div>
             <div class="profile-progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="profileProgressBar">
               <div class="profile-progress-fill" id="profileProgressFill"></div>
             </div>
-            <div class="profile-progress-meta">
-              <p class="profile-progress-count" id="profileProgressCount">0 of 8 sections started</p>
-              <p class="profile-progress-saved is-empty" id="lastSavedLine">Not saved yet</p>
+            <div class="progress-stats">
+              <div class="progress-stat">
+                <span class="progress-stat-label">Knowledge Coverage</span>
+                <span class="progress-stat-value" id="profileProgressPct">0%</span>
+              </div>
+              <div class="progress-stat">
+                <span class="progress-stat-label">Completed Sections</span>
+                <span class="progress-stat-value" id="profileProgressCount">0 / 8</span>
+              </div>
+              <div class="progress-stat">
+                <span class="progress-stat-label">Last Saved</span>
+                <span class="progress-stat-value progress-stat-value--muted" id="lastSavedLine">—</span>
+              </div>
+              <div class="progress-stat">
+                <span class="progress-stat-label">Connected AI Tools</span>
+                <span class="progress-stat-value progress-stat-value--muted" id="connectedToolsCount">4 tools</span>
+              </div>
             </div>
           </div>
           <p class="save-status visually-hidden" id="saveStatus" aria-live="polite"></p>
@@ -507,7 +571,7 @@
 
         <div class="profile-layout">
           <aside class="section-nav" id="sectionNav" aria-label="Profile sections">
-            <span class="section-nav-label">Knowledge Layer</span>
+            <span class="section-nav-label">Hotel Brain</span>
           </aside>
 
           <div class="profile-sections">
@@ -617,7 +681,7 @@
                     <thead>
                       <tr>
                         <th>Room</th>
-                        <th>Type</th>
+                        <th class="col-type">Type</th>
                         <th>Floor</th>
                         <th>Bed setup</th>
                         <th class="col-check">Twin</th>
@@ -625,8 +689,8 @@
                         <th>Bath / shower</th>
                         <th>View</th>
                         <th>Max occ.</th>
-                        <th>Notes</th>
-                        <th class="col-actions"></th>
+                        <th class="col-notes">Notes</th>
+                        <th class="col-actions">Actions</th>
                       </tr>
                     </thead>
                     <tbody id="roomsTableBody"></tbody>
@@ -642,6 +706,7 @@
                 <hr class="subsection-divider">
                 <h3 class="subsection-heading">Property facilities</h3>
                 <p class="section-intro">What guests and staff can access on site. Stored once here for every AI tool.</p>
+                <div class="facility-chips-wrap">
                 <div class="chip-grid" id="facilityGrid">
                   <div class="facility-chip"><input type="checkbox" id="fac-restaurant"><label for="fac-restaurant">Restaurant</label></div>
                   <div class="facility-chip"><input type="checkbox" id="fac-bar"><label for="fac-bar">Bar</label></div>
@@ -653,11 +718,12 @@
                   <div class="facility-chip"><input type="checkbox" id="fac-pool"><label for="fac-pool">Pool</label></div>
                   <div class="facility-chip"><input type="checkbox" id="fac-meeting"><label for="fac-meeting">Meeting rooms</label></div>
                   <div class="facility-chip"><input type="checkbox" id="fac-laundry"><label for="fac-laundry">Laundry</label></div>
+                  <div class="facility-chip"><input type="checkbox" id="fac-parlour"><label for="fac-parlour">Parlour</label></div>
                 </div>
-                <div class="form-group full" style="margin-top:14px">
-                  <label class="form-label" for="customFacilities">Other facilities</label>
-                  <textarea class="notes-textarea" id="customFacilities" placeholder="Anything not listed above — terrace, library, EV charging, etc." style="min-height:64px"></textarea>
+                <div class="chip-grid" id="facilityCustomList"></div>
                 </div>
+                <button type="button" class="add-row-btn facility-add-row" id="addCustomFacility">+ Add Custom Facility</button>
+                <input type="hidden" id="customFacilities" value="">
               </div>
             </section>
 
@@ -882,27 +948,76 @@
               </div>
             </section>
 
-            <section class="profile-card" id="academy">
+            <section class="profile-card" id="hotel-knowledge">
               <div class="profile-card-header">
                 <div class="profile-card-header-left">
                   <div class="card-header-icon purple" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
                   </div>
                   <div class="card-header-text">
-                    <h2>Hospitality Academy</h2>
-                    <p>Your hotel's future AI-powered training centre.</p>
+                    <h2>Hotel Knowledge</h2>
+                    <p>Shared context for every AI tool — standards, terminology, VIP rules and operational guidance.</p>
                   </div>
                 </div>
               </div>
               <div class="profile-card-body">
-                <div class="academy-placeholder">
-                  <div class="academy-placeholder-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                <p class="section-intro">Everything here is shared with every Hospitality Flow AI tool — write naturally, as you would brief a new team member.</p>
+                <div class="knowledge-field">
+                  <label class="form-label" for="hkGeneralNotes">General Notes</label>
+                  <div class="textarea-wrap">
+                    <textarea class="notes-textarea" id="hkGeneralNotes" placeholder="The hotel provides personalised boutique service and clear shift communication."></textarea>
+                    <span class="char-counter" data-for="hkGeneralNotes">0 characters</span>
                   </div>
-                  <h3>Coming soon</h3>
-                  <p>This section will become your hotel's AI-powered training centre. Future Hospitality Flow AI Agents will automatically generate training from your hotel's SOPs, policies and operational knowledge.</p>
-                  <span class="academy-placeholder-badge">Reserved for future release</span>
                 </div>
+                <div class="knowledge-field">
+                  <label class="form-label" for="hkHotelStandards">Hotel Standards</label>
+                  <div class="textarea-wrap">
+                    <textarea class="notes-textarea" id="hkHotelStandards" placeholder="Service standards, presentation rules and expectations for every guest interaction."></textarea>
+                    <span class="char-counter" data-for="hkHotelStandards">0 characters</span>
+                  </div>
+                  <p class="form-helper">How your team should represent the hotel day to day.</p>
+                </div>
+                <div class="knowledge-field">
+                  <label class="form-label" for="hkVipRules">VIP Rules</label>
+                  <div class="textarea-wrap">
+                    <textarea class="notes-textarea" id="hkVipRules" placeholder="VIP arrivals should be reviewed before check-in and relevant amenities prepared."></textarea>
+                    <span class="char-counter" data-for="hkVipRules">0 characters</span>
+                  </div>
+                </div>
+                <div class="knowledge-field">
+                  <label class="form-label" for="hkCommonTerms">Common Terms &amp; Abbreviations</label>
+                  <div class="textarea-wrap">
+                    <textarea class="notes-textarea notes-textarea--large" id="hkCommonTerms" placeholder="DDB = Deluxe Double&#10;DDK = Deluxe King&#10;JNS = Junior Suite&#10;LL = Lear's Loft"></textarea>
+                    <span class="char-counter" data-for="hkCommonTerms">0 characters</span>
+                  </div>
+                  <p class="form-helper">Room codes, internal shorthand and phrases your team uses.</p>
+                </div>
+                <div class="knowledge-field">
+                  <label class="form-label" for="hkOperationalNotes">Operational Notes</label>
+                  <div class="textarea-wrap">
+                    <textarea class="notes-textarea" id="hkOperationalNotes" placeholder="Daily operational priorities, handover focus areas and things the team must never miss."></textarea>
+                    <span class="char-counter" data-for="hkOperationalNotes">0 characters</span>
+                  </div>
+                </div>
+                <div class="knowledge-field">
+                  <label class="form-label" for="hkLocalRecommendations">Local Recommendations</label>
+                  <div class="textarea-wrap">
+                    <textarea class="notes-textarea" id="hkLocalRecommendations" placeholder="Restaurants, walks, transport tips and trusted local partners your team recommends."></textarea>
+                    <span class="char-counter" data-for="hkLocalRecommendations">0 characters</span>
+                  </div>
+                </div>
+                <div class="knowledge-field">
+                  <label class="form-label" for="hkAiInstructions">AI Instructions</label>
+                  <div class="textarea-wrap">
+                    <textarea class="notes-textarea notes-textarea--large" id="hkAiInstructions" placeholder="Always use British English.&#10;Never invent guest information.&#10;Keep handovers concise.&#10;Prioritise urgent maintenance, payment and guest issues."></textarea>
+                    <span class="char-counter" data-for="hkAiInstructions">0 characters</span>
+                  </div>
+                  <p class="form-helper">Default instructions applied across Hospitality Flow AI tools.</p>
+                </div>
+              </div>
+            </section>
+
+            <div id="academy" hidden aria-hidden="true">
                 <input type="checkbox" id="academyEnabled" hidden>
                 <input type="hidden" id="academyDepartments" value="">
                 <input type="hidden" id="academyTrainingTone" value="">
@@ -917,8 +1032,7 @@
                 <input type="checkbox" id="academySourcePolicies" hidden checked>
                 <input type="checkbox" id="academySourceRooms" hidden checked>
                 <input type="checkbox" id="academySourceOps" hidden checked>
-              </div>
-            </section>
+            </div>
 
             <section class="profile-card profile-card--collapsible profile-card--collapsed advanced-settings-card" id="advanced-settings">
               <div class="profile-card-header" data-collapse-toggle>
@@ -1047,13 +1161,25 @@
 
   <div class="save-toast-host" id="saveToastHost" aria-live="polite" aria-atomic="true"></div>
 
+  <div class="modal-overlay" id="roomNotesModal" hidden role="dialog" aria-modal="true" aria-labelledby="roomNotesModalTitle">
+    <div class="modal-panel">
+      <h3 id="roomNotesModalTitle">Room notes</h3>
+      <p class="modal-room-label" id="roomNotesModalRoom">Room 101</p>
+      <label class="visually-hidden" for="roomNotesModalText">Room notes</label>
+      <textarea class="notes-textarea" id="roomNotesModalText" placeholder="Operational notes for this room — quirks, preferences, maintenance, or allocation guidance."></textarea>
+      <div class="modal-actions">
+        <button type="button" class="btn-nav-secondary" id="roomNotesModalCancel">Cancel</button>
+        <button type="button" class="btn-save" id="roomNotesModalSave"><span class="btn-label">Save Notes</span></button>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="hotel-profile-knowledge.js"></script>
   <script src="hotel-profile-export.js"></script>
   <script>
     (function () {
       var STORAGE_KEY = 'hospitalityFlow_hotelProfile';
-      var AUTO_SAVE_DELAY = 800;
       var LOGO_MAX_BYTES = 2 * 1024 * 1024;
       var LOGO_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/svg+xml'];
       var LOGO_EXTS = ['.png', '.jpg', '.jpeg', '.webp', '.svg'];
@@ -1061,6 +1187,7 @@
       var saveStatus = document.getElementById('saveStatus');
       var saveChangesStatus = null;
       var lastSavedLine = document.getElementById('lastSavedLine');
+      var saveConfirmBadge = document.getElementById('saveConfirmBadge');
       var saveToastHost = document.getElementById('saveToastHost');
       var saveBtn = document.getElementById('saveBtn');
       var saveBtnLabel = saveBtn ? saveBtn.querySelector('.btn-label') : null;
@@ -1078,12 +1205,19 @@
       var isRestoring = false;
       var isDirty = false;
       var profileReady = false;
-      var autoSaveTimer = null;
       var lastSavedAt = null;
       var isSaving = false;
       var toastTimer = null;
-      var saveBtnDefaultLabel = 'Save Profile';
+      var saveBtnDefaultLabel = 'Save Hotel Brain';
       var currentLogoDataUrl = '';
+      var activeRoomNotesRow = null;
+      var roomNotesModal = document.getElementById('roomNotesModal');
+      var roomNotesModalRoom = document.getElementById('roomNotesModalRoom');
+      var roomNotesModalText = document.getElementById('roomNotesModalText');
+      var roomNotesModalCancel = document.getElementById('roomNotesModalCancel');
+      var roomNotesModalSave = document.getElementById('roomNotesModalSave');
+      var facilityCustomList = document.getElementById('facilityCustomList');
+      var addCustomFacilityBtn = document.getElementById('addCustomFacility');
 
       var cachedOtaPayment = {};
 
@@ -1162,7 +1296,7 @@
         if (isNaN(d.getTime())) return '';
         var now = new Date();
         var time = d.toLocaleString('en-GB', { hour: '2-digit', minute: '2-digit' });
-        if (d.toDateString() === now.toDateString()) return 'Today at ' + time;
+        if (d.toDateString() === now.toDateString()) return 'today at ' + time;
         var yesterday = new Date(now);
         yesterday.setDate(yesterday.getDate() - 1);
         if (d.toDateString() === yesterday.toDateString()) return 'Yesterday at ' + time;
@@ -1172,25 +1306,44 @@
       function updateLastSavedLine(iso) {
         if (!lastSavedLine) return;
         var text = formatLastSaved(iso);
+        lastSavedLine.classList.remove('is-error');
         if (!text) {
-          lastSavedLine.textContent = 'Not saved yet';
-          lastSavedLine.className = 'profile-progress-saved is-empty';
+          lastSavedLine.textContent = '—';
+          lastSavedLine.className = 'progress-stat-value progress-stat-value--muted';
           return;
         }
-        lastSavedLine.textContent = 'Saved · ' + text;
-        lastSavedLine.className = 'profile-progress-saved';
+        lastSavedLine.textContent = 'Saved ' + text;
+        lastSavedLine.className = 'progress-stat-value progress-stat-value--muted';
+      }
+
+      function showSaveConfirmBadge() {
+        if (!saveConfirmBadge) return;
+        saveConfirmBadge.hidden = false;
+        saveConfirmBadge.classList.add('is-visible');
+      }
+
+      function clearSaveDisplay() {
+        if (saveConfirmBadge) {
+          saveConfirmBadge.hidden = true;
+          saveConfirmBadge.classList.remove('is-visible');
+        }
+        if (lastSavedLine) {
+          lastSavedLine.textContent = '—';
+          lastSavedLine.className = 'progress-stat-value progress-stat-value--muted';
+          lastSavedLine.classList.remove('is-error');
+        }
+      }
+
+      function flashSaveButton() {
+        if (!saveBtn) return;
+        saveBtn.classList.add('is-save-flash');
+        setTimeout(function () { saveBtn.classList.remove('is-save-flash'); }, 420);
       }
 
       function updateChangesStatus(mode) {
-        if (!lastSavedLine) return;
-        if (mode === 'unsaved') {
-          lastSavedLine.textContent = 'Unsaved changes';
-          lastSavedLine.className = 'profile-progress-saved is-unsaved';
-        } else if (mode === 'saved' && lastSavedAt) {
-          updateLastSavedLine(lastSavedAt);
-        } else if (mode === 'error') {
-          lastSavedLine.textContent = 'Unable to save — please try again';
-          lastSavedLine.className = 'profile-progress-saved is-unsaved';
+        if (mode === 'error' && lastSavedLine) {
+          lastSavedLine.textContent = 'Unable to save';
+          lastSavedLine.className = 'progress-stat-value is-error';
         }
       }
 
@@ -1208,7 +1361,7 @@
         toast.className = 'save-toast save-toast--success';
         toast.setAttribute('role', 'status');
         toast.innerHTML =
-          '<div class="save-toast-title"><span aria-hidden="true">✓</span> Hotel Profile saved successfully</div>' +
+          '<div class="save-toast-title"><span aria-hidden="true">✓</span> Hotel Brain saved successfully</div>' +
           (time ? '<div class="save-toast-sub">Saved at ' + time + '</div>' : '');
         saveToastHost.appendChild(toast);
         requestAnimationFrame(function () {
@@ -1254,17 +1407,14 @@
 
       function setSaveStatusState(state) {
         saveStatus.className = 'save-status visually-hidden' + (state ? ' is-' + state : '');
-        if (saveBtn) saveBtn.classList.toggle('is-unsaved', state === 'unsaved');
       }
 
       function markUnsaved() {
         if (isRestoring || !profileReady) return;
         isDirty = true;
-        updateChangesStatus('unsaved');
-        saveStatus.textContent = 'Unsaved changes';
-        setSaveStatusState('unsaved');
+        if (saveBtn) saveBtn.classList.add('is-unsaved');
+        clearSaveDisplay();
         if (HPK && HPK.updateCompletionUI) HPK.updateCompletionUI();
-        scheduleAutoSave();
       }
 
       function toggleEmptyStates() {
@@ -1329,16 +1479,16 @@
       function markSaved(iso, opts) {
         opts = opts || {};
         isDirty = false;
-        clearTimeout(autoSaveTimer);
         lastSavedAt = iso || new Date().toISOString();
         updateLastSavedLine(lastSavedAt);
-        updateChangesStatus('saved');
+        showSaveConfirmBadge();
+        if (saveBtn) {
+          saveBtn.classList.remove('is-unsaved');
+          if (!opts.silent) flashSaveButton();
+        }
         saveStatus.textContent = 'Saved successfully · ' + formatSavedTime(lastSavedAt);
         setSaveStatusState('saved');
         if (HPK && HPK.updateCompletionUI) HPK.updateCompletionUI();
-        if (!opts.silent) {
-          showSaveSuccessToast(lastSavedAt);
-        }
       }
 
       function setSaving() {
@@ -1353,14 +1503,6 @@
         saveStatus.textContent = msg;
         setSaveStatusState('error');
         showToast(msg.indexOf('\u26a0') === 0 ? msg : '\u26a0 ' + msg, 'error', 4500);
-      }
-
-      function scheduleAutoSave() {
-        if (isRestoring) return;
-        clearTimeout(autoSaveTimer);
-        autoSaveTimer = setTimeout(function () {
-          if (isDirty) saveProfile(true);
-        }, AUTO_SAVE_DELAY);
       }
 
       function getInputValue(id) {
@@ -1405,7 +1547,7 @@
           data.terminology || data.aiPrefs || data.facilities || data.inventory ||
           data.petRooms || data.savedAt || data.roomFacilities || data.policies ||
           data.otaPayment || data.guestServices || data.supplies || data.operations ||
-          data.academy
+          data.academy || data.hotelKnowledge
         );
         if (!hasKnownData) return null;
 
@@ -1650,10 +1792,170 @@
       }
 
       function collectFacilities() {
+        var customItems = facilityCustomList ? Array.from(facilityCustomList.querySelectorAll('[data-custom-facility]')).map(function (el) {
+          var cb = el.querySelector('input[type="checkbox"]');
+          var label = el.querySelector('label');
+          return {
+            id: cb ? cb.id : '',
+            label: label ? label.textContent : '',
+            checked: cb ? cb.checked : false
+          };
+        }) : [];
+        var checked = Array.from(document.querySelectorAll('#facilityGrid input[type="checkbox"]:checked, #facilityCustomList input[type="checkbox"]:checked')).map(function (cb) {
+          return cb.id;
+        });
+        var customLegacy = customItems.filter(function (item) { return item.checked && item.label; }).map(function (item) { return item.label; }).join('\n');
+        setInputValue('customFacilities', customLegacy);
         return {
-          checked: Array.from(document.querySelectorAll('#facilityGrid input[type="checkbox"]:checked')).map(function (cb) { return cb.id; }),
-          custom: getInputValue('customFacilities')
+          checked: checked,
+          custom: customLegacy,
+          customItems: customItems
         };
+      }
+
+      function slugifyFacility(label) {
+        return String(label || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || ('item-' + Date.now());
+      }
+
+      function buildCustomFacilityChip(item) {
+        item = item || {};
+        var id = item.id || ('fac-custom-' + slugifyFacility(item.label));
+        var wrap = document.createElement('div');
+        wrap.className = 'facility-chip facility-chip--custom';
+        wrap.setAttribute('data-custom-facility', id);
+        wrap.innerHTML =
+          '<input type="checkbox" id="' + id + '"' + (item.checked !== false ? ' checked' : '') + '>' +
+          '<label for="' + id + '">' + escAttr(item.label || 'Custom facility') + '</label>' +
+          '<button type="button" class="facility-remove" aria-label="Remove ' + escAttr(item.label || 'facility') + '">&times;</button>';
+        return wrap;
+      }
+
+      function restoreFacilities(facilities) {
+        facilities = facilities || {};
+        document.querySelectorAll('#facilityGrid input[type="checkbox"]').forEach(function (cb) {
+          cb.checked = facilities.checked ? facilities.checked.indexOf(cb.id) !== -1 : false;
+        });
+        if (facilityCustomList) {
+          facilityCustomList.innerHTML = '';
+          var items = Array.isArray(facilities.customItems) ? facilities.customItems.slice() : [];
+          if (!items.length && facilities.custom) {
+            facilities.custom.split(/\n|,/).forEach(function (line) {
+              line = String(line || '').trim().replace(/^[-•]\s*/, '');
+              if (line) items.push({ id: 'fac-custom-' + slugifyFacility(line), label: line, checked: true });
+            });
+          }
+          items.forEach(function (item) {
+            if (facilities.checked && facilities.checked.indexOf(item.id) === -1 && item.checked !== true) {
+              item.checked = false;
+            } else if (facilities.checked && facilities.checked.indexOf(item.id) !== -1) {
+              item.checked = true;
+            }
+            facilityCustomList.appendChild(buildCustomFacilityChip(item));
+          });
+        }
+        setInputValue('customFacilities', facilities.custom || '');
+      }
+
+      function collectHotelKnowledge() {
+        return {
+          generalNotes: getInputValue('hkGeneralNotes'),
+          hotelStandards: getInputValue('hkHotelStandards'),
+          vipRules: getInputValue('hkVipRules'),
+          commonTerms: getInputValue('hkCommonTerms'),
+          operationalNotes: getInputValue('hkOperationalNotes'),
+          localRecommendations: getInputValue('hkLocalRecommendations'),
+          aiInstructions: getInputValue('hkAiInstructions')
+        };
+      }
+
+      function restoreHotelKnowledge(hk) {
+        hk = hk || {};
+        setInputValue('hkGeneralNotes', hk.generalNotes);
+        setInputValue('hkHotelStandards', hk.hotelStandards);
+        setInputValue('hkVipRules', hk.vipRules);
+        setInputValue('hkCommonTerms', hk.commonTerms);
+        setInputValue('hkOperationalNotes', hk.operationalNotes);
+        setInputValue('hkLocalRecommendations', hk.localRecommendations);
+        setInputValue('hkAiInstructions', hk.aiInstructions);
+        refreshKnowledgeCharCounters();
+      }
+
+      function updateCharCounter(id) {
+        var el = document.getElementById(id);
+        var counter = document.querySelector('.char-counter[data-for="' + id + '"]');
+        if (!el || !counter) return;
+        var len = String(el.value || '').length;
+        counter.textContent = len + (len === 1 ? ' character' : ' characters');
+      }
+
+      function refreshKnowledgeCharCounters() {
+        ['hkGeneralNotes', 'hkHotelStandards', 'hkVipRules', 'hkCommonTerms', 'hkOperationalNotes', 'hkLocalRecommendations', 'hkAiInstructions'].forEach(updateCharCounter);
+      }
+
+      function initKnowledgeCharCounters() {
+        var hkSection = document.getElementById('hotel-knowledge');
+        if (!hkSection) return;
+        hkSection.querySelectorAll('textarea[id^="hk"]').forEach(function (ta) {
+          if (ta.getAttribute('data-counter-bound')) return;
+          ta.setAttribute('data-counter-bound', '1');
+          updateCharCounter(ta.id);
+          ta.addEventListener('input', function () { updateCharCounter(ta.id); });
+        });
+      }
+
+      function getRoomNotesInput(row) {
+        return row ? row.querySelector('input[data-f="notes"]') : null;
+      }
+
+      function updateRoomNotesIndicator(row) {
+        if (!row) return;
+        var btn = row.querySelector('.room-notes-btn');
+        if (!btn) return;
+        var indicator = btn.querySelector('.room-notes-indicator');
+        if (!indicator) {
+          indicator = document.createElement('span');
+          indicator.className = 'room-notes-indicator';
+          indicator.setAttribute('aria-hidden', 'true');
+          btn.appendChild(indicator);
+        }
+        var notes = (getRoomNotesInput(row) || {}).value || '';
+        indicator.classList.toggle('has-notes', !!String(notes).trim());
+      }
+
+      function openRoomNotesModal(row) {
+        if (!roomNotesModal || !row) return;
+        activeRoomNotesRow = row;
+        var roomNo = fieldVal(row, 'roomNo') || 'Room';
+        if (roomNotesModalRoom) roomNotesModalRoom.textContent = 'Room ' + (roomNo || '—');
+        if (roomNotesModalText) {
+          var notesInput = getRoomNotesInput(row);
+          roomNotesModalText.value = notesInput ? notesInput.value : '';
+        }
+        roomNotesModal.hidden = false;
+        document.body.style.overflow = 'hidden';
+        if (roomNotesModalText) roomNotesModalText.focus();
+      }
+
+      function closeRoomNotesModal() {
+        if (!roomNotesModal) return;
+        roomNotesModal.hidden = true;
+        document.body.style.overflow = '';
+        activeRoomNotesRow = null;
+      }
+
+      function saveRoomNotesFromModal() {
+        if (!activeRoomNotesRow || !roomNotesModalText) return;
+        var notesInput = getRoomNotesInput(activeRoomNotesRow);
+        if (!notesInput) {
+          notesInput = document.createElement('input');
+          notesInput.type = 'hidden';
+          notesInput.setAttribute('data-f', 'notes');
+          activeRoomNotesRow.appendChild(notesInput);
+        }
+        notesInput.value = roomNotesModalText.value;
+        updateRoomNotesIndicator(activeRoomNotesRow);
+        closeRoomNotesModal();
+        markUnsaved();
       }
 
       function collectRoomFacilities() {
@@ -1895,7 +2197,8 @@
           supplies: collectSupplies(),
           operations: collectOperations(),
           operationsTrackers: collectOperationsTrackers(),
-          academy: collectAcademy()
+          academy: collectAcademy(),
+          hotelKnowledge: collectHotelKnowledge()
         };
       }
 
@@ -1904,11 +2207,12 @@
         var bathShower = 'shower';
         if (data.bathtub && data.shower) bathShower = 'both';
         else if (data.bathtub) bathShower = 'bath';
+        var hasNotes = !!(data.notes && String(data.notes).trim());
         var tr = document.createElement('tr');
         tr.setAttribute('data-room-row', '');
         tr.innerHTML =
           '<td><input data-f="roomNo" placeholder="101" value="' + escAttr(data.roomNo) + '"></td>' +
-          '<td><input data-f="roomType" placeholder="Deluxe" value="' + escAttr(data.roomType) + '"></td>' +
+          '<td class="col-type"><input data-f="roomType" placeholder="DDB" value="' + escAttr(data.roomType) + '"></td>' +
           '<td><input data-f="floor" placeholder="2" value="' + escAttr(data.floor) + '"></td>' +
           '<td><input data-f="bedType" placeholder="King" value="' + escAttr(data.bedType) + '"></td>' +
           '<td class="col-check"><input type="checkbox" data-f="twinCapable"' + (data.twinCapable ? ' checked' : '') + '></td>' +
@@ -1916,8 +2220,13 @@
           '<td><select data-f="facing"><option value="shower"' + (bathShower === 'shower' || bathShower === 'both' ? ' selected' : '') + '>Shower</option><option value="bath"' + (bathShower === 'bath' ? ' selected' : '') + '>Bath</option><option value="both"' + (bathShower === 'both' ? ' selected' : '') + '>Both</option></select></td>' +
           '<td><select data-f="viewFacing"><option value="">—</option><option value="street"' + (data.streetFacing ? ' selected' : '') + '>Street</option><option value="quiet"' + (data.quietFacing ? ' selected' : '') + '>Quiet / rear</option></select></td>' +
           '<td><input data-f="maxOccupancy" placeholder="2" value="' + escAttr(data.maxOccupancy) + '"></td>' +
-          '<td><input data-f="notes" placeholder="Short notes" value="' + escAttr(data.notes) + '"></td>' +
-          '<td class="col-actions"><button type="button" class="btn-text toggle-room-details">Details</button><button type="button" class="icon-btn remove-room-row" aria-label="Delete room"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>';
+          '<td class="col-notes"><button type="button" class="btn-text room-notes-btn">Details<span class="room-notes-indicator' + (hasNotes ? ' has-notes' : '') + '" aria-hidden="true"></span></button></td>' +
+          '<td class="col-actions"><button type="button" class="btn-text toggle-room-details">More</button><button type="button" class="icon-btn remove-room-row" aria-label="Delete room"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>';
+        var notesInput = document.createElement('input');
+        notesInput.type = 'hidden';
+        notesInput.setAttribute('data-f', 'notes');
+        notesInput.value = data.notes || '';
+        tr.appendChild(notesInput);
         var detailsTr = document.createElement('tr');
         detailsTr.className = 'room-details-row';
         detailsTr.hidden = true;
@@ -2073,9 +2382,8 @@
         if (HPK) {
           HPK.renderPolicyUI(document.getElementById('policyStructuredRoot'), data);
           HPK.renderReservationsUI(document.getElementById('reservationsRoot'), data);
+          HPK.renderPaymentPoliciesUI(document.getElementById('paymentPoliciesRoot'), data);
           HPK.renderTrackers(document.getElementById('trackersList'), data.operationsTrackers || HPK.defaultTrackers());
-          var suppliesBody = document.querySelector('#inventory .profile-card-body');
-          if (suppliesBody) HPK.renderSupplyHints(suppliesBody);
           bindReservationCollapses();
         }
 
@@ -2275,17 +2583,21 @@
         setInputValue('aiInstructions', ai.instructions);
 
         var facilities = data.facilities || {};
-        document.querySelectorAll('#facilityGrid input[type="checkbox"]').forEach(function (cb) {
-          cb.checked = facilities.checked ? facilities.checked.indexOf(cb.id) !== -1 : cb.checked;
-        });
-        setInputValue('customFacilities', facilities.custom);
+        restoreFacilities(facilities);
+        restoreHotelKnowledge(data.hotelKnowledge);
 
         restoreNewSections(data);
         toggleEmptyStates();
 
         isDirty = false;
-        clearTimeout(autoSaveTimer);
-        if (data.savedAt) markSaved(data.savedAt, { silent: true });
+        lastSavedAt = data.savedAt || null;
+        if (saveBtn) saveBtn.classList.remove('is-unsaved');
+        if (lastSavedAt) updateLastSavedLine(lastSavedAt);
+        else updateLastSavedLine(null);
+        if (saveConfirmBadge) {
+          saveConfirmBadge.hidden = true;
+          saveConfirmBadge.classList.remove('is-visible');
+        }
         } catch (err) {
           showSaveError('Could not restore profile — ' + (err && err.message ? err.message : 'unknown error') + '. Your stored data was not overwritten.');
         } finally {
@@ -2318,7 +2630,6 @@
 
       function loadProfile() {
         profileReady = false;
-        clearTimeout(autoSaveTimer);
         try {
           var raw = localStorage.getItem(STORAGE_KEY);
           if (!raw) {
@@ -2345,6 +2656,7 @@
       }
 
       loadProfile();
+      initKnowledgeCharCounters();
 
       function bindRemove(container, selector, minCount, itemSelector, confirmMsg) {
         container.addEventListener('click', function (e) {
@@ -2431,7 +2743,13 @@
       });
 
       document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') closeMoreActions();
+        if (e.key === 'Escape') {
+          if (roomNotesModal && !roomNotesModal.hidden) {
+            closeRoomNotesModal();
+            return;
+          }
+          closeMoreActions();
+        }
       });
 
       window.addEventListener('beforeunload', function (e) {
@@ -2448,6 +2766,12 @@
           markUnsaved();
         });
         roomBody.addEventListener('click', function (e) {
+          var notesBtn = e.target.closest('.room-notes-btn');
+          if (notesBtn) {
+            var notesRow = notesBtn.closest('tr[data-room-row]');
+            if (notesRow) openRoomNotesModal(notesRow);
+            return;
+          }
           var toggleBtn = e.target.closest('.toggle-room-details');
           if (toggleBtn) {
             var tr = toggleBtn.closest('tr[data-room-row]');
@@ -2467,6 +2791,41 @@
           row.remove();
           toggleEmptyStates();
           markUnsaved();
+        });
+      }
+
+      if (roomNotesModalCancel) roomNotesModalCancel.addEventListener('click', closeRoomNotesModal);
+      if (roomNotesModalSave) roomNotesModalSave.addEventListener('click', saveRoomNotesFromModal);
+      if (roomNotesModal) {
+        roomNotesModal.addEventListener('click', function (e) {
+          if (e.target === roomNotesModal) closeRoomNotesModal();
+        });
+      }
+
+      if (addCustomFacilityBtn && facilityCustomList) {
+        addCustomFacilityBtn.addEventListener('click', function () {
+          var name = window.prompt('Enter a custom facility name:');
+          if (!name || !String(name).trim()) return;
+          name = String(name).trim();
+          var id = 'fac-custom-' + slugifyFacility(name);
+          if (document.getElementById(id)) {
+            showToast('That facility already exists.', 'error', 2800);
+            return;
+          }
+          facilityCustomList.appendChild(buildCustomFacilityChip({ id: id, label: name, checked: true }));
+          markUnsaved();
+        });
+        facilityCustomList.addEventListener('click', function (e) {
+          var removeBtn = e.target.closest('.facility-remove');
+          if (!removeBtn) return;
+          var chip = removeBtn.closest('[data-custom-facility]');
+          if (!chip) return;
+          if (HPK && !HPK.confirmDelete('Remove this custom facility?')) return;
+          chip.remove();
+          markUnsaved();
+        });
+        facilityCustomList.addEventListener('change', function (e) {
+          if (e.target.matches('input[type="checkbox"]')) markUnsaved();
         });
       }
 

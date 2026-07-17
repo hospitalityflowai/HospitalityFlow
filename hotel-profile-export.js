@@ -118,7 +118,7 @@
 
   function buildDocumentHtml(data) {
     var g = data.general || {};
-    var hotelName = g.hotelName || 'Hotel Profile';
+    var hotelName = g.hotelName || 'Hotel Brain';
     var generated = fmtDate(data.savedAt || new Date().toISOString());
 
     var generalPairs = [
@@ -296,12 +296,12 @@
       section('Hospitality Academy', fieldRows(acPairs) ? '<table class="hp-doc-kv">' + fieldRows(acPairs) + '</table>' : '')
     ].filter(Boolean).join('');
 
-    return '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>' + esc(hotelName) + ' — Hotel Profile</title><style>' +
+    return '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>' + esc(hotelName) + ' — Hotel Brain</title><style>' +
       getDocumentStyles(g.brandColor) +
       '</style></head><body><div class="hp-doc">' +
       '<header class="hp-doc-header">' + logoHtml +
       '<div><p class="hp-doc-brand">Hospitality Flow</p><h1>' + esc(hotelName) + '</h1>' +
-      '<p class="hp-doc-subtitle">Hotel Knowledge Layer — Profile Summary</p>' +
+      '<p class="hp-doc-subtitle">Hotel Brain — Knowledge Summary</p>' +
       '<p class="hp-doc-meta">Generated ' + esc(generated) + '</p></div></header>' +
       body +
       '<footer class="hp-doc-footer">Hospitality Flow · Confidential — for internal management review</footer>' +
@@ -402,7 +402,7 @@
 
   PdfWriter.prototype.drawHeader = function (data) {
     var g = data.general || {};
-    var hotelName = g.hotelName || 'Hotel Profile';
+    var hotelName = g.hotelName || 'Hotel Brain';
     this.doc.setDrawColor.apply(this.doc, this.accentRgb);
     this.doc.setLineWidth(1);
     this.doc.line(this.marginX, 12, this.marginX + this.contentW, 12);
@@ -416,7 +416,7 @@
     this.doc.setFont('helvetica', 'normal');
     this.doc.setFontSize(10);
     this.doc.setTextColor.apply(this.doc, COLORS.gray500);
-    this.doc.text('Hotel Knowledge Layer — Profile Summary', this.marginX, 28);
+    this.doc.text('Hotel Brain — Knowledge Summary', this.marginX, 28);
     this.doc.setFontSize(8.5);
     this.doc.text('Generated ' + fmtDate(data.savedAt), this.marginX, 33);
     this.y = 40;
