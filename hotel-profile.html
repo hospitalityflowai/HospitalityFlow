@@ -452,6 +452,27 @@
     .section-intro { font-size: .84rem; color: var(--gray-500); margin-bottom: 20px; max-width: 58ch; line-height: 1.6; }
     .advanced-settings-card { border-style: dashed; }
     .advanced-settings-card .profile-card-body { padding-top: 8px; }
+    .ok-entry-card, .ok-step-card, .ok-source-card { padding: 16px 18px; background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: var(--radius-lg); margin-bottom: 12px; }
+    .ok-entry-card.is-sample, .ok-step-card.is-sample, .ok-source-card.is-sample { border-left: 3px solid var(--blue-400); }
+    .ok-sample-badge { display: inline-flex; align-items: center; padding: 2px 8px; font-size: .68rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--blue-700); background: rgba(74,143,196,.12); border-radius: 100px; }
+    .ok-entry-header { display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px; }
+    .ok-entry-title-row { display: grid; grid-template-columns: 1fr minmax(140px, 180px); gap: 10px; }
+    .ok-entry-badges { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+    .ok-entry-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin: 10px 0; }
+    .ok-shift-row { display: flex; flex-wrap: wrap; gap: 12px; margin: 8px 0 10px; }
+    .ok-shift-check, .ok-toggle { display: inline-flex; align-items: center; gap: 6px; font-size: .78rem; font-weight: 500; color: var(--navy-700); }
+    .ok-entry-flags { display: flex; flex-wrap: wrap; gap: 14px; margin: 8px 0; }
+    .ok-notes { min-height: 64px; margin-top: 8px; }
+    .ok-filter-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+    .ok-filter-row .form-input { min-width: 160px; flex: 1 1 160px; }
+    .ok-workflow-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+    .ok-workflow-tab { padding: 8px 14px; font-size: .8rem; font-weight: 600; color: var(--navy-700); background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius); cursor: pointer; transition: background var(--transition), border-color var(--transition), color var(--transition); }
+    .ok-workflow-tab.is-active { color: var(--white); background: var(--navy-800); border-color: var(--navy-800); }
+    .ok-workflow-panel { margin-bottom: 8px; }
+    .ok-step-row { display: grid; grid-template-columns: 72px 1fr; gap: 10px; margin-bottom: 10px; }
+    .ok-order { text-align: center; }
+    .ok-metric-row { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: var(--radius); margin-bottom: 8px; font-size: .84rem; color: var(--navy-800); }
+    .dev-sample-panel { margin-top: 4px; }
     .settings-panel { margin-bottom: 8px; }
     .settings-panel--muted { padding: 16px 18px; background: var(--gray-50); border-radius: var(--radius); border: 1px solid var(--gray-100); }
     .settings-panel--muted code { font-size: .78rem; color: var(--navy-700); background: var(--white); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--gray-200); }
@@ -948,6 +969,105 @@
               </div>
             </section>
 
+            <section class="profile-card" id="operational-knowledge">
+              <div class="profile-card-header">
+                <div class="profile-card-header-left">
+                  <div class="card-header-icon navy" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                  </div>
+                  <div class="card-header-text">
+                    <h2>Operational Knowledge</h2>
+                    <p>Editable shift workflows, procedures, handover sources and checklist rules for Shift Intelligence.</p>
+                  </div>
+                </div>
+              </div>
+              <div class="profile-card-body">
+                <p class="section-intro">Configure hotel-specific operational knowledge here. Every entry is editable and can be deactivated or removed. Shift Intelligence reads checklist-enabled entries and workflow steps — nothing is hardcoded into the handover tool.</p>
+
+                <h3 class="subsection-heading">Staffing context</h3>
+                <div class="textarea-wrap">
+                  <textarea class="notes-textarea" id="okStaffingContext" placeholder="Duty Managers cover AM, PM and Middle shifts. Night Managers cover five nights per week…"></textarea>
+                </div>
+
+                <hr class="subsection-divider">
+
+                <h3 class="subsection-heading">Handover information sources</h3>
+                <p class="form-helper" style="margin-bottom:12px">Systems and documents your team uses when building a handover.</p>
+                <div id="okSourcesList"></div>
+                <button type="button" class="add-row-btn" id="okAddSource">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  Add handover source
+                </button>
+
+                <hr class="subsection-divider">
+
+                <h3 class="subsection-heading">Daily operations metrics</h3>
+                <p class="form-helper" style="margin-bottom:12px">Metrics your team tracks each day — enable those relevant to your property.</p>
+                <div id="okMetricsList"></div>
+
+                <hr class="subsection-divider">
+
+                <h3 class="subsection-heading">Knowledge entries</h3>
+                <div class="ok-filter-row">
+                  <input class="form-input" type="search" id="okSearchInput" placeholder="Search knowledge…" aria-label="Search operational knowledge">
+                  <select class="form-input" id="okShiftFilter" aria-label="Filter by shift">
+                    <option value="">All shifts</option>
+                    <option value="night">Night</option>
+                    <option value="am">AM</option>
+                    <option value="pm">PM</option>
+                    <option value="middle">Middle</option>
+                  </select>
+                  <input class="form-input" type="search" id="okDeptFilter" placeholder="Filter by department…" aria-label="Filter by department">
+                </div>
+                <div id="okKnowledgeList"></div>
+                <button type="button" class="add-row-btn" id="okAddKnowledge">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  Add knowledge entry
+                </button>
+
+                <hr class="subsection-divider">
+
+                <h3 class="subsection-heading">Shift workflows</h3>
+                <p class="form-helper" style="margin-bottom:12px">Ordered workflow steps by shift type. Checklist-enabled steps appear in Shift Intelligence for the matching shift.</p>
+                <div class="ok-workflow-tabs" role="tablist" aria-label="Shift workflow tabs">
+                  <button type="button" class="ok-workflow-tab is-active" data-shift-tab="night" role="tab" aria-selected="true">Night</button>
+                  <button type="button" class="ok-workflow-tab" data-shift-tab="am" role="tab" aria-selected="false">AM</button>
+                  <button type="button" class="ok-workflow-tab" data-shift-tab="pm" role="tab" aria-selected="false">PM</button>
+                  <button type="button" class="ok-workflow-tab" data-shift-tab="middle" role="tab" aria-selected="false">Middle</button>
+                </div>
+                <div class="ok-workflow-panels">
+                  <div class="ok-workflow-panel" data-shift-panel="night">
+                    <div id="okWorkflow-night"></div>
+                    <button type="button" class="add-row-btn" id="okAddStep-night">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                      Add night workflow step
+                    </button>
+                  </div>
+                  <div class="ok-workflow-panel" data-shift-panel="am" hidden>
+                    <div id="okWorkflow-am"></div>
+                    <button type="button" class="add-row-btn" id="okAddStep-am">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                      Add AM workflow step
+                    </button>
+                  </div>
+                  <div class="ok-workflow-panel" data-shift-panel="pm" hidden>
+                    <div id="okWorkflow-pm"></div>
+                    <button type="button" class="add-row-btn" id="okAddStep-pm">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                      Add PM workflow step
+                    </button>
+                  </div>
+                  <div class="ok-workflow-panel" data-shift-panel="middle" hidden>
+                    <div id="okWorkflow-middle"></div>
+                    <button type="button" class="add-row-btn" id="okAddStep-middle">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                      Add Middle workflow step
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
             <section class="profile-card" id="hotel-knowledge">
               <div class="profile-card-header">
                 <div class="profile-card-header-left">
@@ -1136,7 +1256,16 @@
 
                 <div class="settings-panel settings-panel--muted">
                   <h3 class="subsection-heading">Developer</h3>
-                  <p class="section-intro">Schema version 3 · Storage key <code>hospitalityFlow_hotelProfile</code>. All tools read from this single profile — no duplicate fields.</p>
+                  <p class="section-intro">Schema version 4 · Storage key <code>hospitalityFlow_hotelProfile</code>. All tools read from this single profile — no duplicate fields.</p>
+                </div>
+
+                <div class="settings-panel settings-panel--muted dev-sample-panel">
+                  <h3 class="subsection-heading">Sample data (development)</h3>
+                  <p class="section-intro">Load editable Zetter Marylebone test knowledge. Merges missing entries only — never overwrites your existing Hotel Brain data.</p>
+                  <div class="settings-actions">
+                    <button type="button" class="btn-nav-secondary" id="loadZetterSampleBtn">Load Zetter Marylebone Test Knowledge</button>
+                  </div>
+                  <p class="form-helper" id="zetterSampleStatus" aria-live="polite"></p>
                 </div>
 
                 <div id="legacyRoomData" hidden aria-hidden="true">
@@ -1176,6 +1305,8 @@
 
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="hotel-profile-knowledge.js"></script>
+  <script src="hotel-profile-operational.js"></script>
+  <script src="hotel-profile-zetter-sample.js"></script>
   <script src="hotel-profile-export.js"></script>
   <script>
     (function () {
@@ -1239,10 +1370,12 @@
         'guest-services': 'Guest Services',
         supplies: 'Inventory',
         operations: 'Operations',
+        'operational-knowledge': 'Operational Knowledge',
         academy: 'Academy'
       };
-      var PROFILE_SCHEMA_VERSION = 3;
+      var PROFILE_SCHEMA_VERSION = 4;
       var HPK = window.HotelProfileKnowledge;
+      var HPO = window.HotelProfileOperational;
 
       var roomBody = document.getElementById('roomsTableBody');
       var legacyRoomBody = document.getElementById('roomTableBody');
@@ -1547,7 +1680,7 @@
           data.terminology || data.aiPrefs || data.facilities || data.inventory ||
           data.petRooms || data.savedAt || data.roomFacilities || data.policies ||
           data.otaPayment || data.guestServices || data.supplies || data.operations ||
-          data.academy || data.hotelKnowledge
+          data.academy || data.hotelKnowledge || data.operationalKnowledge
         );
         if (!hasKnownData) return null;
 
@@ -1566,6 +1699,7 @@
         if (data.schemaVersion == null) data.schemaVersion = 1;
         data = JSON.parse(JSON.stringify(data));
         if (HPK && HPK.migrateToV3) HPK.migrateToV3(data);
+        if (HPO && HPO.migrateToV4) HPO.migrateToV4(data);
         else if (data.schemaVersion < PROFILE_SCHEMA_VERSION) data.schemaVersion = PROFILE_SCHEMA_VERSION;
 
         return data;
@@ -2198,7 +2332,8 @@
           operations: collectOperations(),
           operationsTrackers: collectOperationsTrackers(),
           academy: collectAcademy(),
-          hotelKnowledge: collectHotelKnowledge()
+          hotelKnowledge: collectHotelKnowledge(),
+          operationalKnowledge: HPO ? HPO.collectOperationalKnowledge() : null
         };
       }
 
@@ -2472,6 +2607,10 @@
         if (srcRooms) srcRooms.checked = src.rooms !== false;
         if (srcOps) srcOps.checked = src.operations !== false;
 
+        if (HPO && HPO.renderOperationalKnowledgeUI) {
+          HPO.renderOperationalKnowledgeUI(data);
+        }
+
         toggleEmptyStates();
         if (HPK && HPK.updateCompletionUI) HPK.updateCompletionUI();
       }
@@ -2608,6 +2747,7 @@
       function seedFreshProfileUI() {
         syncOtaCacheFromData({});
         refreshKnowledgeUI({});
+        if (HPO && HPO.renderOperationalKnowledgeUI) HPO.renderOperationalKnowledgeUI({});
         toggleEmptyStates();
         if (HPK && HPK.updateCompletionUI) HPK.updateCompletionUI();
       }
@@ -2657,6 +2797,36 @@
 
       loadProfile();
       initKnowledgeCharCounters();
+
+      if (HPO && HPO.bindOperationalKnowledgeEvents) HPO.bindOperationalKnowledgeEvents();
+      document.addEventListener('profile-change', function () {
+        if (!isRestoring) markUnsaved();
+      });
+
+      var loadZetterSampleBtn = document.getElementById('loadZetterSampleBtn');
+      if (loadZetterSampleBtn && HPO) {
+        loadZetterSampleBtn.addEventListener('click', function () {
+          if (!window.confirm(
+            'Load Zetter Marylebone test knowledge?\n\n' +
+            'This merges missing sample entries only. Your existing Hotel Brain data will not be overwritten.\n\n' +
+            'Continue?'
+          )) return;
+          var result = HPO.loadZetterSample(collectProfileData());
+          if (!result.ok) {
+            showSaveError(result.error || 'Could not load sample knowledge');
+            return;
+          }
+          profileReady = false;
+          restoreProfileData(result.profile);
+          profileReady = true;
+          saveProfile(false);
+          var statusEl = document.getElementById('zetterSampleStatus');
+          if (statusEl) {
+            statusEl.textContent = 'Loaded: ' + (result.label || 'Zetter Marylebone Test Knowledge') +
+              ' — ' + new Date().toLocaleString('en-GB');
+          }
+        });
+      }
 
       function bindRemove(container, selector, minCount, itemSelector, confirmMsg) {
         container.addEventListener('click', function (e) {

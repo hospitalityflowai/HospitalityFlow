@@ -451,6 +451,13 @@
       }
     });
 
+    if (global.HotelProfileOperational && brainContext) {
+      global.HotelProfileOperational.getRoomAttributeReminders(
+        brainContext,
+        input.rawNotesText || ""
+      ).forEach(addCandidate);
+    }
+
     candidates.sort(function (a, b) {
       var rankA = PRIORITY_RANK[a.priority] != null ? PRIORITY_RANK[a.priority] : 9;
       var rankB = PRIORITY_RANK[b.priority] != null ? PRIORITY_RANK[b.priority] : 9;
@@ -771,6 +778,36 @@
       : function (text) { return text; };
 
     var scored = [];
+    var seenTexts = {};
+
+    function registerText(text) {
+      var sig = recommendationSignature(text);
+      if (seenTexts[sig]) return false;
+      seenTexts[sig] = true;
+      return true;
+    }
+
+    if (global.HotelProfileOperational && brainContext) {
+      var hotelKnowledge = global.HotelProfileOperational.getShiftIntelligenceKnowledge(
+        brainContext,
+        shiftType,
+        input.rawNotesText || ""
+      );
+      (hotelKnowledge.checklistItems || []).forEach(function (item, index) {
+        var text = applyText(item.text);
+        if (!registerText(text)) return;
+        if (isDuplicatedByRecommendation(text, recommendations)) return;
+        scored.push({
+          hotel: true,
+          sourceId: item.sourceId,
+          text: text,
+          category: item.category || "Operations",
+          department: item.department || fallbackDept,
+          priority: item.priority || "normal",
+          score: 120 - index
+        });
+      });
+    }
 
     CHECKLIST_DEFINITIONS.forEach(function (def) {
       if (typeof def.relevant === "function" && !def.relevant(signals, input)) return;
@@ -779,7 +816,7 @@
       if (shiftScore <= 0 && def.id !== "shift_handover_ready") return;
 
       var itemText = def.text;
-
+      if (!registerText(itemText)) return;
       if (isDuplicatedByRecommendation(itemText, recommendations)) return;
 
       scored.push({
@@ -790,12 +827,24 @@
 
     scored.sort(function (a, b) {
       if (b.score !== a.score) return b.score - a.score;
-      var rankA = PRIORITY_RANK[a.def.priority] != null ? PRIORITY_RANK[a.def.priority] : 9;
-      var rankB = PRIORITY_RANK[b.def.priority] != null ? PRIORITY_RANK[b.def.priority] : 9;
+      var rankA = PRIORITY_RANK[a.priority || (a.def && a.def.priority)] != null
+        ? PRIORITY_RANK[a.priority || a.def.priority] : 9;
+      var rankB = PRIORITY_RANK[b.priority || (b.def && b.def.priority)] != null
+        ? PRIORITY_RANK[b.priority || b.def.priority] : 9;
       return rankA - rankB;
     });
 
     return scored.slice(0, MAX_CHECKLIST_ITEMS).map(function (entry) {
+      if (entry.hotel) {
+        return normalizeChecklistItem({
+          id: entry.sourceId || createId(),
+          text: entry.text,
+          category: entry.category,
+          department: resolveDepartment([entry.department], fallbackDept, departments),
+          priority: entry.priority,
+          status: CHECKLIST_STATUS.pending
+        }, fallbackDept);
+      }
       var def = entry.def;
       return normalizeChecklistItem({
         id: def.id,

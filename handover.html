@@ -2771,6 +2771,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="handover-pdf.js"></script>
+  <script src="hotel-profile-operational.js"></script>
   <script src="shift-intelligence-engine.js"></script>
   <script src="handover-saved.js"></script>
   <script>
@@ -3190,13 +3191,36 @@
         );
         internalSections.push("Only use facts present in shift notes. Never invent guest details, room events, or policy outcomes.");
 
+        if (profile.operationalKnowledge) {
+          if (trimText(profile.operationalKnowledge.staffingContext)) {
+            internalSections.push("Staffing context: " + profile.operationalKnowledge.staffingContext);
+          }
+          var sources = (profile.operationalKnowledge.handoverSources || []).filter(function (s) {
+            return s && s.active !== false && trimText(s.name);
+          });
+          if (sources.length) {
+            internalSections.push("Handover information sources:\n- " + sources.map(function (s) {
+              return s.name + (trimText(s.description) ? ": " + s.description : "");
+            }).join("\n- "));
+          }
+        }
+
+        if (profile.roomFacilities && profile.roomFacilities.length && global.HotelProfileOperational) {
+          var roomInventorySummary = global.HotelProfileOperational.summarizeRoomFacilitiesForContext(
+            profile.roomFacilities
+          );
+          if (trimText(roomInventorySummary)) internalSections.push(roomInventorySummary);
+        }
+
         return {
           general: general,
           hotelKnowledge: hk,
+          operationalKnowledge: profile.operationalKnowledge || null,
           aiPrefs: profile.aiPrefs || {},
           terminology: profile.terminology || [],
           departments: profile.departments || [],
           rooms: profile.rooms || [],
+          roomFacilities: profile.roomFacilities || [],
           policies: profile.policies || {},
           policiesStructured: profile.policiesStructured || null,
           policyLines: policyLines,

@@ -16,6 +16,7 @@
     { id: 'guest-services', label: 'Guest Services', shortLabel: 'Guest Services', icon: 'concierge' },
     { id: 'inventory', label: 'Inventory', shortLabel: 'Inventory', icon: 'box' },
     { id: 'operations', label: 'Operations', shortLabel: 'Operations', icon: 'activity' },
+    { id: 'operational-knowledge', label: 'Operational Knowledge', shortLabel: 'Operational Knowledge', icon: 'activity' },
     { id: 'hotel-knowledge', label: 'Hotel Knowledge', shortLabel: 'Hotel Knowledge', icon: 'knowledge' },
     { id: 'advanced-settings', label: 'Advanced Settings', shortLabel: 'Advanced', icon: 'settings' }
   ];
@@ -704,6 +705,11 @@
           var cb = card.querySelector('[data-f="enabled"]');
           return cb && cb.checked;
         }) || document.querySelectorAll('#emailRecipientList [data-email-recipient]').length > 0;
+      case 'operational-knowledge':
+        return fieldHasText('okStaffingContext') ||
+          document.querySelectorAll('#okKnowledgeList [data-ok-entry]').length > 0 ||
+          document.querySelectorAll('#okSourcesList [data-ok-source]').length > 0 ||
+          document.querySelectorAll('[data-ok-step]').length > 0;
       case 'hotel-knowledge':
         return anyFieldHasText([
           'hkGeneralNotes', 'hkHotelStandards', 'hkVipRules', 'hkCommonTerms',
