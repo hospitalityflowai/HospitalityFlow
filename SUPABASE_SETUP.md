@@ -16,6 +16,8 @@ Existing tools (`handover.html`, `hotel-profile.html`, `sop.html`, `rota.html`, 
 
 No existing pages load these files yet. They are ready for login, workspace, and account features in later phases.
 
+**Verify locally:** open [`supabase-check.html`](supabase-check.html) in your browser (via a local server). It confirms `HospitalityFlowSupabase.isConfigured()` returns true and optionally tests client initialisation.
+
 ---
 
 ## 1. Find your Supabase project URL

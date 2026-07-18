@@ -29,7 +29,10 @@
   function isPlaceholder(value) {
     if (!value || typeof value !== "string") return true;
     var trimmed = value.trim();
-    return !trimmed || trimmed === PLACEHOLDER_URL || trimmed === PLACEHOLDER_KEY;
+    if (!trimmed) return true;
+    if (trimmed === PLACEHOLDER_URL || trimmed === PLACEHOLDER_KEY) return true;
+    if (/^YOUR_/i.test(trimmed) || /YOUR_SUPABASE/i.test(trimmed)) return true;
+    return false;
   }
 
   function isConfigured() {
