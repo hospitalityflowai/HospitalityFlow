@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Supabase configuration check | Hospitality Flow</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #070e1a;
+      color: #eef2f7;
+      margin: 0;
+      padding: 48px 24px;
+      line-height: 1.6;
+    }
+    .wrap { max-width: 520px; margin: 0 auto; }
+    h1 { font-size: 1.25rem; margin-bottom: 8px; }
+    p.note { color: #7a8799; font-size: 0.9rem; margin-bottom: 24px; }
+    .result {
+      padding: 16px 18px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(18, 34, 64, 0.5);
+      margin-bottom: 12px;
+    }
+    .result.ok { border-color: rgba(107, 201, 146, 0.35); }
+    .result.fail { border-color: rgba(224, 122, 122, 0.35); }
+    .label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; color: #7a8799; }
+    .value { font-size: 0.95rem; margin-top: 4px; }
+    a { color: #5b9fd4; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Supabase configuration check</h1>
+    <p class="note">Development utility only. Confirms <code>js/supabase-config.js</code> and <code>js/supabase-client.js</code> load correctly.</p>
+    <div id="results"></div>
+    <p class="note"><a href="index.html">← Back to landing page</a></p>
+  </div>
+
+  <script src="js/supabase-config.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script>
+    (function () {
+      var results = document.getElementById("results");
+      var items = [];
+
+      function add(label, ok, detail) {
+        items.push({ label: label, ok: ok, detail: detail });
+      }
+
+      var config = window.HF_SUPABASE_CONFIG;
+      add(
+        "Config object loaded",
+        !!config,
+        config ? "window.HF_SUPABASE_CONFIG is present" : "Missing — check js/supabase-config.js path"
+      );
+
+      if (config) {
+        add(
+          "Project URL set",
+          !!(config.url && config.url.indexOf("supabase.co") !== -1),
+          config.url ? "URL format looks valid" : "url is empty"
+        );
+        add(
+          "Anon key set",
+          !!(config.anonKey && config.anonKey.length > 20),
+          config.anonKey ? "Key length: " + config.anonKey.length + " characters" : "anonKey is empty"
+        );
+      }
+
+      var configured = window.HospitalityFlowSupabase && HospitalityFlowSupabase.isConfigured();
+      add(
+        "HospitalityFlowSupabase.isConfigured()",
+        !!configured,
+        configured ? "Returns true" : "Returns false — replace placeholders in js/supabase-config.js"
+      );
+
+      results.innerHTML = items.map(function (item) {
+        return (
+          '<div class="result ' + (item.ok ? "ok" : "fail") + '">' +
+          '<div class="label">' + item.label + '</div>' +
+          '<div class="value">' + (item.ok ? "✓ " : "✗ ") + item.detail + '</div>' +
+          '</div>'
+        );
+      }).join("");
+
+      if (configured) {
+        HospitalityFlowSupabase.initClient().then(function (client) {
+          add(
+            "Supabase client initialised",
+            !!client,
+            client ? "CDN loaded and createClient succeeded" : "Client null — check anon key in Supabase dashboard"
+          );
+          var extra = document.createElement("div");
+          extra.innerHTML = items.slice(-1).map(function (item) {
+            return (
+              '<div class="result ' + (item.ok ? "ok" : "fail") + '">' +
+              '<div class="label">' + item.label + '</div>' +
+              '<div class="value">' + (item.ok ? "✓ " : "✗ ") + item.detail + '</div>' +
+              '</div>'
+            );
+          }).join("");
+          results.appendChild(extra.firstChild);
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

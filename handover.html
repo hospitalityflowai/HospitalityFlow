@@ -114,6 +114,17 @@
 
     .logo-icon svg { width: 20px; height: 20px; fill: var(--blue-400); }
 
+    .logo-icon img {
+      display: none;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      border-radius: 9px;
+    }
+
+    .logo-icon.has-hotel-logo svg { display: none; }
+    .logo-icon.has-hotel-logo img { display: block; }
+
     .logo-text {
       font-size: 1.05rem;
       font-weight: 700;
@@ -184,6 +195,103 @@
       font-size: 0.95rem;
       color: var(--gray-500);
       max-width: 520px;
+    }
+
+    .hotel-brain-panel {
+      margin-top: 14px;
+      max-width: 520px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--gray-200);
+      background: linear-gradient(135deg, var(--white) 0%, var(--gray-50) 100%);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+    }
+
+    .hotel-brain-panel-inner {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 16px;
+    }
+
+    .hotel-brain-status {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .hotel-brain-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-top: 6px;
+      flex-shrink: 0;
+      background: var(--gray-300);
+      box-shadow: 0 0 0 3px rgba(168, 180, 196, 0.2);
+    }
+
+    .hotel-brain-panel.is-connected .hotel-brain-dot {
+      background: var(--green-500);
+      box-shadow: 0 0 0 3px rgba(93, 206, 138, 0.18);
+    }
+
+    .hotel-brain-panel.is-disconnected .hotel-brain-dot {
+      background: var(--amber-500);
+      box-shadow: 0 0 0 3px rgba(232, 184, 77, 0.18);
+    }
+
+    .hotel-brain-copy {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
+    }
+
+    .hotel-brain-title {
+      font-size: 0.84rem;
+      font-weight: 700;
+      color: var(--navy-900);
+      letter-spacing: -0.01em;
+    }
+
+    .hotel-brain-meta,
+    .hotel-brain-sub {
+      font-size: 0.78rem;
+      color: var(--gray-500);
+      line-height: 1.45;
+    }
+
+    .hotel-brain-link {
+      flex-shrink: 0;
+      align-self: center;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--blue-600);
+      text-decoration: none;
+      padding: 6px 10px;
+      border-radius: 100px;
+      border: 1px solid rgba(74, 143, 196, 0.22);
+      background: var(--blue-50);
+      transition: background var(--transition), border-color var(--transition);
+      white-space: nowrap;
+    }
+
+    .hotel-brain-link:hover {
+      background: var(--blue-100);
+      border-color: rgba(74, 143, 196, 0.35);
+    }
+
+    @media (max-width: 560px) {
+      .hotel-brain-panel-inner {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .hotel-brain-link {
+        align-self: flex-start;
+      }
     }
 
     /* ── Cards ── */
@@ -420,9 +528,101 @@
     .actions {
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 12px;
       margin-top: 4px;
       animation: fadeUp 0.5s ease 0.15s both;
+    }
+
+    .actions .btn-primary {
+      width: 100%;
+    }
+
+    .secondary-actions {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: 1fr;
+    }
+
+    .secondary-actions .btn-secondary {
+      flex: none;
+      min-width: 0;
+      width: 100%;
+    }
+
+    .actions-clear {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px 12px;
+    }
+
+    .actions-meta {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+      margin-top: 2px;
+    }
+
+    .draft-status,
+    .draft-restored-hint {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--gray-400);
+      letter-spacing: 0.01em;
+    }
+
+    .draft-restored-hint {
+      color: var(--blue-500);
+    }
+
+    .btn-new-handover {
+      min-height: 36px;
+      padding: 0 12px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--navy-700);
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius);
+      gap: 6px;
+    }
+
+    .btn-new-handover:hover {
+      background: var(--gray-50);
+      border-color: var(--gray-300);
+    }
+
+    .btn-new-handover svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .actions-clear .btn-clear {
+      min-height: 36px;
+      padding: 0 10px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--gray-500);
+      background: transparent;
+      border: none;
+      gap: 6px;
+    }
+
+    .actions-clear .btn-clear:hover {
+      color: var(--navy-700);
+      background: var(--gray-50);
+    }
+
+    .actions-clear .btn-clear:focus-visible {
+      outline: 2px solid var(--blue-400);
+      outline-offset: 2px;
+    }
+
+    .actions-clear .btn-clear svg {
+      width: 14px;
+      height: 14px;
     }
 
     .btn {
@@ -471,8 +671,6 @@
     }
 
     .btn-primary.loading .spinner { display: block; }
-
-    .secondary-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 
     .btn-secondary {
       flex: 1;
@@ -1479,6 +1677,510 @@
     .footer a { color: var(--blue-500); text-decoration: none; font-weight: 500; }
     .footer a:hover { text-decoration: underline; }
 
+    /* ── AI Recommendations ── */
+    .recommendations-card {
+      margin-top: var(--card-gap);
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity var(--transition-smooth), transform var(--transition-smooth);
+    }
+
+    .recommendations-card.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .recommendations-card .card-body {
+      padding: 20px 26px 22px;
+    }
+
+    .recommendations-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .recommendations-header-text h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--navy-900);
+      margin-bottom: 4px;
+    }
+
+    .recommendations-header-text p {
+      font-size: 0.84rem;
+      color: var(--gray-500);
+      line-height: 1.45;
+      max-width: 480px;
+    }
+
+    .recommendations-badge {
+      flex-shrink: 0;
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: var(--blue-600);
+      background: var(--blue-50);
+      border: 1px solid rgba(74, 143, 196, 0.2);
+      border-radius: 100px;
+      padding: 5px 10px;
+      white-space: nowrap;
+    }
+
+    .recommendations-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .recommendations-empty {
+      font-size: 0.86rem;
+      color: var(--gray-400);
+      text-align: center;
+      padding: 18px 12px;
+      background: var(--gray-50);
+      border: 1px dashed var(--gray-200);
+      border-radius: var(--radius);
+      line-height: 1.5;
+    }
+
+    .recommendation-item {
+      position: relative;
+      padding: 14px 14px 12px 16px;
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius);
+      border-left: 3px solid var(--blue-400);
+      transition: border-color var(--transition), background var(--transition);
+    }
+
+    .recommendation-item.priority-urgent { border-left-color: var(--red-500); }
+    .recommendation-item.priority-high { border-left-color: var(--amber-500); }
+    .recommendation-item.priority-normal { border-left-color: var(--blue-400); }
+
+    .recommendation-item.is-completed {
+      opacity: 0.72;
+      background: var(--gray-50);
+    }
+
+    .recommendation-item.is-completed .recommendation-item-text {
+      text-decoration: line-through;
+      color: var(--gray-400);
+    }
+
+    .recommendation-item.is-in-progress {
+      background: #fffdf8;
+    }
+
+    .recommendation-item.is-editing {
+      padding: 12px;
+      border-color: var(--blue-400);
+      box-shadow: 0 0 0 3px rgba(74, 143, 196, 0.1);
+    }
+
+    .recommendation-item-main {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-right: 4px;
+    }
+
+    .recommendation-item-text {
+      font-size: 0.9rem;
+      color: var(--navy-900);
+      line-height: 1.5;
+    }
+
+    .recommendation-item-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .recommendation-priority,
+    .recommendation-dept {
+      font-size: 0.66rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 3px 7px;
+      border-radius: 100px;
+    }
+
+    .recommendation-priority.priority-urgent {
+      color: #c94a4a;
+      background: var(--red-50);
+    }
+
+    .recommendation-priority.priority-high {
+      color: #9a7200;
+      background: var(--amber-50);
+    }
+
+    .recommendation-priority.priority-normal {
+      color: var(--blue-600);
+      background: var(--blue-50);
+    }
+
+    .recommendation-dept {
+      color: var(--navy-700);
+      background: var(--gray-100);
+      font-weight: 600;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    .recommendation-item-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--gray-100);
+    }
+
+    .recommendation-item-delete-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      border: 1px solid var(--gray-200);
+      background: var(--white);
+      color: var(--gray-400);
+      transition: all var(--transition);
+    }
+
+    .recommendation-item-delete-btn:hover {
+      background: var(--red-50);
+      border-color: rgba(232, 93, 93, 0.35);
+      color: #c94a4a;
+    }
+
+    .recommendation-item-delete-btn svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    /* ── Shift Intelligence ── */
+    .shift-intelligence-card {
+      margin-top: var(--card-gap);
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity var(--transition-smooth), transform var(--transition-smooth);
+    }
+
+    .shift-intelligence-card.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .shift-intelligence-card .card-body {
+      padding: 22px 26px 24px;
+    }
+
+    .shift-intelligence-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 18px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--gray-200);
+    }
+
+    .shift-intelligence-header-text h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--navy-900);
+      margin-bottom: 4px;
+    }
+
+    .shift-intelligence-header-text p {
+      font-size: 0.84rem;
+      color: var(--gray-500);
+      line-height: 1.45;
+      max-width: 520px;
+    }
+
+    .shift-intelligence-badge {
+      flex-shrink: 0;
+      font-size: 0.66rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--navy-700);
+      background: linear-gradient(135deg, var(--blue-50) 0%, #f0f4fa 100%);
+      border: 1px solid rgba(74, 143, 196, 0.22);
+      border-radius: 100px;
+      padding: 5px 11px;
+      white-space: nowrap;
+    }
+
+    .shift-intelligence-part {
+      margin-top: 14px;
+    }
+
+    .shift-intelligence-part + .shift-intelligence-part {
+      margin-top: 18px;
+      padding-top: 16px;
+      border-top: 1px solid var(--gray-100);
+    }
+
+    .shift-intelligence-part-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      gap: 12px;
+      padding: 0 0 12px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .shift-intelligence-part-toggle-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .shift-intelligence-part-toggle-text strong {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: var(--navy-800);
+    }
+
+    .shift-intelligence-part-sub {
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--gray-400);
+    }
+
+    .shift-intelligence-part-chevron {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+      color: var(--gray-400);
+      transition: transform var(--transition);
+    }
+
+    .shift-intelligence-part-toggle.is-open .shift-intelligence-part-chevron {
+      transform: rotate(180deg);
+    }
+
+    .shift-intelligence-part-body {
+      display: none;
+    }
+
+    .shift-intelligence-part-body.is-open {
+      display: block;
+    }
+
+    .intelligence-checklist-groups {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .intelligence-checklist-group {
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .intelligence-checklist-group-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      padding: 12px 14px;
+      background: var(--gray-50);
+      border: none;
+      cursor: pointer;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--gray-500);
+    }
+
+    .intelligence-checklist-group.is-open .intelligence-checklist-group-body {
+      display: block;
+    }
+
+    .intelligence-checklist-group-body {
+      display: none;
+      padding: 8px 10px 10px;
+    }
+
+    .intelligence-checklist-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: calc(var(--radius) - 2px);
+      transition: background var(--transition);
+    }
+
+    .intelligence-checklist-item:hover {
+      background: var(--gray-50);
+    }
+
+    .intelligence-checklist-item.is-complete {
+      opacity: 0.72;
+    }
+
+    .intelligence-checklist-item.is-complete .intelligence-checklist-text {
+      text-decoration: line-through;
+      color: var(--gray-400);
+    }
+
+    .intelligence-checklist-item.is-na {
+      opacity: 0.55;
+    }
+
+    .intelligence-checklist-item.is-na .intelligence-checklist-text {
+      color: var(--gray-400);
+    }
+
+    .intelligence-checklist-check {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      flex: 1;
+      min-width: 0;
+      cursor: pointer;
+    }
+
+    .intelligence-checklist-check input {
+      margin-top: 3px;
+      flex-shrink: 0;
+      accent-color: var(--blue-500);
+    }
+
+    .intelligence-checklist-copy {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .intelligence-checklist-text {
+      font-size: 0.88rem;
+      color: var(--navy-900);
+      line-height: 1.45;
+    }
+
+    .intelligence-checklist-meta {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--gray-400);
+    }
+
+    .intelligence-checklist-na {
+      flex-shrink: 0;
+      min-height: 28px;
+      padding: 0 8px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--gray-500);
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: 6px;
+    }
+
+    .intelligence-checklist-na:hover,
+    .intelligence-checklist-na.is-active {
+      color: var(--navy-700);
+      border-color: var(--gray-300);
+      background: var(--gray-50);
+    }
+
+    .intelligence-checklist-na.is-active {
+      color: var(--blue-600);
+      border-color: rgba(74, 143, 196, 0.35);
+      background: var(--blue-50);
+    }
+
+    .intelligence-checklist-empty {
+      font-size: 0.86rem;
+      color: var(--gray-400);
+      text-align: center;
+      padding: 18px 12px;
+      background: var(--gray-50);
+      border: 1px dashed var(--gray-200);
+      border-radius: var(--radius);
+      line-height: 1.5;
+    }
+
+    @media print {
+      .topnav, .page-header, .dashboard-grid, .actions, .footer,
+      .saved-handovers-section, .toast, .handover-item-toolbar,
+      .recommendation-item-toolbar, .intelligence-checklist-na, .shift-intelligence-part-toggle,
+      .intelligence-checklist-group-toggle, .snapshot-edit-actions, .glance-snapshot-hint { display: none !important; }
+
+      body {
+        background: var(--white);
+        color: var(--navy-900);
+      }
+
+      .main { padding: 0; }
+      .container { max-width: none; padding: 0; }
+
+      .output-section {
+        display: block !important;
+      }
+
+      .output-panel {
+        margin: 0;
+        padding: 0;
+        border: none;
+      }
+
+      .handover-meta,
+      .shift-glance,
+      .summary-card,
+      .section-card,
+      .shift-intelligence-card,
+      .recommendations-card {
+        break-inside: avoid;
+        page-break-inside: avoid;
+        box-shadow: none;
+      }
+
+      .shift-intelligence-card.is-visible,
+      .recommendations-card.is-visible {
+        display: block !important;
+      }
+
+      .shift-intelligence-part-body,
+      .intelligence-checklist-group-body {
+        display: block !important;
+      }
+
+      .summary-card.is-visible {
+        display: block !important;
+      }
+
+      .section-card:hover {
+        transform: none;
+      }
+    }
+
     /* ── Animations ── */
     @keyframes fadeDown {
       from { opacity: 0; transform: translateY(-10px); }
@@ -1502,10 +2204,16 @@
     @keyframes spin { to { transform: rotate(360deg); } }
 
     /* ── Responsive ── */
-    @media (min-width: 640px) {
-      .actions { flex-direction: row; align-items: stretch; }
-      .btn-primary { flex: 2; width: auto; }
-      .secondary-actions { flex: 1; }
+    @media (min-width: 480px) {
+      .secondary-actions {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (min-width: 768px) {
+      .secondary-actions {
+        grid-template-columns: repeat(4, 1fr);
+      }
     }
 
     @media (max-width: 600px) {
@@ -1529,8 +2237,6 @@
 
     @media (max-width: 400px) {
       .main { padding: 24px 0 56px; }
-      .secondary-actions { flex-direction: column; }
-      .btn-secondary { width: 100%; }
       .shift-btn { min-width: 60px; padding: 9px 10px; font-size: 0.8rem; }
     }
 
@@ -1661,6 +2367,75 @@
       border-radius: var(--radius-lg);
     }
 
+    .saved-handovers-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px 16px;
+      margin-bottom: 14px;
+    }
+
+    .storage-status {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--gray-400);
+      line-height: 1.4;
+    }
+
+    .storage-status-dot {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #3dba7a;
+      margin-right: 5px;
+      vertical-align: middle;
+    }
+
+    .data-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .data-actions .btn-data {
+      min-height: 34px;
+      padding: 0 12px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--gray-600);
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius);
+      gap: 6px;
+    }
+
+    .data-actions .btn-data:hover {
+      background: var(--gray-50);
+      border-color: var(--gray-300);
+      color: var(--navy-700);
+    }
+
+    .data-actions .btn-data-danger {
+      color: var(--red-500);
+      border-color: rgba(232, 93, 93, 0.25);
+    }
+
+    .data-actions .btn-data-danger:hover {
+      background: var(--red-50);
+      border-color: rgba(232, 93, 93, 0.45);
+      color: #c94a4a;
+    }
+
+    .data-actions .btn-data svg {
+      width: 13px;
+      height: 13px;
+    }
+
     @media (max-width: 480px) {
       .saved-handover-meta {
         grid-template-columns: 1fr;
@@ -1684,7 +2459,7 @@
           </div>
           <div>
             <span class="logo-text">Hospitality <span>Flow</span></span>
-            <span class="logo-sub">AI Shift Handover Assistant</span>
+            <span class="logo-sub" id="navHotelLabel">AI Shift Handover Assistant</span>
           </div>
         </a>
         <div class="nav-badge">
@@ -1697,8 +2472,21 @@
     <main class="main">
       <div class="container">
         <div class="page-header">
-          <h1 class="page-title">AI Shift Handover Assistant</h1>
-          <p class="page-subtitle">Turn messy shift notes into professional handovers in seconds.</p>
+          <h1 class="page-title" id="pageTitle">AI Shift Handover Assistant</h1>
+          <p class="page-subtitle" id="pageSubtitle">Turn messy shift notes into professional handovers in seconds.</p>
+          <div class="hotel-brain-panel is-disconnected" id="hotelBrainPanel" aria-live="polite">
+            <div class="hotel-brain-panel-inner">
+              <div class="hotel-brain-status">
+                <span class="hotel-brain-dot" id="hotelBrainDot" aria-hidden="true"></span>
+                <div class="hotel-brain-copy">
+                  <span class="hotel-brain-title" id="hotelBrainTitle">Hotel Brain Not Configured</span>
+                  <span class="hotel-brain-meta" id="hotelBrainMeta">Complete Hotel Brain to personalise Hospitality Flow.</span>
+                  <span class="hotel-brain-sub" id="hotelBrainSub" hidden></span>
+                </div>
+              </div>
+              <a class="hotel-brain-link" id="hotelBrainLink" href="hotel-profile.html">View Hotel Brain</a>
+            </div>
+          </div>
         </div>
 
         <div class="dashboard-grid">
@@ -1711,8 +2499,8 @@
                 </svg>
               </div>
               <div class="card-header-text">
-                <h2>Handover Details</h2>
-                <p>Information included in this handover report.</p>
+                <h2 id="detailsCardTitle">Handover Details</h2>
+                <p id="detailsCardDesc">Information included in this handover report.</p>
               </div>
             </div>
             <div class="card-body">
@@ -1740,7 +2528,7 @@
                 </div>
                 <div class="form-group full">
                   <span class="form-label" id="shiftLabel">Shift</span>
-                  <div class="shift-selector" role="group" aria-labelledby="shiftLabel">
+                  <div class="shift-selector" id="shiftSelector" role="group" aria-labelledby="shiftLabel">
                     <button class="shift-btn active" type="button" data-shift="AM">AM</button>
                     <button class="shift-btn" type="button" data-shift="PM">PM</button>
                     <button class="shift-btn" type="button" data-shift="Night">Night</button>
@@ -1768,8 +2556,8 @@
                 </svg>
               </div>
               <div class="card-header-text">
-                <h2>Shift Handover Notes</h2>
-                <p>Add the key information from your shift. Hospitality Flow will organise it into a clear, professional handover.</p>
+                <h2 id="notesCardTitle">Shift Handover Notes</h2>
+                <p id="notesCardSubtitle">Add the key information from your shift. Hospitality Flow will organise it into a clear, professional handover.</p>
               </div>
             </div>
             <div class="card-body">
@@ -1792,14 +2580,20 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M12 2a4 4 0 0 1 4 4c0 1.95-1.4 3.58-3.25 3.93"/><path d="M8.5 10.5A4 4 0 0 1 12 2"/><path d="M12 12v4"/><path d="M8 22h8"/><path d="M12 18v4"/>
               </svg>
-              <span class="btn-text">Generate Handover</span>
+              <span class="btn-text" id="generateBtnText">Generate Handover</span>
             </button>
             <div class="secondary-actions">
               <button class="btn btn-secondary" id="copyBtn" type="button" disabled>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
                 </svg>
-                Copy Handover
+                <span id="copyBtnText">Copy Handover</span>
+              </button>
+              <button class="btn btn-secondary" id="saveHandoverBtn" type="button" disabled>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+                </svg>
+                <span id="saveHandoverBtnText">Save Handover</span>
               </button>
               <button class="btn btn-secondary" id="exportPdfBtn" type="button" disabled>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -1807,13 +2601,25 @@
                 </svg>
                 Export to PDF
               </button>
-              <button class="btn btn-secondary" id="saveHandoverBtn" type="button" disabled>
+              <button class="btn btn-secondary" id="printHandoverBtn" type="button" disabled title="Print handover">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+                  <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>
                 </svg>
-                Save Handover
+                Print
               </button>
-              <button class="btn btn-secondary" id="clearBtn" type="button">
+            </div>
+            <div class="actions-meta">
+              <span class="draft-status" id="draftStatus" hidden aria-live="polite"></span>
+              <span class="draft-restored-hint" id="draftRestoredHint" hidden aria-live="polite">Previous draft restored.</span>
+            </div>
+            <div class="actions-clear">
+              <button class="btn btn-new-handover" id="newHandoverBtn" type="button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                New Handover
+              </button>
+              <button class="btn btn-clear" id="clearBtn" type="button">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                 </svg>
@@ -1826,7 +2632,7 @@
           <section class="output-section" id="outputSection" aria-live="polite">
             <div class="output-panel">
               <div class="output-panel-header">
-                <h2>Organised Handover</h2>
+                <h2 id="organisedOutputTitle">Organised Handover</h2>
               </div>
 
               <div class="handover-results">
@@ -1857,7 +2663,7 @@
                         </svg>
                       </div>
                       <div class="summary-content">
-                        <div class="summary-label">AI Summary</div>
+                        <div class="summary-label" id="summaryLabel">AI Summary</div>
                         <p class="summary-text" id="summaryOverview"></p>
                         <div class="summary-rows" id="summaryRows"></div>
                         <div class="summary-stats" id="summaryStats" hidden></div>
@@ -1867,6 +2673,52 @@
                 </div>
 
                 <div class="sections-grid" id="sectionsGrid"></div>
+
+                <div class="card shift-intelligence-card" id="shiftIntelligenceCard" hidden>
+                  <div class="card-body">
+                    <div class="shift-intelligence-header">
+                      <div class="shift-intelligence-header-text">
+                        <h3>Shift Intelligence</h3>
+                        <p>Operational checks generated from the Hotel Brain and your current shift.</p>
+                      </div>
+                      <span class="shift-intelligence-badge">Shift Intelligence Engine</span>
+                    </div>
+
+                    <div class="shift-intelligence-part" id="shiftIntelligenceRecommendationsPart">
+                      <button class="shift-intelligence-part-toggle is-open" id="recommendationsPartToggle" type="button" aria-expanded="true" aria-controls="recommendationsPartBody">
+                        <span class="shift-intelligence-part-toggle-text">
+                          <strong>AI Recommendations</strong>
+                          <span class="shift-intelligence-part-sub">What should the next shift do?</span>
+                        </span>
+                        <svg class="shift-intelligence-part-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+                      </button>
+                      <div class="shift-intelligence-part-body is-open" id="recommendationsPartBody">
+                        <ul class="recommendations-list" id="recommendationsList" hidden></ul>
+                        <p class="recommendations-empty" id="recommendationsEmpty" hidden>
+                          No additional recommendations identified.<br>
+                          Recommendations will appear when the shift contains follow-up actions.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div class="shift-intelligence-part" id="shiftIntelligenceChecklistPart">
+                      <button class="shift-intelligence-part-toggle is-open" id="checklistPartToggle" type="button" aria-expanded="true" aria-controls="checklistPartBody">
+                        <span class="shift-intelligence-part-toggle-text">
+                          <strong>Shift Intelligence Checklist</strong>
+                          <span class="shift-intelligence-part-sub">What might the team have forgotten?</span>
+                        </span>
+                        <svg class="shift-intelligence-part-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+                      </button>
+                      <div class="shift-intelligence-part-body is-open" id="checklistPartBody">
+                        <div class="intelligence-checklist-groups" id="intelligenceChecklistGroups"></div>
+                        <p class="intelligence-checklist-empty" id="intelligenceChecklistEmpty" hidden>
+                          No operational checklist items identified for this shift.<br>
+                          Checklist items appear when shift type and handover context require them.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </section>
@@ -1875,8 +2727,30 @@
           <section class="saved-handovers-section" id="savedHandoversSection" aria-label="Saved handovers">
             <div class="saved-handovers-panel">
               <div class="saved-handovers-header">
-                <h2>Saved Handovers</h2>
+                <h2 id="savedHandoversTitle">Saved Handovers</h2>
                 <span class="saved-handovers-count" id="savedHandoversCount"></span>
+              </div>
+              <div class="saved-handovers-toolbar">
+                <div class="storage-status" id="storageStatus">
+                  <span><span class="storage-status-dot" aria-hidden="true"></span>Local storage active</span>
+                  <span id="lastBackupLabel">Last backup: Never</span>
+                </div>
+                <div class="data-actions">
+                  <button class="btn btn-data" id="exportBackupBtn" type="button">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Export Backup
+                  </button>
+                  <button class="btn btn-data" id="importBackupBtn" type="button">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                    Import Backup
+                  </button>
+                  <input type="file" id="importBackupInput" accept=".json,application/json" hidden>
+                  <button class="btn btn-data btn-data-danger" id="clearAllHistoryBtn" type="button">Clear All History</button>
+                </div>
               </div>
               <div class="saved-handovers-grid" id="savedHandoversGrid"></div>
               <p class="saved-handovers-empty" id="savedHandoversEmpty">No saved handovers yet. Generate a handover and click Save Handover to keep it locally.</p>
@@ -1897,6 +2771,8 @@
 
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="handover-pdf.js"></script>
+  <script src="hotel-profile-operational.js"></script>
+  <script src="shift-intelligence-engine.js"></script>
   <script src="handover-saved.js"></script>
   <script>
     (function () {
@@ -1994,10 +2870,21 @@
       var generateBtn = document.getElementById("generateBtn");
       var copyBtn = document.getElementById("copyBtn");
       var exportPdfBtn = document.getElementById("exportPdfBtn");
+      var printHandoverBtn = document.getElementById("printHandoverBtn");
       var saveHandoverBtn = document.getElementById("saveHandoverBtn");
       var clearBtn = document.getElementById("clearBtn");
       var outputSection = document.getElementById("outputSection");
       var sectionsGrid = document.getElementById("sectionsGrid");
+      var shiftIntelligenceCard = document.getElementById("shiftIntelligenceCard");
+      var recommendationsCard = shiftIntelligenceCard;
+      var recommendationsList = document.getElementById("recommendationsList");
+      var recommendationsEmpty = document.getElementById("recommendationsEmpty");
+      var intelligenceChecklistGroups = document.getElementById("intelligenceChecklistGroups");
+      var intelligenceChecklistEmpty = document.getElementById("intelligenceChecklistEmpty");
+      var recommendationsPartToggle = document.getElementById("recommendationsPartToggle");
+      var checklistPartToggle = document.getElementById("checklistPartToggle");
+      var recommendationsPartBody = document.getElementById("recommendationsPartBody");
+      var checklistPartBody = document.getElementById("checklistPartBody");
       var toast = document.getElementById("toast");
       var hotelName = document.getElementById("hotelName");
       var department = document.getElementById("department");
@@ -2014,15 +2901,902 @@
       var shiftAlertsGroup = document.getElementById("shiftAlertsGroup");
       var handoverMeta = document.getElementById("handoverMeta");
       var handoverMetaGrid = document.getElementById("handoverMetaGrid");
+      var shiftSelector = document.getElementById("shiftSelector");
       var shiftButtons = document.querySelectorAll(".shift-btn");
+      var navHotelLabel = document.getElementById("navHotelLabel");
+      var pageTitle = document.getElementById("pageTitle");
+      var pageSubtitle = document.getElementById("pageSubtitle");
+      var hotelBrainPanel = document.getElementById("hotelBrainPanel");
+      var hotelBrainTitle = document.getElementById("hotelBrainTitle");
+      var hotelBrainMeta = document.getElementById("hotelBrainMeta");
+      var hotelBrainSub = document.getElementById("hotelBrainSub");
+      var hotelBrainLink = document.getElementById("hotelBrainLink");
+      var notesCardTitle = document.getElementById("notesCardTitle");
+      var notesCardSubtitle = document.getElementById("notesCardSubtitle");
+      var detailsCardTitle = document.getElementById("detailsCardTitle");
+      var generateBtnText = document.getElementById("generateBtnText");
+      var copyBtnText = document.getElementById("copyBtnText");
+      var saveHandoverBtnText = document.getElementById("saveHandoverBtnText");
+      var organisedOutputTitle = document.getElementById("organisedOutputTitle");
+      var summaryLabel = document.getElementById("summaryLabel");
+      var savedHandoversTitle = document.getElementById("savedHandoversTitle");
+      var savedHandoversEmpty = document.getElementById("savedHandoversEmpty");
+      var detailsCardDesc = document.getElementById("detailsCardDesc");
+      var hotelSnapshotHint = document.querySelector(".hotel-snapshot-pre-hint");
+      var logoIcon = document.querySelector(".logo-icon");
+      var draftStatus = document.getElementById("draftStatus");
+      var draftRestoredHint = document.getElementById("draftRestoredHint");
+      var newHandoverBtn = document.getElementById("newHandoverBtn");
+      var exportBackupBtn = document.getElementById("exportBackupBtn");
+      var importBackupBtn = document.getElementById("importBackupBtn");
+      var importBackupInput = document.getElementById("importBackupInput");
+      var clearAllHistoryBtn = document.getElementById("clearAllHistoryBtn");
+      var lastBackupLabel = document.getElementById("lastBackupLabel");
 
-      var selectedShift = "AM";
+      var HOTEL_BRAIN_KEY = "hospitalityFlow_hotelProfile";
+      var HOTEL_PROFILE_KEY = HOTEL_BRAIN_KEY;
+      var DRAFT_STORAGE_KEY = "hf_handover_draft_v1";
+      var LAST_BACKUP_KEY = "hf_handover_last_backup";
+      var BACKUP_VERSION = 1;
+      var DRAFT_DEBOUNCE_MS = 800;
+      var skipDraftSave = false;
+      var draftSaveTimer = null;
+      var DEFAULT_DEPARTMENTS = [
+        "Reception", "Housekeeping", "Food & Beverage", "Maintenance",
+        "Night Team", "Duty Manager", "Management", "Other"
+      ];
+      var DEFAULT_SHIFTS = [
+        { code: "AM", name: "AM", start: "07:00", end: "15:00" },
+        { code: "PM", name: "PM", start: "15:00", end: "23:00" },
+        { code: "Night", name: "Night", start: "23:00", end: "07:00" }
+      ];
+      var UI_LABEL_SPECS = {
+        handover: {
+          aliases: [
+            "shift handover", "handover report", "handover document",
+            "end-of-shift handover", "shift briefing", "daily lineup"
+          ]
+        },
+        notes: {
+          aliases: [
+            "operations notes", "shift notes", "handover notes",
+            "shift handover notes", "daily lineup notes"
+          ]
+        },
+        details: {
+          aliases: ["handover details", "shift details", "lineup details"]
+        },
+        aiSummary: {
+          aliases: ["ai summary", "summary section"]
+        },
+        assistant: {
+          aliases: ["shift handover assistant", "handover assistant", "daily lineup assistant", "night manager assistant"]
+        }
+      };
+      var PLATFORM_LABELS = {
+        handover: "Shift Handover",
+        notes: "Shift Handover Notes",
+        details: "Handover Details",
+        organised: "Organised Handover",
+        generate: "Generate Handover",
+        copy: "Copy Handover",
+        save: "Save Handover",
+        saved: "Saved Handovers",
+        aiSummary: "AI Summary",
+        assistant: "AI Shift Handover Assistant"
+      };
+      var FIXED_ACTION_LABELS = {
+        copy: "Copy Handover",
+        save: "Save Handover",
+        organised: "Organised Handover",
+        saved: "Saved Handovers"
+      };
+
+      /**
+       * Converts a Hotel Profile handover/role term into a document phrase that
+       * always ends with "Handover" (e.g. "Night Manager" → "Night Handover").
+       * Assistant names may stay role-specific; document actions must not.
+       */
+      function toDocumentHandoverPhrase(handoverTerm) {
+        var term = (handoverTerm || "").trim();
+        if (!term) return "Handover";
+        if (/\bhandover\b/i.test(term)) return term;
+        if (/\bmanager$/i.test(term)) {
+          var prefix = term.replace(/\s+manager$/i, "").trim();
+          return prefix ? prefix + " Handover" : "Handover";
+        }
+        return term + " Handover";
+      }
+
+      function buildDocumentActionLabels(documentPhrase) {
+        return {
+          handover: documentPhrase,
+          generate: "Generate " + documentPhrase,
+          copy: FIXED_ACTION_LABELS.copy,
+          save: FIXED_ACTION_LABELS.save,
+          organised: FIXED_ACTION_LABELS.organised,
+          saved: FIXED_ACTION_LABELS.saved
+        };
+      }
+
+      var hotelProfile = null;
+      var hotelBrainContext = null;
+      var hotelBrainInternalInstructions = "";
+      var uiLabels = clonePlatformLabels();
+      var handoverTermLabel = "Shift Handover";
+      var configuredDepartments = DEFAULT_DEPARTMENTS.slice();
+      var configuredShifts = DEFAULT_SHIFTS.slice();
+      var hotelLogoDataUrl = "";
+      var aiPrefs = {
+        tone: "professional",
+        detail: "standard",
+        language: "British English",
+        dateFormat: "DD/MM/YYYY (24-hour)",
+        instructions: ""
+      };
+      var dateLocale = { locale: "en-GB", hour12: false };
+      var currencySymbol = "£";
+      var terminologyMap = {};
+
+      function clonePlatformLabels() {
+        var copy = {};
+        Object.keys(PLATFORM_LABELS).forEach(function (key) {
+          copy[key] = PLATFORM_LABELS[key];
+        });
+        return copy;
+      }
+
+      function loadHotelProfileFromStorage() {
+        try {
+          var raw = localStorage.getItem(HOTEL_BRAIN_KEY);
+          if (!raw) return null;
+          var parsed = JSON.parse(raw);
+          if (!parsed || typeof parsed !== "object") return null;
+          return parsed;
+        } catch (e) {
+          return null;
+        }
+      }
+
+      function trimText(value) {
+        return String(value == null ? "" : value).trim();
+      }
+
+      function isHotelBrainConfigured(profile) {
+        if (!profile || typeof profile !== "object") return false;
+        if (profile.savedAt) return true;
+
+        var general = profile.general || {};
+        if (trimText(general.hotelName)) return true;
+        if (trimText(general.hotelType)) return true;
+        if (trimText(general.totalRooms)) return true;
+
+        if ((profile.departments || []).some(function (d) { return trimText(d.name); })) return true;
+        if ((profile.terminology || []).some(function (t) { return trimText(t.term); })) return true;
+        if ((profile.rooms || []).some(function (r) { return trimText(r.type) || trimText(r.code); })) return true;
+
+        var hk = profile.hotelKnowledge || {};
+        if (Object.keys(hk).some(function (key) { return trimText(hk[key]); })) return true;
+
+        if (profile.aiPrefs && (
+          trimText(profile.aiPrefs.language) ||
+          trimText(profile.aiPrefs.instructions) ||
+          profile.aiPrefs.tone ||
+          profile.aiPrefs.detail
+        )) return true;
+
+        if (profile.policies && Object.keys(profile.policies).some(function (key) {
+          return trimText(profile.policies[key]);
+        })) return true;
+
+        if (profile.policiesStructured) {
+          var groups = profile.policiesStructured;
+          return ["guest", "payment", "operational", "custom"].some(function (groupId) {
+            var group = groups[groupId] || {};
+            return Object.keys(group).some(function (key) {
+              var entry = group[key];
+              return entry && (trimText(entry.summary) || trimText(entry.instructions));
+            });
+          });
+        }
+
+        return false;
+      }
+
+      function summarizePoliciesStructured(policiesStructured) {
+        var lines = [];
+        if (!policiesStructured) return lines;
+
+        ["guest", "payment", "operational"].forEach(function (groupId) {
+          var group = policiesStructured[groupId] || {};
+          Object.keys(group).forEach(function (key) {
+            var entry = group[key];
+            if (!entry) return;
+            var summary = trimText(entry.summary);
+            var instructions = trimText(entry.instructions);
+            var text = summary || instructions;
+            if (text) lines.push((entry.title || key) + ": " + text);
+          });
+        });
+
+        return lines;
+      }
+
+      function summarizeLegacyPolicies(policies) {
+        var lines = [];
+        if (!policies) return lines;
+        Object.keys(policies).forEach(function (key) {
+          var text = trimText(policies[key]);
+          if (text) lines.push(key + ": " + text);
+        });
+        return lines;
+      }
+
+      function summarizeRoomTypes(rooms) {
+        return (rooms || [])
+          .map(function (room) {
+            var type = trimText(room.type);
+            var code = trimText(room.code);
+            var count = trimText(room.count);
+            if (!type && !code) return "";
+            var label = type || code;
+            return count ? label + " (" + count + ")" : label;
+          })
+          .filter(Boolean);
+      }
+
+      function buildHotelBrainContext(profile) {
+        if (!profile) return null;
+
+        var general = profile.general || {};
+        var hk = profile.hotelKnowledge || {};
+        var policyLines = summarizePoliciesStructured(profile.policiesStructured);
+        if (!policyLines.length) policyLines = summarizeLegacyPolicies(profile.policies);
+
+        var combinedInstructions = [
+          trimText(profile.aiPrefs && profile.aiPrefs.instructions),
+          trimText(hk.aiInstructions),
+          trimText(hk.commonTerms),
+          trimText(general.brandVoice ? "Brand voice: " + general.brandVoice : "")
+        ].filter(Boolean).join("\n");
+
+        var internalSections = [];
+        if (trimText(general.hotelName)) internalSections.push("Hotel: " + general.hotelName);
+        if (trimText(general.hotelType)) internalSections.push("Hotel type: " + general.hotelType);
+        if (trimText(general.totalRooms)) internalSections.push("Total rooms: " + general.totalRooms);
+        if (trimText(general.operatingNotes)) internalSections.push("Operating notes: " + general.operatingNotes);
+        if (trimText(hk.generalNotes)) internalSections.push("General knowledge: " + hk.generalNotes);
+        if (trimText(hk.hotelStandards)) internalSections.push("Hotel standards: " + hk.hotelStandards);
+        if (trimText(hk.vipRules)) internalSections.push("VIP rules: " + hk.vipRules);
+        if (trimText(hk.operationalNotes)) internalSections.push("Operational notes: " + hk.operationalNotes);
+        if (trimText(hk.localRecommendations)) internalSections.push("Local recommendations: " + hk.localRecommendations);
+        if (policyLines.length) internalSections.push("Policies:\n- " + policyLines.join("\n- "));
+
+        var roomTypeSummary = summarizeRoomTypes(profile.rooms);
+        if (roomTypeSummary.length) internalSections.push("Room types: " + roomTypeSummary.join(", "));
+
+        if ((profile.terminology || []).length) {
+          internalSections.push("Terminology:\n" + profile.terminology.map(function (entry) {
+            return "- " + trimText(entry.term) + ": " + trimText(entry.definition);
+          }).filter(function (line) { return line !== "- :"; }).join("\n"));
+        }
+
+        if (combinedInstructions) internalSections.push("AI instructions:\n" + combinedInstructions);
+
+        internalSections.push(
+          "Generation preferences: tone=" + (profile.aiPrefs && profile.aiPrefs.tone || "professional") +
+          "; detail=" + (profile.aiPrefs && profile.aiPrefs.detail || "standard") +
+          "; language=" + (profile.aiPrefs && profile.aiPrefs.language || "British English") +
+          "; dateFormat=" + (profile.aiPrefs && profile.aiPrefs.dateFormat || "DD/MM/YYYY (24-hour)")
+        );
+        internalSections.push("Only use facts present in shift notes. Never invent guest details, room events, or policy outcomes.");
+
+        if (profile.operationalKnowledge) {
+          if (trimText(profile.operationalKnowledge.staffingContext)) {
+            internalSections.push("Staffing context: " + profile.operationalKnowledge.staffingContext);
+          }
+          var sources = (profile.operationalKnowledge.handoverSources || []).filter(function (s) {
+            return s && s.active !== false && trimText(s.name);
+          });
+          if (sources.length) {
+            internalSections.push("Handover information sources:\n- " + sources.map(function (s) {
+              return s.name + (trimText(s.description) ? ": " + s.description : "");
+            }).join("\n- "));
+          }
+        }
+
+        if (profile.roomFacilities && profile.roomFacilities.length && global.HotelProfileOperational) {
+          var roomInventorySummary = global.HotelProfileOperational.summarizeRoomFacilitiesForContext(
+            profile.roomFacilities
+          );
+          if (trimText(roomInventorySummary)) internalSections.push(roomInventorySummary);
+        }
+
+        return {
+          general: general,
+          hotelKnowledge: hk,
+          operationalKnowledge: profile.operationalKnowledge || null,
+          aiPrefs: profile.aiPrefs || {},
+          terminology: profile.terminology || [],
+          departments: profile.departments || [],
+          rooms: profile.rooms || [],
+          roomFacilities: profile.roomFacilities || [],
+          policies: profile.policies || {},
+          policiesStructured: profile.policiesStructured || null,
+          policyLines: policyLines,
+          roomTypeSummary: roomTypeSummary,
+          combinedInstructions: combinedInstructions,
+          internalInstructions: internalSections.join("\n\n")
+        };
+      }
+
+      function countLoadedKnowledgeSections(context) {
+        if (!context) return 0;
+        var count = 0;
+        var hk = context.hotelKnowledge || {};
+        ["generalNotes", "hotelStandards", "vipRules", "commonTerms", "operationalNotes", "localRecommendations", "aiInstructions"].forEach(function (key) {
+          if (trimText(hk[key])) count += 1;
+        });
+        if (context.policyLines.length) count += 1;
+        if (context.roomTypeSummary.length) count += 1;
+        if ((context.terminology || []).some(function (entry) { return trimText(entry.term); })) count += 1;
+        if (trimText(context.combinedInstructions)) count += 1;
+        return count;
+      }
+
+      function renderHotelBrainPanel() {
+        if (!hotelBrainPanel) return;
+
+        var connected = isHotelBrainConfigured(hotelProfile);
+        hotelBrainPanel.classList.toggle("is-connected", connected);
+        hotelBrainPanel.classList.toggle("is-disconnected", !connected);
+
+        if (!connected) {
+          if (hotelBrainTitle) hotelBrainTitle.textContent = "Hotel Brain Not Configured";
+          if (hotelBrainMeta) hotelBrainMeta.textContent = "Complete Hotel Brain to personalise Hospitality Flow.";
+          if (hotelBrainSub) {
+            hotelBrainSub.textContent = "";
+            hotelBrainSub.hidden = true;
+          }
+          if (hotelBrainLink) {
+            hotelBrainLink.textContent = "View Hotel Brain";
+            hotelBrainLink.setAttribute("href", "hotel-profile.html");
+          }
+          return;
+        }
+
+        var general = (hotelBrainContext && hotelBrainContext.general) || (hotelProfile && hotelProfile.general) || {};
+        var hotelName = trimText(general.hotelName) || "Hotel Brain Connected";
+        var roomCount = trimText(general.totalRooms);
+        var hotelType = trimText(general.hotelType);
+        var language = trimText(aiPrefs.language) || "British English";
+        var knowledgeCount = countLoadedKnowledgeSections(hotelBrainContext);
+
+        if (hotelBrainTitle) hotelBrainTitle.textContent = "Hotel Brain Connected";
+        if (hotelBrainMeta) {
+          var metaParts = [hotelName];
+          if (roomCount) metaParts.push(roomCount + (roomCount === "1" ? " room" : " rooms"));
+          else if (hotelType) metaParts.push(hotelType);
+          hotelBrainMeta.textContent = metaParts.join(" · ");
+        }
+        if (hotelBrainSub) {
+          var subParts = [language];
+          subParts.push(knowledgeCount > 0 ? "Knowledge loaded" : "Preferences loaded");
+          hotelBrainSub.textContent = subParts.join(" · ");
+          hotelBrainSub.hidden = false;
+        }
+        if (hotelBrainLink) {
+          hotelBrainLink.textContent = "View Hotel Brain";
+          hotelBrainLink.setAttribute("href", "hotel-profile.html");
+        }
+      }
+
+      function resolveUiLabels(terminology) {
+        var resolved = {};
+        var explicit = {};
+        Object.keys(PLATFORM_LABELS).forEach(function (key) {
+          resolved[key] = PLATFORM_LABELS[key];
+        });
+
+        (terminology || []).forEach(function (entry) {
+          var term = (entry.term || "").trim();
+          var definition = (entry.definition || "").trim().toLowerCase();
+          if (!term || !definition) return;
+
+          Object.keys(UI_LABEL_SPECS).forEach(function (key) {
+            if (explicit[key]) return;
+            var matched = UI_LABEL_SPECS[key].aliases.some(function (alias) {
+              return definition.indexOf(alias) !== -1;
+            });
+            if (matched) {
+              resolved[key] = term;
+              explicit[key] = true;
+            }
+          });
+        });
+
+        var rawHandoverTerm = explicit.handover ? resolved.handover : PLATFORM_LABELS.handover;
+        if (!explicit.handover && explicit.assistant) {
+          var assistantRole = resolved.assistant.match(/^AI\s+(.+?)\s+Assistant$/i);
+          if (assistantRole && assistantRole[1]) rawHandoverTerm = assistantRole[1];
+        }
+        var documentPhrase = toDocumentHandoverPhrase(rawHandoverTerm);
+        var actionLabels = buildDocumentActionLabels(documentPhrase);
+
+        resolved.handover = actionLabels.handover;
+        resolved.generate = actionLabels.generate;
+        resolved.copy = actionLabels.copy;
+        resolved.save = actionLabels.save;
+        resolved.organised = actionLabels.organised;
+        resolved.saved = actionLabels.saved;
+
+        if (!explicit.notes) resolved.notes = documentPhrase + " Notes";
+        if (!explicit.details) {
+          resolved.details = documentPhrase === "Shift Handover"
+            ? PLATFORM_LABELS.details
+            : documentPhrase + " Details";
+        }
+        if (!explicit.assistant) resolved.assistant = "AI " + rawHandoverTerm + " Assistant";
+        if (!explicit.aiSummary) resolved.aiSummary = PLATFORM_LABELS.aiSummary;
+
+        return resolved;
+      }
+
+      function buildTerminologyMap(terminology) {
+        var map = {};
+        (terminology || []).forEach(function (entry) {
+          var term = (entry.term || "").trim();
+          var definition = (entry.definition || "").trim();
+          if (term && definition) map[term.toLowerCase()] = { term: term, definition: definition };
+        });
+        return map;
+      }
+
+      function resolveDateLocale(prefs) {
+        var fmt = (prefs && prefs.dateFormat) || "DD/MM/YYYY (24-hour)";
+        var language = (prefs && prefs.language) || "British English";
+
+        if (fmt.indexOf("MM/DD") === 0 || language === "American English") {
+          return { locale: "en-US", hour12: fmt.indexOf("12-hour") !== -1 };
+        }
+        if (fmt.indexOf("YYYY-MM-DD") === 0) {
+          return { locale: "en-GB", hour12: false, isoDate: true };
+        }
+        return { locale: "en-GB", hour12: fmt.indexOf("12-hour") !== -1 };
+      }
+
+      function resolveCurrencySymbol(language) {
+        if (language === "American English") return "$";
+        if (language === "British English") return "£";
+        return "£";
+      }
+
+      function reloadHotelBrain() {
+        hotelProfile = loadHotelProfileFromStorage();
+        applyHotelProfileConfig(hotelProfile);
+        mergeTerminologyKeywords();
+      }
+
+      function applyHotelProfileConfig(profile) {
+        configuredDepartments = DEFAULT_DEPARTMENTS.slice();
+        configuredShifts = DEFAULT_SHIFTS.slice();
+        hotelLogoDataUrl = "";
+        terminologyMap = {};
+        hotelBrainContext = null;
+        hotelBrainInternalInstructions = "";
+
+        if (!profile) {
+          uiLabels = clonePlatformLabels();
+          handoverTermLabel = PLATFORM_LABELS.handover;
+          return;
+        }
+
+        hotelBrainContext = buildHotelBrainContext(profile);
+        hotelBrainInternalInstructions = hotelBrainContext ? hotelBrainContext.internalInstructions : "";
+
+        var terminology = profile.terminology || [];
+        uiLabels = resolveUiLabels(terminology);
+        handoverTermLabel = uiLabels.handover;
+        terminologyMap = buildTerminologyMap(terminology);
+
+        var depts = (profile.departments || [])
+          .map(function (d) { return trimText(d.name); })
+          .filter(Boolean);
+        if (depts.length) configuredDepartments = depts;
+
+        if (profile.general && profile.general.logo) {
+          hotelLogoDataUrl = profile.general.logo;
+        }
+
+        var hk = profile.hotelKnowledge || {};
+        var mergedInstructions = [
+          trimText(profile.aiPrefs && profile.aiPrefs.instructions),
+          trimText(hk.aiInstructions),
+          trimText(hk.commonTerms)
+        ].filter(Boolean).join("\n");
+
+        if (profile.aiPrefs) {
+          aiPrefs = {
+            tone: profile.aiPrefs.tone || aiPrefs.tone,
+            detail: profile.aiPrefs.detail || aiPrefs.detail,
+            language: profile.aiPrefs.language || aiPrefs.language,
+            dateFormat: profile.aiPrefs.dateFormat || aiPrefs.dateFormat,
+            instructions: mergedInstructions || profile.aiPrefs.instructions || ""
+          };
+        } else if (mergedInstructions) {
+          aiPrefs.instructions = mergedInstructions;
+        }
+
+        dateLocale = resolveDateLocale(aiPrefs);
+        if (profile.general && trimText(profile.general.currency)) {
+          var currency = trimText(profile.general.currency);
+          if (currency === "USD" || currency === "$") currencySymbol = "$";
+          else if (currency === "GBP" || currency === "£") currencySymbol = "£";
+          else if (currency === "EUR" || currency === "€") currencySymbol = "€";
+          else currencySymbol = resolveCurrencySymbol(aiPrefs.language);
+        } else {
+          currencySymbol = resolveCurrencySymbol(aiPrefs.language);
+        }
+      }
+
+      function applyHotelLogo(logoDataUrl) {
+        if (!logoIcon) return;
+
+        var img = document.getElementById("hotelLogoImg");
+        if (!logoDataUrl) {
+          if (img) img.remove();
+          logoIcon.classList.remove("has-hotel-logo");
+          return;
+        }
+
+        if (!img) {
+          img = document.createElement("img");
+          img.id = "hotelLogoImg";
+          img.alt = "Hotel logo";
+          logoIcon.appendChild(img);
+        }
+        img.src = logoDataUrl;
+        logoIcon.classList.add("has-hotel-logo");
+      }
+
+      function applyUiLabelsToPage() {
+        if (navHotelLabel) navHotelLabel.textContent = uiLabels.assistant;
+        if (pageTitle) pageTitle.textContent = uiLabels.assistant;
+        if (detailsCardTitle) detailsCardTitle.textContent = uiLabels.details;
+        if (notesCardTitle) notesCardTitle.textContent = uiLabels.notes;
+        if (generateBtnText) generateBtnText.textContent = uiLabels.generate;
+        if (copyBtnText) copyBtnText.textContent = uiLabels.copy;
+        if (saveHandoverBtnText) saveHandoverBtnText.textContent = uiLabels.save;
+        if (organisedOutputTitle) organisedOutputTitle.textContent = uiLabels.organised;
+        if (summaryLabel) summaryLabel.textContent = uiLabels.aiSummary;
+        if (savedHandoversTitle) savedHandoversTitle.textContent = uiLabels.saved;
+        if (savedHandoversEmpty) {
+          savedHandoversEmpty.textContent =
+            "No saved handovers yet. " + uiLabels.generate + " and click " + uiLabels.save + " to keep it locally.";
+        }
+        if (detailsCardDesc) {
+          detailsCardDesc.textContent = "Information included in this " + handoverTermLabel.toLowerCase() + " report.";
+        }
+        if (hotelSnapshotHint) {
+          hotelSnapshotHint.textContent =
+            "Enter metrics manually, or leave blank to extract from notes when you generate the " +
+            handoverTermLabel.toLowerCase() + ".";
+        }
+        if (notesCardSubtitle) {
+          notesCardSubtitle.textContent =
+            "Add the key information from your shift. Hospitality Flow will organise it into a clear, professional " +
+            handoverTermLabel.toLowerCase() + ".";
+        }
+        if (notesInput) {
+          notesInput.setAttribute("aria-label", uiLabels.notes);
+        }
+        document.title = uiLabels.assistant + " — Hospitality Flow";
+      }
+
+      function mergeTerminologyKeywords() {
+        if (!hotelProfile) return;
+
+        Object.keys(terminologyMap).forEach(function (key) {
+          var entry = terminologyMap[key];
+          if (!entry.term) return;
+          SECTIONS.forEach(function (section) {
+            if (section.id === "general" || section.id === "guest") {
+              if (section.keywords.indexOf(entry.term.toLowerCase()) === -1) {
+                section.keywords.push(entry.term.toLowerCase());
+              }
+            }
+          });
+        });
+
+        var commonTerms = hotelBrainContext && hotelBrainContext.hotelKnowledge
+          ? trimText(hotelBrainContext.hotelKnowledge.commonTerms)
+          : "";
+        if (!commonTerms) return;
+
+        commonTerms.split(/\n|,|;/).forEach(function (chunk) {
+          var term = trimText(chunk.split(/[:=–-]/)[0]);
+          if (term && term.length <= 40) {
+            SECTIONS.forEach(function (section) {
+              if (section.keywords.indexOf(term.toLowerCase()) === -1) {
+                section.keywords.push(term.toLowerCase());
+              }
+            });
+          }
+        });
+      }
+
+      function populateDepartmentSelect() {
+        var current = department.value;
+        department.innerHTML = "";
+        configuredDepartments.forEach(function (name, index) {
+          var opt = document.createElement("option");
+          opt.value = name;
+          opt.textContent = name;
+          if (name === current || (!current && index === 0)) opt.selected = true;
+          department.appendChild(opt);
+        });
+        if (current && configuredDepartments.indexOf(current) === -1) {
+          var extra = document.createElement("option");
+          extra.value = current;
+          extra.textContent = current;
+          extra.selected = true;
+          department.insertBefore(extra, department.firstChild);
+        }
+      }
+
+      function getShiftButtonLabel(shift) {
+        var label = shift.name || shift.code;
+        if (shift.name && shift.code && shift.name !== shift.code) {
+          return shift.name + " (" + shift.code + ")";
+        }
+        return label;
+      }
+
+      function renderShiftSelector() {
+        if (!shiftSelector) return;
+        shiftSelector.innerHTML = "";
+        configuredShifts.forEach(function (shift, index) {
+          var btn = document.createElement("button");
+          btn.className = "shift-btn" + (index === 0 ? " active" : "");
+          btn.type = "button";
+          btn.setAttribute("data-shift", shift.code);
+          btn.textContent = getShiftButtonLabel(shift);
+          if (shift.start && shift.end) {
+            btn.title = shift.start + " – " + shift.end;
+          }
+          shiftSelector.appendChild(btn);
+        });
+        wireShiftButtons();
+      }
+
+      function wireShiftButtons() {
+        shiftButtons = document.querySelectorAll(".shift-btn");
+        shiftButtons.forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            shiftButtons.forEach(function (b) { b.classList.remove("active"); });
+            btn.classList.add("active");
+            selectedShift = btn.getAttribute("data-shift");
+            scheduleDraftSave();
+          });
+        });
+      }
+
+      function restoreCopyButtonHtml() {
+        copyBtn.innerHTML =
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+          '<rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> ' +
+          '<span id="copyBtnText">' + uiLabels.copy + "</span>";
+        copyBtnText = document.getElementById("copyBtnText");
+      }
+
+      function getDefaultDepartment() {
+        return configuredDepartments[0] || "Reception";
+      }
+
+      function applyHotelProfileToUI() {
+        renderHotelBrainPanel();
+
+        if (!isHotelBrainConfigured(hotelProfile)) {
+          applyHotelLogo("");
+          populateDepartmentSelect();
+          wireShiftButtons();
+          return;
+        }
+
+        var general = hotelProfile.general || {};
+        if (general.hotelName && !hotelName.value.trim()) {
+          hotelName.value = general.hotelName;
+        }
+
+        applyHotelLogo(hotelLogoDataUrl);
+        populateDepartmentSelect();
+        wireShiftButtons();
+        applyUiLabelsToPage();
+
+        if (general.hotelName) {
+          if (navHotelLabel) navHotelLabel.textContent = general.hotelName;
+          if (pageTitle) pageTitle.textContent = general.hotelName + " — " + uiLabels.assistant;
+          document.title = general.hotelName + " — " + uiLabels.assistant + " — Hospitality Flow";
+        }
+      }
+
+      function getShiftDisplayName(code) {
+        var match = configuredShifts.filter(function (s) { return s.code === code; })[0];
+        return match ? (match.name || match.code) : code;
+      }
+
+      function getDetailSentenceLimit() {
+        if (aiPrefs.detail === "brief") return 3;
+        if (aiPrefs.detail === "comprehensive") return 9;
+        return 6;
+      }
+
+      function applyToneToText(text) {
+        if (aiPrefs.tone === "friendly") {
+          return text
+            .replace(/\brequire immediate attention\b/gi, "need a quick look from the team")
+            .replace(/\brequires immediate management attention\b/gi, "needs management to take a look")
+            .replace(/\bshould be prioritised\b/gi, "should be top of the list")
+            .replace(/\bOverall the\b/g, "All in all, the");
+        }
+        if (aiPrefs.tone === "concise") {
+          return text
+            .replace(/\bOverall the\b/gi, "The")
+            .replace(/\bthat should be prioritised\b/gi, "to prioritise")
+            .replace(/\brequiring immediate attention\b/gi, "needing attention")
+            .replace(/\bfor the incoming team\b/gi, "next shift")
+            .replace(/\s+/g, " ")
+            .trim();
+        }
+        return text;
+      }
+
+      function applyLanguageVariant(text) {
+        var lang = aiPrefs.language || "British English";
+        if (lang === "American English") {
+          return text
+            .replace(/\bprioritised\b/gi, "prioritized")
+            .replace(/\borganised\b/gi, "organized")
+            .replace(/\brecognised\b/gi, "recognized")
+            .replace(/\bcentre\b/gi, "center");
+        }
+        if (lang === "British English") {
+          return text
+            .replace(/\bprioritized\b/gi, "prioritised")
+            .replace(/\borganized\b/gi, "organised")
+            .replace(/\brecognized\b/gi, "recognised")
+            .replace(/\bcenter\b/gi, "centre");
+        }
+        return text;
+      }
+
+      function applyCustomInstructions(text) {
+        var instructions = (aiPrefs.instructions || "").trim();
+        if (!instructions) return text;
+
+        instructions.split(/\n+/).forEach(function (line) {
+          var trimmed = line.trim();
+          if (!trimmed) return;
+
+          var useNotMatch = trimmed.match(/use\s+['"]?([^'"]+?)['"]?\s+not\s+['"]?([^'".]+?)['"]?/i);
+          if (useNotMatch) {
+            var preferred = useNotMatch[1].trim();
+            var avoid = useNotMatch[2].trim();
+            if (preferred && avoid) {
+              var re = new RegExp("\\b" + avoid.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\b", "gi");
+              text = text.replace(re, preferred);
+            }
+          }
+
+          var alwaysUseMatch = trimmed.match(/always\s+(?:refer to|use|call)\s+['"]?([^'"]+?)['"]?/i);
+          if (alwaysUseMatch && alwaysUseMatch[1]) {
+            var phrase = alwaysUseMatch[1].trim();
+            if (/guest/i.test(phrase) && /customer/i.test(trimmed)) {
+              text = text.replace(/\bcustomers?\b/gi, phrase.match(/guest/i) ? "guest" : phrase);
+            }
+          }
+        });
+
+        return text;
+      }
+
+      function applyTerminologyToText(text) {
+        if (!text) return text;
+        var result = text;
+
+        Object.keys(PLATFORM_LABELS).forEach(function (key) {
+          var platform = PLATFORM_LABELS[key];
+          var hotel = uiLabels[key];
+          if (platform && hotel && platform !== hotel) {
+            var re = new RegExp(platform.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
+            result = result.replace(re, hotel);
+          }
+        });
+
+        Object.keys(terminologyMap).forEach(function (key) {
+          var entry = terminologyMap[key];
+          if (!entry.term) return;
+          var re = new RegExp("\\b" + entry.term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\b", "gi");
+          if (re.test(result)) {
+            result = result.replace(re, entry.term);
+          }
+        });
+
+        return result;
+      }
+
+      function applyHotelBrainContextToSummary(text, classified) {
+        if (!hotelBrainContext || !text) return text;
+
+        var metrics = getHandoverMetrics(classified);
+        var hk = hotelBrainContext.hotelKnowledge || {};
+        var additions = [];
+
+        if (metrics.vip > 0 && trimText(hk.vipRules) && text.toLowerCase().indexOf("vip") === -1) {
+          additions.push("VIP activity noted — follow hotel VIP protocols.");
+        } else if (metrics.vip > 0 && trimText(hk.vipRules) && text.toLowerCase().indexOf("protocol") === -1 && aiPrefs.detail === "comprehensive") {
+          additions.push("Apply hotel VIP rules where relevant.");
+        }
+
+        if (metrics.display.payments > 0 && hotelBrainContext.policyLines.length &&
+            text.toLowerCase().indexOf("policy") === -1 && aiPrefs.detail !== "brief") {
+          additions.push("Check hotel payment policies for flagged items.");
+        }
+
+        if (trimText(hk.operationalNotes) && aiPrefs.detail === "comprehensive" &&
+            text.toLowerCase().indexOf("operational") === -1) {
+          additions.push("Review operational notes for the incoming shift.");
+        }
+
+        if (!additions.length) return text;
+
+        var limit = getDetailSentenceLimit();
+        var currentCount = text.split(/(?<=[.!?])\s+/).filter(Boolean).length;
+        if (currentCount >= limit) return text;
+
+        return text + " " + additions.slice(0, limit - currentCount).join(" ");
+      }
+
+      function applyAiPreferencesToSummary(text, classified) {
+        var processed = applyToneToText(text);
+        processed = applyLanguageVariant(processed);
+        processed = applyCustomInstructions(processed);
+        processed = applyTerminologyToText(processed);
+        if (classified) processed = applyHotelBrainContextToSummary(processed, classified);
+        return processed;
+      }
+
+      function formatTimestamp(date) {
+        if (dateLocale.isoDate) {
+          var yyyy = date.getFullYear();
+          var mm = String(date.getMonth() + 1).padStart(2, "0");
+          var dd = String(date.getDate()).padStart(2, "0");
+          var hh = String(date.getHours()).padStart(2, "0");
+          var min = String(date.getMinutes()).padStart(2, "0");
+          return yyyy + "-" + mm + "-" + dd + " " + hh + ":" + min;
+        }
+        return date.toLocaleString(dateLocale.locale, {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: dateLocale.hour12
+        });
+      }
+
+      reloadHotelBrain();
+
+      var selectedShift = configuredShifts[0] ? configuredShifts[0].code : "AM";
       var lastHandoverText = "";
       var lastSummaryText = "";
       var lastGeneratedTime = "";
       var lastClassified = null;
       var lastHotelSnapshotOverrides = {};
       var activeHandoverEditId = null;
+      var lastRecommendations = [];
+      var activeRecommendationEditId = null;
+      var lastIntelligenceChecklist = [];
 
       var ACTIONABLE_SECTIONS = ["urgent", "guest", "maintenance", "payments", "events", "tasks"];
       var ITEM_STATUSES = [
@@ -2032,6 +3806,15 @@
       ];
 
       var EDIT_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+      var DELETE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>';
+
+      var RECOMMENDATION_PRIORITIES = [
+        { id: "urgent", label: "Urgent" },
+        { id: "high", label: "High" },
+        { id: "normal", label: "Normal" }
+      ];
+
+      var RECOMMENDATION_PRIORITY_RANK = { urgent: 0, high: 1, normal: 2 };
 
       function createItemId() {
         return Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 7);
@@ -2073,12 +3856,19 @@
 
       function normalizeAdrInText(text) {
         if (!text || typeof text !== "string") return text;
+        var sym = currencySymbol;
         return text
           .replace(/\b(adr\s*[:\-]?\s*)\$\s*(\d+(?:\.\d+)?)/gi, function (_match, prefix, amount) {
-            return prefix + "£" + amount;
+            return prefix + sym + amount;
+          })
+          .replace(/\b(adr\s*[:\-]?\s*)£\s*(\d+(?:\.\d+)?)/gi, function (_match, prefix, amount) {
+            return prefix + sym + amount;
           })
           .replace(/\b\$\s*(\d+(?:\.\d+)?)\s+adr\b/gi, function (_match, amount) {
-            return "£" + amount + " ADR";
+            return sym + amount + " ADR";
+          })
+          .replace(/\b£\s*(\d+(?:\.\d+)?)\s+adr\b/gi, function (_match, amount) {
+            return sym + amount + " ADR";
           });
       }
 
@@ -2114,6 +3904,513 @@
       function syncHandoverExports() {
         if (!lastClassified) return;
         lastHandoverText = formatHandoverText(lastClassified);
+        scheduleDraftSave();
+      }
+
+      function normalizeRecommendationStatus(status) {
+        if (status === "in-progress") return "in_progress";
+        if (status === "in_progress" || status === "completed" || status === "open") return status;
+        return "open";
+      }
+
+      function normalizeRecommendation(raw) {
+        if (!raw || typeof raw !== "object") {
+          return {
+            id: createItemId(),
+            text: String(raw || ""),
+            priority: "normal",
+            department: getDefaultDepartment(),
+            status: "open"
+          };
+        }
+        return {
+          id: raw.id || createItemId(),
+          text: String(raw.text || ""),
+          priority: raw.priority || "normal",
+          department: raw.department || getDefaultDepartment(),
+          status: normalizeRecommendationStatus(raw.status || "open")
+        };
+      }
+
+      function formatRecommendationPriorityLabel(priority) {
+        var match = RECOMMENDATION_PRIORITIES.filter(function (entry) { return entry.id === priority; })[0];
+        return match ? match.label : "Normal";
+      }
+
+      function formatRecommendationForExport(rec) {
+        var normalized = normalizeRecommendation(rec);
+        return "[" + formatRecommendationPriorityLabel(normalized.priority) +
+          " · " + normalized.department +
+          " · " + formatStatusLabel(normalized.status) + "] " + normalized.text;
+      }
+
+      function resolveRecommendationDepartment(candidates, fallback) {
+        var options = candidates || [];
+        for (var i = 0; i < options.length; i++) {
+          var candidate = options[i];
+          var match = configuredDepartments.filter(function (dept) {
+            var lowerDept = dept.toLowerCase();
+            var lowerCandidate = candidate.toLowerCase();
+            return lowerDept.indexOf(lowerCandidate) !== -1 || lowerCandidate.indexOf(lowerDept) !== -1;
+          })[0];
+          if (match) return match;
+        }
+        return fallback || getDefaultDepartment();
+      }
+
+      function roomPhrase(note) {
+        if (!note.rooms || !note.rooms.length) return "";
+        return note.rooms.length === 1 ? "Room " + note.rooms[0] : "Rooms " + note.rooms.join(", ");
+      }
+
+      function roomInPhrase(note) {
+        if (!note.rooms || !note.rooms.length) return "";
+        return note.rooms.length === 1 ? " in Room " + note.rooms[0] : " in Rooms " + note.rooms.join(", ");
+      }
+
+      function onPhrase(note) {
+        if (!note.rooms || !note.rooms.length) return "";
+        return note.rooms.length === 1 ? " on Room " + note.rooms[0] : " on Rooms " + note.rooms.join(", ");
+      }
+
+      function isQuietShiftLines(lines) {
+        if (!lines.length) return true;
+        return lines.every(function (line) {
+          return noteContains(line, [
+            "quiet shift", "all guests settled", "no outstanding issues", "no outstanding issue",
+            "nothing to report", "uneventful", "all quiet", "no issues", "no follow-up",
+            "no follow up", "smooth shift", "without incident"
+          ]);
+        });
+      }
+
+      function maintenanceNeedsFollowUp(note) {
+        if (!isMaintenanceNote(note.original) && note.section !== "maintenance" && note.section !== "urgent") {
+          return false;
+        }
+        if (isResolvedNote(note.original)) return false;
+        return noteContains(note.original, [
+          "issue", "broken", "fault", "repair", "fix", "not working", "pressure", "leak",
+          "maintenance", "engineer", "shower", "ac ", "air con", "heating", "plumbing"
+        ]);
+      }
+
+      function applyRecommendationPreferences(text) {
+        var processed = applyToneToText(text);
+        processed = applyLanguageVariant(processed);
+        processed = applyCustomInstructions(processed);
+        processed = applyTerminologyToText(processed);
+        return processed;
+      }
+
+      /**
+       * Shift Intelligence — recommendations + operational checklist via ShiftIntelligenceEngine.
+       */
+      function normalizeChecklistItem(raw) {
+        if (window.ShiftIntelligenceEngine && ShiftIntelligenceEngine.normalizeChecklistItem) {
+          return ShiftIntelligenceEngine.normalizeChecklistItem(raw, getDefaultDepartment());
+        }
+        return {
+          id: raw && raw.id ? raw.id : createItemId(),
+          text: raw && raw.text ? String(raw.text) : "",
+          category: raw && raw.category ? raw.category : "Operations",
+          department: raw && raw.department ? raw.department : getDefaultDepartment(),
+          priority: raw && raw.priority ? raw.priority : "normal",
+          status: raw && raw.status ? raw.status : "pending"
+        };
+      }
+
+      function buildIntelligenceInput(classified, rawNotesText) {
+        return {
+          shiftCode: selectedShift,
+          shiftDisplayName: getShiftDisplayName(selectedShift),
+          rawNotesText: rawNotesText || "",
+          classified: classified,
+          metrics: getHandoverMetrics(classified),
+          brainContext: hotelBrainContext,
+          departments: configuredDepartments,
+          selectedDepartment: department.value,
+          hotelSnapshot: Object.assign({}, lastHotelSnapshotOverrides),
+          applyTextPreferences: applyRecommendationPreferences
+        };
+      }
+
+      function generateShiftIntelligence(classified, rawNotesText) {
+        if (!window.ShiftIntelligenceEngine) {
+          return { recommendations: [], checklist: [] };
+        }
+        return ShiftIntelligenceEngine.analyze(buildIntelligenceInput(classified, rawNotesText));
+      }
+
+      function generateRecommendations(classified, rawNotesText) {
+        var result = generateShiftIntelligence(classified, rawNotesText);
+        return result.recommendations || [];
+      }
+
+      function findChecklistItemById(id) {
+        for (var i = 0; i < lastIntelligenceChecklist.length; i++) {
+          if (lastIntelligenceChecklist[i].id === id) {
+            return { index: i, item: lastIntelligenceChecklist[i] };
+          }
+        }
+        return null;
+      }
+
+      function formatChecklistForExport(item) {
+        var normalized = normalizeChecklistItem(item);
+        var statusLabel = normalized.status === "complete"
+          ? "Complete"
+          : normalized.status === "not_applicable"
+            ? "N/A"
+            : "Pending";
+        return "[" + statusLabel + " · " + normalized.department + "] " + normalized.text;
+      }
+
+      function setChecklistItemStatus(id, status) {
+        var found = findChecklistItemById(id);
+        if (!found) return;
+        found.item.status = status;
+        lastIntelligenceChecklist[found.index] = found.item;
+        renderIntelligenceChecklist();
+        syncHandoverExports();
+      }
+
+      function wireIntelligencePartToggle(toggleBtn, bodyEl) {
+        if (!toggleBtn || !bodyEl) return;
+        toggleBtn.addEventListener("click", function () {
+          var isOpen = toggleBtn.classList.contains("is-open");
+          toggleBtn.classList.toggle("is-open", !isOpen);
+          bodyEl.classList.toggle("is-open", !isOpen);
+          toggleBtn.setAttribute("aria-expanded", !isOpen);
+        });
+      }
+
+      function renderIntelligenceChecklist() {
+        if (!intelligenceChecklistGroups) return;
+
+        intelligenceChecklistGroups.innerHTML = "";
+
+        if (!lastIntelligenceChecklist.length) {
+          if (intelligenceChecklistEmpty) intelligenceChecklistEmpty.hidden = false;
+          return;
+        }
+
+        if (intelligenceChecklistEmpty) intelligenceChecklistEmpty.hidden = true;
+
+        var byCategory = {};
+        lastIntelligenceChecklist.forEach(function (item) {
+          var normalized = normalizeChecklistItem(item);
+          if (!byCategory[normalized.category]) byCategory[normalized.category] = [];
+          byCategory[normalized.category].push(normalized);
+        });
+
+        Object.keys(byCategory).sort().forEach(function (category) {
+          var group = document.createElement("div");
+          group.className = "intelligence-checklist-group is-open";
+
+          var toggle = document.createElement("button");
+          toggle.type = "button";
+          toggle.className = "intelligence-checklist-group-toggle";
+          toggle.setAttribute("aria-expanded", "true");
+          toggle.innerHTML =
+            category +
+            '<svg class="shift-intelligence-part-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>';
+
+          var body = document.createElement("div");
+          body.className = "intelligence-checklist-group-body";
+
+          byCategory[category].forEach(function (item) {
+            body.appendChild(buildChecklistItemElement(item));
+          });
+
+          toggle.addEventListener("click", function () {
+            var isOpen = group.classList.contains("is-open");
+            group.classList.toggle("is-open", !isOpen);
+            toggle.setAttribute("aria-expanded", !isOpen);
+          });
+
+          group.appendChild(toggle);
+          group.appendChild(body);
+          intelligenceChecklistGroups.appendChild(group);
+        });
+      }
+
+      function buildChecklistItemElement(item) {
+        var normalized = normalizeChecklistItem(item);
+        var row = document.createElement("div");
+        row.className = "intelligence-checklist-item";
+        row.setAttribute("data-checklist-id", normalized.id);
+
+        if (normalized.status === "complete") row.classList.add("is-complete");
+        if (normalized.status === "not_applicable") row.classList.add("is-na");
+
+        var label = document.createElement("label");
+        label.className = "intelligence-checklist-check";
+
+        var checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = normalized.status === "complete";
+        checkbox.disabled = normalized.status === "not_applicable";
+        checkbox.setAttribute("aria-label", "Mark checklist item complete");
+
+        var copy = document.createElement("div");
+        copy.className = "intelligence-checklist-copy";
+
+        var text = document.createElement("span");
+        text.className = "intelligence-checklist-text";
+        text.textContent = normalized.text;
+
+        var meta = document.createElement("span");
+        meta.className = "intelligence-checklist-meta";
+        meta.textContent = normalized.category + " · " + normalized.department;
+
+        copy.appendChild(text);
+        copy.appendChild(meta);
+        label.appendChild(checkbox);
+        label.appendChild(copy);
+
+        var naBtn = document.createElement("button");
+        naBtn.type = "button";
+        naBtn.className = "intelligence-checklist-na" + (normalized.status === "not_applicable" ? " is-active" : "");
+        naBtn.textContent = "N/A";
+        naBtn.setAttribute("aria-label", "Mark checklist item not applicable");
+
+        checkbox.addEventListener("change", function () {
+          setChecklistItemStatus(normalized.id, checkbox.checked ? "complete" : "pending");
+        });
+
+        naBtn.addEventListener("click", function () {
+          if (normalized.status === "not_applicable") {
+            setChecklistItemStatus(normalized.id, "pending");
+          } else {
+            setChecklistItemStatus(normalized.id, "not_applicable");
+          }
+        });
+
+        row.appendChild(label);
+        row.appendChild(naBtn);
+        return row;
+      }
+
+      function renderShiftIntelligence() {
+        if (!shiftIntelligenceCard) return;
+
+        var hasRecommendations = lastRecommendations.length > 0;
+        var hasChecklist = lastIntelligenceChecklist.length > 0;
+
+        if (!hasRecommendations && !hasChecklist) {
+          hideShiftIntelligencePanel();
+          return;
+        }
+
+        shiftIntelligenceCard.hidden = false;
+        shiftIntelligenceCard.classList.add("is-visible");
+        renderRecommendations();
+        renderIntelligenceChecklist();
+      }
+
+      function findRecommendationById(id) {
+        for (var i = 0; i < lastRecommendations.length; i++) {
+          if (lastRecommendations[i].id === id) return { index: i, item: lastRecommendations[i] };
+        }
+        return null;
+      }
+
+      function renderRecommendations() {
+        if (!lastRecommendations.length) {
+          if (recommendationsList) {
+            recommendationsList.innerHTML = "";
+            recommendationsList.hidden = true;
+          }
+          if (recommendationsEmpty) recommendationsEmpty.hidden = false;
+          return;
+        }
+
+        if (recommendationsEmpty) recommendationsEmpty.hidden = true;
+        if (!recommendationsList) return;
+
+        recommendationsList.hidden = false;
+        recommendationsList.innerHTML = "";
+
+        lastRecommendations.forEach(function (rec) {
+          recommendationsList.appendChild(buildRecommendationItemElement(rec));
+        });
+      }
+
+      function buildRecommendationItemElement(rec) {
+        var normalized = normalizeRecommendation(rec);
+        var li = document.createElement("li");
+        li.className = "recommendation-item priority-" + normalized.priority;
+        li.setAttribute("data-recommendation-id", normalized.id);
+
+        if (normalized.status === "completed") li.classList.add("is-completed");
+        if (normalized.status === "in_progress") li.classList.add("is-in-progress");
+
+        var main = document.createElement("div");
+        main.className = "recommendation-item-main";
+
+        var text = document.createElement("div");
+        text.className = "recommendation-item-text";
+        text.textContent = normalized.text;
+
+        var meta = document.createElement("div");
+        meta.className = "recommendation-item-meta";
+
+        var priority = document.createElement("span");
+        priority.className = "recommendation-priority priority-" + normalized.priority;
+        priority.textContent = formatRecommendationPriorityLabel(normalized.priority);
+
+        var dept = document.createElement("span");
+        dept.className = "recommendation-dept";
+        dept.textContent = normalized.department;
+
+        meta.appendChild(priority);
+        meta.appendChild(dept);
+        main.appendChild(text);
+        main.appendChild(meta);
+        li.appendChild(main);
+
+        var toolbar = document.createElement("div");
+        toolbar.className = "recommendation-item-toolbar";
+
+        var editBtn = document.createElement("button");
+        editBtn.type = "button";
+        editBtn.className = "handover-item-edit-btn";
+        editBtn.setAttribute("aria-label", "Edit recommendation");
+        editBtn.innerHTML = EDIT_ICON;
+        editBtn.addEventListener("click", function (event) {
+          event.stopPropagation();
+          openRecommendationEditor(li, normalized);
+        });
+
+        var deleteBtn = document.createElement("button");
+        deleteBtn.type = "button";
+        deleteBtn.className = "recommendation-item-delete-btn";
+        deleteBtn.setAttribute("aria-label", "Delete recommendation");
+        deleteBtn.innerHTML = DELETE_ICON;
+        deleteBtn.addEventListener("click", function (event) {
+          event.stopPropagation();
+          deleteRecommendation(normalized.id);
+        });
+
+        var statusSelect = document.createElement("select");
+        statusSelect.className = "handover-item-status-select status-" + normalized.status.replace(/_/g, "-");
+        statusSelect.setAttribute("aria-label", "Recommendation status");
+        ITEM_STATUSES.forEach(function (entry) {
+          var option = document.createElement("option");
+          option.value = entry.id;
+          option.textContent = entry.label;
+          if (entry.id === normalized.status) option.selected = true;
+          statusSelect.appendChild(option);
+        });
+        statusSelect.addEventListener("change", function () {
+          setRecommendationStatus(normalized.id, statusSelect.value);
+        });
+
+        toolbar.appendChild(editBtn);
+        toolbar.appendChild(deleteBtn);
+        toolbar.appendChild(statusSelect);
+        li.appendChild(toolbar);
+        return li;
+      }
+
+      function openRecommendationEditor(li, item) {
+        if (activeRecommendationEditId && activeRecommendationEditId !== item.id) {
+          renderRecommendations();
+        }
+
+        activeRecommendationEditId = item.id;
+        li.classList.add("is-editing");
+        li.innerHTML = "";
+
+        var input = document.createElement("textarea");
+        input.className = "handover-item-edit-input";
+        input.value = item.text;
+        input.setAttribute("aria-label", "Edit recommendation");
+
+        var actions = document.createElement("div");
+        actions.className = "handover-item-edit-actions";
+
+        var saveBtn = document.createElement("button");
+        saveBtn.type = "button";
+        saveBtn.className = "handover-item-edit-save";
+        saveBtn.textContent = "Save";
+
+        var cancelBtn = document.createElement("button");
+        cancelBtn.type = "button";
+        cancelBtn.className = "handover-item-edit-cancel";
+        cancelBtn.textContent = "Cancel";
+
+        function closeEditor(restore) {
+          activeRecommendationEditId = null;
+          if (restore) renderRecommendations();
+        }
+
+        saveBtn.addEventListener("click", function () {
+          saveRecommendationEdit(item.id, input.value);
+        });
+        cancelBtn.addEventListener("click", function () {
+          closeEditor(true);
+        });
+        input.addEventListener("keydown", function (event) {
+          if (event.key === "Escape") closeEditor(true);
+        });
+
+        actions.appendChild(saveBtn);
+        actions.appendChild(cancelBtn);
+        li.appendChild(input);
+        li.appendChild(actions);
+        input.focus();
+      }
+
+      function saveRecommendationEdit(id, newText) {
+        var trimmed = String(newText || "").trim();
+        if (!trimmed) {
+          showToast("Recommendation text cannot be empty.");
+          return;
+        }
+        var found = findRecommendationById(id);
+        if (!found) return;
+        found.item.text = trimmed;
+        lastRecommendations[found.index] = found.item;
+        activeRecommendationEditId = null;
+        renderRecommendations();
+        syncHandoverExports();
+        showToast("Recommendation updated.");
+      }
+
+      function setRecommendationStatus(id, status) {
+        var found = findRecommendationById(id);
+        if (!found) return;
+        found.item.status = normalizeRecommendationStatus(status);
+        lastRecommendations[found.index] = found.item;
+        renderRecommendations();
+        syncHandoverExports();
+      }
+
+      function deleteRecommendation(id) {
+        lastRecommendations = lastRecommendations.filter(function (rec) { return rec.id !== id; });
+        activeRecommendationEditId = null;
+        renderRecommendations();
+        syncHandoverExports();
+        showToast("Recommendation removed.");
+      }
+
+      function hideShiftIntelligencePanel() {
+        if (!shiftIntelligenceCard) return;
+        shiftIntelligenceCard.classList.remove("is-visible");
+        shiftIntelligenceCard.hidden = true;
+        if (recommendationsList) {
+          recommendationsList.innerHTML = "";
+          recommendationsList.hidden = true;
+        }
+        if (recommendationsEmpty) recommendationsEmpty.hidden = true;
+        if (intelligenceChecklistGroups) intelligenceChecklistGroups.innerHTML = "";
+        if (intelligenceChecklistEmpty) intelligenceChecklistEmpty.hidden = true;
+      }
+
+      function hideRecommendationsPanel() {
+        hideShiftIntelligencePanel();
       }
 
       function saveHandoverItemEdit(itemId, newText) {
@@ -2261,14 +4558,6 @@
         var dd = String(today.getDate()).padStart(2, "0");
         handoverDate.value = yyyy + "-" + mm + "-" + dd;
       }
-
-      shiftButtons.forEach(function (btn) {
-        btn.addEventListener("click", function () {
-          shiftButtons.forEach(function (b) { b.classList.remove("active"); });
-          btn.classList.add("active");
-          selectedShift = btn.getAttribute("data-shift");
-        });
-      });
 
       function updateCharCount() {
         var len = notesInput.value.length;
@@ -2824,7 +5113,12 @@
         if (!dateValue) return "Not specified";
         var parts = dateValue.split("-");
         var d = new Date(parts[0], parts[1] - 1, parts[2]);
-        return d.toLocaleDateString("en-GB", {
+        if (dateLocale.isoDate) {
+          var dd = String(d.getDate()).padStart(2, "0");
+          var mm = String(d.getMonth() + 1).padStart(2, "0");
+          return d.getFullYear() + "-" + mm + "-" + dd;
+        }
+        return d.toLocaleDateString(dateLocale.locale, {
           weekday: "long",
           day: "numeric",
           month: "long",
@@ -2836,7 +5130,7 @@
         return {
           hotel: hotelName.value.trim() || "Not specified",
           department: department.value || "Not specified",
-          shift: selectedShift,
+          shift: getShiftDisplayName(selectedShift),
           date: formatDisplayDate(handoverDate.value),
           preparedBy: preparedBy.value.trim() || "Not specified"
         };
@@ -2863,8 +5157,10 @@
       }
 
       function getShiftMetaIcon(shift) {
-        if (shift === "AM") return META_FIELD_ICONS.shiftAM;
-        if (shift === "Night") return META_FIELD_ICONS.shiftNight;
+        var code = String(shift || "").toLowerCase();
+        var displayName = getShiftDisplayName(shift).toLowerCase();
+        if (code === "am" || displayName.indexOf("morning") !== -1) return META_FIELD_ICONS.shiftAM;
+        if (code === "night" || code === "nt" || displayName.indexOf("night") !== -1) return META_FIELD_ICONS.shiftNight;
         return META_FIELD_ICONS.shiftPM;
       }
 
@@ -2911,8 +5207,12 @@
       }
 
       function getShiftLabel() {
-        if (selectedShift === "Night") return "night";
-        return selectedShift.toLowerCase() + " shift";
+        var name = getShiftDisplayName(selectedShift);
+        var lower = name.toLowerCase();
+        if (lower.indexOf("night") !== -1 || lower === "nt") return "night";
+        if (lower === "am" || lower.indexOf("morning") !== -1) return "morning shift";
+        if (lower === "pm" || lower.indexOf("afternoon") !== -1 || lower.indexOf("evening") !== -1) return "afternoon shift";
+        return lower + " shift";
       }
 
       function buildManagementAttentionSentence(managementNotes) {
@@ -3243,7 +5543,9 @@
         var sentences = [];
 
         sentences.push(buildOpeningSentence(metrics, analyzed));
-        sentences.push(buildGlanceSummarySentence(metrics));
+        if (aiPrefs.detail !== "brief") {
+          sentences.push(buildGlanceSummarySentence(metrics));
+        }
 
         var carriedSentence = buildCarriedOverSentence(analyzed.filter(function (n) {
           return n.isCarriedOver && isActiveNote(n);
@@ -3268,7 +5570,9 @@
         var roomSentence = buildRoomSummarySentence(analyzed);
         if (roomSentence && getUniqueRooms(analyzed).length >= 2) sentences.push(roomSentence);
 
-        return sentences.slice(0, 6).join(" ");
+        var limit = getDetailSentenceLimit();
+        var summary = sentences.slice(0, limit).join(" ");
+        return applyAiPreferencesToSummary(summary, classified);
       }
 
       function showSummaryCard() {
@@ -3398,7 +5702,7 @@
           case "adr": {
             var adrText = trimmed.replace(/^adr\s*[:\-]?\s*/i, "").replace(/^[£$€]\s*/, "").trim();
             if (!adrText || !/\d/.test(adrText)) return "";
-            return "£" + adrText;
+            return currencySymbol + adrText;
           }
           default:
             return trimmed;
@@ -3460,7 +5764,7 @@
             var numeric = text.replace(/^[£$€]\s*/, "").replace(/,/g, "").trim();
             var num = parseFloat(numeric);
             if (isNaN(num)) return SNAPSHOT_EMPTY;
-            return "£" + num.toFixed(2);
+            return currencySymbol + num.toFixed(2);
           }
           case "occupancy": {
             var occNum = parseOccupancyNumber(text);
@@ -3522,6 +5826,7 @@
 
         input.addEventListener("input", function () {
           syncSnapshotOverrideFromInput(stat.id, input.value);
+          scheduleDraftSave();
         });
 
         input.addEventListener("blur", function () {
@@ -3533,6 +5838,7 @@
           if (hasSnapshotOverride(stat.id)) {
             input.value = String(lastHotelSnapshotOverrides[stat.id]);
           }
+          scheduleDraftSave();
         });
 
         var label = document.createElement("div");
@@ -3726,6 +6032,7 @@
             syncSnapshotOverrideFromInput(stat.id, input.value);
             closeEditor();
             refreshHotelSnapshotDisplays();
+            scheduleDraftSave();
           }
 
           saveBtn.addEventListener("click", applySave);
@@ -3902,7 +6209,7 @@
       function buildSummaryOverview(classified) {
         var metrics = getHandoverMetrics(classified);
         var analyzed = classified._analyzed || [];
-        return buildOpeningSentence(metrics, analyzed);
+        return applyAiPreferencesToSummary(buildOpeningSentence(metrics, analyzed), classified);
       }
 
       function buildSummaryRowSentence(rowId, classified, metrics) {
@@ -3985,6 +6292,7 @@
 
           var sentence = buildSummaryRowSentence(row.id, classified, metrics);
           if (!sentence) return;
+          sentence = applyAiPreferencesToSummary(sentence, classified);
 
           var el = document.createElement("div");
           el.className = "summary-row";
@@ -4037,6 +6345,459 @@
         return organised;
       }
 
+      function formatDraftStatusTime(isoTimestamp) {
+        if (!isoTimestamp) return "";
+        var date = new Date(isoTimestamp);
+        if (isNaN(date.getTime())) return "";
+        return date.toLocaleTimeString("en-GB", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false
+        });
+      }
+
+      function formatBackupDisplayDate(isoTimestamp) {
+        if (!isoTimestamp) return "Never";
+        var date = new Date(isoTimestamp);
+        if (isNaN(date.getTime())) return "Never";
+        return date.toLocaleDateString("en-GB", {
+          day: "numeric",
+          month: "short",
+          year: "numeric"
+        });
+      }
+
+      function updateDraftStatusUI(savedAt) {
+        if (!draftStatus) return;
+        if (!savedAt) {
+          draftStatus.hidden = true;
+          draftStatus.textContent = "";
+          return;
+        }
+        var timeStr = formatDraftStatusTime(savedAt);
+        if (!timeStr) {
+          draftStatus.hidden = true;
+          return;
+        }
+        draftStatus.textContent = "Draft saved at " + timeStr;
+        draftStatus.hidden = false;
+      }
+
+      function showDraftRestoredHint() {
+        if (!draftRestoredHint) return;
+        draftRestoredHint.hidden = false;
+      }
+
+      function hideDraftRestoredHint() {
+        if (!draftRestoredHint) return;
+        draftRestoredHint.hidden = true;
+      }
+
+      function updateStorageStatusUI() {
+        if (!lastBackupLabel) return;
+        var lastBackup = localStorage.getItem(LAST_BACKUP_KEY);
+        lastBackupLabel.textContent = "Last backup: " + formatBackupDisplayDate(lastBackup);
+      }
+
+      function draftPayloadHasContent(draft) {
+        if (!draft || typeof draft !== "object") return false;
+        if (draft.notes && String(draft.notes).trim()) return true;
+        if (draft.hasGeneratedOutput) return true;
+        if (draft.preparedBy && String(draft.preparedBy).trim()) return true;
+        if (draft.hotelSnapshot && Object.keys(draft.hotelSnapshot).length) return true;
+        if (Array.isArray(draft.recommendations) && draft.recommendations.length) return true;
+        if (Array.isArray(draft.shiftIntelligenceChecklist) && draft.shiftIntelligenceChecklist.length) return true;
+        if (draft.aiSummary && String(draft.aiSummary).trim()) return true;
+        return false;
+      }
+
+      function buildDraftPayload() {
+        captureHotelSnapshotInputs();
+        var now = new Date().toISOString();
+        var payload = {
+          savedAt: now,
+          hotelName: hotelName.value.trim(),
+          department: department.value,
+          preparedBy: preparedBy.value.trim(),
+          shift: selectedShift,
+          date: handoverDate.value,
+          notes: notesInput.value,
+          hotelSnapshot: Object.assign({}, lastHotelSnapshotOverrides),
+          aiSummary: lastSummaryText || "",
+          generatedTime: lastGeneratedTime || "",
+          recommendations: lastRecommendations.map(normalizeRecommendation),
+          shiftIntelligenceChecklist: lastIntelligenceChecklist.map(normalizeChecklistItem),
+          hasGeneratedOutput: !!lastClassified
+        };
+        if (lastClassified) {
+          payload.organisedHandover = buildOrganisedHandover(lastClassified);
+          payload.dashboardMetrics = getHandoverMetrics(lastClassified);
+        }
+        return payload;
+      }
+
+      function scheduleDraftSave() {
+        if (skipDraftSave) return;
+        clearTimeout(draftSaveTimer);
+        draftSaveTimer = setTimeout(saveDraftNow, DRAFT_DEBOUNCE_MS);
+      }
+
+      function saveDraftNow() {
+        if (skipDraftSave) return;
+        try {
+          if (!draftPayloadHasContent(buildDraftPayload())) {
+            localStorage.removeItem(DRAFT_STORAGE_KEY);
+            updateDraftStatusUI(null);
+            return;
+          }
+          var payload = buildDraftPayload();
+          localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(payload));
+          updateDraftStatusUI(payload.savedAt);
+        } catch (err) {
+          /* localStorage unavailable */
+        }
+      }
+
+      function loadDraftFromStorage() {
+        try {
+          var raw = localStorage.getItem(DRAFT_STORAGE_KEY);
+          if (!raw) return null;
+          var parsed = JSON.parse(raw);
+          return parsed && typeof parsed === "object" ? parsed : null;
+        } catch (err) {
+          return null;
+        }
+      }
+
+      function applyDepartmentValue(deptValue) {
+        var dept = deptValue || getDefaultDepartment();
+        var deptFound = Array.from(department.options).some(function (opt) { return opt.value === dept; });
+        if (deptFound) {
+          department.value = dept;
+        } else if (dept) {
+          var opt = document.createElement("option");
+          opt.value = dept;
+          opt.textContent = dept;
+          opt.selected = true;
+          department.insertBefore(opt, department.firstChild);
+        }
+      }
+
+      function applyDraftPayload(draft) {
+        hotelName.value = draft.hotelName || "";
+        applyDepartmentValue(draft.department);
+        preparedBy.value = draft.preparedBy || "";
+        setSelectedShift(draft.shift || "AM");
+        if (draft.date) handoverDate.value = draft.date;
+        notesInput.value = draft.notes || "";
+        updateCharCount();
+
+        lastHotelSnapshotOverrides = draft.hotelSnapshot
+          ? Object.assign({}, draft.hotelSnapshot)
+          : {};
+
+        if (draft.hasGeneratedOutput && draft.organisedHandover) {
+          lastSummaryText = draft.aiSummary || "";
+          lastClassified = restoreClassifiedFromSaved(draft);
+          lastRecommendations = Array.isArray(draft.recommendations)
+            ? draft.recommendations.map(normalizeRecommendation)
+            : [];
+          lastIntelligenceChecklist = Array.isArray(draft.shiftIntelligenceChecklist)
+            ? draft.shiftIntelligenceChecklist.map(normalizeChecklistItem)
+            : [];
+          lastGeneratedTime = draft.generatedTime || "";
+          renderSummaryUI(lastClassified);
+          renderShiftAtAGlance(lastClassified);
+          renderPreHandoverSnapshot();
+          renderHandoverMeta(lastGeneratedTime);
+          renderSummaryStats(lastClassified);
+          renderSections(lastClassified);
+          renderShiftIntelligence();
+          showSummaryCard();
+          lastHandoverText = formatHandoverText(lastClassified);
+          outputSection.classList.add("visible");
+          copyBtn.disabled = false;
+          exportPdfBtn.disabled = false;
+          printHandoverBtn.disabled = false;
+          saveHandoverBtn.disabled = false;
+        } else {
+          lastSummaryText = "";
+          lastClassified = null;
+          lastRecommendations = [];
+          lastIntelligenceChecklist = [];
+          lastGeneratedTime = "";
+          lastHandoverText = "";
+          activeHandoverEditId = null;
+          activeRecommendationEditId = null;
+          outputSection.classList.remove("visible");
+          handoverMetaGrid.innerHTML = "";
+          handoverMeta.classList.remove("is-visible");
+          sectionsGrid.innerHTML = "";
+          shiftSnapshotGrid.innerHTML = "";
+          shiftAlertsGrid.innerHTML = "";
+          shiftAlertsGroup.style.display = "";
+          shiftGlance.classList.remove("is-visible");
+          summaryOverview.textContent = "";
+          summaryRows.innerHTML = "";
+          summaryStats.innerHTML = "";
+          summaryCard.classList.remove("is-visible");
+          hideRecommendationsPanel();
+          renderPreHandoverSnapshot();
+          copyBtn.disabled = true;
+          exportPdfBtn.disabled = true;
+          printHandoverBtn.disabled = true;
+          saveHandoverBtn.disabled = true;
+        }
+      }
+
+      function restoreDraftFromStorage() {
+        var draft = loadDraftFromStorage();
+        if (!draftPayloadHasContent(draft)) return false;
+        skipDraftSave = true;
+        applyDraftPayload(draft);
+        skipDraftSave = false;
+        updateDraftStatusUI(draft.savedAt);
+        return true;
+      }
+
+      function clearDraftStorage() {
+        localStorage.removeItem(DRAFT_STORAGE_KEY);
+        updateDraftStatusUI(null);
+      }
+
+      function clearHandoverOutputState() {
+        outputSection.classList.remove("visible");
+        handoverMetaGrid.innerHTML = "";
+        handoverMeta.classList.remove("is-visible");
+        sectionsGrid.innerHTML = "";
+        shiftSnapshotGrid.innerHTML = "";
+        shiftAlertsGrid.innerHTML = "";
+        shiftAlertsGroup.style.display = "";
+        shiftGlance.classList.remove("is-visible");
+        summaryOverview.textContent = "";
+        summaryRows.innerHTML = "";
+        summaryStats.innerHTML = "";
+        summaryCard.classList.remove("is-visible");
+        lastHandoverText = "";
+        lastSummaryText = "";
+        lastGeneratedTime = "";
+        lastClassified = null;
+        lastRecommendations = [];
+        lastIntelligenceChecklist = [];
+        lastHotelSnapshotOverrides = {};
+        activeHandoverEditId = null;
+        activeRecommendationEditId = null;
+        hideShiftIntelligencePanel();
+        copyBtn.disabled = true;
+        exportPdfBtn.disabled = true;
+        printHandoverBtn.disabled = true;
+        saveHandoverBtn.disabled = true;
+        copyBtn.classList.remove("copied");
+        restoreCopyButtonHtml();
+      }
+
+      function resetHandoverForm() {
+        var brainHotelName = isHotelBrainConfigured(hotelProfile) && hotelProfile.general
+          ? (hotelProfile.general.hotelName || "")
+          : "";
+        hotelName.value = brainHotelName;
+        applyDepartmentValue(getDefaultDepartment());
+        preparedBy.value = "";
+        setSelectedShift(configuredShifts[0] ? configuredShifts[0].code : "AM");
+        initDate();
+        notesInput.value = "";
+        updateCharCount();
+        clearHandoverOutputState();
+        renderPreHandoverSnapshot();
+      }
+
+      function startNewHandover() {
+        if (draftPayloadHasContent(buildDraftPayload())) {
+          if (!window.confirm(
+            "You have an unfinished handover draft. Starting a new handover will clear the current draft. Continue?"
+          )) {
+            return;
+          }
+        }
+        skipDraftSave = true;
+        resetHandoverForm();
+        clearDraftStorage();
+        skipDraftSave = false;
+        hideDraftRestoredHint();
+        notesInput.focus();
+      }
+
+      function buildBackupPayload() {
+        var draft = loadDraftFromStorage();
+        if (!draft && draftPayloadHasContent(buildDraftPayload())) {
+          draft = buildDraftPayload();
+        }
+
+        var hotelBrain = null;
+        try {
+          var brainRaw = localStorage.getItem(HOTEL_BRAIN_KEY);
+          hotelBrain = brainRaw ? JSON.parse(brainRaw) : null;
+        } catch (err) {
+          hotelBrain = null;
+        }
+
+        return {
+          backupVersion: BACKUP_VERSION,
+          exportedAt: new Date().toISOString(),
+          app: "Hospitality Flow",
+          module: "AI Shift Handover",
+          draft: draft,
+          savedHandovers: window.HandoverSaved ? HandoverSaved.loadAll() : [],
+          hotelBrain: hotelBrain,
+          settings: {
+            lastBackupAt: localStorage.getItem(LAST_BACKUP_KEY) || null
+          }
+        };
+      }
+
+      function validateBackupData(data) {
+        if (!data || typeof data !== "object") {
+          return { valid: false, error: "Invalid file format. Please select a valid Hospitality Flow backup." };
+        }
+        if (data.app !== "Hospitality Flow") {
+          return { valid: false, error: "This file is not a Hospitality Flow backup." };
+        }
+        if (!data.backupVersion) {
+          if (!Array.isArray(data.savedHandovers) && !data.draft && !data.hotelBrain) {
+            return { valid: false, error: "Unsupported backup format." };
+          }
+          data.backupVersion = 1;
+        } else if (typeof data.backupVersion !== "number" || data.backupVersion < 1) {
+          return { valid: false, error: "Unsupported backup version." };
+        }
+        if (data.savedHandovers !== undefined && !Array.isArray(data.savedHandovers)) {
+          return { valid: false, error: "Invalid saved handovers data in backup." };
+        }
+        if (data.draft !== undefined && data.draft !== null && typeof data.draft !== "object") {
+          return { valid: false, error: "Invalid draft data in backup." };
+        }
+        if (data.hotelBrain !== undefined && data.hotelBrain !== null && typeof data.hotelBrain !== "object") {
+          return { valid: false, error: "Invalid Hotel Brain data in backup." };
+        }
+        return { valid: true };
+      }
+
+      function exportBackup() {
+        try {
+          var payload = buildBackupPayload();
+          var json = JSON.stringify(payload, null, 2);
+          var blob = new Blob([json], { type: "application/json" });
+          var url = URL.createObjectURL(blob);
+          var now = new Date();
+          var yyyy = now.getFullYear();
+          var mm = String(now.getMonth() + 1).padStart(2, "0");
+          var dd = String(now.getDate()).padStart(2, "0");
+          var filename = "hospitality-flow-backup-" + yyyy + "-" + mm + "-" + dd + ".json";
+
+          var link = document.createElement("a");
+          link.href = url;
+          link.download = filename;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+
+          var exportedAt = payload.exportedAt;
+          localStorage.setItem(LAST_BACKUP_KEY, exportedAt);
+          updateStorageStatusUI();
+          showToast("Backup exported.");
+        } catch (err) {
+          showToast("Unable to export backup. Please try again.");
+        }
+      }
+
+      function importBackupFromData(data) {
+        var validation = validateBackupData(data);
+        if (!validation.valid) {
+          showToast(validation.error);
+          return false;
+        }
+
+        if (!window.confirm(
+          "Importing a backup will replace your current draft, saved handovers, and Hotel Brain data on this device. Continue?"
+        )) {
+          return false;
+        }
+
+        skipDraftSave = true;
+
+        if (data.hotelBrain && typeof data.hotelBrain === "object") {
+          localStorage.setItem(HOTEL_BRAIN_KEY, JSON.stringify(data.hotelBrain));
+        }
+
+        if (window.HandoverSaved && Array.isArray(data.savedHandovers)) {
+          HandoverSaved.saveAll(data.savedHandovers);
+        }
+
+        if (data.draft && draftPayloadHasContent(data.draft)) {
+          localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(data.draft));
+        } else {
+          localStorage.removeItem(DRAFT_STORAGE_KEY);
+        }
+
+        if (data.settings && data.settings.lastBackupAt) {
+          localStorage.setItem(LAST_BACKUP_KEY, data.settings.lastBackupAt);
+        }
+
+        reloadHotelBrain();
+        applyHotelProfileToUI();
+        hideDraftRestoredHint();
+
+        var draft = loadDraftFromStorage();
+        if (draftPayloadHasContent(draft)) {
+          applyDraftPayload(draft);
+          updateDraftStatusUI(draft.savedAt);
+          showDraftRestoredHint();
+        } else {
+          resetHandoverForm();
+          clearDraftStorage();
+        }
+
+        if (window.HandoverSaved) HandoverSaved.renderList();
+        updateStorageStatusUI();
+        skipDraftSave = false;
+        showToast("Backup imported successfully.");
+        return true;
+      }
+
+      function handleImportBackupFile(file) {
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function () {
+          try {
+            var data = JSON.parse(String(reader.result || ""));
+            importBackupFromData(data);
+          } catch (err) {
+            showToast("Invalid backup file. Please select a valid Hospitality Flow JSON backup.");
+          }
+        };
+        reader.onerror = function () {
+          showToast("Unable to read backup file.");
+        };
+        reader.readAsText(file);
+      }
+
+      function wireDraftSaveListeners() {
+        [hotelName, preparedBy, handoverDate, department].forEach(function (el) {
+          if (!el) return;
+          el.addEventListener("input", scheduleDraftSave);
+          el.addEventListener("change", scheduleDraftSave);
+        });
+        notesInput.addEventListener("input", scheduleDraftSave);
+        if (preHotelSnapshotGrid) {
+          preHotelSnapshotGrid.addEventListener("input", function (event) {
+            if (event.target && event.target.classList.contains("snapshot-field-input")) {
+              scheduleDraftSave();
+            }
+          });
+        }
+      }
+
       function buildSavePayload() {
         if (!lastClassified) return null;
 
@@ -4056,6 +6817,8 @@
           dashboardMetrics: getHandoverMetrics(lastClassified),
           organisedHandover: buildOrganisedHandover(lastClassified),
           hotelSnapshot: Object.assign({}, lastHotelSnapshotOverrides),
+          recommendations: lastRecommendations.map(normalizeRecommendation),
+          shiftIntelligenceChecklist: lastIntelligenceChecklist.map(normalizeChecklistItem),
           timestamp: new Date().toISOString()
         };
       }
@@ -4074,15 +6837,19 @@
       }
 
       function setSelectedShift(shift) {
-        selectedShift = shift || "AM";
+        selectedShift = shift || (configuredShifts[0] ? configuredShifts[0].code : "AM");
         shiftButtons.forEach(function (btn) {
           btn.classList.toggle("active", btn.getAttribute("data-shift") === selectedShift);
         });
       }
 
       function restoreSavedHandover(saved) {
+        skipDraftSave = true;
+        hideDraftRestoredHint();
+
         hotelName.value = saved.hotelName === "Not specified" ? "" : (saved.hotelName || "");
-        department.value = saved.department === "Not specified" ? "Reception" : (saved.department || "Reception");
+        var dept = saved.department === "Not specified" ? getDefaultDepartment() : (saved.department || getDefaultDepartment());
+        applyDepartmentValue(dept);
         preparedBy.value = saved.preparedBy === "Not specified" ? "" : (saved.preparedBy || "");
         setSelectedShift(saved.shift || "AM");
         handoverDate.value = saved.date || handoverDate.value;
@@ -4091,6 +6858,12 @@
 
         lastSummaryText = saved.aiSummary || "";
         lastClassified = restoreClassifiedFromSaved(saved);
+        lastRecommendations = Array.isArray(saved.recommendations)
+          ? saved.recommendations.map(normalizeRecommendation)
+          : [];
+        lastIntelligenceChecklist = Array.isArray(saved.shiftIntelligenceChecklist)
+          ? saved.shiftIntelligenceChecklist.map(normalizeChecklistItem)
+          : [];
         lastHotelSnapshotOverrides = saved.hotelSnapshot
           ? Object.assign({}, saved.hotelSnapshot)
           : {};
@@ -4099,21 +6872,23 @@
         renderShiftAtAGlance(lastClassified);
         renderPreHandoverSnapshot();
         lastGeneratedTime = saved.timestamp
-          ? new Date(saved.timestamp).toLocaleString("en-GB", {
-              day: "numeric", month: "short", year: "numeric",
-              hour: "2-digit", minute: "2-digit"
-            })
+          ? formatTimestamp(new Date(saved.timestamp))
           : "Restored from saved handover";
         renderHandoverMeta(lastGeneratedTime);
         renderSummaryStats(lastClassified);
         renderSections(lastClassified);
+        renderShiftIntelligence();
         showSummaryCard();
 
         lastHandoverText = formatHandoverText(lastClassified);
         outputSection.classList.add("visible");
         copyBtn.disabled = false;
         exportPdfBtn.disabled = false;
+        printHandoverBtn.disabled = false;
         saveHandoverBtn.disabled = false;
+
+        skipDraftSave = false;
+        saveDraftNow();
 
         outputSection.scrollIntoView({ behavior: "smooth", block: "start" });
         showToast("Saved handover loaded.");
@@ -4123,9 +6898,13 @@
         var parts = [];
         var meta = getHotelMeta();
         var now = new Date();
-        var timeStr = now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+        var timeStr = now.toLocaleTimeString(dateLocale.locale, {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: dateLocale.hour12
+        });
 
-        parts.push("SHIFT HANDOVER — Hospitality Flow");
+        parts.push(uiLabels.organised.toUpperCase() + " — Hospitality Flow");
         parts.push("════════════════════════════════");
         parts.push("Hotel:       " + meta.hotel);
         parts.push("Department:  " + meta.department);
@@ -4139,7 +6918,7 @@
           parts.push(line);
         });
         parts.push("");
-        parts.push("AI SUMMARY");
+        parts.push(uiLabels.aiSummary.toUpperCase());
         parts.push(lastSummaryText);
         parts.push("");
 
@@ -4152,6 +6931,30 @@
           });
           parts.push("");
         });
+
+        if (lastRecommendations.length || lastIntelligenceChecklist.length) {
+          parts.push("SHIFT INTELLIGENCE");
+          parts.push("Operational checks from the Hotel Brain and your current shift.");
+          parts.push("");
+        }
+
+        if (lastRecommendations.length) {
+          parts.push("AI RECOMMENDATIONS");
+          parts.push("What should the next shift do?");
+          lastRecommendations.forEach(function (rec) {
+            parts.push("• " + formatRecommendationForExport(rec));
+          });
+          parts.push("");
+        }
+
+        if (lastIntelligenceChecklist.length) {
+          parts.push("SHIFT INTELLIGENCE CHECKLIST");
+          parts.push("What might the team have forgotten?");
+          lastIntelligenceChecklist.forEach(function (item) {
+            parts.push("□ " + formatChecklistForExport(item));
+          });
+          parts.push("");
+        }
 
         return parts.join("\n").trim();
       }
@@ -4220,6 +7023,9 @@
           return;
         }
 
+        reloadHotelBrain();
+        renderHotelBrainPanel();
+
         captureHotelSnapshotInputs();
 
         generateBtn.classList.add("loading");
@@ -4237,10 +7043,11 @@
           renderSummaryUI(classified);
           renderShiftAtAGlance(classified);
           renderPreHandoverSnapshot();
-          lastGeneratedTime = now.toLocaleString("en-GB", {
-            day: "numeric", month: "short", year: "numeric",
-            hour: "2-digit", minute: "2-digit"
-          });
+          var intelligence = generateShiftIntelligence(classified, text);
+          lastRecommendations = intelligence.recommendations || [];
+          lastIntelligenceChecklist = intelligence.checklist || [];
+          renderShiftIntelligence();
+          lastGeneratedTime = formatTimestamp(now);
           renderHandoverMeta(lastGeneratedTime);
           renderSummaryStats(classified);
           showSummaryCard();
@@ -4250,11 +7057,13 @@
           outputSection.classList.add("visible");
           copyBtn.disabled = false;
           exportPdfBtn.disabled = false;
+          printHandoverBtn.disabled = false;
           saveHandoverBtn.disabled = false;
 
           generateBtn.classList.remove("loading");
           generateBtn.disabled = false;
-          showToast("Handover generated successfully!");
+          showToast(uiLabels.handover + " generated successfully!");
+          scheduleDraftSave();
 
           document.getElementById(shiftGlance.classList.contains("is-visible") ? "shiftGlance" : "summaryCard")
             .scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -4277,7 +7086,7 @@
           if (!def.count) return;
           var sentence = buildSummaryRowSentence(def.id, classified, metrics);
           if (!sentence) return;
-          rows.push({ heading: def.heading, text: sentence });
+          rows.push({ heading: def.heading, text: applyAiPreferencesToSummary(sentence, classified) });
         });
 
         return {
@@ -4300,6 +7109,14 @@
         }).filter(function (section) { return section; });
       }
 
+      function printHandover() {
+        if (!lastClassified) {
+          showToast("Generate a handover before printing.");
+          return;
+        }
+        window.print();
+      }
+
       function exportHandoverPdf() {
         if (!lastClassified) {
           showToast("Generate a handover first.");
@@ -4316,14 +7133,17 @@
           var now = new Date();
           HandoverPdfExporter.export({
             meta: getPdfMeta(),
-            generatedAt: now.toLocaleString("en-GB", {
-              day: "numeric", month: "short", year: "numeric",
-              hour: "2-digit", minute: "2-digit"
-            }),
+            generatedAt: formatTimestamp(now),
             metrics: getHandoverMetrics(lastClassified),
             hotelSnapshot: buildHotelSnapshotForPdf(),
             summary: buildPdfSummaryPayload(lastClassified),
-            sections: buildPdfSections(lastClassified)
+            sections: buildPdfSections(lastClassified),
+            recommendations: lastRecommendations.map(function (rec) {
+              return formatRecommendationForExport(normalizeRecommendation(rec));
+            }),
+            intelligenceChecklist: lastIntelligenceChecklist.map(function (item) {
+              return formatChecklistForExport(normalizeChecklistItem(item));
+            })
           });
           showToast("PDF downloaded successfully.");
         } catch (err) {
@@ -4349,8 +7169,7 @@
           showToast("Handover copied to clipboard.");
           setTimeout(function () {
             copyBtn.classList.remove("copied");
-            copyBtn.innerHTML =
-              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy Handover';
+            restoreCopyButtonHtml();
           }, 2000);
         };
 
@@ -4377,35 +7196,24 @@
         document.body.removeChild(textarea);
       }
 
-      function clearNotes() {
+      function clearNotesInternal() {
         notesInput.value = "";
         updateCharCount();
-        outputSection.classList.remove("visible");
-        handoverMetaGrid.innerHTML = "";
-        handoverMeta.classList.remove("is-visible");
-        sectionsGrid.innerHTML = "";
-        shiftSnapshotGrid.innerHTML = "";
-        shiftAlertsGrid.innerHTML = "";
-        shiftAlertsGroup.style.display = "";
-        shiftGlance.classList.remove("is-visible");
-        summaryOverview.textContent = "";
-        summaryRows.innerHTML = "";
-        summaryStats.innerHTML = "";
-        summaryCard.classList.remove("is-visible");
-        lastHandoverText = "";
-        lastSummaryText = "";
-        lastGeneratedTime = "";
-        lastClassified = null;
-        lastHotelSnapshotOverrides = {};
-        activeHandoverEditId = null;
+        clearHandoverOutputState();
         renderPreHandoverSnapshot();
-        copyBtn.disabled = true;
-        exportPdfBtn.disabled = true;
-        saveHandoverBtn.disabled = true;
-        copyBtn.classList.remove("copied");
-        copyBtn.innerHTML =
-          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy Handover';
         notesInput.focus();
+      }
+
+      function clearNotes() {
+        if (notesInput.value.trim() || lastClassified) {
+          if (!window.confirm("Clear shift notes and generated handover output?")) {
+            return;
+          }
+        }
+        skipDraftSave = true;
+        clearNotesInternal();
+        skipDraftSave = false;
+        saveDraftNow();
         showToast("Notes cleared.");
       }
 
@@ -4413,10 +7221,39 @@
       generateBtn.addEventListener("click", generateHandover);
       copyBtn.addEventListener("click", copyHandover);
       exportPdfBtn.addEventListener("click", exportHandoverPdf);
+      printHandoverBtn.addEventListener("click", printHandover);
       saveHandoverBtn.addEventListener("click", function () {
         if (window.HandoverSaved) HandoverSaved.handleSaveClick();
       });
       clearBtn.addEventListener("click", clearNotes);
+      if (newHandoverBtn) newHandoverBtn.addEventListener("click", startNewHandover);
+      if (exportBackupBtn) exportBackupBtn.addEventListener("click", exportBackup);
+      if (importBackupBtn && importBackupInput) {
+        importBackupBtn.addEventListener("click", function () {
+          importBackupInput.value = "";
+          importBackupInput.click();
+        });
+        importBackupInput.addEventListener("change", function () {
+          var file = importBackupInput.files && importBackupInput.files[0];
+          handleImportBackupFile(file);
+        });
+      }
+      if (clearAllHistoryBtn && window.HandoverSaved) {
+        clearAllHistoryBtn.addEventListener("click", function () {
+          HandoverSaved.clearAllHistory();
+        });
+      }
+
+      wireDraftSaveListeners();
+      wireIntelligencePartToggle(recommendationsPartToggle, recommendationsPartBody);
+      wireIntelligencePartToggle(checklistPartToggle, checklistPartBody);
+
+      window.addEventListener("beforeunload", function () {
+        if (draftSaveTimer) {
+          clearTimeout(draftSaveTimer);
+          saveDraftNow();
+        }
+      });
 
       notesInput.addEventListener("keydown", function (e) {
         if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
@@ -4425,9 +7262,24 @@
         }
       });
 
-      initDate();
+      applyHotelProfileToUI();
+      window.addEventListener("storage", function (event) {
+        if (event.key !== HOTEL_BRAIN_KEY) return;
+        reloadHotelBrain();
+        applyHotelProfileToUI();
+      });
+
+      var draftWasRestored = restoreDraftFromStorage();
+      if (!draftWasRestored) {
+        initDate();
+      } else {
+        showDraftRestoredHint();
+      }
       updateCharCount();
-      renderPreHandoverSnapshot();
+      if (!draftWasRestored) {
+        renderPreHandoverSnapshot();
+      }
+      updateStorageStatusUI();
 
       if (window.HandoverSaved) {
         HandoverSaved.init({
@@ -4436,7 +7288,13 @@
           countEl: document.getElementById("savedHandoversCount"),
           showToast: showToast,
           onSaveRequest: buildSavePayload,
-          onOpen: restoreSavedHandover
+          onOpen: restoreSavedHandover,
+          onConfirmDelete: function () {
+            return window.confirm("Delete this saved handover? This cannot be undone.");
+          },
+          onConfirmClearAll: function () {
+            return window.confirm("Clear all saved handovers from local history? This cannot be undone.");
+          }
         });
       }
     })();

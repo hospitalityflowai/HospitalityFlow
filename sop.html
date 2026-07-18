@@ -1,0 +1,1362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Hospitality Flow — AI SOP Generator. Create clear, practical hotel Standard Operating Procedures for your team.">
+  <title>AI SOP Generator — Hospitality Flow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy-950: #070e1a; --navy-900: #0c1829; --navy-800: #122240; --navy-700: #1a3055;
+      --blue-400: #5b9fd4; --blue-500: #4a8fc4; --blue-600: #3a7ab0; --blue-50: #eef6fc;
+      --white: #ffffff; --gray-50: #f8fafc; --gray-100: #eef2f7; --gray-200: #d8e0ea;
+      --gray-300: #a8b4c4; --gray-400: #7a8799; --gray-500: #5a6578; --gray-600: #3d4654;
+      --radius: 10px; --radius-lg: 14px; --radius-xl: 18px;
+      --shadow-sm: 0 1px 2px rgba(7,14,26,.04), 0 1px 3px rgba(7,14,26,.03);
+      --shadow-md: 0 4px 16px rgba(7,14,26,.07); --shadow-lg: 0 12px 40px rgba(7,14,26,.1);
+      --shadow-summary: 0 1px 2px rgba(74,143,196,.06), 0 4px 24px rgba(74,143,196,.1), 0 12px 48px rgba(7,14,26,.05);
+      --shadow-summary-hover: 0 2px 4px rgba(74,143,196,.08), 0 8px 32px rgba(74,143,196,.14), 0 16px 56px rgba(7,14,26,.07);
+      --transition: .22s ease; --transition-smooth: .28s cubic-bezier(.4,0,.2,1);
+      --max-width: 920px; --nav-height: 64px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; scroll-padding-top: calc(var(--nav-height) + 16px); }
+    body { font-family: "Inter", system-ui, -apple-system, sans-serif; background: var(--gray-50); color: var(--navy-900); line-height: 1.6; min-height: 100vh; -webkit-font-smoothing: antialiased; font-size: 15px; }
+    button, input, select, textarea { font-family: inherit; }
+    button { cursor: pointer; border: none; background: none; }
+    .topnav { position: sticky; top: 0; z-index: 100; height: var(--nav-height); background: rgba(255,255,255,.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--gray-200); box-shadow: var(--shadow-sm); }
+    .topnav-inner { max-width: var(--max-width); margin: 0 auto; padding: 0 24px; height: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .logo { display: inline-flex; align-items: center; gap: 11px; text-decoration: none; color: inherit; }
+    .logo-icon { width: 36px; height: 36px; border-radius: 9px; background: linear-gradient(135deg, var(--navy-800), var(--navy-700)); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(18,34,64,.18); flex-shrink: 0; }
+    .logo-icon svg { width: 20px; height: 20px; fill: var(--blue-400); }
+    .logo-text { font-size: 1.05rem; font-weight: 700; letter-spacing: -.025em; color: var(--navy-900); line-height: 1.2; }
+    .logo-text span { color: var(--blue-500); }
+    .logo-sub { display: block; font-size: .7rem; font-weight: 500; color: var(--gray-400); }
+    .nav-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: var(--blue-50); border: 1px solid rgba(74,143,196,.18); border-radius: 100px; font-size: .75rem; font-weight: 600; color: var(--blue-600); white-space: nowrap; }
+    .nav-badge-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--blue-500); animation: pulse 2s ease infinite; }
+    .page { min-height: 100vh; display: flex; flex-direction: column; }
+    .container { width: 100%; max-width: var(--max-width); margin: 0 auto; padding: 0 24px; }
+    .main { flex: 1; padding: 32px 0 72px; }
+    .page-header { margin-bottom: 28px; animation: fadeDown .5s ease both; }
+    .page-title { font-size: clamp(1.4rem, 3.5vw, 1.75rem); font-weight: 700; letter-spacing: -.035em; color: var(--navy-900); line-height: 1.2; margin-bottom: 6px; }
+    .page-subtitle { font-size: .95rem; color: var(--gray-500); max-width: 520px; margin-bottom: 8px; }
+    .page-tagline { font-size: .78rem; font-weight: 500; color: var(--gray-400); }
+    .card { background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); }
+    .card-header { display: flex; align-items: center; gap: 10px; padding: 20px 26px; border-bottom: 1px solid var(--gray-100); }
+    .card-header-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .card-header-icon svg { width: 16px; height: 16px; }
+    .card-header-icon.navy { background: var(--navy-800); color: var(--blue-400); }
+    .card-header-text h2 { font-size: .98rem; font-weight: 700; color: var(--navy-900); letter-spacing: -.015em; }
+    .card-header-text p { font-size: .74rem; color: var(--gray-400); margin-top: 3px; max-width: 56ch; }
+    .card-body { padding: 26px; }
+    .dashboard-grid { display: flex; flex-direction: column; gap: 28px; }
+    .form-card { animation: fadeUp .5s ease .05s both; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .form-group { display: flex; flex-direction: column; gap: 7px; }
+    .form-group.full { grid-column: 1 / -1; }
+    .form-label { font-size: .8rem; font-weight: 600; color: var(--gray-500); }
+    .form-helper { font-size: .74rem; color: var(--gray-400); margin-top: 2px; }
+    .form-input { padding: 11px 14px; font-size: .92rem; color: var(--navy-900); background: var(--gray-50); border: 1.5px solid var(--gray-200); border-radius: var(--radius); transition: border-color var(--transition), box-shadow var(--transition); }
+    .form-input:focus { outline: none; background: var(--white); border-color: var(--blue-500); box-shadow: 0 0 0 3px rgba(74,143,196,.12); }
+    select.form-input { cursor: pointer; }
+    .notes-textarea { width: 100%; min-height: 160px; padding: 16px 18px; font-size: .92rem; line-height: 1.7; color: var(--navy-900); background: var(--gray-50); border: 1.5px solid var(--gray-200); border-radius: var(--radius); resize: vertical; transition: border-color var(--transition), box-shadow var(--transition); }
+    .notes-textarea:focus { outline: none; background: var(--white); border-color: var(--blue-500); box-shadow: 0 0 0 3px rgba(74,143,196,.12); }
+    .form-input.is-invalid, .notes-textarea.is-invalid { border-color: #e85d5d; background: #fef2f2; }
+    .form-actions { margin-top: 22px; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 46px; padding: 0 22px; font-size: .92rem; font-weight: 600; border-radius: var(--radius); transition: all var(--transition); white-space: nowrap; }
+    .btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+    .btn-primary { width: 100%; background: linear-gradient(135deg, var(--blue-500), var(--blue-600)); color: var(--white); box-shadow: 0 3px 12px rgba(74,143,196,.32); }
+    .btn-primary:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(74,143,196,.4); }
+    .btn-primary:disabled { opacity: .65; cursor: not-allowed; }
+    .btn-primary .spinner { display: none; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.3); border-top-color: var(--white); border-radius: 50%; animation: spin .7s linear infinite; }
+    .btn-primary.loading .spinner { display: block; }
+    .btn-primary.loading svg:not(.spinner) { display: none; }
+    .preview-section { animation: fadeUp .5s ease .15s both; }
+    .preview-card { position: relative; overflow: hidden; border: 1px solid rgba(74,143,196,.28); border-radius: var(--radius-xl); background: linear-gradient(135deg, #d4e8f7, #eaf4fc 28%, #f5faff 55%, var(--white)); box-shadow: var(--shadow-summary); transition: transform var(--transition-smooth), box-shadow var(--transition-smooth); }
+    .preview-card::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--navy-700), var(--blue-500) 40%, var(--blue-400)); z-index: 1; }
+    .preview-card-body { position: relative; z-index: 2; padding: 28px 30px; }
+    .preview-header { display: flex; align-items: flex-start; gap: 18px; }
+    .preview-icon { width: 48px; height: 48px; border-radius: 14px; background: linear-gradient(145deg, var(--blue-600), var(--blue-400)); display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 6px 20px rgba(74,143,196,.38); }
+    .preview-icon svg { width: 22px; height: 22px; color: var(--white); }
+    .preview-content { flex: 1; min-width: 0; }
+    .preview-label { display: inline-flex; align-items: center; gap: 7px; font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .09em; color: var(--blue-600); margin-bottom: 10px; }
+    .preview-label::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--blue-500); box-shadow: 0 0 0 3px rgba(74,143,196,.22); animation: pulse 2.5s ease infinite; }
+    .preview-title { font-size: 1rem; font-weight: 700; color: var(--navy-800); margin-bottom: 14px; }
+    .preview-placeholder { padding: 20px 22px; background: rgba(255,255,255,.72); border: 1px dashed rgba(74,143,196,.35); border-radius: 11px; font-size: .92rem; color: var(--gray-400); text-align: center; }
+    .preview-placeholder.is-error { color: #c94a4a; border-color: rgba(232,93,93,.4); background: rgba(254,242,242,.72); }
+    .preview-document { padding: 24px 26px; background: rgba(255,255,255,.85); border: 1px solid rgba(7,14,26,.08); border-radius: 11px; text-align: left; line-height: 1.65; }
+    .preview-document-header { padding-bottom: 16px; margin-bottom: 18px; border-bottom: 2px solid var(--navy-800); }
+    .preview-document-hotel { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--gray-500); margin-bottom: 4px; }
+    .preview-document-title { font-size: 1.15rem; font-weight: 700; color: var(--navy-900); letter-spacing: -.02em; }
+    .preview-document-section { margin-bottom: 18px; page-break-inside: avoid; break-inside: avoid; }
+    .preview-document-section:last-child { margin-bottom: 0; }
+    .sop-section-title { font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--navy-700); margin-bottom: 10px; outline: none; }
+    .sop-section-title:focus { box-shadow: 0 0 0 2px rgba(74,143,196,.25); border-radius: 4px; }
+    .sop-editable { font-size: .9rem; color: var(--navy-900); margin-bottom: 8px; outline: none; min-height: 1.2em; }
+    .sop-editable:focus { background: rgba(74,143,196,.06); border-radius: 4px; }
+    .sop-editable ul { margin: 6px 0 0 18px; }
+    .sop-editable li { margin-bottom: 4px; }
+    .sop-info-table { width: 100%; border-collapse: collapse; font-size: .82rem; margin-bottom: 4px; }
+    .sop-info-table th, .sop-info-table td { border: 1px solid var(--gray-200); padding: 8px 10px; text-align: left; vertical-align: top; }
+    .sop-info-table th { background: var(--gray-50); font-weight: 700; color: var(--navy-700); width: 34%; font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; }
+    .sop-info-table td { background: var(--white); }
+    .sop-info-table .doc-input { border: none; background: transparent; padding: 0; box-shadow: none; font-size: .82rem; }
+    .sop-info-table .doc-input:focus { box-shadow: none; border-bottom: 1px solid var(--blue-500); border-radius: 0; }
+    .preview-document-numbered-list { list-style: none; counter-reset: sop-step; display: flex; flex-direction: column; gap: 10px; }
+    .preview-document-numbered-list > li { counter-increment: sop-step; display: flex; align-items: flex-start; gap: 10px; font-size: .88rem; color: var(--navy-900); }
+    .preview-document-numbered-list > li::before { content: counter(sop-step); width: 24px; height: 24px; border-radius: 6px; background: var(--navy-800); color: var(--white); font-size: .72rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .sop-step-body { flex: 1; min-width: 0; }
+    .sop-step-text { width: 100%; font-family: inherit; font-size: .88rem; color: var(--navy-900); background: var(--white); border: 1px solid var(--gray-200); border-radius: 6px; padding: 8px 10px; line-height: 1.5; resize: vertical; min-height: 40px; }
+    .sop-step-text:focus { outline: none; border-color: var(--blue-500); box-shadow: 0 0 0 3px rgba(74,143,196,.12); }
+    .sop-step-controls { display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }
+    .sop-step-btn { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--gray-200); border-radius: 6px; background: var(--white); color: var(--gray-500); transition: all var(--transition); }
+    .sop-step-btn:hover { background: var(--gray-50); color: var(--navy-700); border-color: var(--gray-300); }
+    .sop-step-btn--danger:hover { background: #fef2f2; color: #c94a4a; border-color: #f5c2c2; }
+    .sop-step-btn svg { width: 14px; height: 14px; }
+    .sop-add-step { margin-top: 10px; display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; font-size: .82rem; font-weight: 600; color: var(--blue-600); background: var(--blue-50); border: 1px dashed rgba(74,143,196,.35); border-radius: var(--radius); transition: all var(--transition); }
+    .sop-add-step:hover { background: var(--blue-100); border-color: var(--blue-500); }
+    .sop-revision-table { width: 100%; border-collapse: collapse; font-size: .82rem; margin-top: 6px; }
+    .sop-revision-table th, .sop-revision-table td { border: 1px solid var(--gray-200); padding: 8px 10px; text-align: left; }
+    .sop-revision-table th { background: var(--gray-50); font-weight: 700; color: var(--navy-700); font-size: .72rem; text-transform: uppercase; }
+    .sop-revision-table td { min-height: 32px; background: var(--white); }
+    .doc-cell { width: 100%; font-family: inherit; font-size: .82rem; color: var(--navy-900); background: var(--white); border: none; padding: 4px 2px; min-height: 1.4em; outline: none; }
+    .doc-cell:focus { background: rgba(74,143,196,.06); border-radius: 4px; }
+    .doc-input { width: 100%; font-family: inherit; font-size: .88rem; color: var(--navy-900); background: var(--white); border: 1px solid var(--gray-200); border-radius: 6px; padding: 8px 10px; }
+    .doc-input:focus { outline: none; border-color: var(--blue-500); box-shadow: 0 0 0 3px rgba(74,143,196,.12); }
+    .doc-print-value { display: block; font-size: .88rem; color: var(--navy-900); white-space: pre-wrap; word-break: break-word; }
+    .doc-toolbar { display: none; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid rgba(74,143,196,.15); }
+    .doc-toolbar.is-visible { display: flex; }
+    .doc-save-status { width: 100%; flex-basis: 100%; font-size: .74rem; font-weight: 500; color: var(--gray-400); margin: -4px 0 12px; min-height: 1.1em; }
+    .doc-save-status.is-saving { color: var(--blue-500); }
+    .doc-save-status.is-saved { color: var(--gray-500); }
+    .doc-save-status.is-restored { color: var(--blue-600); }
+    .doc-toolbar-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px; font-size: .82rem; font-weight: 600; color: var(--navy-700); background: var(--white); border: 1.5px solid var(--gray-200); border-radius: var(--radius); transition: all var(--transition); }
+    .doc-toolbar-btn:hover { background: var(--gray-50); border-color: var(--gray-300); }
+    .doc-toolbar-btn--primary { background: linear-gradient(135deg, var(--blue-500), var(--blue-600)); border-color: transparent; color: var(--white); }
+    .doc-toolbar-btn--primary:hover { box-shadow: 0 4px 12px rgba(74,143,196,.32); }
+    .doc-toolbar-btn svg { width: 14px; height: 14px; }
+    .preview-document-footer { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--gray-200); font-size: .75rem; color: var(--gray-400); }
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); padding: 12px 22px; background: var(--navy-900); color: var(--white); font-size: .88rem; font-weight: 500; border-radius: var(--radius); box-shadow: var(--shadow-lg); opacity: 0; transition: transform .35s ease, opacity .35s ease; z-index: 1000; pointer-events: none; }
+    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    .footer { padding: 20px 0; text-align: center; font-size: .78rem; color: var(--gray-400); border-top: 1px solid var(--gray-200); background: var(--white); }
+    .footer a { color: var(--blue-500); text-decoration: none; font-weight: 500; }
+    @keyframes fadeDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @media print {
+      .topnav, .form-card, .form-actions, .page-header, .footer, .preview-label, .preview-title, .preview-icon, .preview-header, .doc-toolbar, .toast, .sop-step-controls, .sop-add-step { display: none !important; }
+      .preview-card { box-shadow: none; border: none; background: none; }
+      .preview-card-body { padding: 0; }
+      .preview-document { border: none; padding: 0; background: var(--white); }
+      .preview-document-section { page-break-inside: avoid; break-inside: avoid; }
+      .sop-step-text, .doc-input, .doc-cell { border: none; background: transparent; box-shadow: none; padding: 0; resize: none; }
+    }
+    @media (max-width: 600px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .logo-sub { display: none; }
+      .nav-badge span.label { display: none; }
+      .card-body, .preview-card-body { padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <nav class="topnav" aria-label="Main navigation">
+      <div class="topnav-inner">
+        <a class="logo" href="index.html">
+          <div class="logo-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L2 7v10l10 5 10-5V7L12 2zm0 2.18l7.5 3.75v7.14L12 18.82l-7.5-3.75V7.93L12 4.18zM12 8l-5 2.5v5L12 18l5-2.5v-5L12 8z"/></svg>
+          </div>
+          <div>
+            <span class="logo-text">Hospitality <span>Flow</span></span>
+            <span class="logo-sub">AI SOP Generator</span>
+          </div>
+        </a>
+        <div class="nav-badge"><span class="nav-badge-dot" aria-hidden="true"></span><span class="label">SOP Tool</span></div>
+      </div>
+    </nav>
+    <main class="main">
+      <div class="container">
+        <div class="page-header">
+          <h1 class="page-title">AI SOP Generator</h1>
+          <p class="page-subtitle">Create clear, practical hotel procedures your team can follow.</p>
+          <p class="page-tagline">Built for boutique and independent hotel operations.</p>
+        </div>
+        <div class="dashboard-grid">
+          <div class="card form-card">
+            <div class="card-header">
+              <div class="card-header-icon navy" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+              </div>
+              <div class="card-header-text">
+                <h2>Create SOP</h2>
+                <p>Enter your hotel details, define the procedure, and generate a structured SOP document.</p>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="form-grid">
+                <div class="form-group full">
+                  <label class="form-label" for="hotelName">Hotel Name</label>
+                  <input class="form-input" type="text" id="hotelName" placeholder="Enter hotel name">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="department">Department</label>
+                  <select class="form-input" id="department">
+                    <option value="">Select department</option>
+                    <option>Front Office</option><option>Housekeeping</option><option>Food &amp; Beverage</option>
+                    <option>Maintenance</option><option>Security</option><option>Reservations</option>
+                    <option>Management</option><option>Human Resources</option><option>Finance</option><option>Other</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="sopCategory">SOP Category</label>
+                  <select class="form-input" id="sopCategory">
+                    <option value="">Select category</option>
+                    <option>Guest Service</option><option>Front Office Operations</option><option>Housekeeping</option>
+                    <option>Health &amp; Safety</option><option>Security</option><option>Maintenance</option>
+                    <option>Cash Handling</option><option>Emergency Procedure</option><option>Staff Training</option>
+                    <option>Compliance</option><option>Other</option>
+                  </select>
+                </div>
+                <div class="form-group full">
+                  <label class="form-label" for="sopTitle">SOP Title</label>
+                  <input class="form-input" type="text" id="sopTitle" placeholder="Example: Night Audit and End of Day Procedure">
+                </div>
+                <div class="form-group full">
+                  <label class="form-label" for="purpose">Purpose of this SOP</label>
+                  <textarea class="notes-textarea" id="purpose" style="min-height:100px" placeholder="Explain why this procedure is needed and what outcome it should achieve."></textarea>
+                </div>
+                <div class="form-group full">
+                  <label class="form-label" for="requirements">AI Instructions</label>
+                  <textarea class="notes-textarea" id="requirements" aria-describedby="requirementsHelper"></textarea>
+                  <p class="form-helper" id="requirementsHelper">Describe what you want the AI to include in this SOP.</p>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="estimatedTime">Estimated Completion Time</label>
+                  <input class="form-input" type="text" id="estimatedTime" placeholder="Example: 15 minutes">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="priority">Priority</label>
+                  <select class="form-input" id="priority">
+                    <option value="">Select priority</option>
+                    <option>Critical</option>
+                    <option>High</option>
+                    <option>Medium</option>
+                    <option>Low</option>
+                  </select>
+                </div>
+                <div class="form-group full">
+                  <label class="form-label" for="tags">Tags</label>
+                  <input class="form-input" type="text" id="tags" placeholder="Example: Night Audit, Opera Cloud, Reception, Reports">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="sopVersion">SOP Version</label>
+                  <input class="form-input" type="text" id="sopVersion" placeholder="Example: 1.0">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="preparedBy">Prepared By</label>
+                  <input class="form-input" type="text" id="preparedBy" placeholder="Name / role">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="approvedBy">Approved By</label>
+                  <input class="form-input" type="text" id="approvedBy" placeholder="Name / role">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="effectiveDate">Effective Date</label>
+                  <input class="form-input" type="date" id="effectiveDate">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="reviewDate">Review Date</label>
+                  <input class="form-input" type="date" id="reviewDate">
+                </div>
+              </div>
+              <div class="form-actions">
+                <button class="btn btn-primary" id="generateBtn" type="button">
+                  <span class="spinner" aria-hidden="true"></span>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a4 4 0 0 1 4 4c0 1.95-1.4 3.58-3.25 3.93"/><path d="M8.5 10.5A4 4 0 0 1 12 2"/><path d="M12 12v4"/><path d="M8 22h8"/><path d="M12 18v4"/></svg>
+                  <span class="btn-text">Generate SOP</span>
+                </button>
+              </div>
+            </div>
+          </div>
+          <section class="preview-section" aria-label="Generated SOP preview">
+            <div class="preview-card" id="previewCard">
+              <div class="preview-card-body">
+                <div class="preview-header">
+                  <div class="preview-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  </div>
+                  <div class="preview-content">
+                    <div class="preview-label">Preview</div>
+                    <h2 class="preview-title">Generated SOP</h2>
+                    <div class="doc-toolbar" id="docToolbar" aria-label="SOP actions">
+                      <button type="button" class="doc-toolbar-btn" id="saveDraftBtn" title="Save draft locally">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                        Save Draft
+                      </button>
+                      <button type="button" class="doc-toolbar-btn" id="clearDraftBtn" title="Clear saved draft">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        Clear Draft
+                      </button>
+                      <button type="button" class="doc-toolbar-btn" id="exportPdfBtn" title="Export to PDF">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>
+                        Export PDF
+                      </button>
+                      <button type="button" class="doc-toolbar-btn" id="printDocBtn" title="Print document">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                        Print
+                      </button>
+                      <button type="button" class="doc-toolbar-btn doc-toolbar-btn--primary" id="generateNewBtn" title="Generate a new SOP">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                        Generate New
+                      </button>
+                    </div>
+                    <p class="doc-save-status" id="docSaveStatus" aria-live="polite"></p>
+                    <div class="preview-placeholder" id="previewOutput" aria-live="polite">Your generated SOP will appear here.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+    <footer class="footer"><div class="container"><p>&copy; 2026 <a href="index.html">Hospitality Flow</a> — AI SOP Generator v1.0</p></div></footer>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script>
+(function () {
+  "use strict";
+
+  var DRAFT_KEY = "hospitalityFlowSopDraft";
+  var HOTEL_PROFILE_KEY = "hospitalityFlow_hotelProfile";
+  var AUTO_SAVE_DELAY = 650;
+  var isGenerating = false;
+  var isRestoring = false;
+  var autoSaveTimer = null;
+
+  var DEFAULT_DEPARTMENTS = [
+    "Front Office", "Housekeeping", "Food & Beverage", "Maintenance",
+    "Security", "Reservations", "Management", "Human Resources", "Finance", "Other"
+  ];
+
+  var hotelProfile = null;
+  var configuredDepartments = DEFAULT_DEPARTMENTS.slice();
+  var terminologyMap = {};
+  var aiPrefs = {
+    tone: "professional",
+    detail: "standard",
+    language: "British English",
+    dateFormat: "DD/MM/YYYY (24-hour)",
+    instructions: ""
+  };
+  var dateLocale = { locale: "en-GB", hour12: false, isoDate: false };
+
+  function loadHotelProfileFromStorage() {
+    try {
+      var raw = localStorage.getItem(HOTEL_PROFILE_KEY);
+      if (!raw) return null;
+      var parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== "object") return null;
+      return parsed;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function buildTerminologyMap(terminology) {
+    var map = {};
+    (terminology || []).forEach(function (entry) {
+      var term = (entry.term || "").trim();
+      var definition = (entry.definition || "").trim();
+      if (term && definition) map[term.toLowerCase()] = { term: term, definition: definition };
+    });
+    return map;
+  }
+
+  function resolveDateLocale(prefs) {
+    var fmt = (prefs && prefs.dateFormat) || "DD/MM/YYYY (24-hour)";
+    var language = (prefs && prefs.language) || "British English";
+
+    if (fmt.indexOf("MM/DD") === 0 || language === "American English") {
+      return { locale: "en-US", hour12: fmt.indexOf("12-hour") !== -1, isoDate: false };
+    }
+    if (fmt.indexOf("YYYY-MM-DD") === 0) {
+      return { locale: "en-GB", hour12: false, isoDate: true };
+    }
+    return { locale: "en-GB", hour12: fmt.indexOf("12-hour") !== -1, isoDate: fmt.indexOf("YYYY-MM-DD") === 0 };
+  }
+
+  function applyHotelProfileConfig(profile) {
+    if (!profile) {
+      configuredDepartments = DEFAULT_DEPARTMENTS.slice();
+      terminologyMap = {};
+      aiPrefs = {
+        tone: "professional",
+        detail: "standard",
+        language: "British English",
+        dateFormat: "DD/MM/YYYY (24-hour)",
+        instructions: ""
+      };
+      dateLocale = resolveDateLocale(aiPrefs);
+      return;
+    }
+
+    var depts = (profile.departments || [])
+      .map(function (d) { return (d.name || "").trim(); })
+      .filter(Boolean);
+    configuredDepartments = depts.length ? depts : DEFAULT_DEPARTMENTS.slice();
+    terminologyMap = buildTerminologyMap(profile.terminology || []);
+
+    if (profile.aiPrefs) {
+      aiPrefs = {
+        tone: profile.aiPrefs.tone || aiPrefs.tone,
+        detail: profile.aiPrefs.detail || aiPrefs.detail,
+        language: profile.aiPrefs.language || aiPrefs.language,
+        dateFormat: profile.aiPrefs.dateFormat || aiPrefs.dateFormat,
+        instructions: profile.aiPrefs.instructions || ""
+      };
+    }
+
+    dateLocale = resolveDateLocale(aiPrefs);
+  }
+
+  function populateDepartmentSelect() {
+    var current = els.department.value;
+    els.department.innerHTML = '<option value="">Select department</option>';
+    configuredDepartments.forEach(function (name) {
+      var opt = document.createElement("option");
+      opt.value = name;
+      opt.textContent = name;
+      if (name === current) opt.selected = true;
+      els.department.appendChild(opt);
+    });
+    if (current && configuredDepartments.indexOf(current) === -1) {
+      var extra = document.createElement("option");
+      extra.value = current;
+      extra.textContent = current;
+      extra.selected = true;
+      els.department.insertBefore(extra, els.department.options[1] || null);
+    }
+  }
+
+  function ensureDepartmentOption(dept) {
+    if (!dept) {
+      els.department.value = "";
+      return;
+    }
+    populateDepartmentSelect();
+    var found = Array.from(els.department.options).some(function (opt) { return opt.value === dept; });
+    if (!found) {
+      var opt = document.createElement("option");
+      opt.value = dept;
+      opt.textContent = dept;
+      els.department.appendChild(opt);
+    }
+    els.department.value = dept;
+  }
+
+  function applyHotelProfileToUI() {
+    populateDepartmentSelect();
+    if (!hotelProfile) return;
+
+    var general = hotelProfile.general || {};
+    if (general.hotelName && !els.hotelName.value.trim()) {
+      els.hotelName.value = general.hotelName;
+    }
+  }
+
+  function applyToneToText(text) {
+    if (aiPrefs.tone === "friendly") {
+      return text
+        .replace(/\bduty manager\b/gi, "duty manager on duty")
+        .replace(/\bnotify the duty manager\b/gi, "let the duty manager know")
+        .replace(/\bescalated to the duty manager\b/gi, "passed to the duty manager for support")
+        .replace(/\bConfirm completion\b/gi, "Check everything looks good");
+    }
+    if (aiPrefs.tone === "concise") {
+      return text
+        .replace(/\bbefore moving to the next step\b/gi, "before continuing")
+        .replace(/\band confirm completion before proceeding\b/gi, "then continue")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+    return text;
+  }
+
+  function applyLanguageVariant(text) {
+    var lang = aiPrefs.language || "British English";
+    if (lang === "American English") {
+      return text
+        .replace(/\bauthorise\b/gi, "authorize")
+        .replace(/\bauthorised\b/gi, "authorized")
+        .replace(/\bauthorisation\b/gi, "authorization")
+        .replace(/\bprioritised\b/gi, "prioritized")
+        .replace(/\borganised\b/gi, "organized")
+        .replace(/\brecognised\b/gi, "recognized")
+        .replace(/\bcentre\b/gi, "center");
+    }
+    if (lang === "British English") {
+      return text
+        .replace(/\bauthorize\b/gi, "authorise")
+        .replace(/\bauthorized\b/gi, "authorised")
+        .replace(/\bauthorization\b/gi, "authorisation")
+        .replace(/\bprioritized\b/gi, "prioritised")
+        .replace(/\borganized\b/gi, "organised")
+        .replace(/\brecognized\b/gi, "recognised")
+        .replace(/\bcenter\b/gi, "centre");
+    }
+    return text;
+  }
+
+  function applyCustomInstructions(text) {
+    var instructions = (aiPrefs.instructions || "").trim();
+    if (!instructions) return text;
+
+    instructions.split(/\n+/).forEach(function (line) {
+      var trimmed = line.trim();
+      if (!trimmed) return;
+
+      var useNotMatch = trimmed.match(/use\s+['"]?([^'"]+?)['"]?\s+not\s+['"]?([^'".]+?)['"]?/i);
+      if (useNotMatch) {
+        var preferred = useNotMatch[1].trim();
+        var avoid = useNotMatch[2].trim();
+        if (preferred && avoid) {
+          var re = new RegExp("\\b" + avoid.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\b", "gi");
+          text = text.replace(re, preferred);
+        }
+      }
+
+      var alwaysUseMatch = trimmed.match(/always\s+(?:refer to|use|call)\s+['"]?([^'"]+?)['"]?/i);
+      if (alwaysUseMatch && alwaysUseMatch[1]) {
+        var phrase = alwaysUseMatch[1].trim();
+        if (/guest/i.test(phrase) && /customer/i.test(trimmed)) {
+          text = text.replace(/\bcustomers?\b/gi, phrase.match(/guest/i) ? "guest" : phrase);
+        }
+      }
+    });
+
+    return text;
+  }
+
+  function applyTerminologyToText(text) {
+    if (!text) return text;
+    var result = text;
+    var phraseMap = [
+      "shift handover",
+      "handover",
+      "guest service",
+      "duty manager",
+      "front office",
+      "housekeeping"
+    ];
+
+    Object.keys(terminologyMap).forEach(function (key) {
+      var entry = terminologyMap[key];
+      if (!entry.term || !entry.definition) return;
+      var definition = entry.definition.toLowerCase();
+      phraseMap.forEach(function (phrase) {
+        if (definition.indexOf(phrase) === -1) return;
+        var re = new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
+        result = result.replace(re, entry.term);
+      });
+    });
+
+    return result;
+  }
+
+  function polishSopText(text) {
+    return applyTerminologyToText(
+      applyCustomInstructions(
+        applyToneToText(
+          applyLanguageVariant(String(text || ""))
+        )
+      )
+    );
+  }
+
+  function getEffectiveRequirements() {
+    var req = els.requirements.value.trim();
+    var custom = (aiPrefs.instructions || "").trim();
+    if (!custom) return req;
+    if (!req) return custom;
+    return req + "\n\nHotel-specific instructions:\n" + custom;
+  }
+
+  function getMinimumProcedureSteps() {
+    if (aiPrefs.detail === "brief") return 3;
+    if (aiPrefs.detail === "comprehensive") return 7;
+    return 4;
+  }
+
+  function getProcedurePaddingLimit() {
+    if (aiPrefs.detail === "brief") return 1;
+    if (aiPrefs.detail === "comprehensive") return 99;
+    return 3;
+  }
+
+  var els = {
+    generateBtn: document.getElementById("generateBtn"),
+    hotelName: document.getElementById("hotelName"),
+    department: document.getElementById("department"),
+    sopCategory: document.getElementById("sopCategory"),
+    sopTitle: document.getElementById("sopTitle"),
+    purpose: document.getElementById("purpose"),
+    requirements: document.getElementById("requirements"),
+    estimatedTime: document.getElementById("estimatedTime"),
+    priority: document.getElementById("priority"),
+    tags: document.getElementById("tags"),
+    sopVersion: document.getElementById("sopVersion"),
+    preparedBy: document.getElementById("preparedBy"),
+    approvedBy: document.getElementById("approvedBy"),
+    effectiveDate: document.getElementById("effectiveDate"),
+    reviewDate: document.getElementById("reviewDate"),
+    previewCard: document.getElementById("previewCard"),
+    previewOutput: document.getElementById("previewOutput"),
+    docToolbar: document.getElementById("docToolbar"),
+    saveDraftBtn: document.getElementById("saveDraftBtn"),
+    clearDraftBtn: document.getElementById("clearDraftBtn"),
+    exportPdfBtn: document.getElementById("exportPdfBtn"),
+    printDocBtn: document.getElementById("printDocBtn"),
+    generateNewBtn: document.getElementById("generateNewBtn"),
+    docSaveStatus: document.getElementById("docSaveStatus"),
+    toast: document.getElementById("toast"),
+    btnText: document.querySelector("#generateBtn .btn-text")
+  };
+
+  var defaultBtnLabel = els.btnText.textContent;
+
+  var REQUIREMENT_EXAMPLES = {
+    "Guest Service": "Create a practical SOP for delivering consistent guest service standards.\n\nInclude:\n• Greeting and first impressions\n• Service recovery steps\n• Communication standards\n• Handover to other departments\n• Follow-up and guest feedback",
+    "Front Office Operations": "Create a practical SOP for completing the hotel night audit.\n\nInclude:\n• Pre-audit checks\n• End-of-day process\n• Required reports\n• Payment reconciliation\n• Escalation steps",
+    "Housekeeping": "Create a practical SOP for room cleaning and inspection.\n\nInclude:\n• Pre-shift briefing\n• Cleaning sequence by area\n• Quality inspection checklist\n• Reporting maintenance issues\n• Sign-off and handover",
+    "Health & Safety": "Create a practical SOP for workplace health and safety compliance.\n\nInclude:\n• Risk assessment steps\n• PPE requirements\n• Incident reporting\n• Emergency contacts\n• Record keeping",
+    "Security": "Create a practical SOP for hotel security patrols.\n\nInclude:\n• Patrol routes and frequency\n• Access control checks\n• Incident logging\n• CCTV review\n• Escalation to management",
+    "Maintenance": "Create a practical SOP for responding to maintenance requests.\n\nInclude:\n• Request triage and priority\n• Work order creation\n• Guest room access protocol\n• Completion and testing\n• Close-out documentation",
+    "Cash Handling": "Create a practical SOP for daily cash handling and reconciliation.\n\nInclude:\n• Float setup\n• Payment acceptance rules\n• End-of-shift count\n• Discrepancy reporting\n• Secure storage and banking",
+    "Emergency Procedure": "Create a practical SOP for fire evacuation.\n\nInclude:\n• Alarm activation response\n• Guest and staff notification\n• Assembly point procedures\n• Roll call and headcount\n• All-clear and re-entry",
+    "Staff Training": "Create a practical SOP for onboarding new front office staff.\n\nInclude:\n• Day-one orientation\n• System access setup\n• Shadowing schedule\n• Competency checkpoints\n• Trainer sign-off",
+    "Compliance": "Create a practical SOP for GDPR guest data handling.\n\nInclude:\n• Data collection limits\n• Secure storage\n• Access controls\n• Guest request handling\n• Breach escalation",
+    "Other": "Create a practical SOP for your hotel procedure.\n\nInclude:\n• Preparation steps\n• Main process\n• Quality checks\n• Documentation\n• Escalation steps"
+  };
+
+  function escapeHtml(text) {
+    return String(text)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function formatDateISO(d) {
+    d = d || new Date();
+    var m = String(d.getMonth() + 1);
+    var day = String(d.getDate());
+    if (m.length < 2) m = "0" + m;
+    if (day.length < 2) day = "0" + day;
+    return d.getFullYear() + "-" + m + "-" + day;
+  }
+
+  function formatDisplayDate(iso) {
+    if (!iso) return "—";
+    var parts = iso.split("-");
+    if (parts.length !== 3) return iso;
+    if (dateLocale.isoDate) {
+      return parts[2] + "/" + parts[1] + "/" + parts[0];
+    }
+    var d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+    if (isNaN(d.getTime())) return iso;
+    return d.toLocaleDateString(dateLocale.locale, {
+      day: "numeric",
+      month: "long",
+      year: "numeric"
+    });
+  }
+
+  function addMonthsISO(iso, months) {
+    var d = iso ? new Date(iso) : new Date();
+    d.setMonth(d.getMonth() + months);
+    return formatDateISO(d);
+  }
+
+  function showToast(msg) {
+    els.toast.textContent = msg;
+    els.toast.classList.add("show");
+    window.setTimeout(function () { els.toast.classList.remove("show"); }, 2800);
+  }
+
+  function setSaveStatus(state, message) {
+    els.docSaveStatus.textContent = message || "";
+    els.docSaveStatus.className = "doc-save-status" + (state ? " is-" + state : "");
+  }
+
+  function getActiveDocument() {
+    return els.previewOutput.querySelector(".preview-document");
+  }
+
+  function showToolbar() { els.docToolbar.classList.add("is-visible"); }
+  function hideToolbar() { els.docToolbar.classList.remove("is-visible"); }
+
+  function getRequirementsExample(cat) {
+    return REQUIREMENT_EXAMPLES[cat] || REQUIREMENT_EXAMPLES.Other;
+  }
+
+  function applyRequirementsExample(cat) {
+    els.requirements.value = getRequirementsExample(cat);
+    els.requirements.classList.remove("is-invalid");
+  }
+
+  function generateReference(dept) {
+    var prefix = (dept || "GEN").replace(/[^A-Za-z]/g, "").slice(0, 3).toUpperCase() || "SOP";
+    return "SOP-" + prefix + "-" + Date.now().toString().slice(-6);
+  }
+
+  function parseRequirementLines(text) {
+    return String(text || "")
+      .split("\n")
+      .map(function (line) { return line.replace(/^[\s•\-*\d.)]+/, "").trim(); })
+      .filter(function (line) {
+        if (!line) return false;
+        if (/^create a practical sop/i.test(line)) return false;
+        if (/^include:?\s*$/i.test(line)) return false;
+        return true;
+      });
+  }
+
+  function expandRequirementToStep(line, dept, title) {
+    var lower = line.toLowerCase();
+    var step;
+    if (/pre-audit|pre audit|pre-shift|preparation|pre-shift|setup|float setup|orientation|day-one/i.test(lower)) {
+      step = dept + " staff complete all preparation checks before starting " + title + ". Confirm systems, tools and handover notes are ready.";
+    } else if (/escalat|manager|duty manager|supervisor/i.test(lower)) {
+      step = "If issues arise during this step, stop and escalate to the duty manager or department supervisor. Record the time and details.";
+    } else if (/report|document|record|log|sign-off|sign off|close-out|close out/i.test(lower)) {
+      step = "Complete required records for " + line.toLowerCase() + ". Ensure entries are accurate, dated and signed where required.";
+    } else if (/check|inspect|quality|reconcil|count|review/i.test(lower)) {
+      step = "Carry out " + line.toLowerCase() + ". Verify results against hotel standards before moving to the next step.";
+    } else {
+      step = "Follow hotel standards for " + line.toLowerCase() + ". " + dept + " staff own this step and confirm completion before proceeding.";
+    }
+    return polishSopText(step);
+  }
+
+  function buildProcedureSteps(requirements, dept, title, category) {
+    var lines = parseRequirementLines(requirements);
+    var steps = [];
+    steps.push(polishSopText("Read this SOP and confirm you understand your role. Gather required tools and check any open handover notes before starting."));
+
+    lines.forEach(function (line) {
+      steps.push(expandRequirementToStep(line, dept, title));
+    });
+
+    var minSteps = getMinimumProcedureSteps();
+    if (steps.length < minSteps) {
+      var defaults = {
+        "Guest Service": ["Greet every guest within 30 seconds with eye contact and a warm welcome.", "Anticipate guest needs and offer help before being asked.", "Resolve minor issues on the spot; escalate complaints to the duty manager."],
+        "Front Office Operations": ["Verify all folios and payments are posted correctly.", "Run required end-of-day reports and save copies.", "Secure the front desk cash float and complete the handover log."],
+        "Housekeeping": ["Collect assigned room list and guest status from housekeeping control.", "Follow the approved cleaning sequence for each room type.", "Inspect each room against the quality checklist before releasing."],
+        "Health & Safety": ["Identify hazards in the work area before starting tasks.", "Wear required PPE at all times during the procedure.", "Report any safety concerns to the duty manager immediately."],
+        "Security": ["Begin patrol at the designated start point and follow the approved route.", "Check all access points, doors and restricted areas.", "Log findings and report anomalies before end of shift."],
+        "Maintenance": ["Review open work orders and confirm priority with the duty manager.", "Knock, announce and verify guest consent before entering occupied rooms.", "Test repairs and update the work order with completion notes."],
+        "Cash Handling": ["Count the float at shift start and record the opening balance.", "Process payments according to hotel policy — never leave cash unattended.", "Reconcile totals at shift end and report discrepancies immediately."],
+        "Emergency Procedure": ["Activate the appropriate alarm or alert system if safe to do so.", "Guide guests and staff to the nearest safe exit using approved routes.", "Proceed to the assembly point and report to the duty manager for roll call."],
+        "Staff Training": ["Review the training schedule and learning objectives with the trainee.", "Demonstrate each task, then observe the trainee completing it independently.", "Sign off each competency checkpoint before advancing to the next module."],
+        "Compliance": ["Collect only the guest data required for the stated purpose.", "Store records securely with access limited to authorised staff.", "Respond to guest data requests within the hotel's approved timeframe."],
+        "Other": ["Prepare the work area and confirm all required resources are available.", "Complete the main process following hotel standards step by step.", "Review outcomes and escalate any exceptions to the duty manager."]
+      };
+      var paddingLimit = getProcedurePaddingLimit();
+      var added = 0;
+      (defaults[category] || defaults.Other).forEach(function (s) {
+        if (steps.length >= minSteps) return;
+        if (added >= paddingLimit) return;
+        steps.push(polishSopText(s));
+        added += 1;
+      });
+    }
+
+    steps.push(polishSopText("Complete final checks, update records and sign off. Brief the next shift on anything outstanding."));
+    return steps;
+  }
+
+  function sectionBlock(title, bodyHtml) {
+    return (
+      '<div class="preview-document-section">' +
+      '<h3 class="sop-section-title" contenteditable="true" spellcheck="true">' + escapeHtml(title) + "</h3>" +
+      bodyHtml +
+      "</div>"
+    );
+  }
+
+  function editableParagraph(text) {
+    return '<p class="sop-editable" contenteditable="true" spellcheck="true">' + escapeHtml(polishSopText(text)) + "</p>";
+  }
+
+  function buildScope(dept, category, hotel) {
+    return editableParagraph(
+      "This SOP applies to all " + dept + " team members at " + hotel + " who perform duties related to " + category.toLowerCase() + ". " +
+      "It covers daily operations during all shifts unless a separate emergency SOP takes precedence."
+    );
+  }
+
+  function buildResponsibilities(dept) {
+    return (
+      '<div class="sop-editable" contenteditable="true" spellcheck="true">' +
+      "<ul><li><strong>" + escapeHtml(dept) + " staff:</strong> " + escapeHtml(polishSopText("Follow each step, maintain records, and escalate issues promptly.")) + "</li>" +
+      "<li><strong>Duty Manager:</strong> " + escapeHtml(polishSopText("Provides oversight, approves exceptions, and reviews compliance.")) + "</li>" +
+      "<li><strong>Department Head:</strong> " + escapeHtml(polishSopText("Ensures training, updates this SOP, and reviews it on schedule.")) + "</li></ul></div>"
+    );
+  }
+
+  function buildTools(category) {
+    var tools = {
+      "Guest Service": "PMS guest profile, service recovery log, telephone and radio",
+      "Front Office Operations": "PMS, payment terminal, night audit reports, cash float",
+      "Housekeeping": "Room assignment sheet, cleaning cart, inspection checklist, maintenance log",
+      "Health & Safety": "Risk assessment form, PPE, incident report, first aid kit location map",
+      "Security": "Patrol log, access control system, CCTV monitor, incident report form",
+      "Maintenance": "Work order system, tools kit, room access checklist, completion log",
+      "Cash Handling": "Cash float, secure safe, reconciliation sheet, banking deposit bag",
+      "Emergency Procedure": "Emergency contact list, evacuation plan, guest register, assembly point map",
+      "Staff Training": "Training checklist, competency sign-off sheet, PMS training login",
+      "Compliance": "Data request log, secure filing system, privacy policy, breach report form",
+      "Other": "Relevant hotel systems, checklists and logbooks for this procedure"
+    };
+    return editableParagraph("Required tools and systems: " + (tools[category] || tools.Other) + ".");
+  }
+
+  function buildStepControlsHtml() {
+    return (
+      '<div class="sop-step-controls">' +
+      '<button type="button" class="sop-step-btn sop-step-up" title="Move up" aria-label="Move step up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg></button>' +
+      '<button type="button" class="sop-step-btn sop-step-down" title="Move down" aria-label="Move step down"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>' +
+      '<button type="button" class="sop-step-btn sop-step-btn--danger sop-step-remove" title="Remove step" aria-label="Remove step"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>' +
+      "</div>"
+    );
+  }
+
+  function buildStepItem(text) {
+    return (
+      "<li>" +
+      '<div class="sop-step-body"><textarea class="sop-step-text" rows="2">' + escapeHtml(text) + "</textarea></div>" +
+      buildStepControlsHtml() +
+      "</li>"
+    );
+  }
+
+  function buildProcedureList(steps) {
+    var html = '<ol class="preview-document-numbered-list" id="sopProcedureList">';
+    steps.forEach(function (step) { html += buildStepItem(step); });
+    html += "</ol>";
+    html += '<button type="button" class="sop-add-step" id="addStepBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 5v14M5 12h14"/></svg> Add procedure step</button>';
+    return html;
+  }
+
+  function buildQualityStandards(category, dept) {
+    return editableParagraph(
+      dept + " team members deliver consistent " + category.toLowerCase() + " standards on every shift. " +
+      "Work is completed accurately, on time, and in line with guest expectations. " +
+      "Any deviation is corrected immediately or escalated to the duty manager."
+    );
+  }
+
+  function buildEscalation(dept) {
+    return (
+      '<div class="sop-editable" contenteditable="true" spellcheck="true">' +
+      "<ul><li>" + escapeHtml(polishSopText("Minor issues: resolve at team level and note in the daily log.")) + "</li>" +
+      "<li>" + escapeHtml(polishSopText("Guest complaints or safety concerns: notify the duty manager immediately.")) + "</li>" +
+      "<li>" + escapeHtml(polishSopText("System failures or emergencies: follow the relevant emergency SOP and contact " + dept + " management.")) + "</li></ul></div>"
+    );
+  }
+
+  function buildSafetyNotes(category) {
+    var notes = {
+      "Health & Safety": "Follow all health and safety legislation and hotel risk assessments. Report hazards before starting work.",
+      "Emergency Procedure": "Guest and staff safety is the priority. Never re-enter the building until authorised.",
+      "Security": "Do not confront intruders alone. Contact police and management as per hotel policy.",
+      "Cash Handling": "Never leave cash unattended. Dual verification required for discrepancies over hotel threshold.",
+      "Housekeeping": "Use wet floor signs, correct chemical dilution, and report slip or trip hazards immediately."
+    };
+    return editableParagraph(notes[category] || "Follow hotel health, safety and compliance policies at all times. Report hazards and incidents to the duty manager.");
+  }
+
+  function buildTraining(dept, title) {
+    return editableParagraph(
+      "All new " + dept + " staff must read and sign this SOP before working independently. " +
+      "Refresher training on \"" + title + "\" is completed annually or when the SOP is updated."
+    );
+  }
+
+  function buildRelatedDocs() {
+    return (
+      '<div class="sop-editable" contenteditable="true" spellcheck="true">' +
+      "<ul><li>Hotel Employee Handbook</li><li>" + escapeHtml(polishSopText("Department shift handover log")) + "</li><li>Relevant emergency and safety SOPs</li></ul></div>"
+    );
+  }
+
+  function buildRevisionTable(data) {
+    return (
+      '<table class="sop-revision-table"><thead><tr><th>Version</th><th>Date</th><th>Author</th><th>Changes</th><th>Approved By</th></tr></thead>' +
+      "<tbody><tr>" +
+      '<td contenteditable="true" class="doc-cell">' + escapeHtml(data.version || "—") + "</td>" +
+      '<td contenteditable="true" class="doc-cell">' + escapeHtml(formatDisplayDate(data.effectiveDate)) + "</td>" +
+      '<td contenteditable="true" class="doc-cell">' + escapeHtml(data.preparedBy || "—") + "</td>" +
+      '<td contenteditable="true" class="doc-cell">Initial issue</td>' +
+      '<td contenteditable="true" class="doc-cell">' + escapeHtml(data.approvedBy || "—") + "</td>" +
+      "</tr></tbody></table>"
+    );
+  }
+
+  function buildInfoTable(data, ref) {
+    var rows = [
+      ["SOP Title", data.title],
+      ["Hotel Name", data.hotel],
+      ["Department", data.department],
+      ["SOP Category", data.category],
+      ["Document Reference", ref]
+    ];
+    if (data.estimatedTime) rows.push(["Estimated Completion Time", data.estimatedTime]);
+    if (data.priority) rows.push(["Priority", data.priority]);
+    if (data.tags) rows.push(["Tags", data.tags]);
+    rows.push(
+      ["Version", data.version || "—"],
+      ["Effective Date", formatDisplayDate(data.effectiveDate)],
+      ["Review Date", formatDisplayDate(data.reviewDate)],
+      ["Prepared By", data.preparedBy || "—"],
+      ["Approved By", data.approvedBy || "—"]
+    );
+    var html = '<table class="sop-info-table"><tbody>';
+    rows.forEach(function (row) {
+      html += "<tr><th>" + escapeHtml(row[0]) + "</th><td>" + escapeHtml(row[1]) + "</td></tr>";
+    });
+    html += "</tbody></table>";
+    return html;
+  }
+
+  function buildSopHtml(data) {
+    var ref = generateReference(data.department);
+    var steps = buildProcedureSteps(data.requirements, data.department, data.title, data.category);
+
+    return (
+      '<div class="preview-document">' +
+      '<div class="preview-document-header">' +
+      '<div class="preview-document-hotel">' + escapeHtml(data.hotel) + "</div>" +
+      '<div class="preview-document-title">' + escapeHtml(data.title) + "</div>" +
+      "</div>" +
+      sectionBlock("Document Information", buildInfoTable(data, ref)) +
+      sectionBlock("1. Purpose", editableParagraph(data.purpose)) +
+      sectionBlock("2. Scope", buildScope(data.department, data.category, data.hotel)) +
+      sectionBlock("3. Responsibilities", buildResponsibilities(data.department)) +
+      sectionBlock("4. Required Tools or Systems", buildTools(data.category)) +
+      sectionBlock("5. Procedure", buildProcedureList(steps)) +
+      sectionBlock("6. Service and Quality Standards", buildQualityStandards(data.category, data.department)) +
+      sectionBlock("7. Exceptions and Escalation", buildEscalation(data.department)) +
+      sectionBlock("8. Health, Safety or Compliance Notes", buildSafetyNotes(data.category)) +
+      sectionBlock("9. Training Requirements", buildTraining(data.department, data.title)) +
+      sectionBlock("10. Related Documents", buildRelatedDocs()) +
+      sectionBlock("11. Approval and Revision History", buildRevisionTable(data)) +
+      '<div class="preview-document-footer">Generated by Hospitality Flow — AI SOP Generator.</div>' +
+      "</div>"
+    );
+  }
+
+  function bindStepControls() {
+    var list = document.getElementById("sopProcedureList");
+    if (!list) return;
+
+    list.querySelectorAll(".sop-step-up").forEach(function (btn) {
+      btn.onclick = function () {
+        var li = btn.closest("li");
+        var prev = li.previousElementSibling;
+        if (prev) { list.insertBefore(li, prev); scheduleAutoSave(); }
+      };
+    });
+
+    list.querySelectorAll(".sop-step-down").forEach(function (btn) {
+      btn.onclick = function () {
+        var li = btn.closest("li");
+        var next = li.nextElementSibling;
+        if (next) { list.insertBefore(next, li); scheduleAutoSave(); }
+      };
+    });
+
+    list.querySelectorAll(".sop-step-remove").forEach(function (btn) {
+      btn.onclick = function () {
+        var li = btn.closest("li");
+        var items = list.querySelectorAll("li");
+        if (items.length <= 1) { showToast("At least one procedure step is required."); return; }
+        li.remove();
+        scheduleAutoSave();
+      };
+    });
+
+    var addBtn = document.getElementById("addStepBtn");
+    if (addBtn) {
+      addBtn.onclick = function () {
+        var li = document.createElement("li");
+        li.innerHTML =
+          '<div class="sop-step-body"><textarea class="sop-step-text" rows="2"></textarea></div>' +
+          buildStepControlsHtml();
+        list.appendChild(li);
+        bindStepControls();
+        li.querySelector(".sop-step-text").focus();
+        scheduleAutoSave();
+      };
+    }
+  }
+
+  function syncTextareasFromDom(root) {
+    root.querySelectorAll("textarea.sop-step-text").forEach(function (ta) {
+      if (ta.textContent && !ta.value) ta.value = ta.textContent;
+    });
+  }
+
+  function initGeneratedDocument() {
+    var doc = getActiveDocument();
+    if (doc) syncTextareasFromDom(doc);
+    showToolbar();
+    bindStepControls();
+  }
+
+  function resetPreview() {
+    els.previewOutput.className = "preview-placeholder";
+    els.previewOutput.textContent = "Your generated SOP will appear here.";
+    hideToolbar();
+  }
+
+  function setLoading(loading) {
+    isGenerating = loading;
+    els.generateBtn.disabled = loading;
+    els.generateBtn.classList.toggle("loading", loading);
+    els.btnText.textContent = loading ? "Generating…" : defaultBtnLabel;
+  }
+
+  function clearValidation() {
+    [els.hotelName, els.department, els.sopTitle, els.purpose, els.requirements].forEach(function (f) {
+      f.classList.remove("is-invalid");
+    });
+    els.previewOutput.classList.remove("is-error");
+  }
+
+  function validateForm() {
+    clearValidation();
+    var missing = [];
+    if (!els.hotelName.value.trim()) { els.hotelName.classList.add("is-invalid"); missing.push("Hotel Name"); }
+    if (!els.department.value) { els.department.classList.add("is-invalid"); missing.push("Department"); }
+    if (!els.sopTitle.value.trim()) { els.sopTitle.classList.add("is-invalid"); missing.push("SOP Title"); }
+    if (!els.purpose.value.trim()) { els.purpose.classList.add("is-invalid"); missing.push("Purpose"); }
+    if (!els.requirements.value.trim()) { els.requirements.classList.add("is-invalid"); missing.push("AI Instructions"); }
+
+    if (missing.length) {
+      els.previewOutput.className = "preview-placeholder is-error";
+      els.previewOutput.textContent = "Please complete all required fields: " + missing.join(", ") + ".";
+      els.previewCard.scrollIntoView({ behavior: "smooth", block: "start" });
+      return false;
+    }
+    return true;
+  }
+
+  function getFormData() {
+    return {
+      hotel: els.hotelName.value.trim(),
+      department: els.department.value,
+      category: els.sopCategory.value || "Other",
+      title: els.sopTitle.value.trim(),
+      purpose: els.purpose.value.trim(),
+      requirements: els.requirements.value.trim(),
+      estimatedTime: els.estimatedTime.value.trim(),
+      priority: els.priority.value,
+      tags: els.tags.value.trim(),
+      version: els.sopVersion.value.trim(),
+      preparedBy: els.preparedBy.value.trim(),
+      approvedBy: els.approvedBy.value.trim(),
+      effectiveDate: els.effectiveDate.value || formatDateISO(),
+      reviewDate: els.reviewDate.value || addMonthsISO(els.effectiveDate.value, 12)
+    };
+  }
+
+  function handleGenerate() {
+    if (isGenerating) return;
+    if (!validateForm()) return;
+    setLoading(true);
+    var data = getFormData();
+    data.requirements = getEffectiveRequirements();
+    window.setTimeout(function () {
+      els.previewOutput.className = "";
+      els.previewOutput.innerHTML = buildSopHtml(data);
+      initGeneratedDocument();
+      setLoading(false);
+      scheduleAutoSave();
+      els.previewCard.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 500);
+  }
+
+  function persistDocumentFields(clone) {
+    clone.querySelectorAll("textarea.sop-step-text").forEach(function (ta, i) {
+      var orig = getActiveDocument().querySelectorAll("textarea.sop-step-text")[i];
+      if (orig) ta.textContent = orig.value;
+    });
+    clone.querySelectorAll("input.doc-input").forEach(function (input, i) {
+      var orig = getActiveDocument().querySelectorAll("input.doc-input")[i];
+      if (orig) { input.setAttribute("value", orig.value); input.value = orig.value; }
+    });
+  }
+
+  function buildDraftPayload() {
+    var doc = getActiveDocument();
+    var html = null;
+    if (doc) {
+      var clone = doc.cloneNode(true);
+      persistDocumentFields(clone);
+      html = clone.outerHTML;
+    }
+    return {
+      version: 1,
+      hotelName: els.hotelName.value.trim(),
+      department: els.department.value,
+      sopCategory: els.sopCategory.value,
+      sopTitle: els.sopTitle.value.trim(),
+      purpose: els.purpose.value,
+      requirements: els.requirements.value,
+      estimatedTime: els.estimatedTime.value.trim(),
+      priority: els.priority.value,
+      tags: els.tags.value.trim(),
+      sopVersion: els.sopVersion.value.trim(),
+      preparedBy: els.preparedBy.value.trim(),
+      approvedBy: els.approvedBy.value.trim(),
+      effectiveDate: els.effectiveDate.value,
+      reviewDate: els.reviewDate.value,
+      documentHtml: html,
+      savedAt: new Date().toISOString()
+    };
+  }
+
+  function writeDraft(manual) {
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(buildDraftPayload()));
+      setSaveStatus("saved", "Saved");
+      if (manual) showToast("Draft saved locally.");
+      return true;
+    } catch (e) {
+      if (manual) showToast("Could not save draft.");
+      return false;
+    }
+  }
+
+  function scheduleAutoSave() {
+    if (isRestoring) return;
+    setSaveStatus("saving", "Saving…");
+    window.clearTimeout(autoSaveTimer);
+    autoSaveTimer = window.setTimeout(function () { writeDraft(false); }, AUTO_SAVE_DELAY);
+  }
+
+  function readDraft() {
+    try {
+      var raw = localStorage.getItem(DRAFT_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) { return null; }
+  }
+
+  function restoreDraft() {
+    var draft = readDraft();
+    if (!draft) return;
+    isRestoring = true;
+    els.hotelName.value = draft.hotelName || "";
+    if (!els.hotelName.value.trim() && hotelProfile && hotelProfile.general && hotelProfile.general.hotelName) {
+      els.hotelName.value = hotelProfile.general.hotelName;
+    }
+    ensureDepartmentOption(draft.department || "");
+    els.sopCategory.value = draft.sopCategory || "";
+    els.sopTitle.value = draft.sopTitle || "";
+    els.purpose.value = draft.purpose || "";
+    els.requirements.value = draft.requirements || getRequirementsExample(draft.sopCategory || "Other");
+    els.estimatedTime.value = draft.estimatedTime || "";
+    els.priority.value = draft.priority || "";
+    els.tags.value = draft.tags || "";
+    els.sopVersion.value = draft.sopVersion || "";
+    els.preparedBy.value = draft.preparedBy || "";
+    els.approvedBy.value = draft.approvedBy || "";
+    els.effectiveDate.value = draft.effectiveDate || "";
+    els.reviewDate.value = draft.reviewDate || "";
+    if (draft.documentHtml) {
+      els.previewOutput.className = "";
+      els.previewOutput.innerHTML = draft.documentHtml;
+      initGeneratedDocument();
+    } else {
+      resetPreview();
+    }
+    setSaveStatus("restored", "Draft restored");
+    isRestoring = false;
+  }
+
+  function clearDraft() {
+    if (!window.confirm("Clear saved draft and reset the form?")) return;
+    window.clearTimeout(autoSaveTimer);
+    localStorage.removeItem(DRAFT_KEY);
+    els.hotelName.value = "";
+    if (hotelProfile && hotelProfile.general && hotelProfile.general.hotelName) {
+      els.hotelName.value = hotelProfile.general.hotelName;
+    }
+    els.department.value = "";
+    populateDepartmentSelect();
+    els.sopCategory.value = "";
+    els.sopTitle.value = "";
+    els.purpose.value = "";
+    applyRequirementsExample("Other");
+    els.estimatedTime.value = "";
+    els.priority.value = "";
+    els.tags.value = "";
+    els.sopVersion.value = "";
+    els.preparedBy.value = "";
+    els.approvedBy.value = "";
+    els.effectiveDate.value = formatDateISO();
+    els.reviewDate.value = addMonthsISO(els.effectiveDate.value, 12);
+    resetPreview();
+    setSaveStatus("", "");
+    showToast("Draft cleared.");
+  }
+
+  function generateNew() {
+    if (getActiveDocument() && !window.confirm("Start a new SOP? Unsaved preview edits will be lost unless saved.")) return;
+    resetPreview();
+    scheduleAutoSave();
+    document.querySelector(".form-card").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function cloneForExport(source) {
+    var clone = source.cloneNode(true);
+    var pairs = [
+      ["textarea.sop-step-text", "textarea"],
+      ["input.doc-input", "input"],
+      [".doc-cell", "cell"],
+      [".sop-editable", "editable"],
+      [".sop-section-title", "title"]
+    ];
+
+    pairs.forEach(function (pair) {
+      var sel = pair[0];
+      var type = pair[1];
+      var srcEls = source.querySelectorAll(sel);
+      var cloneEls = clone.querySelectorAll(sel);
+      cloneEls.forEach(function (el, i) {
+        var orig = srcEls[i];
+        if (!orig) return;
+        var span = document.createElement("span");
+        span.className = "doc-print-value";
+        if (type === "textarea" || type === "input") {
+          span.textContent = orig.value || " ";
+        } else {
+          span.textContent = orig.textContent || " ";
+        }
+        el.replaceWith(span);
+      });
+    });
+
+    clone.querySelectorAll(".sop-step-controls, .sop-add-step").forEach(function (el) { el.remove(); });
+    return clone;
+  }
+
+  function exportPdf() {
+    var doc = getActiveDocument();
+    if (!doc || typeof html2pdf === "undefined") {
+      showToast("Generate an SOP before exporting.");
+      return;
+    }
+    els.exportPdfBtn.disabled = true;
+    var exportNode = cloneForExport(doc);
+    exportNode.style.width = "190mm";
+    exportNode.style.maxWidth = "190mm";
+    exportNode.style.background = "#ffffff";
+    var wrapper = document.createElement("div");
+    wrapper.style.cssText = "position:fixed;left:-9999px;top:0;width:190mm";
+    wrapper.appendChild(exportNode);
+    document.body.appendChild(wrapper);
+    var hotel = els.hotelName.value.trim().replace(/[^\w\s-]/g, "").replace(/\s+/g, "-") || "Hotel";
+    var title = els.sopTitle.value.trim().replace(/[^\w\s-]/g, "").replace(/\s+/g, "-") || "SOP";
+    html2pdf().set({
+      margin: [10, 10, 10, 10],
+      filename: hotel + "-" + title + ".pdf",
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+      pagebreak: { mode: ["css", "legacy"], avoid: ".preview-document-section" }
+    }).from(exportNode).save().then(function () {
+      document.body.removeChild(wrapper);
+      els.exportPdfBtn.disabled = false;
+      showToast("PDF exported successfully.");
+    }).catch(function () {
+      document.body.removeChild(wrapper);
+      els.exportPdfBtn.disabled = false;
+      showToast("PDF export failed. Try Print instead.");
+    });
+  }
+
+  function printDoc() {
+    if (!getActiveDocument()) { showToast("Generate an SOP before printing."); return; }
+    window.print();
+  }
+
+  function handlePreviewInput(e) {
+    var t = e.target;
+    if (!t || !t.closest || !t.closest(".preview-document")) return;
+    if (t.matches(".sop-step-text, .doc-input, .doc-cell") || t.isContentEditable) {
+      scheduleAutoSave();
+    }
+  }
+
+  function initDefaults() {
+    if (!els.effectiveDate.value) els.effectiveDate.value = formatDateISO();
+    if (!els.reviewDate.value) els.reviewDate.value = addMonthsISO(els.effectiveDate.value, 12);
+  }
+
+  els.generateBtn.addEventListener("click", handleGenerate);
+  els.saveDraftBtn.addEventListener("click", function () { window.clearTimeout(autoSaveTimer); writeDraft(true); });
+  els.clearDraftBtn.addEventListener("click", clearDraft);
+  els.exportPdfBtn.addEventListener("click", exportPdf);
+  els.printDocBtn.addEventListener("click", printDoc);
+  els.generateNewBtn.addEventListener("click", generateNew);
+
+  els.previewOutput.addEventListener("input", handlePreviewInput);
+  els.previewOutput.addEventListener("change", handlePreviewInput);
+  els.previewOutput.addEventListener("blur", function (e) {
+    if (e.target && e.target.isContentEditable) scheduleAutoSave();
+  }, true);
+
+  els.sopCategory.addEventListener("change", function () {
+    applyRequirementsExample(els.sopCategory.value || "Other");
+    scheduleAutoSave();
+  });
+
+  [els.hotelName, els.department, els.sopTitle, els.purpose, els.requirements,
+    els.estimatedTime, els.priority, els.tags,
+    els.sopVersion, els.preparedBy, els.approvedBy, els.effectiveDate, els.reviewDate].forEach(function (field) {
+    field.addEventListener("input", function () {
+      field.classList.remove("is-invalid");
+      scheduleAutoSave();
+    });
+    field.addEventListener("change", function () {
+      field.classList.remove("is-invalid");
+      scheduleAutoSave();
+    });
+  });
+
+  els.effectiveDate.addEventListener("change", function () {
+    if (!els.reviewDate.value || els.reviewDate.value <= els.effectiveDate.value) {
+      els.reviewDate.value = addMonthsISO(els.effectiveDate.value, 12);
+    }
+  });
+
+  hotelProfile = loadHotelProfileFromStorage();
+  applyHotelProfileConfig(hotelProfile);
+  initDefaults();
+  applyHotelProfileToUI();
+  restoreDraft();
+})();
+
+</script>
+</body>
+</html>

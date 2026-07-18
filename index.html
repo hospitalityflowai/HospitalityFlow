@@ -1,10 +1,17 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-GB">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Hospitality Flow — AI-powered operations for independent and boutique hotels. Simplify daily operations with practical AI tools, templates, and automation.">
-  <title>Hospitality Flow — AI-Powered Operations for Independent Hotels</title>
+  <meta name="description" content="AI Shift Handover for independent and boutique hotels. Transform scattered shift notes into clear operational handovers, powered by the Hotel Brain.">
+  <title>Hospitality Flow | AI Shift Handover for Boutique Hotels</title>
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Hospitality Flow | AI Shift Handover for Boutique Hotels">
+  <meta property="og:description" content="AI Shift Handover for independent and boutique hotels. Transform scattered shift notes into clear operational handovers, powered by the Hotel Brain.">
+  <meta property="og:url" content="https://hospitalityflow.co.uk">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Hospitality Flow | AI Shift Handover for Boutique Hotels">
+  <meta name="twitter:description" content="AI Shift Handover for independent and boutique hotels. Transform scattered shift notes into clear operational handovers, powered by the Hotel Brain.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -19,12 +26,16 @@
       --blue-500: #4a8fc4;
       --blue-600: #3a7ab0;
       --white: #ffffff;
+      --warm-50: #f9f7f4;
+      --warm-100: #f0ebe4;
       --gray-50: #f8fafc;
       --gray-100: #eef2f7;
       --gray-200: #d8e0ea;
       --gray-300: #a8b4c4;
       --gray-400: #7a8799;
       --gray-500: #5a6578;
+      --red-400: #e07a7a;
+      --green-400: #6bc992;
       --radius: 12px;
       --radius-lg: 16px;
       --radius-xl: 20px;
@@ -34,6 +45,7 @@
       --transition: 0.25s ease;
       --max-width: 1200px;
       --header-height: 72px;
+      --section-padding: 48px;
     }
 
     *, *::before, *::after {
@@ -47,6 +59,15 @@
       scroll-padding-top: var(--header-height);
     }
 
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
     body {
       font-family: "Inter", system-ui, -apple-system, sans-serif;
       background: var(--navy-950);
@@ -56,19 +77,9 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    a {
-      color: inherit;
-      text-decoration: none;
-    }
-
-    img {
-      max-width: 100%;
-      display: block;
-    }
-
-    ul {
-      list-style: none;
-    }
+    a { color: inherit; text-decoration: none; }
+    img { max-width: 100%; display: block; height: auto; }
+    ul { list-style: none; }
 
     button {
       font-family: inherit;
@@ -92,11 +103,10 @@
       right: 0;
       z-index: 1000;
       height: var(--header-height);
-      background: rgba(7, 14, 26, 0.85);
+      background: rgba(7, 14, 26, 0.88);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-      transition: background var(--transition);
     }
 
     .header-inner {
@@ -113,9 +123,7 @@
       color: var(--white);
     }
 
-    .logo span {
-      color: var(--blue-400);
-    }
+    .logo span { color: var(--blue-400); }
 
     .nav-desktop {
       display: flex;
@@ -142,26 +150,33 @@
       justify-content: center;
       gap: 8px;
       padding: 12px 24px;
+      min-height: 44px;
       font-size: 0.9rem;
       font-weight: 600;
       border-radius: var(--radius);
-      transition: all var(--transition);
+      transition: background var(--transition), border-color var(--transition), box-shadow var(--transition), transform var(--transition), opacity var(--transition);
       white-space: nowrap;
     }
 
     .btn-primary {
       background: var(--blue-500);
       color: var(--white);
-      box-shadow: 0 4px 16px rgba(74, 143, 196, 0.3);
+      box-shadow: 0 4px 16px rgba(74, 143, 196, 0.28);
     }
 
     .btn-primary:hover,
     .btn-primary:focus-visible {
       background: var(--blue-600);
       transform: translateY(-1px);
-      box-shadow: 0 6px 20px rgba(74, 143, 196, 0.4);
+      box-shadow: 0 6px 20px rgba(74, 143, 196, 0.36);
       outline: 2px solid var(--blue-400);
       outline-offset: 2px;
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.65;
+      cursor: wait;
+      transform: none;
     }
 
     .btn-secondary {
@@ -178,15 +193,27 @@
       outline-offset: 2px;
     }
 
+    .btn-ghost {
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--gray-200);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 10px 18px;
+      font-size: 0.85rem;
+    }
+
+    .btn-ghost:hover,
+    .btn-ghost:focus-visible {
+      background: rgba(255, 255, 255, 0.08);
+      outline: 2px solid var(--blue-400);
+      outline-offset: 2px;
+    }
+
     .btn-lg {
       padding: 14px 28px;
       font-size: 0.95rem;
+      min-height: 48px;
     }
-
-    .btn-nav {
-      padding: 10px 20px;
-      font-size: 0.875rem;
-    }
+    .btn-nav { padding: 10px 20px; font-size: 0.875rem; }
 
     .menu-toggle {
       display: none;
@@ -194,6 +221,11 @@
       gap: 5px;
       padding: 8px;
       border-radius: 8px;
+    }
+
+    .menu-toggle:focus-visible {
+      outline: 2px solid var(--blue-400);
+      outline-offset: 2px;
     }
 
     .menu-toggle span {
@@ -205,17 +237,9 @@
       transition: all var(--transition);
     }
 
-    .menu-toggle[aria-expanded="true"] span:nth-child(1) {
-      transform: translateY(7px) rotate(45deg);
-    }
-
-    .menu-toggle[aria-expanded="true"] span:nth-child(2) {
-      opacity: 0;
-    }
-
-    .menu-toggle[aria-expanded="true"] span:nth-child(3) {
-      transform: translateY(-7px) rotate(-45deg);
-    }
+    .menu-toggle[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .menu-toggle[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+    .menu-toggle[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
     .nav-mobile {
       display: none;
@@ -232,9 +256,7 @@
       overflow-y: auto;
     }
 
-    .nav-mobile.open {
-      display: flex;
-    }
+    .nav-mobile.open { display: flex; }
 
     .nav-mobile a {
       display: block;
@@ -253,15 +275,10 @@
       outline: none;
     }
 
-    .nav-mobile .btn {
-      margin-top: 16px;
-      width: 100%;
-    }
+    .nav-mobile .btn { margin-top: 16px; width: 100%; }
 
     /* ── Sections ── */
-    section {
-      padding: 96px 0;
-    }
+    section { padding: var(--section-padding) 0; }
 
     .section-label {
       display: inline-block;
@@ -274,433 +291,26 @@
     }
 
     .section-heading {
-      font-size: clamp(1.75rem, 4vw, 2.5rem);
+      font-size: clamp(1.5rem, 3.2vw, 2rem);
       font-weight: 700;
       letter-spacing: -0.03em;
-      line-height: 1.2;
-      margin-bottom: 16px;
+      line-height: 1.25;
+      margin-bottom: 12px;
     }
 
     .section-text {
-      font-size: 1.05rem;
+      font-size: 0.98rem;
       color: var(--gray-300);
-      max-width: 640px;
-      line-height: 1.7;
+      max-width: 560px;
+      line-height: 1.65;
     }
 
     .section-header {
       text-align: center;
-      margin-bottom: 56px;
-    }
-
-    .section-header .section-text {
-      margin: 0 auto;
-    }
-
-    /* ── Hero ── */
-    .hero {
-      padding-top: calc(var(--header-height) + 80px);
-      padding-bottom: 72px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .hero::before {
-      content: "";
-      position: absolute;
-      top: -200px;
-      right: -200px;
-      width: 600px;
-      height: 600px;
-      background: radial-gradient(circle, rgba(74, 143, 196, 0.08) 0%, transparent 70%);
-      pointer-events: none;
-    }
-
-    .hero-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 64px;
-      align-items: center;
-    }
-
-    .hero-content {
-      animation: fadeUp 0.8s ease forwards;
-    }
-
-    .hero-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 6px 14px;
-      background: rgba(74, 143, 196, 0.12);
-      border: 1px solid rgba(74, 143, 196, 0.25);
-      border-radius: 100px;
-      font-size: 0.8rem;
-      font-weight: 500;
-      color: var(--blue-400);
       margin-bottom: 24px;
     }
 
-    .hero-badge::before {
-      content: "";
-      width: 6px;
-      height: 6px;
-      background: var(--blue-400);
-      border-radius: 50%;
-    }
-
-    .hero h1 {
-      font-size: clamp(2.25rem, 5.5vw, 3.35rem);
-      font-weight: 700;
-      letter-spacing: -0.03em;
-      line-height: 1.12;
-      margin-bottom: 22px;
-      max-width: 420px;
-    }
-
-    .hero-desc {
-      font-size: 1.1rem;
-      color: var(--gray-300);
-      line-height: 1.7;
-      margin-bottom: 16px;
-      max-width: 520px;
-    }
-
-    .hero-trust {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 0.9rem;
-      font-weight: 500;
-      color: var(--gray-300);
-      margin-bottom: 28px;
-      padding: 8px 0;
-    }
-
-    .hero-trust::before {
-      content: "";
-      width: 20px;
-      height: 1px;
-      background: var(--blue-400);
-      flex-shrink: 0;
-    }
-
-    .hero-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-    }
-
-    .hero-visual {
-      position: relative;
-      animation: fadeUp 0.8s ease 0.2s forwards;
-      opacity: 0;
-    }
-
-    .dashboard-preview {
-      background: var(--navy-800);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: var(--radius-xl);
-      padding: 24px;
-      box-shadow: var(--shadow-lg);
-    }
-
-    .dashboard-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 20px;
-      padding-bottom: 16px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    }
-
-    .dashboard-title {
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--gray-200);
-    }
-
-    .dashboard-status {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.75rem;
-      color: var(--blue-400);
-    }
-
-    .dashboard-status::before {
-      content: "";
-      width: 6px;
-      height: 6px;
-      background: var(--blue-400);
-      border-radius: 50%;
-      animation: pulse 2s infinite;
-    }
-
-    .dashboard-cards {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-bottom: 16px;
-    }
-
-    .dash-card {
-      background: var(--navy-900);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: var(--radius);
-      padding: 16px;
-    }
-
-    .dash-card-label {
-      font-size: 0.7rem;
-      color: var(--gray-400);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: 6px;
-    }
-
-    .dash-card-value {
-      font-size: 1.1rem;
-      font-weight: 600;
-    }
-
-    .dash-card-value.accent {
-      color: var(--blue-400);
-    }
-
-    .checklist-preview {
-      background: var(--navy-900);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: var(--radius);
-      padding: 16px;
-    }
-
-    .checklist-title {
-      font-size: 0.8rem;
-      font-weight: 600;
-      margin-bottom: 12px;
-      color: var(--gray-200);
-    }
-
-    .checklist-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 8px 0;
-      font-size: 0.8rem;
-      color: var(--gray-300);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-    }
-
-    .checklist-item:last-child {
-      border-bottom: none;
-    }
-
-    .check-box {
-      width: 16px;
-      height: 16px;
-      border: 1.5px solid var(--navy-600);
-      border-radius: 4px;
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .check-box.done {
-      background: var(--blue-500);
-      border-color: var(--blue-500);
-    }
-
-    .check-box.done::after {
-      content: "✓";
-      font-size: 10px;
-      color: white;
-    }
-
-    .float-note {
-      position: absolute;
-      background: var(--navy-700);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: var(--radius);
-      padding: 12px 16px;
-      font-size: 0.75rem;
-      box-shadow: var(--shadow-md);
-      animation: float 4s ease-in-out infinite;
-    }
-
-    .float-note.top-right {
-      top: -16px;
-      right: -16px;
-    }
-
-    .float-note.bottom-left {
-      bottom: -12px;
-      left: -12px;
-      animation-delay: 1s;
-    }
-
-    .float-note strong {
-      display: block;
-      color: var(--white);
-      margin-bottom: 2px;
-    }
-
-    .float-note span {
-      color: var(--gray-400);
-    }
-
-    /* ── Statement Banner ── */
-    .statement-banner {
-      padding: 24px 0 40px;
-      background: var(--navy-950);
-    }
-
-    .statement-banner__inner {
-      max-width: 820px;
-      margin: 0 auto;
-      text-align: center;
-      padding: 28px 36px;
-      background: linear-gradient(135deg, rgba(18, 34, 64, 0.9) 0%, rgba(12, 24, 41, 0.95) 100%);
-      border: 1px solid rgba(74, 143, 196, 0.22);
-      border-radius: var(--radius-lg);
-      font-size: clamp(1rem, 2.2vw, 1.2rem);
-      font-weight: 500;
-      color: var(--gray-200);
-      line-height: 1.65;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-    }
-
-    .statement-banner__inner strong {
-      color: var(--white);
-      font-weight: 600;
-    }
-
-    /* ── Why Hospitality Flow ── */
-    .why-hf {
-      background: var(--navy-900);
-      padding-top: 72px;
-    }
-
-    .why-hf-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 20px;
-    }
-
-    .why-card {
-      background: var(--navy-800);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: var(--radius-lg);
-      padding: 32px 28px;
-      transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
-    }
-
-    .why-card:hover {
-      transform: translateY(-4px);
-      border-color: rgba(74, 143, 196, 0.22);
-      box-shadow: var(--shadow-md);
-    }
-
-    .why-card-icon {
-      width: 44px;
-      height: 44px;
-      background: rgba(74, 143, 196, 0.12);
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 18px;
-      font-size: 1.15rem;
-    }
-
-    .why-card h3 {
-      font-size: 1.05rem;
-      font-weight: 600;
-      margin-bottom: 10px;
-      line-height: 1.35;
-    }
-
-    .why-card p {
-      font-size: 0.875rem;
-      color: var(--gray-400);
-      line-height: 1.65;
-    }
-
-    /* ── Problems ── */
-    .problems {
-      background: var(--navy-900);
-    }
-
-    .problems-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 20px;
-    }
-
-    .problem-card {
-      background: var(--navy-800);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: var(--radius-lg);
-      padding: 28px 24px;
-      transition: transform var(--transition), border-color var(--transition);
-    }
-
-    .problem-card:hover {
-      transform: translateY(-4px);
-      border-color: rgba(74, 143, 196, 0.2);
-    }
-
-    .problem-icon {
-      width: 44px;
-      height: 44px;
-      background: rgba(74, 143, 196, 0.12);
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 16px;
-      font-size: 1.2rem;
-    }
-
-    .problem-card h3 {
-      font-size: 1rem;
-      font-weight: 600;
-      margin-bottom: 8px;
-      line-height: 1.4;
-    }
-
-    .problem-card p {
-      font-size: 0.875rem;
-      color: var(--gray-400);
-      line-height: 1.6;
-    }
-
-    /* ── Platform / Features ── */
-    .features-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 20px;
-    }
-
-    .feature-card {
-      background: var(--navy-800);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: var(--radius-lg);
-      padding: 28px 24px;
-      position: relative;
-      transition: transform var(--transition), border-color var(--transition);
-    }
-
-    .feature-card:hover {
-      transform: translateY(-4px);
-      border-color: rgba(74, 143, 196, 0.2);
-    }
-
-    .feature-card.featured {
-      border-color: rgba(74, 143, 196, 0.3);
-      background: linear-gradient(135deg, var(--navy-800) 0%, rgba(26, 48, 85, 0.8) 100%);
-    }
+    .section-header .section-text { margin: 0 auto; }
 
     .badge {
       display: inline-block;
@@ -712,395 +322,693 @@
       border-radius: 100px;
     }
 
-    .badge-soon {
-      background: rgba(255, 255, 255, 0.08);
-      color: var(--gray-300);
+    .badge-preview {
+      background: rgba(240, 235, 228, 0.1);
+      color: var(--warm-100);
+      border: 1px solid rgba(240, 235, 228, 0.15);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
 
-    .badge-dev {
-      background: rgba(74, 143, 196, 0.15);
-      color: var(--blue-400);
+    /* ── Hero ── */
+    .hero {
+      padding-top: calc(var(--header-height) + 72px);
+      padding-bottom: 56px;
+      position: relative;
     }
 
-    .badge-live {
-      background: rgba(93, 206, 138, 0.15);
-      color: #5dce8a;
+    .hero::before {
+      content: "";
+      position: absolute;
+      top: -120px;
+      right: -120px;
+      width: 480px;
+      height: 480px;
+      background: radial-gradient(circle, rgba(74, 143, 196, 0.06) 0%, transparent 70%);
+      pointer-events: none;
     }
 
-    .badge-first {
-      background: rgba(74, 143, 196, 0.2);
-      color: var(--blue-400);
-    }
-
-    .feature-card h3 {
-      font-size: 1.05rem;
-      font-weight: 600;
-      margin: 12px 0 8px;
-    }
-
-    .feature-card p {
-      font-size: 0.875rem;
-      color: var(--gray-400);
-      line-height: 1.6;
-    }
-
-    /* ── Handover Demo ── */
-    .handover {
-      background: var(--navy-900);
-    }
-
-    .handover-wrapper {
+    .hero-grid {
       display: grid;
-      grid-template-columns: 1fr auto 1fr;
-      gap: 24px;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 72px;
       align-items: center;
     }
 
-    .handover-panel {
+    .hero-content { animation: fadeUp 0.8s ease forwards; }
+
+    .hero-eyebrow {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--blue-400);
+      line-height: 1.4;
+      margin-bottom: 14px;
+      max-width: 520px;
+      letter-spacing: -0.01em;
+    }
+
+    .hero h1 {
+      font-size: clamp(2rem, 4.8vw, 2.85rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.12;
+      margin-bottom: 10px;
+      max-width: 540px;
+    }
+
+    .hero-headline-sub {
+      display: block;
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--gray-300);
+      letter-spacing: -0.02em;
+      margin-bottom: 14px;
+      max-width: 520px;
+    }
+
+    .hero-subhead {
+      font-size: 1rem;
+      color: var(--gray-300);
+      line-height: 1.6;
+      margin-bottom: 0;
+      max-width: 520px;
+    }
+
+    .hero-audience {
+      font-size: 0.9rem;
+      color: var(--gray-400);
+      line-height: 1.5;
+      margin-top: 14px;
+      margin-bottom: 0;
+      max-width: 520px;
+    }
+
+    .hero-statement {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--gray-100);
+      line-height: 1.5;
+      margin-top: 14px;
+      margin-bottom: 28px;
+      max-width: 520px;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .hero-visual {
+      animation: fadeUp 0.8s ease 0.15s forwards;
+      opacity: 0;
+    }
+
+    .hero-preview {
       background: var(--navy-800);
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: var(--radius-lg);
-      overflow: hidden;
+      padding: 24px;
+      box-shadow: var(--shadow-md);
     }
 
-    .handover-panel-header {
-      padding: 16px 20px;
-      background: rgba(0, 0, 0, 0.2);
+    .hero-shift-label {
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--gray-500);
+      margin-bottom: 12px;
+      text-align: center;
+    }
+
+    .hero-preview-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--gray-400);
+      margin-bottom: 14px;
+    }
+
+    .hero-preview-section {
+      padding: 12px 14px;
+      background: var(--navy-900);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: var(--radius);
+      margin-bottom: 8px;
+    }
+
+    .hero-preview-section:last-child { margin-bottom: 0; }
+
+    .hero-preview-section strong {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--blue-400);
+      margin-bottom: 6px;
+    }
+
+    .hero-preview-section span {
+      font-size: 0.82rem;
+      color: var(--gray-300);
+      line-height: 1.55;
+    }
+
+    /* ── Interactive Demo ── */
+    .demo {
+      background: var(--navy-950);
+      padding: 48px 0 64px;
+    }
+
+    .demo-flow-label {
+      text-align: center;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--gray-400);
+      margin-bottom: 20px;
+      letter-spacing: 0.02em;
+    }
+
+    .demo-flow-label span { color: var(--blue-400); }
+
+    .demo-wrapper {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 16px;
+      align-items: stretch;
+      max-width: var(--max-width);
+      margin: 0 auto;
+    }
+
+    .demo-panel {
+      background: var(--navy-800);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-lg);
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      min-width: 0;
+      height: 100%;
+    }
+
+    .demo-panel-header {
+      padding: 14px 20px;
+      min-height: 48px;
+      background: rgba(0, 0, 0, 0.22);
       border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       font-weight: 600;
       color: var(--gray-300);
       display: flex;
       align-items: center;
       gap: 8px;
+      flex-shrink: 0;
     }
 
-    .handover-panel-header .dot {
+    .demo-panel-header .dot {
       width: 8px;
       height: 8px;
       border-radius: 50%;
     }
 
-    .dot-red { background: #e85d5d; }
-    .dot-yellow { background: #e8b84d; }
-    .dot-green { background: #5dce8a; }
+    .dot-red { background: #e07a7a; }
+    .dot-yellow { background: #d4b06a; }
+    .dot-green { background: var(--green-400); }
 
-    .handover-panel-body {
-      padding: 24px;
-    }
-
-    .handover-input-item {
+    .demo-panel-body {
+      padding: 22px 22px 26px;
       display: flex;
-      align-items: flex-start;
-      gap: 12px;
-      padding: 10px 0;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    .demo-textarea {
+      width: 100%;
+      min-height: 180px;
+      padding: 16px;
+      background: var(--navy-900);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius);
+      color: var(--gray-200);
+      font-family: inherit;
       font-size: 0.875rem;
+      line-height: 1.65;
+      resize: vertical;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+
+    .demo-textarea:focus {
+      outline: none;
+      border-color: var(--blue-500);
+      box-shadow: 0 0 0 3px rgba(74, 143, 196, 0.15);
+    }
+
+    .demo-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: auto;
+      padding-top: 16px;
+    }
+
+    .demo-arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--blue-400);
+      padding: 4px;
+      align-self: center;
+    }
+
+    .demo-arrow svg {
+      width: 36px;
+      height: 36px;
+    }
+
+    .demo-output {
+      min-height: 180px;
+      flex: 1;
+      font-size: 0.875rem;
+      line-height: 1.65;
+    }
+
+    .demo-panel-body--output {
+      min-height: 280px;
+    }
+
+    .demo-output-placeholder {
+      color: var(--gray-500);
+      font-size: 0.875rem;
+      line-height: 1.65;
+      padding: 8px 0;
+    }
+
+    .demo-output-section {
+      padding: 12px 14px;
+      background: var(--navy-900);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: var(--radius);
+      margin-bottom: 8px;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.35s ease, transform 0.35s ease;
+    }
+
+    .demo-output-section.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .demo-output-section:last-child { margin-bottom: 0; }
+
+    .demo-output-section h4 {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--blue-400);
+      margin-bottom: 6px;
+    }
+
+    .demo-output-section .handover-subtitle {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--gray-200);
+      margin-bottom: 6px;
+      line-height: 1.45;
+    }
+
+    .demo-output-section .handover-room {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--gray-100);
+      margin-top: 4px;
+      margin-bottom: 2px;
+      line-height: 1.45;
+    }
+
+    .demo-output-section .handover-room:first-of-type {
+      margin-top: 0;
+    }
+
+    .demo-output-section p {
       color: var(--gray-300);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      font-size: 0.82rem;
+      line-height: 1.55;
+      margin-bottom: 2px;
     }
 
-    .handover-input-item:last-child {
-      border-bottom: none;
+    .demo-output-section p:last-child {
+      margin-bottom: 0;
     }
 
-    .handover-input-item::before {
+    .demo-loading {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      color: var(--gray-400);
+      font-size: 0.85rem;
+      padding: 12px 0;
+    }
+
+    .demo-loading.active { display: flex; }
+
+    .demo-spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(91, 159, 212, 0.25);
+      border-top-color: var(--blue-400);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .demo-status {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .demo-footnote {
+      text-align: center;
+      font-size: 0.82rem;
+      color: var(--gray-500);
+      line-height: 1.65;
+      max-width: 560px;
+      margin: 32px auto 0;
+    }
+
+    /* ── Problem statement ── */
+    .problem {
+      display: none;
+    }
+
+    /* ── Hotel Brain ── */
+    .hotel-brain {
+      background: var(--navy-900);
+      padding: 48px 0;
+    }
+
+    .brain-block {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 36px 40px;
+      background: rgba(18, 34, 64, 0.4);
+      border: 1px solid rgba(74, 143, 196, 0.12);
+      border-radius: var(--radius-lg);
+    }
+
+    .brain-grid {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 48px;
+      align-items: center;
+    }
+
+    .brain-heading {
+      font-size: clamp(1.05rem, 2vw, 1.25rem);
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--white);
+      margin-bottom: 16px;
+      line-height: 1.35;
+    }
+
+    .brain-lead {
+      font-size: 0.95rem;
+      color: var(--gray-300);
+      line-height: 1.65;
+      margin-bottom: 0;
+      max-width: 640px;
+    }
+
+    .brain-roadmap {
+      padding-top: 24px;
+      margin-top: 24px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .brain-roadmap-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .brain-roadmap-list li {
+      font-size: 0.84rem;
+      color: var(--gray-500);
+      line-height: 1.5;
+      padding-left: 18px;
+      position: relative;
+      text-align: left;
+    }
+
+    .brain-roadmap-list li::before {
+      position: absolute;
+      left: 0;
+      top: 0;
+      font-size: 0.82rem;
+      line-height: 1.5;
+    }
+
+    .brain-roadmap-list li.is-available {
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--white);
+      padding: 12px 16px 12px 36px;
+      margin-bottom: 4px;
+      background: rgba(107, 201, 146, 0.08);
+      border: 1px solid rgba(107, 201, 146, 0.22);
+      border-radius: var(--radius-lg);
+    }
+
+    .brain-roadmap-list li.is-available::before {
+      content: "✓";
+      left: 14px;
+      top: 12px;
+      color: var(--green-400);
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    .brain-roadmap-list li.is-soon::before {
       content: "•";
       color: var(--gray-500);
     }
 
-    .handover-output {
-      font-size: 0.875rem;
-      line-height: 1.8;
-      color: var(--gray-200);
-    }
-
-    .handover-output h4 {
-      font-size: 0.95rem;
-      font-weight: 600;
-      color: var(--white);
-      margin-bottom: 16px;
-      padding-bottom: 12px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    }
-
-    .handover-output section {
-      padding: 0;
-      margin-bottom: 16px;
-    }
-
-    .handover-output section:last-child {
-      margin-bottom: 0;
-    }
-
-    .handover-output .section-name {
-      font-size: 0.75rem;
-      font-weight: 600;
+    .brain-roadmap-soon-label {
+      font-size: 0.68rem;
+      font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--blue-400);
-      margin-bottom: 8px;
+      letter-spacing: 0.07em;
+      color: var(--gray-500);
+      margin: 14px 0 10px;
     }
 
-    .handover-output ul {
-      padding-left: 16px;
+    .brain-roadmap-note {
+      font-size: 0.78rem;
+      color: var(--gray-500);
+      line-height: 1.55;
+      margin-top: 16px;
     }
 
-    .handover-output li {
-      list-style: disc;
-      color: var(--gray-300);
-      margin-bottom: 4px;
+    .brain-demo-link {
+      display: inline-flex;
+      margin-top: 24px;
     }
 
-    .handover-arrow {
+    .brain-flow {
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 16px 0;
+      padding: 28px 32px;
+      min-width: 210px;
+      background: rgba(7, 14, 26, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: var(--radius-lg);
     }
 
-    .handover-arrow svg {
-      color: var(--blue-400);
-    }
-
-    /* ── Founding Member ── */
-    .founding {
-      position: relative;
-      overflow: hidden;
-      padding: 104px 0;
-    }
-
-    .founding::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background:
-        radial-gradient(ellipse 70% 60% at 50% 0%, rgba(74, 143, 196, 0.1) 0%, transparent 65%),
-        linear-gradient(180deg, var(--navy-900) 0%, var(--navy-950) 100%);
-      z-index: 0;
-    }
-
-    .founding-card {
-      position: relative;
-      z-index: 1;
-      background: linear-gradient(160deg, var(--navy-800) 0%, rgba(18, 34, 64, 0.98) 100%);
-      border: 1px solid rgba(74, 143, 196, 0.38);
-      border-radius: var(--radius-xl);
-      padding: 64px 56px;
-      box-shadow:
-        0 0 0 1px rgba(74, 143, 196, 0.08),
-        0 0 80px rgba(74, 143, 196, 0.14),
-        var(--shadow-lg);
-      max-width: 720px;
-      margin: 0 auto;
+    .brain-flow-step {
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--gray-500);
       text-align: center;
+      line-height: 1.4;
+      padding: 6px 12px;
+      white-space: nowrap;
     }
 
-    .founding-label {
-      display: inline-block;
-      font-size: 0.7rem;
-      font-weight: 700;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
+    .brain-flow-step.is-core {
       color: var(--blue-400);
-      padding: 6px 14px;
-      background: rgba(74, 143, 196, 0.12);
-      border: 1px solid rgba(74, 143, 196, 0.28);
-      border-radius: 100px;
-      margin-bottom: 28px;
+      font-weight: 600;
     }
 
-    .founding-price-block {
-      margin-bottom: 12px;
+    .brain-flow-step.is-active {
+      color: var(--gray-100);
+      font-weight: 600;
     }
 
-    .founding-price {
-      font-size: clamp(2.75rem, 7vw, 4rem);
-      font-weight: 700;
-      letter-spacing: -0.03em;
-      color: var(--white);
-      line-height: 1.05;
+    .brain-flow-arrow {
+      font-size: 0.85rem;
+      color: var(--gray-500);
+      line-height: 1;
+      padding: 2px 0;
     }
 
-    .founding-price-life {
-      font-size: 1.15rem;
-      font-weight: 500;
-      color: var(--gray-300);
-      margin-top: 6px;
+    /* ── Waitlist ── */
+    .waitlist {
+      background: var(--navy-950);
+      border-top: 1px solid rgba(255, 255, 255, 0.04);
+      padding: 48px 0 64px;
     }
 
-    .founding-availability {
+    .waitlist-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px 56px;
+      align-items: start;
+      max-width: var(--max-width);
+      margin: 0 auto;
+    }
+
+    .waitlist-info {
+      text-align: left;
+    }
+
+    .waitlist-info .section-heading {
+      text-align: left;
+      margin-bottom: 16px;
+    }
+
+    .waitlist-lead,
+    .waitlist-trust-text,
+    .waitlist-review-note {
       font-size: 0.95rem;
       color: var(--gray-300);
-      margin-bottom: 36px;
-      font-weight: 500;
+      line-height: 1.65;
     }
 
-    .founding-benefits {
-      text-align: left;
-      max-width: 560px;
-      margin: 0 auto 32px;
+    .waitlist-lead {
+      margin-bottom: 20px;
     }
 
-    .founding-benefits li {
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-      padding: 10px 0;
-      font-size: 0.9rem;
-      color: var(--gray-200);
+    .waitlist-offer {
+      padding: 20px 22px;
+      margin-bottom: 20px;
+      background: rgba(74, 143, 196, 0.08);
+      border: 1px solid rgba(74, 143, 196, 0.18);
+      border-radius: var(--radius-lg);
     }
 
-    .founding-benefits li::before {
-      content: "✓";
-      flex-shrink: 0;
-      width: 22px;
-      height: 22px;
-      background: rgba(74, 143, 196, 0.15);
-      color: var(--blue-400);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.7rem;
+    .waitlist-offer-label {
+      font-size: 0.68rem;
       font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--blue-400);
+      margin-bottom: 6px;
     }
 
-    .founding-disclaimer {
-      font-size: 0.8rem;
-      color: var(--gray-400);
-      max-width: 560px;
-      margin: 0 auto 24px;
-      padding: 16px;
-      background: rgba(0, 0, 0, 0.2);
-      border-radius: var(--radius);
-      line-height: 1.6;
-    }
-
-    .founding-waitlist-note {
-      font-size: 0.875rem;
-      color: var(--gray-400);
-      max-width: 480px;
-      margin: 18px auto 0;
+    .waitlist-offer-text {
+      font-size: 0.92rem;
+      color: var(--gray-200);
       line-height: 1.55;
     }
 
-    /* ── How It Works ── */
-    .how-it-works {
-      background: var(--navy-900);
+    .waitlist-offer-note {
+      font-size: 0.82rem;
+      color: var(--gray-400);
+      line-height: 1.5;
+      margin-top: 10px;
     }
 
-    .steps-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 32px;
-    }
-
-    .step-card {
-      text-align: center;
-      padding: 32px 24px;
-    }
-
-    .step-number {
-      width: 48px;
-      height: 48px;
-      background: rgba(74, 143, 196, 0.15);
-      color: var(--blue-400);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.1rem;
-      font-weight: 700;
-      margin: 0 auto 20px;
-    }
-
-    .step-card h3 {
-      font-size: 1.1rem;
-      font-weight: 600;
+    .waitlist-note {
+      font-size: 0.88rem;
+      color: var(--gray-400);
+      line-height: 1.55;
       margin-bottom: 10px;
     }
 
-    .step-card p {
-      font-size: 0.9rem;
-      color: var(--gray-400);
-      line-height: 1.6;
-    }
-
-    /* ── Audience ── */
-    .audience-grid {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 16px;
-      margin-bottom: 40px;
-    }
-
-    .audience-card {
-      background: var(--navy-800);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: var(--radius-lg);
-      padding: 28px 20px;
-      text-align: center;
-      transition: transform var(--transition), border-color var(--transition);
-    }
-
-    .audience-card:hover {
-      transform: translateY(-4px);
-      border-color: rgba(74, 143, 196, 0.2);
-    }
-
-    .audience-icon {
-      font-size: 1.75rem;
-      margin-bottom: 12px;
-    }
-
-    .audience-card h3 {
-      font-size: 0.9rem;
-      font-weight: 600;
-      line-height: 1.4;
-    }
-
-    .audience-statement {
-      text-align: center;
-      font-size: 0.95rem;
-      color: var(--gray-400);
-      max-width: 680px;
-      margin: 0 auto;
-      line-height: 1.7;
-    }
-
-    /* ── Founder ── */
-    .founder {
-      background: var(--navy-900);
-    }
-
-    .founder-content {
-      max-width: 720px;
-      margin: 0 auto;
-      text-align: center;
-    }
-
-    .founder-content p {
-      font-size: 1.05rem;
-      color: var(--gray-300);
-      line-height: 1.8;
+    .waitlist-includes {
       margin-bottom: 16px;
     }
 
-    .founder-content p:last-child {
+    .waitlist-includes-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--gray-400);
+      margin-bottom: 12px;
+    }
+
+    .waitlist-includes-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .waitlist-includes-list li {
+      font-size: 0.88rem;
+      color: var(--gray-300);
+      line-height: 1.5;
+      padding-left: 22px;
+      position: relative;
+    }
+
+    .waitlist-includes-list li::before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      top: 0;
+      color: var(--green-400);
+      font-weight: 600;
+      font-size: 0.82rem;
+    }
+
+    .waitlist-trust {
+      padding-top: 20px;
       margin-bottom: 0;
-      color: var(--gray-200);
-      font-weight: 500;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
     }
 
-    /* ── Waitlist Form ── */
-    .waitlist-form-wrapper {
-      max-width: 560px;
-      margin: 0 auto;
+    .waitlist-trust-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--gray-400);
+      margin-bottom: 12px;
     }
 
-    .form-group {
-      margin-bottom: 20px;
+    .waitlist-trust-text + .waitlist-trust-text {
+      margin-top: 10px;
     }
+
+    .waitlist-review-note {
+      margin-top: 10px;
+    }
+
+    .waitlist-form-card {
+      background: rgba(18, 34, 64, 0.55);
+      border: 1px solid rgba(74, 143, 196, 0.15);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+    }
+
+    .form-group { margin-bottom: 18px; }
 
     .form-group label {
       display: block;
@@ -1114,7 +1022,8 @@
     .form-group select,
     .form-group textarea {
       width: 100%;
-      padding: 14px 16px;
+      height: 48px;
+      padding: 0 16px;
       background: var(--navy-800);
       border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: var(--radius);
@@ -1125,9 +1034,7 @@
     }
 
     .form-group input::placeholder,
-    .form-group textarea::placeholder {
-      color: var(--gray-500);
-    }
+    .form-group textarea::placeholder { color: var(--gray-500); }
 
     .form-group input:focus,
     .form-group select:focus,
@@ -1135,6 +1042,12 @@
       outline: none;
       border-color: var(--blue-500);
       box-shadow: 0 0 0 3px rgba(74, 143, 196, 0.15);
+    }
+
+    .form-group input.is-invalid,
+    .form-group select.is-invalid {
+      border-color: var(--red-400);
+      box-shadow: 0 0 0 3px rgba(224, 122, 122, 0.12);
     }
 
     .form-group select {
@@ -1150,9 +1063,21 @@
       color: var(--white);
     }
 
+    .form-group input[type="number"] {
+      -moz-appearance: textfield;
+    }
+
+    .form-group input[type="number"]::-webkit-outer-spin-button,
+    .form-group input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
     .form-group textarea {
-      resize: vertical;
+      height: auto;
       min-height: 100px;
+      padding: 14px 16px;
+      resize: vertical;
     }
 
     .form-group.optional label::after {
@@ -1161,17 +1086,46 @@
       color: var(--gray-500);
     }
 
-    .form-submit {
-      width: 100%;
-      margin-top: 8px;
+    .field-error {
+      display: none;
+      margin-top: 6px;
+      font-size: 0.8rem;
+      color: var(--red-400);
     }
+
+    .field-error.show { display: block; }
+
+    .form-feedback {
+      margin-top: 16px;
+      padding: 14px 16px;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      line-height: 1.55;
+      display: none;
+    }
+
+    .form-feedback.show { display: block; }
+
+    .form-feedback--error {
+      background: rgba(224, 122, 122, 0.1);
+      border: 1px solid rgba(224, 122, 122, 0.25);
+      color: var(--red-400);
+    }
+
+    .form-feedback--progress {
+      background: rgba(74, 143, 196, 0.1);
+      border: 1px solid rgba(74, 143, 196, 0.22);
+      color: var(--gray-300);
+    }
+
+    .form-submit { width: 100%; margin-top: 8px; }
 
     .form-success {
       display: none;
       text-align: center;
-      padding: 32px;
-      background: rgba(74, 143, 196, 0.1);
-      border: 1px solid rgba(74, 143, 196, 0.25);
+      padding: 36px 32px;
+      background: rgba(74, 143, 196, 0.08);
+      border: 1px solid rgba(74, 143, 196, 0.22);
       border-radius: var(--radius-lg);
     }
 
@@ -1181,186 +1135,108 @@
     }
 
     .form-success-icon {
-      width: 56px;
-      height: 56px;
-      background: rgba(74, 143, 196, 0.2);
+      width: 52px;
+      height: 52px;
+      background: rgba(74, 143, 196, 0.15);
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin: 0 auto 16px;
-      font-size: 1.5rem;
-      color: var(--blue-400);
+      margin: 0 auto 18px;
+      font-size: 1.35rem;
+      color: var(--green-400);
+    }
+
+    .form-success-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: var(--white);
+      margin-bottom: 16px;
+      letter-spacing: -0.02em;
     }
 
     .form-success p {
-      font-size: 1.05rem;
-      color: var(--gray-200);
-    }
-
-    /* ── FAQ ── */
-    .faq {
-      background: var(--navy-900);
-    }
-
-    .faq-list {
-      max-width: 720px;
+      font-size: 0.92rem;
+      color: var(--gray-300);
+      line-height: 1.65;
+      max-width: 440px;
       margin: 0 auto;
     }
 
-    .faq-item {
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    }
-
-    .faq-question {
-      width: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      padding: 20px 0;
-      text-align: left;
-      font-size: 1rem;
-      font-weight: 600;
-      color: var(--white);
-      transition: color var(--transition);
-    }
-
-    .faq-question:hover,
-    .faq-question:focus-visible {
-      color: var(--blue-400);
-      outline: none;
-    }
-
-    .faq-icon {
-      flex-shrink: 0;
-      width: 24px;
-      height: 24px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--gray-400);
-      transition: transform var(--transition);
-    }
-
-    .faq-item.open .faq-icon {
-      transform: rotate(45deg);
-      color: var(--blue-400);
-    }
-
-    .faq-answer {
-      max-height: 0;
-      overflow: hidden;
-      transition: max-height 0.35s ease;
-    }
-
-    .faq-item.open .faq-answer {
-      max-height: 300px;
-    }
-
-    .faq-answer p {
-      padding-bottom: 20px;
-      font-size: 0.9rem;
-      color: var(--gray-400);
-      line-height: 1.7;
+    .form-success p + p {
+      margin-top: 12px;
     }
 
     /* ── Footer ── */
     .footer {
-      padding: 64px 0 32px;
+      padding: 44px 0 28px;
       border-top: 1px solid rgba(255, 255, 255, 0.06);
     }
 
-    .footer-grid {
-      display: grid;
-      grid-template-columns: 2fr 1fr 1fr;
-      gap: 48px;
-      margin-bottom: 48px;
+    .footer-inner {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 28px;
+      margin-bottom: 32px;
     }
 
+    .footer-brand { max-width: 320px; }
+
     .footer-brand .logo {
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       display: inline-block;
     }
 
     .footer-tagline {
       font-size: 0.9rem;
       color: var(--gray-400);
-      max-width: 280px;
       line-height: 1.6;
+      margin-bottom: 12px;
     }
 
-    .footer-col h4 {
-      font-size: 0.8rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--gray-400);
-      margin-bottom: 16px;
-    }
-
-    .footer-col a {
-      display: block;
+    .footer-email {
       font-size: 0.9rem;
       color: var(--gray-300);
-      padding: 6px 0;
       transition: color var(--transition);
     }
 
-    .footer-col a:hover,
-    .footer-col a:focus-visible {
+    .footer-email:hover,
+    .footer-email:focus-visible {
       color: var(--white);
       outline: none;
     }
 
-    .footer-bottom {
+    .footer-links-row {
       display: flex;
       flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      padding-top: 32px;
+      gap: 24px;
+    }
+
+    .footer-links-row a {
+      font-size: 0.875rem;
+      color: var(--gray-400);
+      transition: color var(--transition);
+    }
+
+    .footer-links-row a:hover,
+    .footer-links-row a:focus-visible {
+      color: var(--gray-200);
+      outline: none;
+    }
+
+    .footer-bottom {
+      padding-top: 28px;
       border-top: 1px solid rgba(255, 255, 255, 0.06);
       font-size: 0.85rem;
       color: var(--gray-500);
     }
 
-    .footer-links {
-      display: flex;
-      gap: 24px;
-    }
-
-    .footer-links a {
-      color: var(--gray-500);
-      transition: color var(--transition);
-    }
-
-    .footer-links a:hover,
-    .footer-links a:focus-visible {
-      color: var(--gray-300);
-      outline: none;
-    }
-
     /* ── Animations ── */
     @keyframes fadeUp {
-      from {
-        opacity: 0;
-        transform: translateY(24px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.4; }
-    }
-
-    @keyframes float {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-6px); }
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     .reveal {
@@ -1376,150 +1252,51 @@
 
     /* ── Responsive ── */
     @media (max-width: 1024px) {
-      .hero-grid {
-        grid-template-columns: 1fr;
-        gap: 40px;
-      }
-
-      .why-hf-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-
-      .hero-visual {
-        max-width: 520px;
-        margin: 0 auto;
-      }
-
-      .problems-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-
-      .features-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-
-      .handover-wrapper {
-        grid-template-columns: 1fr;
-        gap: 16px;
-      }
-
-      .handover-arrow {
-        transform: rotate(90deg);
-        padding: 8px 0;
-      }
-
-      .steps-grid {
-        grid-template-columns: 1fr;
-        gap: 16px;
-      }
-
-      .audience-grid {
-        grid-template-columns: repeat(3, 1fr);
-      }
-
-      .footer-grid {
-        grid-template-columns: 1fr 1fr;
-      }
+      .hero-grid { grid-template-columns: 1fr; gap: 40px; }
+      .hero-visual { max-width: 440px; margin: 0 auto; width: 100%; }
+      .brain-block { padding: 28px 28px; }
+      .brain-grid { grid-template-columns: 1fr; gap: 32px; }
+      .brain-flow { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 8px 12px; min-width: 0; width: 100%; padding: 20px; }
+      .brain-flow-arrow { display: none; }
+      .brain-flow-step { white-space: normal; }
+      .waitlist-layout { grid-template-columns: 1fr; gap: 36px; max-width: 560px; }
+      .demo-wrapper { grid-template-columns: 1fr; gap: 12px; max-width: 560px; align-items: start; }
+      .demo-arrow { transform: rotate(90deg); padding: 4px 0; align-self: center; }
     }
 
     @media (max-width: 768px) {
-      section {
-        padding: 72px 0;
-      }
+      :root { --section-padding: 48px; }
 
-      .nav-desktop {
-        display: none;
-      }
+      section { padding: var(--section-padding) 0; }
 
-      .menu-toggle {
-        display: flex;
-      }
+      .nav-desktop { display: none; }
+      .menu-toggle { display: flex; }
 
-      .problems-grid {
-        grid-template-columns: 1fr;
-      }
+      .brain-block { padding: 24px 20px; }
+      .waitlist-form-card { padding: 24px 20px; }
 
-      .features-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .audience-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-
-      .why-hf-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .statement-banner__inner {
-        padding: 24px 20px;
-      }
-
-      .founding {
-        padding: 80px 0;
-      }
-
-      .founding-card {
-        padding: 44px 24px;
-      }
-
-      .hero h1 {
-        max-width: none;
-      }
-
-      .float-note.top-right {
-        right: 0;
-        top: -8px;
-      }
-
-      .float-note.bottom-left {
-        left: 0;
-        bottom: -8px;
-      }
-
-      .footer-grid {
-        grid-template-columns: 1fr;
-        gap: 32px;
-      }
-
-      .footer-bottom {
-        flex-direction: column;
-        text-align: center;
-      }
+      .footer-inner { flex-direction: column; }
     }
 
     @media (max-width: 480px) {
-      .hero-actions {
-        flex-direction: column;
-      }
-
-      .hero-actions .btn {
-        width: 100%;
-      }
-
-      .dashboard-cards {
-        grid-template-columns: 1fr;
-      }
-
-      .audience-grid {
-        grid-template-columns: 1fr;
-      }
+      .hero-actions { flex-direction: column; }
+      .hero-actions .btn { width: 100%; }
+      .demo-actions { flex-direction: column; }
+      .demo-actions .btn { width: 100%; }
     }
   </style>
 </head>
 <body>
 
-  <!-- Navigation -->
   <header class="header" role="banner">
     <div class="container header-inner">
       <a href="#" class="logo" aria-label="Hospitality Flow home">Hospitality <span>Flow</span></a>
 
       <nav class="nav-desktop" aria-label="Main navigation">
-        <a href="#how-it-works">How It Works</a>
-        <a href="#features">Features</a>
-        <a href="#founding">Founding Members</a>
-        <a href="#faq">FAQ</a>
-        <a href="#waitlist" class="btn btn-primary btn-nav">Join the Waitlist</a>
+        <a href="#product">Product</a>
+        <a href="#hotel-brain">How It Works</a>
+        <a href="#handover-demo">Demo</a>
+        <a href="#waitlist" class="btn btn-primary btn-nav">Join Early Access</a>
       </nav>
 
       <button class="menu-toggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="mobile-menu">
@@ -1530,11 +1307,10 @@
     </div>
 
     <nav class="nav-mobile" id="mobile-menu" aria-label="Mobile navigation">
-      <a href="#how-it-works">How It Works</a>
-      <a href="#features">Features</a>
-      <a href="#founding">Founding Members</a>
-      <a href="#faq">FAQ</a>
-      <a href="#waitlist" class="btn btn-primary">Join the Waitlist</a>
+      <a href="#product">Product</a>
+      <a href="#hotel-brain">How It Works</a>
+      <a href="#handover-demo">Demo</a>
+      <a href="#waitlist" class="btn btn-primary">Join Early Access</a>
     </nav>
   </header>
 
@@ -1545,468 +1321,221 @@
       <div class="container">
         <div class="hero-grid">
           <div class="hero-content">
-            <div class="hero-badge">First tool now available</div>
-            <h1>AI That Helps Hotels Run Better</h1>
-            <p class="hero-desc">Helping boutique hotels, guest houses, serviced apartments, and new hotel openings simplify daily operations with practical AI tools, templates, and automation.</p>
-            <p class="hero-trust">Built from 15+ years of real hospitality experience.</p>
+            <p class="hero-eyebrow">Powered by the Hospitality Flow Hotel Brain™</p>
+            <h1>AI Shift Handover</h1>
+            <p class="hero-headline-sub">Built for Independent &amp; Boutique Hotels</p>
+            <p class="hero-subhead">AI Shift Handover transforms scattered shift notes into clear, structured operational handovers.</p>
+            <p class="hero-audience">Designed for Reception, Duty Managers and Night Teams.</p>
+            <p class="hero-statement">Stop losing operational knowledge between shifts.</p>
             <div class="hero-actions">
-              <a href="handover.html" class="btn btn-primary btn-lg">Try Shift Handover</a>
-              <a href="#waitlist" class="btn btn-secondary btn-lg">Join the Waitlist</a>
+              <a href="#waitlist" class="btn btn-primary btn-lg">Join Early Access</a>
+              <a href="#handover-demo" class="btn btn-secondary btn-lg">Try the AI Shift Handover Demo</a>
             </div>
           </div>
 
-          <div class="hero-visual">
-            <div class="dashboard-preview">
-              <div class="dashboard-header">
-                <span class="dashboard-title">Operations Dashboard</span>
-                <span class="dashboard-status">Live preview</span>
+          <div class="hero-visual" aria-hidden="true">
+            <p class="hero-shift-label">AM • PM • Night Shifts</p>
+            <div class="hero-preview">
+              <div class="hero-preview-label">Structured Handover Preview</div>
+              <div class="hero-preview-section">
+                <strong>Urgent Issues</strong>
+                <span>Room 24 — Air conditioning not cooling properly. Maintenance follow-up required.</span>
               </div>
-              <div class="dashboard-cards">
-                <div class="dash-card">
-                  <div class="dash-card-label">Today's Arrivals</div>
-                  <div class="dash-card-value">18</div>
-                </div>
-                <div class="dash-card">
-                  <div class="dash-card-label">Pending Tasks</div>
-                  <div class="dash-card-value accent">7</div>
-                </div>
-                <div class="dash-card">
-                  <div class="dash-card-label">Shift Handover</div>
-                  <div class="dash-card-value accent">Ready</div>
-                </div>
-                <div class="dash-card">
-                  <div class="dash-card-label">Open Issues</div>
-                  <div class="dash-card-value">3</div>
-                </div>
+              <div class="hero-preview-section">
+                <strong>VIP Guests</strong>
+                <span>VIP arriving tomorrow at 11:00 — allocate a quiet upper-floor room. Room 42 if available.</span>
               </div>
-              <div class="checklist-preview">
-                <div class="checklist-title">Morning Opening Checklist</div>
-                <div class="checklist-item">
-                  <span class="check-box done"></span>
-                  Review overnight notes
-                </div>
-                <div class="checklist-item">
-                  <span class="check-box done"></span>
-                  Check VIP arrivals
-                </div>
-                <div class="checklist-item">
-                  <span class="check-box"></span>
-                  Confirm maintenance requests
-                </div>
-                <div class="checklist-item">
-                  <span class="check-box"></span>
-                  Update shift handover
-                </div>
+              <div class="hero-preview-section">
+                <strong>Outstanding Tasks</strong>
+                <span>Room 15 and Room 37 — guest adapters to be collected before departure.</span>
               </div>
-            </div>
-            <div class="float-note top-right">
-              <strong>Shift Handover</strong>
-              <span>Generated in 4 seconds</span>
-            </div>
-            <div class="float-note bottom-left">
-              <strong>Room 12</strong>
-              <span>AC issue flagged</span>
+              <div class="hero-preview-section">
+                <strong>Tomorrow's Priorities</strong>
+                <span>Follow-up Room 18 open balance.<br>Prepare Room 42 for the VIP arrival.<br>Confirm Room 56 airport transfer for 10:15.</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Highlighted Statement -->
-    <section class="statement-banner" aria-label="Value proposition">
+    <!-- Hotel Brain -->
+    <section class="hotel-brain" id="hotel-brain">
       <div class="container">
-        <p class="statement-banner__inner reveal">
-          <strong>Hotels waste hours every week on repetitive admin.</strong> Hospitality Flow is being built to change that.
-        </p>
+        <div class="brain-block reveal">
+          <div class="brain-grid">
+            <div class="brain-main">
+              <h2 class="brain-heading" id="product">One Technology. The Hotel Brain.</h2>
+              <p class="brain-lead">Every hotel has operational knowledge scattered across people, emails, documents and shifts. The Hotel Brain keeps that knowledge organised and uses it to power practical AI tools for hotel teams.</p>
+              <div class="brain-roadmap">
+                <ul class="brain-roadmap-list">
+                  <li class="is-available">AI Shift Handover — Available Today</li>
+                </ul>
+                <p class="brain-roadmap-soon-label">Coming Soon</p>
+                <ul class="brain-roadmap-list">
+                  <li class="is-soon">AI Operations Assistant</li>
+                  <li class="is-soon">AI SOP Assistant</li>
+                  <li class="is-soon">AI Maintenance Assistant</li>
+                  <li class="is-soon">AI Guest Request Assistant</li>
+                  <li class="is-soon">AI Knowledge Search</li>
+                  <li class="is-soon">AI Lost Property Assistant</li>
+                  <li class="is-soon">AI Rota Generator</li>
+                  <li class="is-soon">Operations Analytics</li>
+                </ul>
+                <p class="brain-roadmap-note">More operational AI assistants will be introduced as Hospitality Flow evolves.</p>
+              </div>
+              <a href="#handover-demo" class="btn btn-secondary brain-demo-link">Try Interactive Demo</a>
+            </div>
+            <div class="brain-flow" aria-hidden="true">
+              <span class="brain-flow-step">Hotel Knowledge</span>
+              <span class="brain-flow-arrow">↓</span>
+              <span class="brain-flow-step is-core">Hotel Brain</span>
+              <span class="brain-flow-arrow">↓</span>
+              <span class="brain-flow-step is-active">AI Shift Handover</span>
+              <span class="brain-flow-arrow">↓</span>
+              <span class="brain-flow-step">Future AI Assistants</span>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
-    <!-- Why Hospitality Flow -->
-    <section class="why-hf" id="why-hf">
-      <div class="container">
-        <div class="section-header reveal">
-          <h2 class="section-heading">Why Hospitality Flow?</h2>
-          <p class="section-text">Practical outcomes for teams who need operations to run smoothly every day.</p>
-        </div>
-        <div class="why-hf-grid">
-          <div class="why-card reveal">
-            <div class="why-card-icon">⏱️</div>
-            <h3>Save hours every week</h3>
-            <p>Reduce time spent rewriting handovers, preparing documents, and repeating routine administrative tasks.</p>
-          </div>
-          <div class="why-card reveal">
-            <div class="why-card-icon">✓</div>
-            <h3>Reduce operational mistakes</h3>
-            <p>Create clearer processes, more consistent information, and fewer missed details between shifts.</p>
-          </div>
-          <div class="why-card reveal">
-            <div class="why-card-icon">📋</div>
-            <h3>Keep every shift consistent</h3>
-            <p>Give teams practical tools, templates, and guidance that support the same operational standards every day.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Problems -->
-    <section class="problems" id="problems">
+    <!-- Interactive Demo -->
+    <section class="demo" id="handover-demo">
       <div class="container">
         <div class="section-header reveal">
-          <h2 class="section-heading">Hotel operations should not feel this complicated.</h2>
-          <p class="section-text">Small hotel teams often rely on disconnected documents, manual processes, and information passed between shifts.</p>
-        </div>
-        <div class="problems-grid">
-          <div class="problem-card reveal">
-            <div class="problem-icon">📋</div>
-            <h3>Missed handover information</h3>
-            <p>Critical details about guests, rooms, and issues get lost between shifts, leading to service gaps and repeated questions.</p>
-          </div>
-          <div class="problem-card reveal">
-            <div class="problem-icon">✅</div>
-            <h3>Inconsistent checklists and procedures</h3>
-            <p>Without standardised processes, tasks are completed differently each time, making quality and accountability hard to maintain.</p>
-          </div>
-          <div class="problem-card reveal">
-            <div class="problem-icon">⏱️</div>
-            <h3>Repetitive administrative work</h3>
-            <p>Staff spend valuable time on manual documentation and formatting that could be handled more efficiently.</p>
-          </div>
-          <div class="problem-card reveal">
-            <div class="problem-icon">💬</div>
-            <h3>Communication gaps between departments</h3>
-            <p>Information silos between reception, housekeeping, and maintenance cause delays and missed guest requests.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Platform / Features -->
-    <section class="features" id="features">
-      <div class="container">
-        <div class="section-header reveal">
-          <span class="section-label">The Platform</span>
-          <h2 class="section-heading">One platform for smoother hotel operations.</h2>
-          <p class="section-text">Hospitality Flow is being built to bring essential operational tools into one practical system.</p>
-        </div>
-        <div class="features-grid">
-          <div class="feature-card featured reveal">
-            <span class="badge badge-live">Available Now</span>
-            <h3>AI Shift Handover Assistant</h3>
-            <p>Turn rough shift notes into clear, professional handovers in seconds.</p>
-            <a href="handover.html" class="btn btn-secondary" style="margin-top: 14px; display: inline-flex;">Open Assistant</a>
-          </div>
-          <div class="feature-card reveal">
-            <span class="badge badge-soon">Coming Soon</span>
-            <h3>Smart Operational Checklists</h3>
-            <p>Digital checklists that adapt to your property's daily routines and opening procedures.</p>
-          </div>
-          <div class="feature-card reveal">
-            <span class="badge badge-soon">Coming Soon</span>
-            <h3>SOP and Template Library</h3>
-            <p>Ready-to-use standard operating procedures and document templates for common hotel tasks.</p>
-          </div>
-          <div class="feature-card reveal">
-            <span class="badge badge-soon">Coming Soon</span>
-            <h3>Guest Complaint Support</h3>
-            <p>Structured tools to log, track, and respond to guest complaints consistently.</p>
-          </div>
-          <div class="feature-card reveal">
-            <span class="badge badge-soon">Coming Soon</span>
-            <h3>AI Review Assistant</h3>
-            <p>Help drafting thoughtful, professional responses to guest reviews.</p>
-          </div>
-          <div class="feature-card reveal">
-            <span class="badge badge-soon">Coming Soon</span>
-            <h3>Hotel Opening Tools</h3>
-            <p>Practical resources and checklists for teams preparing to launch a new property.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Featured First Product -->
-    <section class="handover" id="handover-demo">
-      <div class="container">
-        <div class="section-header reveal">
-          <span class="badge badge-live">First release — available now</span>
-          <h2 class="section-heading" style="margin-top: 16px;">AI Shift Handover Assistant</h2>
-          <p class="section-text">Turn rough shift notes into a clear, professional handover in seconds.</p>
-          <a href="handover.html" class="btn btn-primary btn-lg" style="margin-top: 18px;">Try the Assistant</a>
+          <span class="badge badge-preview">Interactive preview</span>
+          <h2 class="section-heading" style="margin-top: 10px;">Try AI Shift Handover</h2>
         </div>
 
-        <div class="handover-wrapper reveal">
-          <div>
-            <div class="handover-panel">
-              <div class="handover-panel-header">
-                <span class="dot dot-red"></span>
-                <span class="dot dot-yellow"></span>
-                <span class="dot dot-green"></span>
-                &nbsp; Shift Notes — Input
-              </div>
-              <div class="handover-panel-body">
-                <div class="handover-input-item">VIP arrival at 14:00 — Mr Henderson, Suite 8, prefers quiet room away from lift</div>
-                <div class="handover-input-item">Room 12 air-conditioning issue — guest reported at 22:30, maintenance notified</div>
-                <div class="handover-input-item">Payment required for Room 24 — outstanding balance of £145, guest checking out tomorrow</div>
-                <div class="handover-input-item">Early breakfast requested — Room 15, needs breakfast at 06:30 for airport transfer</div>
+        <p class="demo-flow-label reveal">Unstructured shift notes <span>→</span> Clear next-shift briefing</p>
+
+        <div class="demo-wrapper reveal">
+          <div class="demo-panel">
+            <div class="demo-panel-header">
+              <span class="dot dot-red"></span>
+              <span class="dot dot-yellow"></span>
+              <span class="dot dot-green"></span>
+              Shift notes — input
+            </div>
+            <div class="demo-panel-body">
+              <label for="demo-input" class="demo-status">Raw shift handover notes</label>
+              <textarea id="demo-input" class="demo-textarea" aria-describedby="demo-input-help">Room 24 reported that the air conditioning is not cooling properly. Maintenance has been informed but has not attended yet. A VIP is arriving tomorrow at 11:00 and would prefer a quiet upper-floor room. Allocate Room 42 if available. Room 56 has an airport transfer confirmed for 10:15 and a wake-up call scheduled for 06:30. Guest adapters issued to Room 15 and Room 37 are still outstanding. Room 18 has an open balance to review before departure.</textarea>
+              <p id="demo-input-help" class="demo-status">Edit the notes above, then generate a structured handover preview.</p>
+              <div class="demo-actions">
+                <button type="button" id="demo-generate" class="btn btn-primary">Generate AI Handover</button>
+                <button type="button" id="demo-reset" class="btn btn-ghost">Reset Demo</button>
               </div>
             </div>
           </div>
 
-          <div class="handover-arrow" aria-hidden="true">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <div class="demo-arrow" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M5 12h14M12 5l7 7-7 7"/>
             </svg>
           </div>
 
-          <div>
-            <div class="handover-panel">
-              <div class="handover-panel-header">
-                <span class="dot dot-red"></span>
-                <span class="dot dot-yellow"></span>
-                <span class="dot dot-green"></span>
-                &nbsp; Professional Handover — Output
+          <div class="demo-panel">
+            <div class="demo-panel-header">
+              <span class="dot dot-red"></span>
+              <span class="dot dot-yellow"></span>
+              <span class="dot dot-green"></span>
+              Next Shift Briefing
+            </div>
+            <div class="demo-panel-body demo-panel-body--output">
+              <div class="demo-loading" id="demo-loading" aria-hidden="true">
+                <span class="demo-spinner"></span>
+                Organising handover…
               </div>
-              <div class="handover-panel-body">
-                <div class="handover-output">
-                  <h4>Shift Handover — Night to Morning</h4>
-                  <section>
-                    <div class="section-name">VIP Arrivals</div>
-                    <ul>
-                      <li>Mr Henderson arriving 14:00, Suite 8. Prefers quiet room away from lift.</li>
-                    </ul>
-                  </section>
-                  <section>
-                    <div class="section-name">Maintenance &amp; Room Issues</div>
-                    <ul>
-                      <li>Room 12: Air-conditioning issue reported at 22:30. Maintenance has been notified — follow up required.</li>
-                    </ul>
-                  </section>
-                  <section>
-                    <div class="section-name">Payments &amp; Departures</div>
-                    <ul>
-                      <li>Room 24: Outstanding balance of £145. Guest checking out tomorrow — payment required before departure.</li>
-                    </ul>
-                  </section>
-                  <section>
-                    <div class="section-name">Special Requests</div>
-                    <ul>
-                      <li>Room 15: Early breakfast at 06:30 required for airport transfer.</li>
-                    </ul>
-                  </section>
-                </div>
+              <div class="demo-output" id="demo-output" role="region" aria-label="Generated next shift briefing">
+                <p class="demo-output-placeholder" id="demo-placeholder">Generated briefing sections will appear here.</p>
               </div>
+              <div id="demo-status" class="demo-status" aria-live="polite" aria-atomic="true"></div>
             </div>
           </div>
         </div>
+
+        <p class="demo-footnote reveal">The full product also includes hotel details, arrivals, departures, occupancy, shift information, saved handovers and export tools.</p>
       </div>
     </section>
 
-    <!-- Founding Member -->
-    <section class="founding" id="founding">
-      <div class="container">
-        <div class="founding-card reveal">
-          <span class="founding-label">Founding Member</span>
-
-          <div class="founding-price-block">
-            <div class="founding-price">£4.99/month</div>
-            <p class="founding-price-life">for life</p>
-          </div>
-
-          <p class="founding-availability">Available to the first 250 eligible members.</p>
-
-          <ul class="founding-benefits">
-            <li>Your Founding Member plan price will never increase while your membership remains active</li>
-            <li>Early access to Hospitality Flow</li>
-            <li>Operational templates and tools included in the Founding Member plan</li>
-            <li>Opportunity to help shape future features</li>
-            <li>Priority access to tools included within the plan</li>
-          </ul>
-
-          <p class="founding-disclaimer">Advanced AI tools, enterprise features, usage-based services, and future premium modules may be offered separately.</p>
-
-          <a href="#waitlist" class="btn btn-primary btn-lg">Join the Founding Member Waitlist</a>
-
-          <p class="founding-waitlist-note">No payment is taken when joining the waitlist.</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- How It Works -->
-    <section class="how-it-works" id="how-it-works">
-      <div class="container">
-        <div class="section-header reveal">
-          <h2 class="section-heading">How it works</h2>
-        </div>
-        <div class="steps-grid">
-          <div class="step-card reveal">
-            <div class="step-number">1</div>
-            <h3>Join the waitlist</h3>
-            <p>Register your interest with no payment required.</p>
-          </div>
-          <div class="step-card reveal">
-            <div class="step-number">2</div>
-            <h3>Help shape the platform</h3>
-            <p>Share feedback about the operational problems your property faces.</p>
-          </div>
-          <div class="step-card reveal">
-            <div class="step-number">3</div>
-            <h3>Lock in your Founding Member price</h3>
-            <p>When Hospitality Flow launches, eligible early members can activate the £4.99 monthly plan.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Who It Is For -->
-    <section class="audience" id="audience">
-      <div class="container">
-        <div class="section-header reveal">
-          <h2 class="section-heading">Built for smaller hospitality teams.</h2>
-        </div>
-        <div class="audience-grid">
-          <div class="audience-card reveal">
-            <div class="audience-icon">🏨</div>
-            <h3>Independent hotels</h3>
-          </div>
-          <div class="audience-card reveal">
-            <div class="audience-icon">✨</div>
-            <h3>Boutique hotels</h3>
-          </div>
-          <div class="audience-card reveal">
-            <div class="audience-icon">🏡</div>
-            <h3>Guest houses</h3>
-          </div>
-          <div class="audience-card reveal">
-            <div class="audience-icon">🏢</div>
-            <h3>Serviced apartments</h3>
-          </div>
-          <div class="audience-card reveal">
-            <div class="audience-icon">🚀</div>
-            <h3>New hotel openings</h3>
-          </div>
-        </div>
-        <p class="audience-statement reveal">Hospitality Flow is initially focused on smaller properties and teams where time, staffing, and operational consistency matter most.</p>
-      </div>
-    </section>
-
-    <!-- Founder -->
-    <section class="founder" id="founder">
-      <div class="container">
-        <div class="founder-content reveal">
-          <h2 class="section-heading">Built by hospitality, for hospitality.</h2>
-          <p>Hospitality Flow is being created from years of real experience across boutique hotels, guest houses, serviced apartments, large hotels, night operations, reception, reservations, and hotel openings.</p>
-          <p>The goal is simple: create practical tools that solve real operational problems rather than adding more complexity.</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- Waitlist Form -->
+    <!-- Early Access -->
     <section class="waitlist" id="waitlist">
       <div class="container">
-        <div class="section-header reveal">
-          <h2 class="section-heading">Join the Hospitality Flow waitlist</h2>
-        </div>
+        <div class="waitlist-layout reveal">
+          <div class="waitlist-info">
+            <h2 class="section-heading">Early Access Programme</h2>
+            <p class="waitlist-lead">Join the first group of independent and boutique hotels helping shape AI Shift Handover.</p>
+            <div class="waitlist-offer">
+              <p class="waitlist-offer-label">Founding Hotel Programme</p>
+              <p class="waitlist-offer-text">The first 100 hotels accepted receive Hospitality Flow free for their first year.</p>
+              <p class="waitlist-offer-note">No payment required during the free first year.</p>
+            </div>
+            <div class="waitlist-includes">
+              <p class="waitlist-includes-label">What Early Access includes</p>
+              <ul class="waitlist-includes-list">
+                <li>Free for your first year</li>
+                <li>Personal onboarding</li>
+                <li>Built with real hotel operations experience</li>
+                <li>Influence future product development</li>
+                <li>No payment details required</li>
+              </ul>
+            </div>
+            <div class="waitlist-trust">
+              <p class="waitlist-trust-label">Built from real hotel operations</p>
+              <p class="waitlist-trust-text">Hospitality Flow is being developed using real day-to-day operational experience from independent and boutique hotels.</p>
+              <p class="waitlist-trust-text">Every feature is designed to solve practical hotel problems encountered during real shifts.</p>
+              <p class="waitlist-trust-text waitlist-review-note">Applications are personally reviewed to provide a personalised onboarding experience.</p>
+            </div>
+          </div>
 
-        <div class="waitlist-form-wrapper reveal">
-          <form id="waitlist-form" novalidate>
-            <div class="form-group">
-              <label for="first-name">First name</label>
-              <input type="text" id="first-name" name="first-name" required autocomplete="given-name" placeholder="Your first name">
-            </div>
-            <div class="form-group">
-              <label for="email">Email address</label>
-              <input type="email" id="email" name="email" required autocomplete="email" placeholder="you@yourhotel.com">
-            </div>
-            <div class="form-group">
-              <label for="property-name">Property or company name</label>
-              <input type="text" id="property-name" name="property-name" required autocomplete="organization" placeholder="Your property or company">
-            </div>
-            <div class="form-group">
-              <label for="property-type">Property type</label>
-              <select id="property-type" name="property-type" required>
-                <option value="" disabled selected>Select property type</option>
-                <option value="independent-hotel">Independent hotel</option>
-                <option value="boutique-hotel">Boutique hotel</option>
-                <option value="guest-house">Guest house</option>
-                <option value="serviced-apartment">Serviced apartment</option>
-                <option value="new-hotel-opening">New hotel opening</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-            <div class="form-group optional">
-              <label for="challenge">What is your biggest operational challenge?</label>
-              <textarea id="challenge" name="challenge" placeholder="Tell us about the operational challenges you face…"></textarea>
-            </div>
-            <button type="submit" class="btn btn-primary btn-lg form-submit">Join the Waitlist</button>
-          </form>
+          <div class="waitlist-form-card">
+            <form id="waitlist-form" novalidate>
+              <div class="form-group">
+                <label for="first-name">First name</label>
+                <input type="text" id="first-name" name="first-name" required autocomplete="given-name" placeholder="Your first name">
+              </div>
+              <div class="form-group">
+                <label for="email">Work email address</label>
+                <input type="email" id="email" name="email" required autocomplete="email" placeholder="you@yourhotel.com" aria-describedby="email-error">
+                <span class="field-error" id="email-error" role="alert">Please enter a valid email address.</span>
+              </div>
+              <div class="form-group">
+                <label for="property-name">Property or company name</label>
+                <input type="text" id="property-name" name="property-name" required autocomplete="organization" placeholder="Your property or company">
+              </div>
+              <div class="form-group">
+                <label for="property-type">Property type</label>
+                <select id="property-type" name="property-type" required>
+                  <option value="" disabled selected>Select property type</option>
+                  <option value="independent-hotel">Independent hotel</option>
+                  <option value="boutique-hotel">Boutique hotel</option>
+                  <option value="small-hotel-group">Small hotel group (2–10 hotels)</option>
+                  <option value="guest-house">Guest house</option>
+                  <option value="serviced-apartment">Serviced apartment</option>
+                  <option value="hotel-opening-soon">Hotel opening soon</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="room-count">Number of rooms</label>
+                <input type="number" id="room-count" name="room-count" required min="1" max="9999" inputmode="numeric" placeholder="e.g. 42">
+              </div>
+              <div class="form-group">
+                <label for="role">Your role</label>
+                <input type="text" id="role" name="role" required autocomplete="organization-title" placeholder="e.g. General Manager">
+              </div>
+              <button type="submit" class="btn btn-primary btn-lg form-submit" id="form-submit-btn">Join the Early Access Programme</button>
+              <div class="form-feedback form-feedback--progress" id="form-progress" role="status" aria-live="polite"></div>
+              <div class="form-feedback form-feedback--error" id="form-error" role="alert" aria-live="assertive"></div>
+            </form>
 
-          <div class="form-success" id="form-success" role="status" aria-live="polite">
-            <div class="form-success-icon">✓</div>
-            <p>Thank you. You've joined the Hospitality Flow waitlist.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- FAQ -->
-    <section class="faq" id="faq">
-      <div class="container">
-        <div class="section-header reveal">
-          <h2 class="section-heading">Frequently asked questions</h2>
-        </div>
-        <div class="faq-list">
-          <div class="faq-item reveal">
-            <button class="faq-question" aria-expanded="false">
-              Is Hospitality Flow available now?
-              <span class="faq-icon">+</span>
-            </button>
-            <div class="faq-answer">
-              <p>Hospitality Flow is currently in development. The waitlist gives you early updates and the opportunity to help shape the platform.</p>
-            </div>
-          </div>
-          <div class="faq-item reveal">
-            <button class="faq-question" aria-expanded="false">
-              When will I be charged?
-              <span class="faq-icon">+</span>
-            </button>
-            <div class="faq-answer">
-              <p>No payment is taken when joining the waitlist. Payment will only begin if you choose to activate a paid plan after launch.</p>
-            </div>
-          </div>
-          <div class="faq-item reveal">
-            <button class="faq-question" aria-expanded="false">
-              What does £4.99 per month for life mean?
-              <span class="faq-icon">+</span>
-            </button>
-            <div class="faq-answer">
-              <p>Eligible Founding Members can keep the £4.99 monthly price for the Founding Member plan while their membership remains continuously active.</p>
-            </div>
-          </div>
-          <div class="faq-item reveal">
-            <button class="faq-question" aria-expanded="false">
-              Will every future feature be included?
-              <span class="faq-icon">+</span>
-            </button>
-            <div class="faq-answer">
-              <p>No. Features included in the Founding Member plan will remain available under that plan, but advanced AI tools, enterprise features, usage-based services, and premium modules may be sold separately.</p>
-            </div>
-          </div>
-          <div class="faq-item reveal">
-            <button class="faq-question" aria-expanded="false">
-              Who is Hospitality Flow designed for?
-              <span class="faq-icon">+</span>
-            </button>
-            <div class="faq-answer">
-              <p>Hospitality Flow is initially designed for independent hotels, boutique hotels, guest houses, serviced apartments, and new hotel openings.</p>
-            </div>
-          </div>
-          <div class="faq-item reveal">
-            <button class="faq-question" aria-expanded="false">
-              Are the 250 places guaranteed?
-              <span class="faq-icon">+</span>
-            </button>
-            <div class="faq-answer">
-              <p>Joining the waitlist registers your interest. Final eligibility and activation details will be confirmed before launch.</p>
+            <div class="form-success" id="form-success" role="status" aria-live="polite">
+              <div class="form-success-icon" aria-hidden="true">✓</div>
+              <h3 class="form-success-title">Application received</h3>
+              <p>Thank you for applying to the Hospitality Flow Early Access Programme.</p>
+              <p>We'll personally review your application and contact you shortly to arrange onboarding and access.</p>
+              <p>We're excited to learn more about your hotel and how AI Shift Handover can support your team.</p>
             </div>
           </div>
         </div>
@@ -2015,39 +1544,33 @@
 
   </main>
 
-  <!-- Footer -->
   <footer class="footer" role="contentinfo">
     <div class="container">
-      <div class="footer-grid">
+      <div class="footer-inner">
         <div class="footer-brand">
           <span class="logo">Hospitality <span>Flow</span></span>
-          <p class="footer-tagline">Making hospitality smoother, smarter, and less stressful.</p>
+          <p class="footer-tagline">AI That Helps Hotels Run Better.</p>
+          <a href="mailto:hello@hospitalityflow.co.uk" class="footer-email">hello@hospitalityflow.co.uk</a>
         </div>
-        <div class="footer-col">
-          <h4>Platform</h4>
-          <a href="#features">Features</a>
-          <a href="#how-it-works">How It Works</a>
-          <a href="#founding">Founding Members</a>
-        </div>
-        <div class="footer-col">
-          <h4>Contact</h4>
-          <a href="https://hospitalityflow.co.uk">hospitalityflow.co.uk</a>
-          <a href="#waitlist">Join the Waitlist</a>
-          <a href="#faq">FAQ</a>
+        <div class="footer-links-row">
+          <a href="#product">Product</a>
+          <a href="#hotel-brain">How It Works</a>
+          <a href="#handover-demo">Demo</a>
+          <a href="#waitlist">Early Access</a>
+          <a href="privacy.html">Privacy</a>
+          <a href="terms.html">Terms</a>
         </div>
       </div>
       <div class="footer-bottom">
-        <span>&copy; 2026 Hospitality Flow</span>
-        <div class="footer-links">
-          <a href="#">Privacy Policy</a>
-          <a href="#">Terms</a>
-        </div>
+        <span>&copy; 2026 Hospitality Flow. All rights reserved.</span>
       </div>
     </div>
   </footer>
 
   <script>
     (function () {
+      var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
       /* Mobile menu */
       var menuToggle = document.querySelector('.menu-toggle');
       var mobileMenu = document.getElementById('mobile-menu');
@@ -2055,7 +1578,7 @@
 
       menuToggle.addEventListener('click', function () {
         var expanded = menuToggle.getAttribute('aria-expanded') === 'true';
-        menuToggle.setAttribute('aria-expanded', !expanded);
+        menuToggle.setAttribute('aria-expanded', String(!expanded));
         mobileMenu.classList.toggle('open');
         document.body.style.overflow = expanded ? '' : 'hidden';
       });
@@ -2068,39 +1591,18 @@
         });
       });
 
-      /* FAQ accordion */
-      document.querySelectorAll('.faq-question').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-          var item = btn.closest('.faq-item');
-          var isOpen = item.classList.contains('open');
+      /* Smooth scroll with reduced-motion support */
+      document.querySelectorAll('a[href^="#"]').forEach(function (anchor) {
+        anchor.addEventListener('click', function (e) {
+          var targetId = this.getAttribute('href');
+          if (targetId === '#') return;
 
-          document.querySelectorAll('.faq-item').forEach(function (el) {
-            el.classList.remove('open');
-            el.querySelector('.faq-question').setAttribute('aria-expanded', 'false');
-          });
-
-          if (!isOpen) {
-            item.classList.add('open');
-            btn.setAttribute('aria-expanded', 'true');
+          var target = document.querySelector(targetId);
+          if (target) {
+            e.preventDefault();
+            target.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth' });
           }
         });
-      });
-
-      /* Waitlist form */
-      var form = document.getElementById('waitlist-form');
-      var success = document.getElementById('form-success');
-
-      form.addEventListener('submit', function (e) {
-        e.preventDefault();
-
-        if (!form.checkValidity()) {
-          form.reportValidity();
-          return;
-        }
-
-        form.style.display = 'none';
-        success.classList.add('show');
-        success.scrollIntoView({ behavior: 'smooth', block: 'center' });
       });
 
       /* Scroll reveal */
@@ -2125,17 +1627,289 @@
         });
       }
 
-      /* Smooth scroll offset for fixed header */
-      document.querySelectorAll('a[href^="#"]').forEach(function (anchor) {
-        anchor.addEventListener('click', function (e) {
-          var targetId = this.getAttribute('href');
-          if (targetId === '#') return;
+      /* Interactive handover demo */
+      var demoInput = document.getElementById('demo-input');
+      var demoGenerate = document.getElementById('demo-generate');
+      var demoReset = document.getElementById('demo-reset');
+      var demoOutput = document.getElementById('demo-output');
+      var demoPlaceholder = document.getElementById('demo-placeholder');
+      var demoLoading = document.getElementById('demo-loading');
+      var demoStatus = document.getElementById('demo-status');
 
-          var target = document.querySelector(targetId);
-          if (target) {
-            e.preventDefault();
-            target.scrollIntoView({ behavior: 'smooth' });
+      var defaultNote = 'Room 24 reported that the air conditioning is not cooling properly. Maintenance has been informed but has not attended yet. A VIP is arriving tomorrow at 11:00 and would prefer a quiet upper-floor room. Allocate Room 42 if available. Room 56 has an airport transfer confirmed for 10:15 and a wake-up call scheduled for 06:30. Guest adapters issued to Room 15 and Room 37 are still outstanding. Room 18 has an open balance to review before departure.';
+
+      demoInput.value = defaultNote;
+
+      var handoverSections = [
+        {
+          title: 'Shift Overview',
+          subtitle: 'Priority for the next shift',
+          lines: [
+            'Follow up the unresolved air-conditioning issue in Room 24, prepare Room 42 for the early VIP arrival, review the open balance for Room 18, and confirm the airport transfer for Room 56.'
+          ]
+        },
+        {
+          title: 'Urgent Issues',
+          entries: [
+            {
+              room: 'Room 24',
+              lines: [
+                'Air conditioning not cooling properly.',
+                'Maintenance follow-up required.'
+              ]
+            }
+          ]
+        },
+        {
+          title: 'VIP Guests',
+          entries: [
+            {
+              room: 'Room 42',
+              lines: [
+                'VIP arriving tomorrow at 11:00.',
+                'Quiet upper-floor room requested.'
+              ]
+            }
+          ]
+        },
+        {
+          title: 'Guest Requests',
+          entries: [
+            {
+              room: 'Room 56',
+              lines: [
+                'Airport transfer confirmed for 10:15.',
+                'Wake-up call scheduled for 06:30.'
+              ]
+            }
+          ]
+        },
+        {
+          title: 'Payment Issues',
+          entries: [
+            {
+              room: 'Room 18',
+              lines: [
+                'Open balance to review before departure.'
+              ]
+            }
+          ]
+        },
+        {
+          title: 'Outstanding Tasks',
+          entries: [
+            {
+              room: 'Room 15',
+              lines: ['Guest adapter still outstanding.']
+            },
+            {
+              room: 'Room 37',
+              lines: ['Guest adapter still outstanding.']
+            }
+          ]
+        },
+        {
+          title: 'Tomorrow\'s Priorities',
+          lines: [
+            'Follow-up Room 18 open balance.',
+            'Prepare Room 42 for the VIP arrival.',
+            'Confirm Room 56 airport transfer for 10:15.'
+          ]
+        }
+      ];
+
+      function buildHandoverSectionHtml(section) {
+        var html = '<h4>' + section.title + '</h4>';
+
+        if (section.subtitle) {
+          html += '<p class="handover-subtitle">' + section.subtitle + '</p>';
+        }
+
+        if (section.lines) {
+          section.lines.forEach(function (line) {
+            html += '<p>' + line + '</p>';
+          });
+        }
+
+        if (section.entries) {
+          section.entries.forEach(function (entry) {
+            html += '<p class="handover-room">' + entry.room + '</p>';
+            entry.lines.forEach(function (line) {
+              html += '<p>' + line + '</p>';
+            });
+          });
+        }
+
+        return html;
+      }
+
+      function renderHandover() {
+        demoPlaceholder.style.display = 'none';
+        demoOutput.innerHTML = '';
+
+        handoverSections.forEach(function (section, index) {
+          var block = document.createElement('div');
+          block.className = 'demo-output-section';
+          block.innerHTML = buildHandoverSectionHtml(section);
+          demoOutput.appendChild(block);
+
+          if (prefersReducedMotion) {
+            block.classList.add('visible');
+          } else {
+            setTimeout(function () {
+              block.classList.add('visible');
+            }, index * 80);
           }
+        });
+
+        demoStatus.textContent = 'Next shift briefing generated with ' + handoverSections.length + ' sections.';
+      }
+
+      function resetDemo() {
+        demoInput.value = defaultNote;
+        demoOutput.innerHTML = '';
+        demoPlaceholder.style.display = 'block';
+        demoOutput.appendChild(demoPlaceholder);
+        demoLoading.classList.remove('active');
+        demoGenerate.disabled = false;
+        demoStatus.textContent = 'Demo reset. Edit the notes and generate again.';
+      }
+
+      demoGenerate.addEventListener('click', function () {
+        if (!demoInput.value.trim()) {
+          demoStatus.textContent = 'Please enter shift notes before generating.';
+          demoInput.focus();
+          return;
+        }
+
+        demoGenerate.disabled = true;
+        demoLoading.classList.add('active');
+        demoStatus.textContent = 'Generating handover preview…';
+
+        setTimeout(function () {
+          demoLoading.classList.remove('active');
+          renderHandover();
+          demoGenerate.disabled = false;
+        }, prefersReducedMotion ? 100 : 1200);
+      });
+
+      demoReset.addEventListener('click', resetDemo);
+
+      demoGenerate.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          demoGenerate.click();
+        }
+      });
+
+      /* Waitlist form */
+      var form = document.getElementById('waitlist-form');
+      var success = document.getElementById('form-success');
+      var formProgress = document.getElementById('form-progress');
+      var formError = document.getElementById('form-error');
+      var submitBtn = document.getElementById('form-submit-btn');
+      var emailInput = document.getElementById('email');
+      var emailError = document.getElementById('email-error');
+
+      function isValidEmail(value) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+      }
+
+      function hideFormFeedback() {
+        formProgress.classList.remove('show');
+        formError.classList.remove('show');
+        formProgress.textContent = '';
+        formError.textContent = '';
+      }
+
+      function showEmailError(show) {
+        emailInput.classList.toggle('is-invalid', show);
+        emailError.classList.toggle('show', show);
+      }
+
+      emailInput.addEventListener('input', function () {
+        if (isValidEmail(emailInput.value.trim())) {
+          showEmailError(false);
+        }
+      });
+
+      /* Early Access application — replace submitApplication() body when connecting Supabase/API */
+      function collectApplicationData() {
+        return {
+          firstName: document.getElementById('first-name').value.trim(),
+          email: document.getElementById('email').value.trim(),
+          propertyName: document.getElementById('property-name').value.trim(),
+          propertyType: document.getElementById('property-type').value,
+          roomCount: document.getElementById('room-count').value.trim(),
+          role: document.getElementById('role').value.trim(),
+          source: 'early-access-programme',
+          submittedAt: new Date().toISOString()
+        };
+      }
+
+      function submitApplication(data) {
+        /* TODO: POST to backend, e.g. Supabase:
+           return fetch('YOUR_API_URL/applications', {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify(data)
+           }); */
+        try {
+          sessionStorage.setItem('hf_early_access_application', JSON.stringify(data));
+        } catch (err) {
+          /* storage unavailable — backend should still receive the submission */
+        }
+        return Promise.resolve({ ok: true });
+      }
+
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        hideFormFeedback();
+
+        var email = emailInput.value.trim();
+
+        if (!form.checkValidity()) {
+          if (!isValidEmail(email)) {
+            showEmailError(true);
+          }
+          form.reportValidity();
+          return;
+        }
+
+        if (!isValidEmail(email)) {
+          showEmailError(true);
+          emailInput.focus();
+          return;
+        }
+
+        showEmailError(false);
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submitting application…';
+        formProgress.textContent = 'Submitting your application…';
+        formProgress.classList.add('show');
+
+        var applicationData = collectApplicationData();
+
+        submitApplication(applicationData).then(function (result) {
+          if (!result.ok) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Join the Early Access Programme';
+            hideFormFeedback();
+            formError.textContent = 'Something went wrong. Please try again or email hello@hospitalityflow.co.uk.';
+            formError.classList.add('show');
+            return;
+          }
+
+          form.style.display = 'none';
+          hideFormFeedback();
+          success.classList.add('show');
+          success.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'center' });
+        }).catch(function () {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Join the Early Access Programme';
+          hideFormFeedback();
+          formError.textContent = 'Something went wrong. Please try again or email hello@hospitalityflow.co.uk.';
+          formError.classList.add('show');
         });
       });
     })();

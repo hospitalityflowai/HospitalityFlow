@@ -13,6 +13,8 @@
   var onOpen = null;
   var onSaveRequest = null;
   var showToast = null;
+  var onConfirmDelete = null;
+  var onConfirmClearAll = null;
 
   function loadAll() {
     try {
@@ -63,10 +65,23 @@
   }
 
   function deleteHandover(id) {
+    if (onConfirmDelete && !onConfirmDelete()) return;
     var list = loadAll().filter(function (item) { return item.id !== id; });
     saveAll(list);
     renderList();
     if (showToast) showToast("Handover deleted.");
+  }
+
+  function clearAllHistory() {
+    var list = loadAll();
+    if (!list.length) {
+      if (showToast) showToast("No saved handovers to clear.");
+      return;
+    }
+    if (onConfirmClearAll && !onConfirmClearAll()) return;
+    saveAll([]);
+    renderList();
+    if (showToast) showToast("All saved handovers cleared.");
   }
 
   function openHandover(id) {
@@ -108,6 +123,20 @@
       var shift = escapeHtml(item.shift || "Not specified");
       var date = escapeHtml(item.dateDisplay || formatDisplayDate(item.date));
       var generated = escapeHtml(formatGeneratedTime(item.timestamp));
+      var recCount = Array.isArray(item.recommendations) ? item.recommendations.length : 0;
+      var checklistCount = Array.isArray(item.shiftIntelligenceChecklist) ? item.shiftIntelligenceChecklist.length : 0;
+      var recLine = recCount
+        ? '<div class="saved-handover-field full">' +
+            '<span class="saved-handover-label">Recommendations</span>' +
+            '<span class="saved-handover-value">' + recCount + ' action' + (recCount === 1 ? '' : 's') + '</span>' +
+          '</div>'
+        : '';
+      var checklistLine = checklistCount
+        ? '<div class="saved-handover-field full">' +
+            '<span class="saved-handover-label">Intelligence Checklist</span>' +
+            '<span class="saved-handover-value">' + checklistCount + ' item' + (checklistCount === 1 ? '' : 's') + '</span>' +
+          '</div>'
+        : '';
 
       card.innerHTML =
         '<div class="saved-handover-body">' +
@@ -132,6 +161,8 @@
               '<span class="saved-handover-label">Generated</span>' +
               '<span class="saved-handover-value">' + generated + '</span>' +
             '</div>' +
+            recLine +
+            checklistLine +
           '</div>' +
         '</div>' +
         '<div class="saved-handover-actions">' +
@@ -169,6 +200,8 @@
     onOpen = options.onOpen;
     onSaveRequest = options.onSaveRequest;
     showToast = options.showToast;
+    onConfirmDelete = options.onConfirmDelete;
+    onConfirmClearAll = options.onConfirmClearAll;
     renderList();
   }
 
@@ -188,6 +221,8 @@
     init: init,
     renderList: renderList,
     handleSaveClick: handleSaveClick,
-    loadAll: loadAll
+    loadAll: loadAll,
+    saveAll: saveAll,
+    clearAllHistory: clearAllHistory
   };
 })(window);
