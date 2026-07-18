@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <meta name="description" content="Sign in to your Hospitality Flow account.">
+  <title>Sign in | Hospitality Flow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/auth.css">
+</head>
+<body>
+
+  <header class="header" role="banner">
+    <div class="container header-inner">
+      <a href="index.html" class="logo" aria-label="Hospitality Flow home">Hospitality <span>Flow</span></a>
+      <a href="signup.html" class="header-link">Create account</a>
+    </div>
+  </header>
+
+  <main>
+    <div class="container auth-layout">
+      <div id="auth-loading" class="auth-loading" aria-live="polite">Checking session…</div>
+
+      <div id="auth-content" class="auth-content hidden">
+        <h1 class="auth-heading">Sign in</h1>
+        <p class="auth-lead">Access your Hospitality Flow account.</p>
+
+        <div class="auth-card">
+          <div id="auth-alert" class="auth-alert" aria-live="polite"></div>
+
+          <form id="login-form" novalidate>
+            <div class="auth-form-group">
+              <label for="login-email">Email address</label>
+              <input type="email" id="login-email" name="email" required autocomplete="email" placeholder="you@yourhotel.com">
+            </div>
+            <div class="auth-form-group">
+              <label for="login-password">Password</label>
+              <input type="password" id="login-password" name="password" required autocomplete="current-password" placeholder="Your password">
+            </div>
+            <button type="submit" class="btn btn-primary" id="login-submit">Sign in</button>
+          </form>
+        </div>
+
+        <p class="auth-footer-text">No account yet? <a href="signup.html">Create one</a></p>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/supabase-config.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/auth.js"></script>
+  <script>HFAuth.initLoginPage();</script>
+</body>
+</html>

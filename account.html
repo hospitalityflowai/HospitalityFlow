@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <meta name="description" content="Your Hospitality Flow account.">
+  <title>Account | Hospitality Flow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/auth.css">
+</head>
+<body>
+
+  <header class="header" role="banner">
+    <div class="container header-inner">
+      <a href="index.html" class="logo" aria-label="Hospitality Flow home">Hospitality <span>Flow</span></a>
+      <a href="index.html" class="header-link">Home</a>
+    </div>
+  </header>
+
+  <main>
+    <div class="container auth-layout auth-layout--wide">
+      <div id="auth-loading" class="auth-loading" aria-live="polite">Loading your account…</div>
+
+      <div id="auth-content" class="auth-content hidden">
+        <h1 class="auth-heading">Your account</h1>
+        <p id="account-email" class="account-email">Signed in as …</p>
+
+        <div id="auth-alert" class="auth-alert" aria-live="polite"></div>
+
+        <div class="auth-card">
+          <div class="account-panel">
+            <p class="account-panel-label">Coming soon</p>
+            <p class="account-panel-text">Your hotel workspace will appear here — a dedicated space for your property, team and operational tools powered by the Hotel Brain.</p>
+          </div>
+
+          <p class="account-note">Local tools remain available on this device while cloud workspaces are in development.</p>
+
+          <div class="account-links">
+            <a href="handover.html">AI Shift Handover</a>
+            <a href="hotel-profile.html">Hotel Brain profile</a>
+            <a href="index.html">Landing page</a>
+          </div>
+
+          <div class="account-actions">
+            <button type="button" class="btn btn-secondary" id="logout-btn">Sign out</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/supabase-config.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/auth.js"></script>
+  <script>HFAuth.initAccountPage();</script>
+</body>
+</html>

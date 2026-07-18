@@ -132,6 +132,35 @@ Phase 1 does not change any existing product behaviour.
 
 ---
 
+## 8. Phase 2 — Customer authentication
+
+Auth pages (use a local server so `js/supabase-config.js` loads):
+
+| Page | URL | Purpose |
+|------|-----|---------|
+| Sign up | `signup.html` | Create account with email and password |
+| Sign in | `login.html` | Sign in to existing account |
+| Account | `account.html` | Protected placeholder dashboard + sign out |
+
+Shared modules: `js/auth.js`, `css/auth.css`
+
+### Enable email auth in Supabase
+
+1. Supabase dashboard → **Authentication** → **Providers** → **Email** → ensure enabled.
+2. **Authentication** → **URL Configuration** — add your site URL and redirect URLs, e.g.:
+   - `http://localhost:5500/account.html` (local)
+   - `https://your-domain.co.uk/account.html` (production)
+
+### Session behaviour
+
+- Sessions persist in the browser via Supabase (`persistSession: true` in `js/supabase-client.js`).
+- Signed-in users visiting `login.html` or `signup.html` are redirected to `account.html`.
+- Unauthenticated users visiting `account.html` are redirected to `login.html`.
+
+Existing tools (`handover.html`, `hotel-profile.html`, etc.) are unchanged and still use local storage.
+
+---
+
 ## 7. Troubleshooting
 
 **`HospitalityFlowSupabase.isConfigured()` returns false**
