@@ -1,0 +1,7 @@
+# Local Supabase credentials — never commit
+js/supabase-config.js
+
+# Environment files
+.env
+.env.local
+.env.*.local
