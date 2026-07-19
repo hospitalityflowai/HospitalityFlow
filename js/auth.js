@@ -313,9 +313,16 @@
           }
 
           showAlert(alertEl, "success", "Signed in successfully. Redirecting…");
-          setTimeout(function () {
-            redirect(getRedirectTarget(ROUTES.account));
-          }, 400);
+
+          var preloadPromise = global.HFHotelBrainStore
+            ? global.HFHotelBrainStore.preload()
+            : Promise.resolve();
+
+          preloadPromise.finally(function () {
+            setTimeout(function () {
+              redirect(getRedirectTarget(ROUTES.account));
+            }, 400);
+          });
         }).catch(function (err) {
           showAlert(alertEl, "error", formatError(err));
           setFormLoading(form, false, submitBtn, "Signing in…", "Sign in");

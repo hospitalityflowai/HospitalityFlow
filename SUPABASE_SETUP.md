@@ -124,9 +124,10 @@ Do **not** add `SUPABASE_SERVICE_ROLE_KEY` to client-facing Vercel variables.
 | Use Supabase for | Keep local for now |
 |------------------|-------------------|
 | Customer accounts | Handover drafts |
-| Authentication | Hotel Brain profile (local) |
-| Hotel workspace (Phase 3) | Saved handovers |
-| Early Access applications (later) | SOP / Rota drafts |
+| Authentication | SOP / Rota drafts |
+| Hotel workspace (Phase 3) | Saved handovers (local) |
+| Hotel Brain profile (Phase 4) | |
+| Early Access applications (later) | |
 
 Phase 1 does not change any existing product behaviour.
 
@@ -289,6 +290,10 @@ The first user to create a workspace receives the **`owner`** role via `hotel_me
 
 ### Troubleshooting Phase 3
 
+**“Workspace changes are not permitted”**
+
+- Run `phase3_hotel_workspace.sql` and `phase5_hotel_workspace_edit.sql` in the Supabase SQL Editor.
+
 **“Workspace creation is not permitted”**
 
 - Run `phase3_hotel_workspace.sql` in the Supabase SQL Editor.
@@ -305,6 +310,93 @@ The first user to create a workspace receives the **`owner`** role via `hotel_me
 
 - Check Supabase → **Table Editor** → `hotels` and `hotel_members` for new rows.
 - Confirm RLS policies were created by the migration.
+
+---
+
+## 11. Phase 4 — Hotel Brain cloud sync
+
+Hotel Brain profiles are stored in Supabase (one record per hotel workspace). The editor UI is unchanged; save/load now uses the cloud instead of `localStorage`.
+
+### Run the migration (required once)
+
+1. Open Supabase → **SQL Editor**.
+2. Paste and run [`supabase/migrations/phase4_hotel_brain.sql`](supabase/migrations/phase4_hotel_brain.sql).
+3. Confirm success (creates `hotel_brain_profiles` table and RLS policies).
+
+### New files
+
+| File | Purpose |
+|------|---------|
+| `js/hotel-brain-store.js` | Load/save Hotel Brain via Supabase (`window.HFHotelBrainStore`) |
+| `supabase/migrations/phase4_hotel_brain.sql` | `hotel_brain_profiles` table + RLS |
+
+### Database table
+
+| Table | Purpose |
+|-------|---------|
+| `hotel_brain_profiles` | One row per `hotels.id`; full profile JSON in `profile_data` (jsonb) |
+
+Access is scoped by `hotel_members` — users only read/write their own hotel's profile.
+
+### Behaviour
+
+| Action | Result |
+|--------|--------|
+| Sign in + open Account | Hotel Brain preloads in the background |
+| Open `hotel-profile.html` (signed in) | Loads profile from Supabase; creates empty profile seeded from workspace if none exists |
+| Save Hotel Brain | Upserts profile to Supabase |
+| Open `handover.html` / `sop.html` (signed in) | Loads Hotel Brain from Supabase into the app |
+| Not signed in / no workspace | Tools show empty Hotel Brain; profile page shows a clear error message |
+
+### Testing Phase 4
+
+1. Run `phase4_hotel_brain.sql` in Supabase.
+2. Sign in and ensure you have a hotel workspace (Phase 3).
+3. Open `hotel-profile.html` → fill in hotel details → **Save Hotel Brain**.
+4. Refresh the page — data should reload from Supabase.
+5. Open `handover.html` — Hotel Brain panel should show **Connected** with your hotel name.
+6. Sign out, sign in again, reopen `hotel-profile.html` — profile should still load.
+7. Confirm handover drafts and SOP drafts still use local storage (unchanged).
+
+### Troubleshooting Phase 4
+
+**“Sign in to load your Hotel Brain from the cloud.”**
+
+- Open `login.html`, sign in, then return to Hotel Brain.
+
+**“Create your hotel workspace on the Account page…”**
+
+- Complete Phase 3 workspace creation on `account.html` first.
+
+**“Hotel Brain database setup incomplete”**
+
+- Run `phase4_hotel_brain.sql` in the Supabase SQL Editor.
+
+**Save succeeds locally but handover shows Not Configured**
+
+- Ensure you are signed in with the same account on both pages.
+- Refresh `handover.html` after saving the profile.
+
+---
+
+## 12. Phase 5 — Hotel workspace editing
+
+Workspace owners can edit hotel details (name, property type, rooms, city, country) on `account.html`. Changes are saved to the `hotels` table only — Hotel Brain profile data remains separate.
+
+### Run the migration (required once)
+
+1. Open Supabase → **SQL Editor**.
+2. Paste and run [`supabase/migrations/phase5_hotel_workspace_edit.sql`](supabase/migrations/phase5_hotel_workspace_edit.sql).
+3. Confirm success (adds owner-only UPDATE policy on `hotels`).
+
+### Behaviour
+
+| Role | Can edit workspace hotel details? |
+|------|-----------------------------------|
+| Owner | Yes — **Edit hotel details** on Account |
+| Other roles | No — view only |
+
+After saving, the workspace card updates immediately. Handover and SOP use the workspace hotel name for display when you are signed in.
 
 ---
 

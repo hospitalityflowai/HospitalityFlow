@@ -20,6 +20,29 @@
     return acc;
   }, {});
 
+  var cachedWorkspace = null;
+
+  function isOwnerRole(role) {
+    return String(role || "").toLowerCase() === "owner";
+  }
+
+  function getCachedWorkspace() {
+    return cachedWorkspace;
+  }
+
+  function getWorkspaceHotelName() {
+    if (!cachedWorkspace || !cachedWorkspace.hotel) return null;
+    var name = cachedWorkspace.hotel.name;
+    return name && String(name).trim() ? String(name).trim() : null;
+  }
+
+  function resolveDisplayHotelName(profileHotelName) {
+    var workspaceName = getWorkspaceHotelName();
+    if (workspaceName) return workspaceName;
+    if (profileHotelName == null) return "";
+    return String(profileHotelName).trim();
+  }
+
   function ensureClient() {
     return global.HFAuth.ensureClient();
   }
@@ -44,13 +67,27 @@
       return "Your session has expired. Please sign in again.";
     }
     if (/row-level security|permission denied|42501/i.test(msg)) {
-      return "Workspace creation is not permitted. Run the Phase 3 SQL migration in Supabase (see SUPABASE_SETUP.md).";
+      return "Workspace changes are not permitted. Run the Supabase workspace migrations (see SUPABASE_SETUP.md).";
     }
     if (/city|country|number_of_rooms|property_type/i.test(msg) && /column|schema|42703/i.test(msg)) {
       return "Database setup incomplete. Run supabase/migrations/phase3_hotel_workspace.sql in Supabase.";
     }
+    if (/cannot coerce the result to a single JSON object|PGRST116|JSON object requested, multiple/i.test(msg)) {
+      return "Could not load your hotel workspace reliably. Refresh the page or contact support if this continues.";
+    }
+    if (/hotel details could not be updated|no rows/i.test(msg)) {
+      return "Hotel details could not be updated. Confirm you are the workspace owner and try again.";
+    }
 
     return global.HFAuth.formatError(error);
+  }
+
+  function normalizeMembershipRow(row) {
+    if (!row || !row.hotels) return null;
+    return {
+      role: row.role,
+      hotel: row.hotels
+    };
   }
 
   function getUserWorkspace() {
@@ -61,20 +98,19 @@
 
         return client
           .from("hotel_members")
-          .select("role, hotels ( id, name, property_type, number_of_rooms, city, country, created_at )")
+          .select("role, hotel_id, created_at, hotels ( id, name, property_type, number_of_rooms, city, country, created_at )")
           .eq("user_id", user.id)
-          .maybeSingle()
+          .order("created_at", { ascending: true })
+          .limit(1)
           .then(function (response) {
             if (response.error) {
               return Promise.reject(response.error);
             }
-            if (!response.data || !response.data.hotels) {
-              return null;
-            }
-            return {
-              role: response.data.role,
-              hotel: response.data.hotels
-            };
+
+            var row = response.data && response.data.length ? response.data[0] : null;
+            var workspace = normalizeMembershipRow(row);
+            cachedWorkspace = workspace;
+            return workspace;
           });
       });
     });
@@ -93,6 +129,91 @@
           return Promise.reject(response.error);
         }
         return getUserWorkspace();
+      });
+    });
+  }
+
+  function validateWorkspacePayload(payload) {
+    if (!payload.name) {
+      return "Please enter your hotel name.";
+    }
+    if (!payload.propertyType) {
+      return "Please select a property type.";
+    }
+    if (!payload.roomCount || payload.roomCount < 1) {
+      return "Please enter a valid number of rooms.";
+    }
+    if (!payload.city) {
+      return "Please enter a city.";
+    }
+    if (!payload.country) {
+      return "Please enter a country.";
+    }
+    return null;
+  }
+
+  function updateWorkspace(hotelId, payload) {
+    if (!cachedWorkspace || !isOwnerRole(cachedWorkspace.role)) {
+      return Promise.reject(new Error("Only workspace owners can edit hotel details."));
+    }
+    if (!hotelId || !cachedWorkspace.hotel || cachedWorkspace.hotel.id !== hotelId) {
+      return Promise.reject(new Error("Could not identify your hotel workspace."));
+    }
+
+    return ensureClient().then(function (client) {
+      return client.auth.getUser().then(function (authResult) {
+        var user = authResult.data.user;
+        if (!user) {
+          return Promise.reject(new Error("Not authenticated"));
+        }
+
+        return client
+          .from("hotel_members")
+          .select("role, hotel_id")
+          .eq("user_id", user.id)
+          .eq("hotel_id", hotelId)
+          .limit(1)
+          .then(function (membershipResponse) {
+            if (membershipResponse.error) {
+              return Promise.reject(membershipResponse.error);
+            }
+
+            var membership = membershipResponse.data && membershipResponse.data.length
+              ? membershipResponse.data[0]
+              : null;
+
+            if (!membership || !isOwnerRole(membership.role)) {
+              return Promise.reject(new Error("Only workspace owners can edit hotel details."));
+            }
+
+            return client
+              .from("hotels")
+              .update({
+                name: payload.name,
+                property_type: payload.propertyType,
+                number_of_rooms: payload.roomCount,
+                city: payload.city,
+                country: payload.country
+              })
+              .eq("id", hotelId)
+              .select("id, name, property_type, number_of_rooms, city, country, created_at")
+              .then(function (updateResponse) {
+                if (updateResponse.error) {
+                  return Promise.reject(updateResponse.error);
+                }
+
+                var updatedRows = updateResponse.data || [];
+                if (!updatedRows.length) {
+                  return Promise.reject(new Error("Hotel details could not be updated."));
+                }
+
+                cachedWorkspace = {
+                  role: membership.role,
+                  hotel: updatedRows[0]
+                };
+                return cachedWorkspace;
+              });
+          });
       });
     });
   }
@@ -123,6 +244,8 @@
     var hotelMetaEl = document.getElementById("workspace-hotel-meta");
     var roleEl = document.getElementById("workspace-user-role");
     var headingEl = document.getElementById("account-heading");
+    var editBtn = document.getElementById("workspace-edit-btn");
+    var editPanel = document.getElementById("workspace-edit");
 
     setWorkspacePanelVisible(createEl, false);
     setWorkspacePanelVisible(dashboardEl, true);
@@ -144,6 +267,95 @@
     if (roleEl) {
       roleEl.textContent = "Your role: " + formatRole(workspace.role);
     }
+
+    var canEdit = isOwnerRole(workspace.role);
+    if (editBtn) {
+      editBtn.classList.toggle("hidden", !canEdit);
+      editBtn.hidden = !canEdit;
+    }
+    if (editPanel && !canEdit) {
+      setWorkspacePanelVisible(editPanel, false);
+    }
+  }
+
+  function populateWorkspaceEditForm(workspace) {
+    var hotel = workspace.hotel;
+    var nameEl = document.getElementById("workspace-edit-name");
+    var typeEl = document.getElementById("workspace-edit-property-type");
+    var roomsEl = document.getElementById("workspace-edit-room-count");
+    var cityEl = document.getElementById("workspace-edit-city");
+    var countryEl = document.getElementById("workspace-edit-country");
+
+    if (nameEl) nameEl.value = hotel.name || "";
+    if (typeEl) typeEl.value = hotel.property_type || "";
+    if (roomsEl) roomsEl.value = hotel.number_of_rooms != null ? hotel.number_of_rooms : "";
+    if (cityEl) cityEl.value = hotel.city || "";
+    if (countryEl) countryEl.value = hotel.country || "";
+  }
+
+  function initWorkspaceEdit(workspace, alertEl) {
+    var editBtn = document.getElementById("workspace-edit-btn");
+    var editPanel = document.getElementById("workspace-edit");
+    var editForm = document.getElementById("workspace-edit-form");
+    var editAlertEl = document.getElementById("workspace-edit-alert");
+    var cancelBtn = document.getElementById("workspace-edit-cancel");
+    var submitBtn = document.getElementById("workspace-edit-submit");
+
+    if (!editBtn || !editPanel || !editForm || !isOwnerRole(workspace.role)) {
+      return;
+    }
+
+    editBtn.addEventListener("click", function () {
+      hideAlert(editAlertEl);
+      populateWorkspaceEditForm(cachedWorkspace || workspace);
+      setWorkspacePanelVisible(editPanel, true);
+      editBtn.hidden = true;
+      editBtn.classList.add("hidden");
+    });
+
+    if (cancelBtn) {
+      cancelBtn.addEventListener("click", function () {
+        hideAlert(editAlertEl);
+        setWorkspacePanelVisible(editPanel, false);
+        editBtn.hidden = false;
+        editBtn.classList.remove("hidden");
+      });
+    }
+
+    editForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      hideAlert(editAlertEl);
+      hideAlert(alertEl);
+
+      var payload = {
+        name: document.getElementById("workspace-edit-name").value.trim(),
+        propertyType: document.getElementById("workspace-edit-property-type").value,
+        roomCount: parseInt(document.getElementById("workspace-edit-room-count").value, 10),
+        city: document.getElementById("workspace-edit-city").value.trim(),
+        country: document.getElementById("workspace-edit-country").value.trim()
+      };
+
+      var validationError = validateWorkspacePayload(payload);
+      if (validationError) {
+        showAlert(editAlertEl, "error", validationError);
+        return;
+      }
+
+      setFormLoading(editForm, true, submitBtn, "Saving…", "Save hotel details");
+
+      updateWorkspace((cachedWorkspace || workspace).hotel.id, payload).then(function (updated) {
+        renderWorkspaceDashboard(updated);
+        populateWorkspaceEditForm(updated);
+        setWorkspacePanelVisible(editPanel, false);
+        editBtn.hidden = false;
+        editBtn.classList.remove("hidden");
+        showAlert(alertEl, "success", "Hotel details updated successfully.");
+        setFormLoading(editForm, false, submitBtn, "Saving…", "Save hotel details");
+      }).catch(function (err) {
+        showAlert(editAlertEl, "error", formatWorkspaceError(err));
+        setFormLoading(editForm, false, submitBtn, "Saving…", "Save hotel details");
+      });
+    });
   }
 
   function renderWorkspaceCreateForm() {
@@ -175,12 +387,17 @@
 
       global.HFAuth.initChangePasswordSection(session);
 
+      if (global.HFHotelBrainStore) {
+        global.HFHotelBrainStore.preload();
+      }
+
       return getUserWorkspace().then(function (workspace) {
         if (loadingEl) loadingEl.classList.add("hidden");
         if (contentEl) contentEl.classList.remove("hidden");
 
         if (workspace) {
           renderWorkspaceDashboard(workspace);
+          initWorkspaceEdit(workspace, alertEl);
         } else {
           renderWorkspaceCreateForm();
         }
@@ -197,24 +414,15 @@
             var city = document.getElementById("workspace-city").value.trim();
             var country = document.getElementById("workspace-country").value.trim();
 
-            if (!name) {
-              showAlert(alertEl, "error", "Please enter your hotel name.");
-              return;
-            }
-            if (!propertyType) {
-              showAlert(alertEl, "error", "Please select a property type.");
-              return;
-            }
-            if (!roomCount || roomCount < 1) {
-              showAlert(alertEl, "error", "Please enter a valid number of rooms.");
-              return;
-            }
-            if (!city) {
-              showAlert(alertEl, "error", "Please enter a city.");
-              return;
-            }
-            if (!country) {
-              showAlert(alertEl, "error", "Please enter a country.");
+            var validationError = validateWorkspacePayload({
+              name: name,
+              propertyType: propertyType,
+              roomCount: roomCount,
+              city: city,
+              country: country
+            });
+            if (validationError) {
+              showAlert(alertEl, "error", validationError);
               return;
             }
 
@@ -229,6 +437,7 @@
             }).then(function (workspace) {
               showAlert(alertEl, "success", "Hotel workspace created successfully.");
               renderWorkspaceDashboard(workspace);
+              initWorkspaceEdit(workspace, alertEl);
               form.reset();
               setFormLoading(form, false, submitBtn, "Creating workspace…", "Create hotel workspace");
             }).catch(function (err) {
@@ -276,7 +485,11 @@
   global.HFWorkspace = {
     PROPERTY_TYPES: PROPERTY_TYPES,
     getUserWorkspace: getUserWorkspace,
+    getCachedWorkspace: getCachedWorkspace,
+    getWorkspaceHotelName: getWorkspaceHotelName,
+    resolveDisplayHotelName: resolveDisplayHotelName,
     createWorkspace: createWorkspace,
+    updateWorkspace: updateWorkspace,
     initAccountPage: initAccountPage
   };
 })(window);

@@ -359,6 +359,22 @@ main {
   gap: 10px;
 }
 
+.account-edit-btn {
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.workspace-edit {
+  margin-bottom: 16px;
+  padding-top: 4px;
+}
+
+.account-form-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .account-password-section {
   margin-top: 20px;
 }

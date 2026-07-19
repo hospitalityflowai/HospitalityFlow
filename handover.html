@@ -2771,6 +2771,11 @@
 
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="handover-pdf.js"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/workspace.js"></script>
+  <script src="js/hotel-brain-store.js"></script>
   <script src="hotel-profile-operational.js"></script>
   <script src="shift-intelligence-engine.js"></script>
   <script src="handover-saved.js"></script>
@@ -3047,15 +3052,10 @@
       }
 
       function loadHotelProfileFromStorage() {
-        try {
-          var raw = localStorage.getItem(HOTEL_BRAIN_KEY);
-          if (!raw) return null;
-          var parsed = JSON.parse(raw);
-          if (!parsed || typeof parsed !== "object") return null;
-          return parsed;
-        } catch (e) {
-          return null;
+        if (window.HFHotelBrainStore) {
+          return window.HFHotelBrainStore.getCached();
         }
+        return null;
       }
 
       function trimText(value) {
@@ -3252,8 +3252,15 @@
         hotelBrainPanel.classList.toggle("is-disconnected", !connected);
 
         if (!connected) {
+          var workspaceName = window.HFWorkspace && window.HFWorkspace.getWorkspaceHotelName
+            ? window.HFWorkspace.getWorkspaceHotelName()
+            : null;
           if (hotelBrainTitle) hotelBrainTitle.textContent = "Hotel Brain Not Configured";
-          if (hotelBrainMeta) hotelBrainMeta.textContent = "Complete Hotel Brain to personalise Hospitality Flow.";
+          if (hotelBrainMeta) {
+            hotelBrainMeta.textContent = workspaceName
+              ? workspaceName + " · Complete Hotel Brain to personalise Hospitality Flow."
+              : "Complete Hotel Brain to personalise Hospitality Flow.";
+          }
           if (hotelBrainSub) {
             hotelBrainSub.textContent = "";
             hotelBrainSub.hidden = true;
@@ -3266,7 +3273,10 @@
         }
 
         var general = (hotelBrainContext && hotelBrainContext.general) || (hotelProfile && hotelProfile.general) || {};
-        var hotelName = trimText(general.hotelName) || "Hotel Brain Connected";
+        var hotelName = (window.HFWorkspace && window.HFWorkspace.resolveDisplayHotelName)
+          ? window.HFWorkspace.resolveDisplayHotelName(general.hotelName)
+          : trimText(general.hotelName);
+        if (!hotelName) hotelName = "Hotel Brain Connected";
         var roomCount = trimText(general.totalRooms);
         var hotelType = trimText(general.hotelType);
         var language = trimText(aiPrefs.language) || "British English";
@@ -3375,6 +3385,28 @@
         hotelProfile = loadHotelProfileFromStorage();
         applyHotelProfileConfig(hotelProfile);
         mergeTerminologyKeywords();
+      }
+
+      function initHotelBrainFromCloud(done) {
+        var workspacePromise = window.HFWorkspace
+          ? window.HFWorkspace.getUserWorkspace().catch(function () { return null; })
+          : Promise.resolve(null);
+
+        function finishInit() {
+          reloadHotelBrain();
+          applyHotelProfileToUI();
+          if (done) done();
+        }
+
+        if (!window.HFHotelBrainStore) {
+          workspacePromise.then(finishInit);
+          return;
+        }
+
+        Promise.all([
+          window.HFHotelBrainStore.load(),
+          workspacePromise
+        ]).then(finishInit).catch(finishInit);
       }
 
       function applyHotelProfileConfig(profile) {
@@ -3597,6 +3629,15 @@
         renderHotelBrainPanel();
 
         if (!isHotelBrainConfigured(hotelProfile)) {
+          var workspaceOnlyName = window.HFWorkspace && window.HFWorkspace.getWorkspaceHotelName
+            ? window.HFWorkspace.getWorkspaceHotelName()
+            : null;
+          if (workspaceOnlyName) {
+            if (!hotelName.value.trim()) hotelName.value = workspaceOnlyName;
+            if (navHotelLabel) navHotelLabel.textContent = workspaceOnlyName;
+            if (pageTitle) pageTitle.textContent = workspaceOnlyName + " — " + uiLabels.assistant;
+            document.title = workspaceOnlyName + " — " + uiLabels.assistant + " — Hospitality Flow";
+          }
           applyHotelLogo("");
           populateDepartmentSelect();
           wireShiftButtons();
@@ -3604,8 +3645,11 @@
         }
 
         var general = hotelProfile.general || {};
-        if (general.hotelName && !hotelName.value.trim()) {
-          hotelName.value = general.hotelName;
+        var displayHotelName = (window.HFWorkspace && window.HFWorkspace.resolveDisplayHotelName)
+          ? window.HFWorkspace.resolveDisplayHotelName(general.hotelName)
+          : trimText(general.hotelName);
+        if (displayHotelName && !hotelName.value.trim()) {
+          hotelName.value = displayHotelName;
         }
 
         applyHotelLogo(hotelLogoDataUrl);
@@ -3613,10 +3657,10 @@
         wireShiftButtons();
         applyUiLabelsToPage();
 
-        if (general.hotelName) {
-          if (navHotelLabel) navHotelLabel.textContent = general.hotelName;
-          if (pageTitle) pageTitle.textContent = general.hotelName + " — " + uiLabels.assistant;
-          document.title = general.hotelName + " — " + uiLabels.assistant + " — Hospitality Flow";
+        if (displayHotelName) {
+          if (navHotelLabel) navHotelLabel.textContent = displayHotelName;
+          if (pageTitle) pageTitle.textContent = displayHotelName + " — " + uiLabels.assistant;
+          document.title = displayHotelName + " — " + uiLabels.assistant + " — Hospitality Flow";
         }
       }
 
@@ -3785,7 +3829,6 @@
         });
       }
 
-      reloadHotelBrain();
 
       var selectedShift = configuredShifts[0] ? configuredShifts[0].code : "AM";
       var lastHandoverText = "";
@@ -6633,13 +6676,9 @@
           draft = buildDraftPayload();
         }
 
-        var hotelBrain = null;
-        try {
-          var brainRaw = localStorage.getItem(HOTEL_BRAIN_KEY);
-          hotelBrain = brainRaw ? JSON.parse(brainRaw) : null;
-        } catch (err) {
-          hotelBrain = null;
-        }
+        var hotelBrain = hotelProfile && typeof hotelProfile === "object"
+          ? JSON.parse(JSON.stringify(hotelProfile))
+          : null;
 
         return {
           backupVersion: BACKUP_VERSION,
@@ -6727,7 +6766,13 @@
         skipDraftSave = true;
 
         if (data.hotelBrain && typeof data.hotelBrain === "object") {
-          localStorage.setItem(HOTEL_BRAIN_KEY, JSON.stringify(data.hotelBrain));
+          hotelProfile = data.hotelBrain;
+          if (window.HFHotelBrainStore) {
+            window.HFHotelBrainStore.setCache(window.HFHotelBrainStore.getCachedHotelId(), data.hotelBrain);
+            window.HFHotelBrainStore.save(data.hotelBrain).catch(function () {
+              showToast("Hotel Brain imported but cloud sync failed. Sign in and try again.");
+            });
+          }
         }
 
         if (window.HandoverSaved && Array.isArray(data.savedHandovers)) {
@@ -7262,24 +7307,19 @@
         }
       });
 
-      applyHotelProfileToUI();
-      window.addEventListener("storage", function (event) {
-        if (event.key !== HOTEL_BRAIN_KEY) return;
-        reloadHotelBrain();
-        applyHotelProfileToUI();
+      initHotelBrainFromCloud(function () {
+        var draftWasRestored = restoreDraftFromStorage();
+        if (!draftWasRestored) {
+          initDate();
+        } else {
+          showDraftRestoredHint();
+        }
+        updateCharCount();
+        if (!draftWasRestored) {
+          renderPreHandoverSnapshot();
+        }
+        updateStorageStatusUI();
       });
-
-      var draftWasRestored = restoreDraftFromStorage();
-      if (!draftWasRestored) {
-        initDate();
-      } else {
-        showDraftRestoredHint();
-      }
-      updateCharCount();
-      if (!draftWasRestored) {
-        renderPreHandoverSnapshot();
-      }
-      updateStorageStatusUI();
 
       if (window.HandoverSaved) {
         HandoverSaved.init({

@@ -1304,6 +1304,11 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/workspace.js"></script>
+  <script src="js/hotel-brain-store.js"></script>
   <script src="hotel-profile-knowledge.js"></script>
   <script src="hotel-profile-operational.js"></script>
   <script src="hotel-profile-zetter-sample.js"></script>
@@ -1658,7 +1663,7 @@
       }
 
       function writeToStorage(data) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        return window.HFHotelBrainStore.save(data);
       }
 
       function isValidProfileData(data) {
@@ -1744,7 +1749,7 @@
               showSaveError('Invalid profile file — expected hotel profile JSON');
               return;
             }
-            if (!window.confirm('Import this profile?\n\nThis will replace your current hotel profile in this browser. Export a backup first if you want to keep the current data.')) return;
+            if (!window.confirm('Import this profile?\n\nThis will replace your current Hotel Brain in the cloud. Export a backup first if you want to keep the current data.')) return;
             profileReady = false;
             restoreProfileData(data);
             profileReady = true;
@@ -2756,39 +2761,67 @@
         if (!profileReady || isSaving) return;
         isSaving = true;
         setSaving();
+
+        var data;
         try {
-          var data = collectProfileData();
-          writeToStorage(data);
-          markSaved(data.savedAt, { isAuto: !!isAuto, sectionId: sectionId || null });
+          data = collectProfileData();
         } catch (e) {
           showSaveError('Unable to save profile. Please try again.');
-        } finally {
           setSaveButtonSaving(false);
           isSaving = false;
+          return;
         }
+
+        writeToStorage(data).then(function () {
+          markSaved(data.savedAt, { isAuto: !!isAuto, sectionId: sectionId || null });
+        }).catch(function (err) {
+          showSaveError(window.HFHotelBrainStore.formatError(err));
+        }).finally(function () {
+          setSaveButtonSaving(false);
+          isSaving = false;
+        });
       }
 
       function loadProfile() {
         profileReady = false;
-        try {
-          var raw = localStorage.getItem(STORAGE_KEY);
-          if (!raw) {
+
+        window.HFHotelBrainStore.load().then(function (result) {
+          if (result.error === 'NOT_AUTHENTICATED') {
+            showSaveError('Sign in to load your Hotel Brain from the cloud.');
             seedFreshProfileUI();
             profileReady = true;
             if (HPK) HPK.updateCompletionUI();
             return;
           }
-          var parsed = parseStoredProfile(raw);
-          var migrated = migrateProfileSchema(parsed);
+          if (result.error === 'NO_WORKSPACE') {
+            showSaveError('Create your hotel workspace on the Account page before using Hotel Brain.');
+            seedFreshProfileUI();
+            profileReady = true;
+            if (HPK) HPK.updateCompletionUI();
+            return;
+          }
+
+          if (!result.profile) {
+            seedFreshProfileUI();
+            profileReady = true;
+            if (HPK) HPK.updateCompletionUI();
+            return;
+          }
+
+          var migrated = migrateProfileSchema(result.profile);
           if (!migrated) {
-            showSaveError('Could not load saved profile — unrecognised format. Your stored data was not changed.');
+            showSaveError('Could not load saved profile — unrecognised format.');
+            seedFreshProfileUI();
+            profileReady = true;
             return;
           }
           restoreProfileData(migrated);
           profileReady = true;
-        } catch (e) {
-          showSaveError('Could not load saved profile — ' + (e && e.message ? e.message : 'parse error') + '. Your stored data was not overwritten.');
-        }
+        }).catch(function (err) {
+          showSaveError(window.HFHotelBrainStore.formatError(err));
+          seedFreshProfileUI();
+          profileReady = true;
+        });
       }
 
       if (HPK) {

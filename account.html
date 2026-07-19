@@ -77,7 +77,48 @@
             <p id="workspace-user-role" class="account-note"></p>
           </div>
 
-          <p class="account-note">Local tools remain available on this device. Cloud sync for handovers and Hotel Brain will arrive in a later phase.</p>
+          <button type="button" class="btn btn-secondary account-edit-btn hidden" id="workspace-edit-btn" hidden>Edit hotel details</button>
+
+          <div id="workspace-edit" class="workspace-edit hidden" hidden>
+            <div id="workspace-edit-alert" class="auth-alert" aria-live="polite"></div>
+            <form id="workspace-edit-form" novalidate>
+              <div class="auth-form-group">
+                <label for="workspace-edit-name">Hotel name</label>
+                <input type="text" id="workspace-edit-name" name="hotel-name" required autocomplete="organization" placeholder="Your hotel name">
+              </div>
+              <div class="auth-form-group">
+                <label for="workspace-edit-property-type">Property type</label>
+                <select id="workspace-edit-property-type" name="property-type" required>
+                  <option value="" disabled>Select property type</option>
+                  <option value="independent-hotel">Independent hotel</option>
+                  <option value="boutique-hotel">Boutique hotel</option>
+                  <option value="small-hotel-group">Small hotel group (2–10 hotels)</option>
+                  <option value="guest-house">Guest house</option>
+                  <option value="serviced-apartment">Serviced apartment</option>
+                  <option value="hotel-opening-soon">Hotel opening soon</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div class="auth-form-group">
+                <label for="workspace-edit-room-count">Number of rooms</label>
+                <input type="number" id="workspace-edit-room-count" name="room-count" required min="1" max="9999" inputmode="numeric" placeholder="e.g. 42">
+              </div>
+              <div class="auth-form-group">
+                <label for="workspace-edit-city">City</label>
+                <input type="text" id="workspace-edit-city" name="city" required autocomplete="address-level2" placeholder="e.g. London">
+              </div>
+              <div class="auth-form-group">
+                <label for="workspace-edit-country">Country</label>
+                <input type="text" id="workspace-edit-country" name="country" required autocomplete="country-name" placeholder="e.g. United Kingdom">
+              </div>
+              <div class="account-form-actions">
+                <button type="submit" class="btn btn-primary" id="workspace-edit-submit">Save hotel details</button>
+                <button type="button" class="btn btn-secondary" id="workspace-edit-cancel">Cancel</button>
+              </div>
+            </form>
+          </div>
+
+          <p class="account-note">Hotel Brain syncs to your hotel workspace. Handover drafts remain on this device until a later phase.</p>
 
           <div class="account-links">
             <a href="handover.html">AI Shift Handover</a>
