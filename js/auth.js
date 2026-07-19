@@ -9,11 +9,21 @@
     login: "login.html",
     signup: "signup.html",
     account: "account.html",
+    forgotPassword: "forgot-password.html",
+    resetPassword: "reset-password.html",
     home: "index.html"
   };
 
+  var MIN_PASSWORD_LENGTH = 8;
+
   function redirect(url) {
     global.location.href = url;
+  }
+
+  function getPageUrl(filename) {
+    var origin = global.location.origin;
+    var basePath = global.location.pathname.replace(/[^/]*$/, "");
+    return origin + basePath + filename;
   }
 
   function getRedirectTarget(fallback) {
@@ -75,9 +85,7 @@
 
   function signUp(email, password) {
     return ensureClient().then(function (client) {
-      var origin = global.location.origin;
-      var basePath = global.location.pathname.replace(/[^/]*$/, "");
-      var redirectTo = origin + basePath + ROUTES.account;
+      var redirectTo = getPageUrl(ROUTES.account);
 
       return client.auth.signUp({
         email: email,
@@ -92,6 +100,111 @@
   function signOut() {
     return ensureClient().then(function (client) {
       return client.auth.signOut();
+    });
+  }
+
+  function signOut() {
+    return ensureClient().then(function (client) {
+      return client.auth.signOut();
+    });
+  }
+
+  function requestPasswordReset(email) {
+    return ensureClient().then(function (client) {
+      return client.auth.resetPasswordForEmail(email, {
+        redirectTo: getPageUrl(ROUTES.resetPassword)
+      });
+    });
+  }
+
+  function updatePassword(newPassword) {
+    return ensureClient().then(function (client) {
+      return client.auth.updateUser({ password: newPassword });
+    });
+  }
+
+  function validateNewPassword(password, confirm) {
+    if (!password || password.length < MIN_PASSWORD_LENGTH) {
+      return "Password must be at least " + MIN_PASSWORD_LENGTH + " characters.";
+    }
+    if (password !== confirm) {
+      return "Passwords do not match.";
+    }
+    return null;
+  }
+
+  function parseAuthHashError() {
+    var hash = global.location.hash.replace(/^#/, "");
+    if (!hash) return null;
+
+    var params = new URLSearchParams(hash);
+    var error = params.get("error_description") || params.get("error");
+    if (!error) return null;
+
+    try {
+      return decodeURIComponent(error.replace(/\+/g, " "));
+    } catch (e) {
+      return error;
+    }
+  }
+
+  function waitForRecoverySession(client, timeoutMs) {
+    var timeout = timeoutMs || 4000;
+
+    return new Promise(function (resolve) {
+      var settled = false;
+      var subscription = null;
+      var timer = null;
+
+      function finish(session, isRecovery) {
+        if (settled) return;
+        settled = true;
+        if (timer) clearTimeout(timer);
+        if (subscription && subscription.unsubscribe) {
+          subscription.unsubscribe();
+        }
+        resolve({ session: session, isRecovery: isRecovery });
+      }
+
+      subscription = client.auth.onAuthStateChange(function (event, session) {
+        if (event === "PASSWORD_RECOVERY" && session) {
+          finish(session, true);
+          return;
+        }
+        if (session && (event === "SIGNED_IN" || event === "INITIAL_SESSION")) {
+          var hashType = "";
+          if (global.location.hash) {
+            hashType = new URLSearchParams(global.location.hash.replace(/^#/, "")).get("type") || "";
+          }
+          if (hashType === "recovery" || event === "PASSWORD_RECOVERY") {
+            finish(session, true);
+          }
+        }
+      });
+
+      client.auth.getSession().then(function (result) {
+        var session = result.data.session;
+        if (!session) return;
+
+        var hashType = "";
+        if (global.location.hash) {
+          hashType = new URLSearchParams(global.location.hash.replace(/^#/, "")).get("type") || "";
+        }
+        if (hashType === "recovery") {
+          finish(session, true);
+        }
+      });
+
+      timer = setTimeout(function () {
+        client.auth.getSession().then(function (result) {
+          var session = result.data.session;
+          var hashType = "";
+          if (global.location.hash) {
+            hashType = new URLSearchParams(global.location.hash.replace(/^#/, "")).get("type") || "";
+          }
+          finish(session, hashType === "recovery" && !!session);
+        });
+      }, timeout);
     });
   }
 
@@ -110,6 +223,15 @@
     }
     if (/password should be at least|at least 6 characters/i.test(msg)) {
       return "Password must be at least 6 characters.";
+    }
+    if (/at least 8 characters/i.test(msg)) {
+      return "Password must be at least " + MIN_PASSWORD_LENGTH + " characters.";
+    }
+    if (/same password|identical password|reuse/i.test(msg)) {
+      return "Choose a different password from your current one.";
+    }
+    if (/session expired|invalid.*token|otp_expired|flow state/i.test(msg)) {
+      return "This reset link has expired or is invalid. Please request a new one.";
     }
     if (/valid email/i.test(msg)) {
       return "Please enter a valid email address.";
@@ -137,7 +259,7 @@
 
   function setFormLoading(form, loading, submitBtn, loadingText, defaultText) {
     if (!form || !submitBtn) return;
-    var inputs = form.querySelectorAll("input, button");
+    var inputs = form.querySelectorAll("input, select, button");
     inputs.forEach(function (input) {
       input.disabled = loading;
     });
@@ -161,6 +283,8 @@
       if (loadingEl) loadingEl.classList.add("hidden");
       if (wasRedirected) return;
       if (contentEl) contentEl.classList.remove("hidden");
+
+      showLoginResetSuccess();
 
       form.addEventListener("submit", function (e) {
         e.preventDefault();
@@ -277,60 +401,229 @@
     });
   }
 
-  function initAccountPage() {
+  function initForgotPasswordPage() {
+    var form = document.getElementById("forgot-form");
     var alertEl = document.getElementById("auth-alert");
-    var emailEl = document.getElementById("account-email");
-    var logoutBtn = document.getElementById("logout-btn");
+    var submitBtn = document.getElementById("forgot-submit");
     var loadingEl = document.getElementById("auth-loading");
     var contentEl = document.getElementById("auth-content");
 
-    requireAuth().then(function (session) {
-      if (!session) return;
+    if (!form) return;
 
+    requireGuest().then(function (wasRedirected) {
       if (loadingEl) loadingEl.classList.add("hidden");
+      if (wasRedirected) return;
       if (contentEl) contentEl.classList.remove("hidden");
 
-      if (emailEl) {
-        var email = session.user && session.user.email ? session.user.email : "your account";
-        emailEl.innerHTML = "Signed in as <strong>" + escapeHtml(email) + "</strong>";
-      }
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        hideAlert(alertEl);
 
-      if (logoutBtn) {
-        logoutBtn.addEventListener("click", function () {
-          hideAlert(alertEl);
-          logoutBtn.disabled = true;
-          logoutBtn.textContent = "Signing out…";
+        var email = document.getElementById("forgot-email").value.trim();
 
-          signOut().then(function (result) {
-            if (result.error) {
-              showAlert(alertEl, "error", formatError(result.error));
-              logoutBtn.disabled = false;
-              logoutBtn.textContent = "Sign out";
-              return;
-            }
+        if (!isValidEmail(email)) {
+          showAlert(alertEl, "error", "Please enter a valid email address.");
+          return;
+        }
 
-            redirect(ROUTES.login);
-          }).catch(function (err) {
-            showAlert(alertEl, "error", formatError(err));
-            logoutBtn.disabled = false;
-            logoutBtn.textContent = "Sign out";
-          });
+        setFormLoading(form, true, submitBtn, "Sending reset link…", "Send reset link");
+
+        requestPasswordReset(email).then(function (result) {
+          if (result.error) {
+            showAlert(alertEl, "error", formatError(result.error));
+            setFormLoading(form, false, submitBtn, "Sending reset link…", "Send reset link");
+            return;
+          }
+
+          showAlert(
+            alertEl,
+            "success",
+            "If an account exists for that email, we have sent a password reset link. Check your inbox and spam folder."
+          );
+          form.reset();
+          setFormLoading(form, false, submitBtn, "Sending reset link…", "Send reset link");
+        }).catch(function (err) {
+          showAlert(alertEl, "error", formatError(err));
+          setFormLoading(form, false, submitBtn, "Sending reset link…", "Send reset link");
         });
-      }
+      });
     }).catch(function (err) {
       if (loadingEl) loadingEl.classList.add("hidden");
+      if (contentEl) contentEl.classList.remove("hidden");
       showAlert(alertEl, "error", formatError(err));
     });
   }
 
-  function escapeHtml(text) {
-    var div = document.createElement("div");
-    div.textContent = text;
-    return div.innerHTML;
+  function initResetPasswordPage() {
+    var form = document.getElementById("reset-form");
+    var alertEl = document.getElementById("auth-alert");
+    var submitBtn = document.getElementById("reset-submit");
+    var loadingEl = document.getElementById("auth-loading");
+    var contentEl = document.getElementById("auth-content");
+    var invalidEl = document.getElementById("reset-invalid");
+
+    if (!form) return;
+
+    var hashError = parseAuthHashError();
+    if (hashError) {
+      if (loadingEl) loadingEl.classList.add("hidden");
+      if (contentEl) contentEl.classList.remove("hidden");
+      if (invalidEl) {
+        invalidEl.classList.remove("hidden");
+        invalidEl.hidden = false;
+      }
+      form.classList.add("hidden");
+      form.hidden = true;
+      showAlert(alertEl, "error", formatError({ message: hashError }));
+      return;
+    }
+
+    ensureClient().then(function (client) {
+      return waitForRecoverySession(client).then(function (result) {
+        if (loadingEl) loadingEl.classList.add("hidden");
+        if (contentEl) contentEl.classList.remove("hidden");
+
+        if (!result.session || !result.isRecovery) {
+          if (invalidEl) {
+            invalidEl.classList.remove("hidden");
+            invalidEl.hidden = false;
+          }
+          form.classList.add("hidden");
+          form.hidden = true;
+          showAlert(
+            alertEl,
+            "error",
+            "This reset link is invalid or has expired. Request a new password reset email."
+          );
+          return;
+        }
+
+        form.addEventListener("submit", function (e) {
+          e.preventDefault();
+          hideAlert(alertEl);
+
+          var password = document.getElementById("reset-password").value;
+          var confirm = document.getElementById("reset-password-confirm").value;
+          var validationError = validateNewPassword(password, confirm);
+
+          if (validationError) {
+            showAlert(alertEl, "error", validationError);
+            return;
+          }
+
+          setFormLoading(form, true, submitBtn, "Updating password…", "Update password");
+
+          updatePassword(password).then(function (result) {
+            if (result.error) {
+              showAlert(alertEl, "error", formatError(result.error));
+              setFormLoading(form, false, submitBtn, "Updating password…", "Update password");
+              return;
+            }
+
+            return signOut().then(function () {
+              showAlert(alertEl, "success", "Password updated successfully. Redirecting to sign in…");
+              setTimeout(function () {
+                redirect(ROUTES.login + "?reset=success");
+              }, 800);
+            });
+          }).catch(function (err) {
+            showAlert(alertEl, "error", formatError(err));
+            setFormLoading(form, false, submitBtn, "Updating password…", "Update password");
+          });
+        });
+      });
+    }).catch(function (err) {
+      if (loadingEl) loadingEl.classList.add("hidden");
+      if (contentEl) contentEl.classList.remove("hidden");
+      showAlert(alertEl, "error", formatError(err));
+    });
+  }
+
+  function initChangePasswordSection(session) {
+    var sectionEl = document.getElementById("password-section");
+    var form = document.getElementById("change-password-form");
+    var alertEl = document.getElementById("password-alert");
+    var submitBtn = document.getElementById("change-password-submit");
+
+    if (!sectionEl || !form || !session) return;
+
+    sectionEl.classList.remove("hidden");
+    sectionEl.hidden = false;
+
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      hideAlert(alertEl);
+
+      var currentPassword = document.getElementById("change-password-current").value;
+      var newPassword = document.getElementById("change-password-new").value;
+      var confirm = document.getElementById("change-password-confirm").value;
+      var email = session.user && session.user.email ? session.user.email : "";
+
+      if (!currentPassword) {
+        showAlert(alertEl, "error", "Please enter your current password.");
+        return;
+      }
+
+      if (!email) {
+        showAlert(alertEl, "error", "Could not verify your account email. Please sign in again.");
+        return;
+      }
+
+      var validationError = validateNewPassword(newPassword, confirm);
+      if (validationError) {
+        showAlert(alertEl, "error", validationError);
+        return;
+      }
+
+      if (currentPassword === newPassword) {
+        showAlert(alertEl, "error", "Your new password must be different from your current password.");
+        return;
+      }
+
+      setFormLoading(form, true, submitBtn, "Updating password…", "Update password");
+
+      signIn(email, currentPassword).then(function (signInResult) {
+        if (signInResult.error) {
+          showAlert(alertEl, "error", "Current password is incorrect.");
+          setFormLoading(form, false, submitBtn, "Updating password…", "Update password");
+          return;
+        }
+
+        return updatePassword(newPassword).then(function (updateResult) {
+          if (updateResult.error) {
+            showAlert(alertEl, "error", formatError(updateResult.error));
+            setFormLoading(form, false, submitBtn, "Updating password…", "Update password");
+            return;
+          }
+
+          showAlert(alertEl, "success", "Password updated successfully.");
+          form.reset();
+          setFormLoading(form, false, submitBtn, "Updating password…", "Update password");
+        });
+      }).catch(function (err) {
+        showAlert(alertEl, "error", formatError(err));
+        setFormLoading(form, false, submitBtn, "Updating password…", "Update password");
+      });
+    });
+  }
+
+  function showLoginResetSuccess() {
+    var params = new URLSearchParams(global.location.search);
+    if (params.get("reset") !== "success") return;
+
+    var alertEl = document.getElementById("auth-alert");
+    if (alertEl) {
+      showAlert(alertEl, "success", "Your password has been updated. You can sign in with your new password.");
+    }
+
+    if (global.history && global.history.replaceState) {
+      global.history.replaceState({}, document.title, ROUTES.login);
+    }
   }
 
   global.HFAuth = {
     ROUTES: ROUTES,
+    MIN_PASSWORD_LENGTH: MIN_PASSWORD_LENGTH,
     ensureClient: ensureClient,
     getSession: getSession,
     requireGuest: requireGuest,
@@ -338,9 +631,18 @@
     signIn: signIn,
     signUp: signUp,
     signOut: signOut,
+    requestPasswordReset: requestPasswordReset,
+    updatePassword: updatePassword,
+    validateNewPassword: validateNewPassword,
     formatError: formatError,
+    showAlert: showAlert,
+    hideAlert: hideAlert,
+    setFormLoading: setFormLoading,
     initLoginPage: initLoginPage,
     initSignupPage: initSignupPage,
-    initAccountPage: initAccountPage
+    initForgotPasswordPage: initForgotPasswordPage,
+    initResetPasswordPage: initResetPasswordPage,
+    initChangePasswordSection: initChangePasswordSection,
+    showLoginResetSuccess: showLoginResetSuccess
   };
 })(window);

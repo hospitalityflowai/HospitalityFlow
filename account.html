@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex">
-  <meta name="description" content="Your Hospitality Flow account.">
+  <meta name="description" content="Your Hospitality Flow account and hotel workspace.">
   <title>Account | Hospitality Flow</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,28 +25,91 @@
       <div id="auth-loading" class="auth-loading" aria-live="polite">Loading your account…</div>
 
       <div id="auth-content" class="auth-content hidden">
-        <h1 class="auth-heading">Your account</h1>
+        <h1 class="auth-heading" id="account-heading">Your account</h1>
         <p id="account-email" class="account-email">Signed in as …</p>
 
         <div id="auth-alert" class="auth-alert" aria-live="polite"></div>
 
-        <div class="auth-card">
+        <!-- Phase 3: one hotel per user; multi-property switcher comes in a later phase -->
+        <div id="workspace-create" class="hidden" hidden>
+          <p class="auth-lead">Set up your first hotel workspace to get started with Hospitality Flow.</p>
+          <div class="auth-card">
+            <form id="workspace-form" novalidate>
+              <div class="auth-form-group">
+                <label for="workspace-name">Hotel name</label>
+                <input type="text" id="workspace-name" name="hotel-name" required autocomplete="organization" placeholder="Your hotel name">
+              </div>
+              <div class="auth-form-group">
+                <label for="workspace-property-type">Property type</label>
+                <select id="workspace-property-type" name="property-type" required>
+                  <option value="" disabled selected>Select property type</option>
+                  <option value="independent-hotel">Independent hotel</option>
+                  <option value="boutique-hotel">Boutique hotel</option>
+                  <option value="small-hotel-group">Small hotel group (2–10 hotels)</option>
+                  <option value="guest-house">Guest house</option>
+                  <option value="serviced-apartment">Serviced apartment</option>
+                  <option value="hotel-opening-soon">Hotel opening soon</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div class="auth-form-group">
+                <label for="workspace-room-count">Number of rooms</label>
+                <input type="number" id="workspace-room-count" name="room-count" required min="1" max="9999" inputmode="numeric" placeholder="e.g. 42">
+              </div>
+              <div class="auth-form-group">
+                <label for="workspace-city">City</label>
+                <input type="text" id="workspace-city" name="city" required autocomplete="address-level2" placeholder="e.g. London">
+              </div>
+              <div class="auth-form-group">
+                <label for="workspace-country">Country</label>
+                <input type="text" id="workspace-country" name="country" required autocomplete="country-name" placeholder="e.g. United Kingdom">
+              </div>
+              <button type="submit" class="btn btn-primary" id="workspace-submit">Create hotel workspace</button>
+            </form>
+          </div>
+        </div>
+
+        <div id="workspace-dashboard" class="hidden auth-card" hidden>
           <div class="account-panel">
-            <p class="account-panel-label">Coming soon</p>
-            <p class="account-panel-text">Your hotel workspace will appear here — a dedicated space for your property, team and operational tools powered by the Hotel Brain.</p>
+            <p class="account-panel-label">Your hotel</p>
+            <p id="workspace-hotel-name" class="account-panel-text">—</p>
+            <p id="workspace-hotel-meta" class="account-note"></p>
+            <p id="workspace-user-role" class="account-note"></p>
           </div>
 
-          <p class="account-note">Local tools remain available on this device while cloud workspaces are in development.</p>
+          <p class="account-note">Local tools remain available on this device. Cloud sync for handovers and Hotel Brain will arrive in a later phase.</p>
 
           <div class="account-links">
             <a href="handover.html">AI Shift Handover</a>
             <a href="hotel-profile.html">Hotel Brain profile</a>
-            <a href="index.html">Landing page</a>
           </div>
 
           <div class="account-actions">
             <button type="button" class="btn btn-secondary" id="logout-btn">Sign out</button>
           </div>
+        </div>
+
+        <div id="password-section" class="auth-card account-password-section hidden" hidden>
+          <h2 class="account-section-heading">Change password</h2>
+          <p class="account-note">Update your account password. Minimum 8 characters.</p>
+
+          <div id="password-alert" class="auth-alert" aria-live="polite"></div>
+
+          <form id="change-password-form" novalidate>
+            <div class="auth-form-group">
+              <label for="change-password-current">Current password</label>
+              <input type="password" id="change-password-current" name="current-password" required autocomplete="current-password" placeholder="Your current password">
+            </div>
+            <div class="auth-form-group">
+              <label for="change-password-new">New password</label>
+              <input type="password" id="change-password-new" name="new-password" required autocomplete="new-password" minlength="8" placeholder="At least 8 characters">
+            </div>
+            <div class="auth-form-group">
+              <label for="change-password-confirm">Confirm new password</label>
+              <input type="password" id="change-password-confirm" name="new-password-confirm" required autocomplete="new-password" minlength="8" placeholder="Repeat your new password">
+            </div>
+            <button type="submit" class="btn btn-secondary" id="change-password-submit">Update password</button>
+          </form>
         </div>
       </div>
     </div>
@@ -55,6 +118,7 @@
   <script src="js/supabase-config.js"></script>
   <script src="js/supabase-client.js"></script>
   <script src="js/auth.js"></script>
-  <script>HFAuth.initAccountPage();</script>
+  <script src="js/workspace.js"></script>
+  <script>HFWorkspace.initAccountPage();</script>
 </body>
 </html>
