@@ -351,7 +351,7 @@
     .hero-grid {
       display: grid;
       grid-template-columns: 1.05fr 0.95fr;
-      gap: 72px;
+      gap: 64px 72px;
       align-items: center;
     }
 
@@ -380,36 +380,59 @@
       display: block;
       font-size: 1.05rem;
       font-weight: 600;
-      color: var(--gray-300);
+      color: var(--gray-200);
       letter-spacing: -0.02em;
-      margin-bottom: 14px;
+      margin-bottom: 16px;
       max-width: 520px;
     }
 
     .hero-subhead {
       font-size: 1rem;
       color: var(--gray-300);
-      line-height: 1.6;
+      line-height: 1.65;
       margin-bottom: 0;
       max-width: 520px;
     }
 
-    .hero-audience {
-      font-size: 0.9rem;
-      color: var(--gray-400);
-      line-height: 1.5;
-      margin-top: 14px;
+    .hero-audience-wrap {
+      margin-top: 18px;
       margin-bottom: 0;
-      max-width: 520px;
+    }
+
+    .hero-audience-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      padding: 8px 15px;
+      max-width: 100%;
+      font-size: 0.84rem;
+      font-weight: 500;
+      color: var(--gray-200);
+      line-height: 1.45;
+      letter-spacing: -0.01em;
+      background: rgba(255, 255, 255, 0.045);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 100px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+    }
+
+    .hero-audience-badge::before {
+      content: "";
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--blue-400);
+      opacity: 0.9;
+      flex-shrink: 0;
     }
 
     .hero-statement {
       font-size: 1rem;
       font-weight: 600;
       color: var(--gray-100);
-      line-height: 1.5;
-      margin-top: 14px;
-      margin-bottom: 28px;
+      line-height: 1.55;
+      margin-top: 18px;
+      margin-bottom: 32px;
       max-width: 520px;
     }
 
@@ -417,29 +440,41 @@
       display: flex;
       flex-wrap: wrap;
       gap: 12px;
+      align-items: center;
     }
 
     .hero-visual {
       animation: fadeUp 0.8s ease 0.15s forwards;
       opacity: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
     .hero-preview {
-      background: var(--navy-800);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: linear-gradient(180deg, rgba(26, 48, 85, 0.55) 0%, var(--navy-800) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: var(--radius-lg);
       padding: 24px;
-      box-shadow: var(--shadow-md);
+      width: 100%;
+      box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255, 255, 255, 0.04);
     }
 
-    .hero-shift-label {
-      font-size: 0.65rem;
+    .hero-shift-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 7px 16px;
+      margin-bottom: 14px;
+      font-size: 0.68rem;
       font-weight: 600;
       letter-spacing: 0.1em;
       text-transform: uppercase;
-      color: var(--gray-500);
-      margin-bottom: 12px;
-      text-align: center;
+      color: var(--gray-200);
+      background: rgba(12, 24, 41, 0.72);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 100px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.14);
     }
 
     .hero-preview-label {
@@ -447,14 +482,14 @@
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.07em;
-      color: var(--gray-400);
-      margin-bottom: 14px;
+      color: var(--gray-300);
+      margin-bottom: 16px;
     }
 
     .hero-preview-section {
       padding: 12px 14px;
       background: var(--navy-900);
-      border: 1px solid rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.07);
       border-radius: var(--radius);
       margin-bottom: 8px;
     }
@@ -606,6 +641,22 @@
       padding: 8px 0;
     }
 
+    .demo-placeholder-outline {
+      display: flex;
+      flex-direction: column;
+      gap: 11px;
+    }
+
+    .demo-placeholder-section {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: rgba(122, 135, 153, 0.5);
+      line-height: 1.4;
+    }
+
     .demo-output-section {
       padding: 12px 14px;
       background: var(--navy-900);
@@ -741,14 +792,23 @@
       letter-spacing: 0.06em;
       text-transform: uppercase;
       color: var(--white);
-      margin-bottom: 16px;
+      margin-bottom: 14px;
       line-height: 1.35;
     }
 
-    .brain-lead {
-      font-size: 0.95rem;
-      color: var(--gray-300);
-      line-height: 1.65;
+    .brain-intro-primary {
+      font-size: 1.02rem;
+      font-weight: 600;
+      color: var(--gray-100);
+      line-height: 1.55;
+      margin-bottom: 10px;
+      max-width: 640px;
+    }
+
+    .brain-intro-support {
+      font-size: 0.88rem;
+      color: var(--gray-400);
+      line-height: 1.6;
       margin-bottom: 0;
       max-width: 640px;
     }
@@ -805,6 +865,15 @@
     .brain-roadmap-list li.is-soon::before {
       content: "•";
       color: var(--gray-500);
+    }
+
+    .brain-roadmap-available-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--green-400);
+      margin: 0 0 10px;
     }
 
     .brain-roadmap-soon-label {
@@ -905,33 +974,66 @@
     }
 
     .waitlist-offer {
-      padding: 20px 22px;
-      margin-bottom: 20px;
-      background: rgba(74, 143, 196, 0.08);
-      border: 1px solid rgba(74, 143, 196, 0.18);
+      padding: 24px 26px;
+      margin-bottom: 24px;
+      background: rgba(18, 34, 64, 0.5);
+      border: 1px solid rgba(74, 143, 196, 0.22);
       border-radius: var(--radius-lg);
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.04);
     }
 
     .waitlist-offer-label {
-      font-size: 0.68rem;
+      font-size: 0.7rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.07em;
+      letter-spacing: 0.08em;
       color: var(--blue-400);
-      margin-bottom: 6px;
+      margin-bottom: 12px;
     }
 
     .waitlist-offer-text {
-      font-size: 0.92rem;
-      color: var(--gray-200);
+      font-size: 0.95rem;
+      color: var(--gray-100);
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+
+    .waitlist-offer-detail {
+      font-size: 0.88rem;
+      color: var(--gray-300);
       line-height: 1.55;
     }
 
-    .waitlist-offer-note {
-      font-size: 0.82rem;
+    .waitlist-offer-detail + .waitlist-offer-detail {
+      margin-top: 8px;
+    }
+
+    .waitlist-offer-detail--muted {
+      font-size: 0.84rem;
       color: var(--gray-400);
+    }
+
+    .waitlist-offer-note {
+      font-size: 0.84rem;
+      color: var(--gray-300);
       line-height: 1.5;
-      margin-top: 10px;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(255, 255, 255, 0.07);
+    }
+
+    .waitlist-offer-availability {
+      margin-top: 12px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--blue-400);
+      letter-spacing: 0.02em;
+      min-height: 1.25em;
+    }
+
+    .waitlist-offer-availability.is-loading {
+      color: var(--gray-400);
+      font-weight: 400;
     }
 
     .waitlist-note {
@@ -1003,9 +1105,10 @@
 
     .waitlist-form-card {
       background: rgba(18, 34, 64, 0.55);
-      border: 1px solid rgba(74, 143, 196, 0.15);
+      border: 1px solid rgba(74, 143, 196, 0.18);
       border-radius: var(--radius-lg);
       padding: 32px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.04);
     }
 
     .form-group { margin-bottom: 18px; }
@@ -1281,6 +1384,16 @@
     @media (max-width: 480px) {
       .hero-actions { flex-direction: column; }
       .hero-actions .btn { width: 100%; }
+      .hero-audience-badge {
+        font-size: 0.8rem;
+        padding: 7px 13px;
+      }
+      .hero-shift-badge {
+        font-size: 0.64rem;
+        letter-spacing: 0.08em;
+        padding: 6px 12px;
+      }
+      .waitlist-offer { padding: 20px 18px; }
       .demo-actions { flex-direction: column; }
       .demo-actions .btn { width: 100%; }
     }
@@ -1297,7 +1410,7 @@
         <a href="#hotel-brain">How It Works</a>
         <a href="#handover-demo">Demo</a>
         <a href="login.html" class="btn btn-secondary btn-nav">Log In</a>
-        <a href="#waitlist" class="btn btn-primary btn-nav">Join Early Access</a>
+        <a href="#waitlist" class="btn btn-primary btn-nav">Apply for Founding Access</a>
       </nav>
 
       <button class="menu-toggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="mobile-menu">
@@ -1312,7 +1425,7 @@
       <a href="#hotel-brain">How It Works</a>
       <a href="#handover-demo">Demo</a>
       <a href="login.html" class="btn btn-secondary">Log In</a>
-      <a href="#waitlist" class="btn btn-primary">Join Early Access</a>
+      <a href="#waitlist" class="btn btn-primary">Apply for Founding Access</a>
     </nav>
   </header>
 
@@ -1323,20 +1436,22 @@
       <div class="container">
         <div class="hero-grid">
           <div class="hero-content">
-            <p class="hero-eyebrow">Powered by the Hospitality Flow Hotel Brain™</p>
+            <p class="hero-eyebrow">Powered by the Hotel Brain™</p>
             <h1>AI Shift Handover</h1>
             <p class="hero-headline-sub">Built for Independent &amp; Boutique Hotels</p>
-            <p class="hero-subhead">AI Shift Handover transforms scattered shift notes into clear, structured operational handovers.</p>
-            <p class="hero-audience">Designed for Reception, Duty Managers and Night Teams.</p>
+            <p class="hero-subhead">Turn scattered shift notes into clear, structured handovers for the next team.</p>
+            <div class="hero-audience-wrap">
+              <span class="hero-audience-badge">Built for reception and hotel operations teams.</span>
+            </div>
             <p class="hero-statement">Stop losing operational knowledge between shifts.</p>
             <div class="hero-actions">
-              <a href="#waitlist" class="btn btn-primary btn-lg">Join Early Access</a>
-              <a href="#handover-demo" class="btn btn-secondary btn-lg">Try the AI Shift Handover Demo</a>
+              <a href="#waitlist" class="btn btn-primary btn-lg">Apply for Founding Access</a>
+              <a href="#handover-demo" class="btn btn-secondary btn-lg">Try the Interactive Demo</a>
             </div>
           </div>
 
           <div class="hero-visual" aria-hidden="true">
-            <p class="hero-shift-label">AM • PM • Night Shifts</p>
+            <span class="hero-shift-badge">Built for AM • PM • Night Shifts</span>
             <div class="hero-preview">
               <div class="hero-preview-label">Structured Handover Preview</div>
               <div class="hero-preview-section">
@@ -1367,24 +1482,21 @@
         <div class="brain-block reveal">
           <div class="brain-grid">
             <div class="brain-main">
-              <h2 class="brain-heading" id="product">One Technology. The Hotel Brain.</h2>
-              <p class="brain-lead">Every hotel has operational knowledge scattered across people, emails, documents and shifts. The Hotel Brain keeps that knowledge organised and uses it to power practical AI tools for hotel teams.</p>
+              <h2 class="brain-heading" id="product">The Hotel Brain</h2>
+              <p class="brain-intro-primary">Your hotel&rsquo;s operational knowledge, organised in one place.</p>
+              <p class="brain-intro-support">It powers AI tools that understand how your hotel works. Start with AI Shift Handover. Every future Hospitality Flow assistant will use the same knowledge.</p>
               <div class="brain-roadmap">
+                <p class="brain-roadmap-available-label">Available Today</p>
                 <ul class="brain-roadmap-list">
-                  <li class="is-available">AI Shift Handover — Available Today</li>
+                  <li class="is-available">AI Shift Handover</li>
                 </ul>
-                <p class="brain-roadmap-soon-label">Coming Soon</p>
+                <p class="brain-roadmap-soon-label">Coming Next</p>
                 <ul class="brain-roadmap-list">
-                  <li class="is-soon">AI Operations Assistant</li>
                   <li class="is-soon">AI SOP Assistant</li>
-                  <li class="is-soon">AI Maintenance Assistant</li>
-                  <li class="is-soon">AI Guest Request Assistant</li>
-                  <li class="is-soon">AI Knowledge Search</li>
-                  <li class="is-soon">AI Lost Property Assistant</li>
+                  <li class="is-soon">AI Operations Assistant</li>
                   <li class="is-soon">AI Rota Generator</li>
-                  <li class="is-soon">Operations Analytics</li>
                 </ul>
-                <p class="brain-roadmap-note">More operational AI assistants will be introduced as Hospitality Flow evolves.</p>
+                <p class="brain-roadmap-note">Additional operational assistants will be introduced as Hospitality Flow develops.</p>
               </div>
               <a href="#handover-demo" class="btn btn-secondary brain-demo-link">Try Interactive Demo</a>
             </div>
@@ -1410,7 +1522,7 @@
           <h2 class="section-heading" style="margin-top: 10px;">Try AI Shift Handover</h2>
         </div>
 
-        <p class="demo-flow-label reveal">Unstructured shift notes <span>→</span> Clear next-shift briefing</p>
+        <p class="demo-flow-label reveal">Scattered shift notes <span>→</span> Structured next-shift handover</p>
 
         <div class="demo-wrapper reveal">
           <div class="demo-panel">
@@ -1425,7 +1537,7 @@
               <textarea id="demo-input" class="demo-textarea" aria-describedby="demo-input-help">Room 24 reported that the air conditioning is not cooling properly. Maintenance has been informed but has not attended yet. A VIP is arriving tomorrow at 11:00 and would prefer a quiet upper-floor room. Allocate Room 42 if available. Room 56 has an airport transfer confirmed for 10:15 and a wake-up call scheduled for 06:30. Guest adapters issued to Room 15 and Room 37 are still outstanding. Room 18 has an open balance to review before departure.</textarea>
               <p id="demo-input-help" class="demo-status">Edit the notes above, then generate a structured handover preview.</p>
               <div class="demo-actions">
-                <button type="button" id="demo-generate" class="btn btn-primary">Generate AI Handover</button>
+                <button type="button" id="demo-generate" class="btn btn-primary">Generate Handover</button>
                 <button type="button" id="demo-reset" class="btn btn-ghost">Reset Demo</button>
               </div>
             </div>
@@ -1450,7 +1562,14 @@
                 Organising handover…
               </div>
               <div class="demo-output" id="demo-output" role="region" aria-label="Generated next shift briefing">
-                <p class="demo-output-placeholder" id="demo-placeholder">Generated briefing sections will appear here.</p>
+                <div class="demo-output-placeholder" id="demo-placeholder">
+                  <div class="demo-placeholder-outline" aria-hidden="true">
+                    <span class="demo-placeholder-section">Urgent Issues</span>
+                    <span class="demo-placeholder-section">VIP Guests</span>
+                    <span class="demo-placeholder-section">Outstanding Tasks</span>
+                    <span class="demo-placeholder-section">Tomorrow&rsquo;s Priorities</span>
+                  </div>
+                </div>
               </div>
               <div id="demo-status" class="demo-status" aria-live="polite" aria-atomic="true"></div>
             </div>
@@ -1461,33 +1580,35 @@
       </div>
     </section>
 
-    <!-- Early Access -->
+    <!-- Founding Hotel Programme -->
     <section class="waitlist" id="waitlist">
       <div class="container">
         <div class="waitlist-layout reveal">
           <div class="waitlist-info">
-            <h2 class="section-heading">Early Access Programme</h2>
-            <p class="waitlist-lead">Join the first group of independent and boutique hotels helping shape AI Shift Handover.</p>
+            <h2 class="section-heading">Founding Hotel Programme</h2>
+            <p class="waitlist-lead">An exclusive programme for independent and boutique hotels helping shape the future of Hospitality Flow.</p>
             <div class="waitlist-offer">
               <p class="waitlist-offer-label">Founding Hotel Programme</p>
-              <p class="waitlist-offer-text">The first 100 hotels accepted receive Hospitality Flow free for their first year.</p>
-              <p class="waitlist-offer-note">No payment required during the free first year.</p>
+              <p class="waitlist-offer-text">AI Shift Handover is free for your first year.</p>
+              <p class="waitlist-offer-detail"><strong>Founder pricing:</strong> After that, Founding Hotels continue at a lifetime Founder rate of £49/month while continuously subscribed.</p>
+              <p class="waitlist-offer-detail waitlist-offer-detail--muted"><strong>Future pricing:</strong> Hotels joining after the programme closes will pay the standard £99/month.</p>
+              <p class="waitlist-offer-note">No payment details are required during the first year.</p>
+              <p class="waitlist-offer-availability is-loading" id="founding-availability" aria-live="polite">Checking availability…</p>
             </div>
             <div class="waitlist-includes">
-              <p class="waitlist-includes-label">What Early Access includes</p>
+              <p class="waitlist-includes-label">What&rsquo;s included</p>
               <ul class="waitlist-includes-list">
-                <li>Free for your first year</li>
-                <li>Personal onboarding</li>
-                <li>Built with real hotel operations experience</li>
-                <li>Influence future product development</li>
-                <li>No payment details required</li>
+                <li>Hospitality Flow free for your first year</li>
+                <li>Personal onboarding and ongoing support</li>
+                <li>Direct input into future product development</li>
+                <li>Founding rate of £49 per month after year one</li>
+                <li>Cancel anytime</li>
               </ul>
             </div>
             <div class="waitlist-trust">
               <p class="waitlist-trust-label">Built from real hotel operations</p>
-              <p class="waitlist-trust-text">Hospitality Flow is being developed using real day-to-day operational experience from independent and boutique hotels.</p>
-              <p class="waitlist-trust-text">Every feature is designed to solve practical hotel problems encountered during real shifts.</p>
-              <p class="waitlist-trust-text waitlist-review-note">Applications are personally reviewed to provide a personalised onboarding experience.</p>
+              <p class="waitlist-trust-text">Hospitality Flow is being developed from real day-to-day hotel operations—not theoretical workflows.</p>
+              <p class="waitlist-trust-text">Founding Hotels receive personal onboarding and ongoing support, with the opportunity to help shape how Hospitality Flow develops.</p>
             </div>
           </div>
 
@@ -1527,7 +1648,7 @@
                 <label for="role">Your role</label>
                 <input type="text" id="role" name="role" required autocomplete="organization-title" placeholder="e.g. General Manager">
               </div>
-              <button type="submit" class="btn btn-primary btn-lg form-submit" id="form-submit-btn">Join the Early Access Programme</button>
+              <button type="submit" class="btn btn-primary btn-lg form-submit" id="form-submit-btn">Apply to the Founding Hotel Programme</button>
               <div class="form-feedback form-feedback--progress" id="form-progress" role="status" aria-live="polite"></div>
               <div class="form-feedback form-feedback--error" id="form-error" role="alert" aria-live="assertive"></div>
             </form>
@@ -1535,7 +1656,7 @@
             <div class="form-success" id="form-success" role="status" aria-live="polite">
               <div class="form-success-icon" aria-hidden="true">✓</div>
               <h3 class="form-success-title">Application received</h3>
-              <p>Thank you for applying to the Hospitality Flow Early Access Programme.</p>
+              <p>Thank you for applying to the Founding Hotel Programme.</p>
               <p>We'll personally review your application and contact you shortly to arrange onboarding and access.</p>
               <p>We're excited to learn more about your hotel and how AI Shift Handover can support your team.</p>
             </div>
@@ -1558,7 +1679,7 @@
           <a href="#product">Product</a>
           <a href="#hotel-brain">How It Works</a>
           <a href="#handover-demo">Demo</a>
-          <a href="#waitlist">Early Access</a>
+          <a href="#waitlist">Founding Programme</a>
           <a href="privacy.html">Privacy</a>
           <a href="terms.html">Terms</a>
         </div>
@@ -1569,9 +1690,16 @@
     </div>
   </footer>
 
+  <script src="js/supabase-config.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/early-access.js"></script>
   <script>
     (function () {
       var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      if (window.HospitalityFlowEarlyAccess) {
+        HospitalityFlowEarlyAccess.initAvailabilityDisplay('founding-availability');
+      }
 
       /* Mobile menu */
       var menuToggle = document.querySelector('.menu-toggle');
@@ -1850,12 +1978,9 @@
       }
 
       function submitApplication(data) {
-        /* TODO: POST to backend, e.g. Supabase:
-           return fetch('YOUR_API_URL/applications', {
-             method: 'POST',
-             headers: { 'Content-Type': 'application/json' },
-             body: JSON.stringify(data)
-           }); */
+        if (window.HospitalityFlowEarlyAccess) {
+          return HospitalityFlowEarlyAccess.submitApplication(data);
+        }
         try {
           sessionStorage.setItem('hf_early_access_application', JSON.stringify(data));
         } catch (err) {
@@ -1895,7 +2020,7 @@
         submitApplication(applicationData).then(function (result) {
           if (!result.ok) {
             submitBtn.disabled = false;
-            submitBtn.textContent = 'Join the Early Access Programme';
+            submitBtn.textContent = 'Apply to the Founding Hotel Programme';
             hideFormFeedback();
             formError.textContent = 'Something went wrong. Please try again or email hello@hospitalityflow.co.uk.';
             formError.classList.add('show');
@@ -1908,7 +2033,7 @@
           success.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'center' });
         }).catch(function () {
           submitBtn.disabled = false;
-          submitBtn.textContent = 'Join the Early Access Programme';
+          submitBtn.textContent = 'Apply to the Founding Hotel Programme';
           hideFormFeedback();
           formError.textContent = 'Something went wrong. Please try again or email hello@hospitalityflow.co.uk.';
           formError.classList.add('show');
