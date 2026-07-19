@@ -329,6 +329,11 @@
   </div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/workspace.js"></script>
+  <script src="js/hotel-brain-store.js"></script>
   <script>
 (function () {
   "use strict";
@@ -358,15 +363,10 @@
   var dateLocale = { locale: "en-GB", hour12: false, isoDate: false };
 
   function loadHotelProfileFromStorage() {
-    try {
-      var raw = localStorage.getItem(HOTEL_PROFILE_KEY);
-      if (!raw) return null;
-      var parsed = JSON.parse(raw);
-      if (!parsed || typeof parsed !== "object") return null;
-      return parsed;
-    } catch (e) {
-      return null;
+    if (window.HFHotelBrainStore) {
+      return window.HFHotelBrainStore.getCached();
     }
+    return null;
   }
 
   function buildTerminologyMap(terminology) {
@@ -463,11 +463,22 @@
 
   function applyHotelProfileToUI() {
     populateDepartmentSelect();
+
+    var workspaceName = window.HFWorkspace && window.HFWorkspace.getWorkspaceHotelName
+      ? window.HFWorkspace.getWorkspaceHotelName()
+      : null;
+    if (workspaceName && !els.hotelName.value.trim()) {
+      els.hotelName.value = workspaceName;
+    }
+
     if (!hotelProfile) return;
 
     var general = hotelProfile.general || {};
-    if (general.hotelName && !els.hotelName.value.trim()) {
-      els.hotelName.value = general.hotelName;
+    var displayHotelName = (window.HFWorkspace && window.HFWorkspace.resolveDisplayHotelName)
+      ? window.HFWorkspace.resolveDisplayHotelName(general.hotelName)
+      : (general.hotelName || "").trim();
+    if (displayHotelName && !els.hotelName.value.trim()) {
+      els.hotelName.value = displayHotelName;
     }
   }
 
@@ -1350,11 +1361,35 @@
     }
   });
 
-  hotelProfile = loadHotelProfileFromStorage();
-  applyHotelProfileConfig(hotelProfile);
-  initDefaults();
-  applyHotelProfileToUI();
-  restoreDraft();
+  function initHotelProfileFromCloud() {
+    var workspacePromise = window.HFWorkspace
+      ? window.HFWorkspace.getUserWorkspace().catch(function () { return null; })
+      : Promise.resolve(null);
+
+    function finishInit(profile) {
+      hotelProfile = profile || null;
+      applyHotelProfileConfig(hotelProfile);
+      initDefaults();
+      applyHotelProfileToUI();
+      restoreDraft();
+    }
+
+    if (!window.HFHotelBrainStore) {
+      workspacePromise.then(function () { finishInit(null); });
+      return;
+    }
+
+    Promise.all([
+      window.HFHotelBrainStore.load(),
+      workspacePromise
+    ]).then(function (results) {
+      finishInit(results[0] && results[0].profile ? results[0].profile : null);
+    }).catch(function () {
+      finishInit(null);
+    });
+  }
+
+  initHotelProfileFromCloud();
 })();
 
 </script>

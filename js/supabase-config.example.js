@@ -6,6 +6,9 @@
  *
  * Do not commit supabase-config.js — it is listed in .gitignore.
  * Never put the service-role key in browser code.
+ *
+ * Production (Vercel) generates js/supabase-config.js at build time from
+ * SUPABASE_URL and SUPABASE_ANON_KEY environment variables.
  */
 (function (global) {
   "use strict";

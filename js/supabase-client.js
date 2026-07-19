@@ -32,6 +32,8 @@
     if (!trimmed) return true;
     if (trimmed === PLACEHOLDER_URL || trimmed === PLACEHOLDER_KEY) return true;
     if (/^YOUR_/i.test(trimmed) || /YOUR_SUPABASE/i.test(trimmed)) return true;
+    if (/example\.supabase\.co/i.test(trimmed)) return true;
+    if (/eyJexample/i.test(trimmed)) return true;
     return false;
   }
 
