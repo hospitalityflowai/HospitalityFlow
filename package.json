@@ -3,7 +3,8 @@
   "private": true,
   "description": "Hospitality Flow — static HTML tools for independent and boutique hotels",
   "scripts": {
-    "dev": "serve . -l 5500"
+    "dev": "serve . -l 5500",
+    "build": "node scripts/generate-supabase-config.js"
   },
   "devDependencies": {
     "serve": "^14.2.4"

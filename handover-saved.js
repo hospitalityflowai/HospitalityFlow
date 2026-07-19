@@ -11,6 +11,7 @@
   var emptyEl = null;
   var countEl = null;
   var onOpen = null;
+  var onPrint = null;
   var onSaveRequest = null;
   var showToast = null;
   var onConfirmDelete = null;
@@ -94,6 +95,16 @@
     if (onOpen) onOpen(item);
   }
 
+  function printHandover(id) {
+    var item = loadAll().find(function (entry) { return entry.id === id; });
+    if (!item) {
+      if (showToast) showToast("Saved handover not found.");
+      renderList();
+      return;
+    }
+    if (onPrint) onPrint(item);
+  }
+
   function renderList() {
     if (!gridEl) return;
 
@@ -167,11 +178,16 @@
         '</div>' +
         '<div class="saved-handover-actions">' +
           '<button class="btn btn-secondary saved-handover-open" type="button">Open</button>' +
+          '<button class="btn btn-secondary saved-handover-print" type="button">Print</button>' +
           '<button class="btn btn-secondary saved-handover-delete" type="button">Delete</button>' +
         '</div>';
 
       card.querySelector(".saved-handover-open").addEventListener("click", function () {
         openHandover(item.id);
+      });
+
+      card.querySelector(".saved-handover-print").addEventListener("click", function () {
+        printHandover(item.id);
       });
 
       card.querySelector(".saved-handover-delete").addEventListener("click", function () {
@@ -198,6 +214,7 @@
     emptyEl = options.emptyEl;
     countEl = options.countEl;
     onOpen = options.onOpen;
+    onPrint = options.onPrint;
     onSaveRequest = options.onSaveRequest;
     showToast = options.showToast;
     onConfirmDelete = options.onConfirmDelete;

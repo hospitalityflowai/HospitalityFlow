@@ -1626,6 +1626,7 @@
         }
         saveStatus.textContent = 'Saved successfully · ' + formatSavedTime(lastSavedAt);
         setSaveStatusState('saved');
+        if (!opts.silent) showSaveSuccessToast(lastSavedAt);
         if (HPK && HPK.updateCompletionUI) HPK.updateCompletionUI();
       }
 

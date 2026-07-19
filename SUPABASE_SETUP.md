@@ -100,10 +100,12 @@ if (HospitalityFlowSupabase.isConfigured()) {
 
 ## 5. Configure Vercel (for deployment)
 
-When you deploy to Vercel:
+Production uses a build step to generate `js/supabase-config.js` from Vercel environment variables. Local development still uses a manual gitignored copy (see section 3).
 
-1. Open your **Hospitality Flow** project in the Vercel dashboard.
-2. Go to **Settings** → **Environment Variables** (right-hand project settings panel).
+### Environment variables
+
+1. Open your **Hospitality Flow** project in the [Vercel dashboard](https://vercel.com).
+2. Go to **Settings** → **Environment Variables**.
 3. Add:
 
    | Name | Value | Environments |
@@ -111,11 +113,25 @@ When you deploy to Vercel:
    | `SUPABASE_URL` | Your Supabase project URL | Production, Preview |
    | `SUPABASE_ANON_KEY` | Your Supabase anon public key | Production, Preview |
 
-4. Save.
-
-**Note:** This repository is currently static HTML with no build step. Vercel environment variables are documented here so they are ready when you add a deploy step or serverless function that injects config into pages. Until then, local development uses `js/supabase-config.js` directly.
+4. Save and redeploy.
 
 Do **not** add `SUPABASE_SERVICE_ROLE_KEY` to client-facing Vercel variables.
+
+### Build
+
+The repo includes:
+
+| File | Purpose |
+|------|---------|
+| `vercel.json` | Runs `npm run build` on deploy |
+| `scripts/generate-supabase-config.js` | Writes `js/supabase-config.js` from env vars |
+| `package.json` `"build"` script | Invoked by Vercel before static deploy |
+
+If env vars are missing on Vercel, the build fails. Locally, `npm run build` skips generation when env vars are unset but `js/supabase-config.js` already exists.
+
+### Production Supabase auth URLs
+
+Set **Site URL** to `https://hospitalityflow.co.uk` and add redirect URLs for `account.html` and `reset-password.html` on that domain (see README deployment section).
 
 ---
 
