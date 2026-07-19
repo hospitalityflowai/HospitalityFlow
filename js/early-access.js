@@ -8,19 +8,19 @@
   "use strict";
 
   var FOUNDING_TOTAL = 10;
-  var FALLBACK_MESSAGE = "10 Founding Hotel places currently available.";
+  var FALLBACK_MESSAGE = "10 pilot places currently available.";
 
   function formatAvailabilityMessage(remaining) {
     if (remaining <= 0) {
-      return "Founding Hotel Programme is currently full.";
+      return "Founding Pilot Programme is currently full.";
     }
     if (remaining === 1) {
-      return "1 founding hotel place remaining.";
+      return "1 pilot place remaining.";
     }
     if (remaining >= FOUNDING_TOTAL) {
-      return FOUNDING_TOTAL + " founding hotel places available.";
+      return FOUNDING_TOTAL + " pilot places currently available.";
     }
-    return remaining + " founding hotel places remaining.";
+    return remaining + " pilot places remaining.";
   }
 
   function parseRemainingPlaces(data) {
