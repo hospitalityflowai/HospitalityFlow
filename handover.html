@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Hospitality Flow — AI Shift Handover Assistant. Turn messy shift notes into professional handovers in seconds.">
-  <title>AI Shift Handover Assistant — Hospitality Flow</title>
+  <meta name="description" content="Hospitality Flow — AI Shift Handover. Turn scattered shift notes into clear, structured handovers in seconds.">
+  <title>AI Shift Handover — Hospitality Flow</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -2609,6 +2609,64 @@
       height: 13px;
     }
 
+    .advanced-data-options {
+      margin-top: 4px;
+    }
+
+    .advanced-data-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      gap: 12px;
+      padding: 10px 0;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--gray-600);
+      text-align: left;
+      border: none;
+      background: none;
+      cursor: pointer;
+    }
+
+    .advanced-data-toggle:hover {
+      color: var(--navy-700);
+    }
+
+    .advanced-data-toggle-chevron {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+      color: var(--gray-400);
+      transition: transform var(--transition);
+    }
+
+    .advanced-data-toggle.is-open .advanced-data-toggle-chevron {
+      transform: rotate(180deg);
+    }
+
+    .advanced-data-body {
+      display: none;
+      padding-bottom: 4px;
+    }
+
+    .advanced-data-body.is-open {
+      display: block;
+    }
+
+    .advanced-data-desc {
+      font-size: 0.78rem;
+      color: var(--gray-400);
+      margin-bottom: 10px;
+      line-height: 1.45;
+    }
+
+    .data-actions-destructive {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--gray-200);
+    }
+
     @media (max-width: 480px) {
       .saved-handover-meta {
         grid-template-columns: 1fr;
@@ -2632,7 +2690,7 @@
           </div>
           <div>
             <span class="logo-text">Hospitality <span>Flow</span></span>
-            <span class="logo-sub" id="navHotelLabel">AI Shift Handover Assistant</span>
+            <span class="logo-sub" id="navHotelLabel">AI Shift Handover</span>
           </div>
         </a>
         <div class="nav-badge">
@@ -2645,8 +2703,8 @@
     <main class="main">
       <div class="container">
         <div class="page-header">
-          <h1 class="page-title" id="pageTitle">AI Shift Handover Assistant</h1>
-          <p class="page-subtitle" id="pageSubtitle">Turn messy shift notes into professional handovers in seconds.</p>
+          <h1 class="page-title" id="pageTitle">AI Shift Handover</h1>
+          <p class="page-subtitle" id="pageSubtitle">Turn scattered shift notes into clear, structured handovers in seconds.</p>
           <div class="hotel-brain-panel is-disconnected" id="hotelBrainPanel" aria-live="polite">
             <div class="hotel-brain-panel-inner">
               <div class="hotel-brain-status">
@@ -2657,7 +2715,7 @@
                   <span class="hotel-brain-sub" id="hotelBrainSub" hidden></span>
                 </div>
               </div>
-              <a class="hotel-brain-link" id="hotelBrainLink" href="hotel-profile.html">View Hotel Brain</a>
+              <a class="hotel-brain-link" id="hotelBrainLink" href="hotel-profile.html">Hotel Profile</a>
             </div>
           </div>
         </div>
@@ -2908,25 +2966,36 @@
                   <span><span class="storage-status-dot" aria-hidden="true"></span>Local storage active</span>
                   <span id="lastBackupLabel">Last backup: Never</span>
                 </div>
-                <div class="data-actions">
-                  <button class="btn btn-data" id="exportBackupBtn" type="button">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-                    </svg>
-                    Export Backup
-                  </button>
-                  <button class="btn btn-data" id="importBackupBtn" type="button">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
-                    </svg>
-                    Import Backup
-                  </button>
-                  <input type="file" id="importBackupInput" accept=".json,application/json" hidden>
-                  <button class="btn btn-data btn-data-danger" id="clearAllHistoryBtn" type="button">Clear All History</button>
+              </div>
+              <div class="advanced-data-options" id="advancedDataOptions">
+                <button class="advanced-data-toggle" id="advancedDataToggle" type="button" aria-expanded="false" aria-controls="advancedDataBody">
+                  <span>Advanced data options</span>
+                  <svg class="advanced-data-toggle-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div class="advanced-data-body" id="advancedDataBody">
+                  <p class="advanced-data-desc">Export or restore handovers stored on this device.</p>
+                  <div class="data-actions">
+                    <button class="btn btn-data" id="exportBackupBtn" type="button">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                      </svg>
+                      Export Backup
+                    </button>
+                    <button class="btn btn-data" id="importBackupBtn" type="button">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                      </svg>
+                      Import Backup
+                    </button>
+                    <input type="file" id="importBackupInput" accept=".json,application/json" hidden>
+                  </div>
+                  <div class="data-actions data-actions-destructive">
+                    <button class="btn btn-data btn-data-danger" id="clearAllHistoryBtn" type="button">Clear All History</button>
+                  </div>
                 </div>
               </div>
               <div class="saved-handovers-grid" id="savedHandoversGrid"></div>
-              <p class="saved-handovers-empty" id="savedHandoversEmpty">No saved handovers yet. Generate a handover and click Save Handover to keep it locally.</p>
+              <p class="saved-handovers-empty" id="savedHandoversEmpty">No saved handovers yet. Generate and save a handover to keep it on this device.</p>
             </div>
           </section>
         </div>
@@ -2935,7 +3004,7 @@
 
     <footer class="footer">
       <div class="container">
-        <p>&copy; 2026 <a href="index.html">Hospitality Flow</a> — AI Shift Handover Assistant v1.0</p>
+        <p>&copy; 2026 <a href="index.html">Hospitality Flow</a> — AI Shift Handover v1.0</p>
       </div>
     </footer>
   </div>
@@ -3109,6 +3178,8 @@
       var importBackupBtn = document.getElementById("importBackupBtn");
       var importBackupInput = document.getElementById("importBackupInput");
       var clearAllHistoryBtn = document.getElementById("clearAllHistoryBtn");
+      var advancedDataToggle = document.getElementById("advancedDataToggle");
+      var advancedDataBody = document.getElementById("advancedDataBody");
       var lastBackupLabel = document.getElementById("lastBackupLabel");
 
       var HOTEL_BRAIN_KEY = "hospitalityFlow_hotelProfile";
@@ -3161,8 +3232,9 @@
         save: "Save Handover",
         saved: "Saved Handovers",
         aiSummary: "AI Summary",
-        assistant: "AI Shift Handover Assistant"
+        assistant: "AI Shift Handover"
       };
+      var PAGE_SUBTITLE = "Turn scattered shift notes into clear, structured handovers in seconds.";
       var FIXED_ACTION_LABELS = {
         copy: "Copy Handover",
         save: "Save Handover",
@@ -3611,7 +3683,7 @@
             hotelBrainSub.hidden = true;
           }
           if (hotelBrainLink) {
-            hotelBrainLink.textContent = "View Hotel Brain";
+            hotelBrainLink.textContent = "Hotel Profile";
             hotelBrainLink.setAttribute("href", "hotel-profile.html");
           }
           return;
@@ -3624,7 +3696,6 @@
         if (!hotelName) hotelName = "Hotel Brain Connected";
         var roomCount = getTotalRoomCount() || trimText(general.totalRooms);
         var hotelType = trimText(general.hotelType);
-        var language = trimText(aiPrefs.language) || "British English";
         var knowledgeCount = countLoadedKnowledgeSections(hotelBrainContext);
 
         if (hotelBrainTitle) hotelBrainTitle.textContent = "Hotel Brain Connected";
@@ -3635,14 +3706,11 @@
           hotelBrainMeta.textContent = metaParts.join(" · ");
         }
         if (hotelBrainSub) {
-          var subParts = ["Powered by the Hotel Brain™"];
-          if (language) subParts.push(language);
-          subParts.push(knowledgeCount > 0 ? "Knowledge loaded" : "Preferences loaded");
-          hotelBrainSub.textContent = subParts.join(" · ");
+          hotelBrainSub.textContent = knowledgeCount > 0 ? "Knowledge loaded" : "Preferences loaded";
           hotelBrainSub.hidden = false;
         }
         if (hotelBrainLink) {
-          hotelBrainLink.textContent = "View Hotel Brain";
+          hotelBrainLink.textContent = "Hotel Profile";
           hotelBrainLink.setAttribute("href", "hotel-profile.html");
         }
       }
@@ -3692,7 +3760,7 @@
             ? PLATFORM_LABELS.details
             : documentPhrase + " Details";
         }
-        if (!explicit.assistant) resolved.assistant = "AI " + rawHandoverTerm + " Assistant";
+        if (!explicit.assistant) resolved.assistant = "AI Shift Handover";
         if (!explicit.aiSummary) resolved.aiSummary = PLATFORM_LABELS.aiSummary;
 
         return resolved;
@@ -3855,6 +3923,7 @@
       function applyUiLabelsToPage() {
         if (navHotelLabel) navHotelLabel.textContent = uiLabels.assistant;
         if (pageTitle) pageTitle.textContent = uiLabels.assistant;
+        if (pageSubtitle) pageSubtitle.textContent = PAGE_SUBTITLE;
         if (detailsCardTitle) detailsCardTitle.textContent = uiLabels.details;
         if (notesCardTitle) notesCardTitle.textContent = uiLabels.notes;
         if (generateBtnText) generateBtnText.textContent = uiLabels.generate;
@@ -3865,7 +3934,7 @@
         if (savedHandoversTitle) savedHandoversTitle.textContent = uiLabels.saved;
         if (savedHandoversEmpty) {
           savedHandoversEmpty.textContent =
-            "No saved handovers yet. " + uiLabels.generate + " and click " + uiLabels.save + " to keep it locally.";
+            "No saved handovers yet. Generate and save a handover to keep it on this device.";
         }
         if (detailsCardDesc) {
           detailsCardDesc.textContent = "Information included in this " + handoverTermLabel.toLowerCase() + " report.";
@@ -4291,13 +4360,22 @@
         return match ? match.label : "Open";
       }
 
+      function formatStatusPhrase(status) {
+        if (status === "completed") return "Completed during this shift.";
+        if (status === "in_progress") return "Continue monitoring.";
+        if (status === "open") return "Requires follow-up.";
+        return "";
+      }
+
       function formatItemForExport(item) {
         var text = normalizeAdrInText(getItemText(item));
-        if (!item || typeof item === "string" || !item.status || item.status === "open") {
-          return text;
-        }
+        if (!item || typeof item === "string") return text;
         if (!isActionableSection(item.sectionId)) return text;
-        return text + " [" + formatStatusLabel(item.status) + "]";
+        var status = item.status || "open";
+        var phrase = formatStatusPhrase(status);
+        if (!phrase) return text;
+        if (status === "open") return text + " " + phrase;
+        return text + " — " + phrase;
       }
 
       function findItemInClassified(classified, itemId) {
@@ -4353,9 +4431,10 @@
 
       function formatRecommendationForExport(rec) {
         var normalized = normalizeRecommendation(rec);
+        var statusPhrase = formatStatusPhrase(normalized.status);
         return "[" + formatRecommendationPriorityLabel(normalized.priority) +
-          " · " + normalized.department +
-          " · " + formatStatusLabel(normalized.status) + "] " + normalized.text;
+          " · " + normalized.department + "] " + normalized.text +
+          (statusPhrase && normalized.status !== "open" ? " — " + statusPhrase : "");
       }
 
       function resolveRecommendationDepartment(candidates, fallback) {
@@ -4487,6 +4566,7 @@
         lastIntelligenceChecklist[found.index] = found.item;
         renderIntelligenceChecklist();
         syncHandoverExports();
+        scheduleDraftSave();
       }
 
       function wireIntelligencePartToggle(toggleBtn, bodyEl) {
@@ -4564,7 +4644,6 @@
         var checkbox = document.createElement("input");
         checkbox.type = "checkbox";
         checkbox.checked = normalized.status === "complete";
-        checkbox.disabled = normalized.status === "not_applicable";
         checkbox.setAttribute("aria-label", "Mark checklist item complete");
 
         var copy = document.createElement("div");
@@ -4590,11 +4669,17 @@
         naBtn.setAttribute("aria-label", "Mark checklist item not applicable");
 
         checkbox.addEventListener("change", function () {
-          setChecklistItemStatus(normalized.id, checkbox.checked ? "complete" : "pending");
+          if (checkbox.checked) {
+            setChecklistItemStatus(normalized.id, "complete");
+          } else {
+            setChecklistItemStatus(normalized.id, "pending");
+          }
         });
 
         naBtn.addEventListener("click", function () {
-          if (normalized.status === "not_applicable") {
+          var found = findChecklistItemById(normalized.id);
+          var currentStatus = found ? found.item.status : normalized.status;
+          if (currentStatus === "not_applicable") {
             setChecklistItemStatus(normalized.id, "pending");
           } else {
             setChecklistItemStatus(normalized.id, "not_applicable");
@@ -5629,6 +5714,140 @@
         return lower + " shift";
       }
 
+      function getShiftPossessive() {
+        var shift = getShiftLabel();
+        if (shift === "night") return "Tonight's shift";
+        if (shift === "morning shift") return "The morning shift";
+        if (shift === "afternoon shift") return "The afternoon shift";
+        return "This shift";
+      }
+
+      function getIncomingTeamPhrase() {
+        var shift = getShiftLabel();
+        if (shift === "night") return "the morning team";
+        if (shift === "morning shift") return "the afternoon team";
+        if (shift === "afternoon shift") return "the night team";
+        return "the incoming team";
+      }
+
+      function briefIssueDetail(note) {
+        if (!note || !note.original) return "";
+        var line = note.original;
+        if (note.rooms.length === 1) {
+          line = stripRoomReference(line, note.rooms[0]);
+        }
+        line = line.replace(/^\[[^\]]+\]\s*/, "").replace(/\.$/, "").trim();
+        if (line.length > 72) line = line.slice(0, 69) + "…";
+        return line;
+      }
+
+      function buildRoomIssueSentence(note) {
+        if (!note.rooms || !note.rooms.length) return "";
+        var detail = briefIssueDetail(note);
+        if (!detail) return "";
+        detail = detail.replace(/\.$/, "");
+        if (note.rooms.length === 1) {
+          return "Room " + note.rooms[0] + "'s " + detail.charAt(0).toLowerCase() + detail.slice(1) + " remains unresolved.";
+        }
+        return "Rooms " + note.rooms.join(", ") + ": " + detail + " remains unresolved.";
+      }
+
+      function buildUrgentDetailSentences(analyzed) {
+        var urgentNotes = analyzed.filter(function (n) {
+          return (n.section === "urgent" || n.needsManagementAttention) && isActiveNote(n);
+        });
+        var sentences = [];
+        var seen = {};
+
+        urgentNotes.forEach(function (note) {
+          var sentence = buildRoomIssueSentence(note);
+          if (!sentence || seen[sentence]) return;
+          seen[sentence] = true;
+          sentences.push(capitalize(sentence));
+        });
+
+        if (!sentences.length && urgentNotes.length) {
+          var rooms = [];
+          var roomSeen = {};
+          urgentNotes.forEach(function (note) {
+            note.rooms.forEach(function (room) {
+              if (!roomSeen[room]) {
+                roomSeen[room] = true;
+                rooms.push(room);
+              }
+            });
+          });
+          if (rooms.length === 1) {
+            sentences.push("Room " + rooms[0] + " requires priority follow-up.");
+          } else if (rooms.length > 1) {
+            sentences.push("Priority follow-up is required for Rooms " + rooms.slice(0, 3).join(", ") +
+              (rooms.length > 3 ? " and others" : "") + ".");
+          }
+        }
+
+        return sentences.slice(0, 2);
+      }
+
+      function buildHandoverHandoffSentence(metrics) {
+        var handoffParts = [];
+
+        if (metrics.display.guest > 0) {
+          handoffParts.push({
+            count: metrics.display.guest,
+            singular: "guest-related matter",
+            plural: "guest-related matters"
+          });
+        }
+        if (metrics.display.payments > 0) {
+          handoffParts.push({
+            count: metrics.display.payments,
+            singular: "payment follow-up",
+            plural: "payment follow-ups"
+          });
+        }
+        if (metrics.display.maintenance > 0) {
+          handoffParts.push({
+            count: metrics.display.maintenance,
+            singular: "maintenance item",
+            plural: "maintenance items"
+          });
+        }
+        if (metrics.display.tasks > 0) {
+          handoffParts.push({
+            count: metrics.display.tasks,
+            singular: "operational task",
+            plural: "operational tasks"
+          });
+        }
+        if (metrics.display.events > 0) {
+          handoffParts.push({
+            count: metrics.display.events,
+            singular: "event",
+            plural: "events"
+          });
+        }
+
+        if (!handoffParts.length) return "";
+
+        var phrases = handoffParts.map(function (part) {
+          return part.count === 1 ? "one " + part.singular : part.count + " " + part.plural;
+        });
+
+        var joined;
+        if (phrases.length === 1) {
+          joined = phrases[0];
+        } else if (phrases.length === 2) {
+          joined = phrases[0] + " and " + phrases[1];
+        } else {
+          joined = phrases.slice(0, -1).join(", ") + ", and " + phrases[phrases.length - 1];
+        }
+
+        var verb = handoffParts.reduce(function (sum, part) { return sum + part.count; }, 0) === 1
+          ? "has"
+          : "have";
+        return capitalize(joined) + " " + verb + " been handed over to " + getIncomingTeamPhrase() + ".";
+      }
+
       function buildManagementAttentionSentence(managementNotes) {
         var rooms = [];
         var seen = {};
@@ -5641,19 +5860,32 @@
           });
         });
 
-        var count = managementNotes.length;
-        var base = count === 1
-          ? "One item requires immediate management attention"
-          : count + " items require immediate management attention";
+        if (managementNotes.length === 1 && managementNotes[0].rooms.length === 1) {
+          var detail = briefIssueDetail(managementNotes[0]);
+          if (detail) {
+            return "Room " + managementNotes[0].rooms[0] + " requires immediate management attention: " +
+              detail.charAt(0).toLowerCase() + detail.slice(1) + ".";
+          }
+          return "Room " + managementNotes[0].rooms[0] + " requires immediate management attention.";
+        }
 
         if (rooms.length === 1) {
-          return base + " — notably involving Room " + rooms[0] + ".";
+          return managementNotes.length === 1
+            ? "One item requires immediate management attention for Room " + rooms[0] + "."
+            : managementNotes.length + " items require immediate management attention for Room " + rooms[0] + ".";
         }
+
         if (rooms.length > 1) {
-          return base + ", spanning Rooms " + rooms.slice(0, 3).join(", ") +
-            (rooms.length > 3 ? " and others" : "") + ".";
+          return managementNotes.length === 1
+            ? "One item requires immediate management attention across Rooms " + rooms.slice(0, 3).join(", ") +
+              (rooms.length > 3 ? " and others" : "") + "."
+            : managementNotes.length + " items require immediate management attention across Rooms " +
+              rooms.slice(0, 3).join(", ") + (rooms.length > 3 ? " and others" : "") + ".";
         }
-        return base + ".";
+
+        return managementNotes.length === 1
+          ? "One item requires immediate management attention."
+          : managementNotes.length + " items require immediate management attention.";
       }
 
       function buildVipSummarySentence(vipNotes) {
@@ -5721,6 +5953,16 @@
       function buildMaintenancePrioritySentence(analyzed, metrics) {
         if (!metrics.display.maintenance) return "";
 
+        var activeMaint = analyzed.filter(function (n) {
+          return isActiveNote(n) && (n.section === "maintenance" || n.section === "urgent") &&
+            maintenanceNeedsFollowUp(n);
+        });
+
+        if (activeMaint.length === 1 && activeMaint[0].rooms.length === 1) {
+          var roomSentence = buildRoomIssueSentence(activeMaint[0]);
+          if (roomSentence) return capitalize(roomSentence);
+        }
+
         function priorityDisplayCount(priority) {
           var notes = analyzed.filter(function (n) {
             return isActiveNote(n) && n.section === "maintenance" && n.maintenancePriority === priority;
@@ -5732,27 +5974,27 @@
         var high = priorityDisplayCount("High");
         var normal = priorityDisplayCount("Normal");
 
-        var parts = [];
-        if (critical) {
-          parts.push(critical === 1 ? "1 critical maintenance task" : critical + " critical maintenance tasks");
-        }
-        if (high) {
-          parts.push(high === 1 ? "1 high-priority maintenance task" : high + " high-priority maintenance tasks");
-        }
-        if (normal) {
-          parts.push(normal === 1 ? "1 routine maintenance task" : normal + " routine maintenance tasks");
-        }
-
-        if (!parts.length) {
-          return metrics.display.maintenance === 1
-            ? "One maintenance task was logged for follow-up."
-            : metrics.display.maintenance + " maintenance tasks were logged for follow-up.";
+        if (critical === 1 && !high && !normal) {
+          var criticalNote = analyzed.filter(function (n) {
+            return isActiveNote(n) && n.maintenancePriority === "Critical";
+          })[0];
+          if (criticalNote && criticalNote.rooms.length === 1) {
+            return capitalize(buildRoomIssueSentence(criticalNote));
+          }
+          return "One critical maintenance issue requires immediate follow-up.";
         }
 
-        if (parts.length === 1) {
-          return "Maintenance status: " + parts[0] + " logged.";
+        if (critical || high) {
+          var parts = [];
+          if (critical) parts.push(critical === 1 ? "one critical issue" : critical + " critical issues");
+          if (high) parts.push(high === 1 ? "one high-priority issue" : high + " high-priority issues");
+          return "Maintenance follow-up is required for " + parts.join(" and ") + ".";
         }
-        return "Maintenance status: " + parts.slice(0, -1).join(", ") + ", and " + parts[parts.length - 1] + " logged.";
+
+        if (normal === 1) return "One routine maintenance task remains open.";
+        if (normal > 1) return normal + " routine maintenance tasks remain open.";
+        if (metrics.display.maintenance === 1) return "One maintenance task requires follow-up.";
+        return metrics.display.maintenance + " maintenance tasks require follow-up.";
       }
 
       function buildGlanceSummarySentence(metrics) {
@@ -5778,48 +6020,23 @@
       }
 
       function buildOpeningSentence(metrics, analyzed) {
-        var shift = getShiftLabel();
+        var possessive = getShiftPossessive();
         var urgentCount = metrics.display.urgent;
-        var maintenanceCount = metrics.display.maintenance;
-        var management = analyzed.filter(function (n) { return n.needsManagementAttention && isActiveNote(n); });
-        var carried = analyzed.filter(function (n) { return n.isCarriedOver && isActiveNote(n); });
+        var hasFollowUpWork = metrics.display.maintenance + metrics.display.guest +
+          metrics.display.payments + metrics.display.tasks + metrics.display.events > 0;
 
-        if (management.length > 0) {
-          return capitalize(buildManagementAttentionSentence(management).replace(/\.$/, "")) +
-            " Overall the " + shift + (urgentCount === 1
-              ? " recorded one urgent issue."
-              : urgentCount > 1
-                ? " recorded " + urgentCount + " urgent issues."
-                : " completed with operational items to review.");
+        if (urgentCount === 0) {
+          if (!hasFollowUpWork) {
+            return possessive + " ran smoothly with no urgent issues flagged.";
+          }
+          return possessive + " completed without urgent issues requiring immediate attention.";
         }
 
-        var urgentMaint = analyzed.filter(function (n) {
-          return n.section === "urgent" && isActiveNote(n) && isMaintenanceNote(n.original);
-        }).length;
-
-        if (urgentCount > 0 && urgentMaint === urgentCount) {
-          return "Overall the " + shift + (urgentCount === 1
-            ? " had one urgent maintenance issue."
-            : " had " + urgentCount + " urgent maintenance issues.");
+        if (urgentCount === 1) {
+          return possessive + " completed with one urgent issue requiring follow-up.";
         }
 
-        if (carried.length > 0 && urgentCount === 0) {
-          return "Overall the " + shift + " ran without new emergencies, but " +
-            (carried.length === 1 ? "one issue remains open from earlier." : carried.length + " issues remain open from earlier.");
-        }
-
-        if (urgentCount > 0) {
-          return "Overall the " + shift + (urgentCount === 1
-            ? " had one urgent issue requiring immediate attention."
-            : " had " + urgentCount + " urgent issues requiring immediate attention.");
-        }
-
-        if (maintenanceCount > 0) {
-          return "Overall the " + shift + " ran relatively smoothly, with " +
-            maintenanceCount + " maintenance " + (maintenanceCount === 1 ? "task" : "tasks") + " noted.";
-        }
-
-        return "Overall the " + shift + " ran smoothly with no urgent issues flagged.";
+        return possessive + " completed with " + urgentCount + " urgent issues requiring follow-up.";
       }
 
       function buildGuestSentence(metrics, analyzed) {
@@ -5877,31 +6094,30 @@
         var issueCount = metrics.display.payments;
         if (!issueCount && !(items && items.length)) return "";
 
-        var completed = items.filter(function (i) {
-          return noteContains(i, ["completed", "complete", "done", "settled", "processed", "reconciled"]);
+        var activePaymentNotes = (items || []).filter(function (item) {
+          var text = getItemText(item);
+          return text && !noteContains(text, ["completed", "complete", "done", "settled", "processed", "reconciled"]);
         });
-        var hasPmAccount = items.some(function (i) { return noteContains(i, ["pm account", "accounts"]); });
 
-        if (completed.length && issueCount) {
-          var donePart = hasPmAccount ? "Payments and PM accounts were completed successfully" : "Payments were processed successfully";
-          return donePart + ", though " + (issueCount === 1 ? "one payment issue still needs attention" : "some payment issues still need attention") + ".";
+        if (!issueCount && !activePaymentNotes.length) return "";
+
+        if (issueCount === 1) {
+          var paymentItem = activePaymentNotes[0] || items[0];
+          var paymentText = paymentItem ? getItemText(paymentItem) : "";
+          var roomMatch = paymentText.match(/\b(?:room|rm\.?)\s*(\d+[a-z]?)\b/i);
+          if (roomMatch) {
+            return "Room " + roomMatch[1] + " has a payment issue requiring follow-up before departure.";
+          }
+          return "One payment issue requires follow-up before the next shift.";
         }
 
-        if (completed.length || hasPmAccount) {
-          if (hasPmAccount && completed.length) return "Payments and PM accounts were completed successfully.";
-          if (hasPmAccount) return "PM accounts were completed successfully.";
-          return "Payments were completed successfully.";
+        if (issueCount > 1) {
+          return issueCount + " payment issues require follow-up before the next shift.";
         }
 
-        if (issueCount) {
-          return issueCount === 1
-            ? "One payment issue was flagged and needs follow-up."
-            : issueCount + " payment issues were flagged and need follow-up.";
-        }
-
-        return items.length === 1
-          ? "One payment-related note was logged."
-          : items.length + " payment-related notes were logged.";
+        return activePaymentNotes.length === 1
+          ? "One payment-related note requires follow-up."
+          : activePaymentNotes.length + " payment-related notes require follow-up.";
       }
 
       function buildTasksSentence(tasks, general, analyzed, metrics) {
@@ -5909,80 +6125,85 @@
         var openFollowUps = analyzed.filter(function (n) {
           return n.isFollowUp && isActiveNote(n) && n.section === "tasks";
         });
-        var followUpSentence = buildFollowUpSentence(openFollowUps);
 
-        var combined = tasks.concat(general);
-        var completed = combined.filter(function (i) {
-          return noteContains(i, ["completed", "complete", "done", "finished", "setup", "set up", "prepared", "ready"]);
+        var resolvedDuringShift = analyzed.filter(function (n) {
+          return (n.section === "tasks" || n.section === "general") && isResolvedNote(n.original);
         });
 
-        var completedSentence = "";
-        if (completed.length) {
-          var breakfast = completed.filter(function (i) { return noteContains(i, ["breakfast"]); });
-          if (breakfast.length) {
-            completedSentence = "Breakfast setup has been completed.";
-          } else {
-            var stock = completed.filter(function (i) { return noteContains(i, ["stock", "inventory"]); });
-            if (stock.length) {
-              completedSentence = "Stocking and inventory tasks have been completed.";
-            } else if (completed.length === 1) {
-              var line = getItemText(completed[0]).replace(/^\[[^\]]+\]\s*/, "").replace(/^Room\s+\S+:\s*/i, "").replace(/\.$/, "").toLowerCase();
-              if (line.length < 80) {
-                completedSentence = capitalize(line) + (line.indexOf("completed") !== -1 || line.indexOf("complete") !== -1 ? "." : " has been completed.");
-              } else {
-                completedSentence = "One outstanding task was completed during the shift.";
-              }
-            } else {
-              completedSentence = completed.length + " outstanding tasks were completed during the shift.";
-            }
-          }
+        var parts = [];
+
+        if (openFollowUps.length === 1 && openFollowUps[0].rooms.length === 1) {
+          var followDetail = briefIssueDetail(openFollowUps[0]);
+          parts.push("Room " + openFollowUps[0].rooms[0] +
+            (followDetail ? " requires follow-up on " + followDetail.charAt(0).toLowerCase() + followDetail.slice(1) : " has an outstanding follow-up task") + ".");
+        } else if (openFollowUps.length) {
+          parts.push(openFollowUps.length === 1
+            ? "One follow-up task remains outstanding for the incoming team."
+            : openFollowUps.length + " follow-up tasks remain outstanding for the incoming team.");
+        } else if (taskCount === 1) {
+          parts.push("One operational task requires follow-up.");
+        } else if (taskCount > 1) {
+          parts.push(taskCount + " operational tasks require follow-up.");
         }
 
-        if (followUpSentence && completedSentence) {
-          return followUpSentence + " " + completedSentence;
+        if (resolvedDuringShift.length === 1) {
+          parts.push("One task was completed during this shift.");
+        } else if (resolvedDuringShift.length > 1) {
+          parts.push(resolvedDuringShift.length + " tasks were completed during this shift.");
         }
-        if (followUpSentence) return followUpSentence;
-        if (completedSentence) return completedSentence;
-        if (taskCount === 1) return "One outstanding task remains for the incoming team.";
-        if (taskCount > 1) return taskCount + " outstanding tasks remain for the incoming team.";
-        return "";
+
+        return parts.join(" ");
       }
 
       function generateSummary(classified) {
         var analyzed = classified._analyzed || [];
         var metrics = getHandoverMetrics(classified);
-        var payments = classified.payments || [];
-        var tasks = classified.tasks || [];
-        var general = classified.general || [];
         var sentences = [];
+        var urgentDetails = buildUrgentDetailSentences(analyzed);
 
         sentences.push(buildOpeningSentence(metrics, analyzed));
-        if (aiPrefs.detail !== "brief") {
-          sentences.push(buildGlanceSummarySentence(metrics));
-        }
+
+        urgentDetails.forEach(function (sentence) {
+          if (sentences.indexOf(sentence) === -1) sentences.push(sentence);
+        });
 
         var carriedSentence = buildCarriedOverSentence(analyzed.filter(function (n) {
           return n.isCarriedOver && isActiveNote(n);
         }));
-        if (carriedSentence && sentences[0].indexOf("remains open from earlier") === -1 &&
-            sentences[0].indexOf("remain open from earlier") === -1) {
-          sentences.push(carriedSentence);
+        if (carriedSentence) sentences.push(carriedSentence);
+
+        var maintSentence = buildMaintenanceSentence(metrics, analyzed);
+        if (maintSentence) {
+          var urgentDetailText = urgentDetails.join(" ").toLowerCase();
+          if (!urgentDetailText || maintSentence.toLowerCase().indexOf(urgentDetailText.slice(0, 24)) === -1) {
+            if (sentences.indexOf(maintSentence) === -1) sentences.push(maintSentence);
+          }
         }
 
         var guestSentence = buildGuestSentence(metrics, analyzed);
-        if (guestSentence) sentences.push(guestSentence);
+        if (guestSentence && aiPrefs.detail !== "brief" &&
+            !/guest-related note(s)? (was|were) recorded/i.test(guestSentence)) {
+          sentences.push(guestSentence);
+        }
 
-        var maintSentence = buildMaintenanceSentence(metrics, analyzed);
-        if (maintSentence && sentences.indexOf(maintSentence) === -1) sentences.push(maintSentence);
+        var paySentence = buildPaymentsSentence(classified.payments || [], metrics);
+        if (paySentence && aiPrefs.detail !== "brief") sentences.push(paySentence);
 
-        var paySentence = buildPaymentsSentence(payments, metrics);
-        if (paySentence) sentences.push(paySentence);
+        var taskSentence = buildTasksSentence(classified.tasks || [], classified.general || [], analyzed, metrics);
+        if (taskSentence && sentences.indexOf(taskSentence) === -1 &&
+            !/operational tasks require follow-up|operational task requires follow-up|follow-up tasks remain outstanding for the incoming team/i.test(taskSentence)) {
+          sentences.push(taskSentence);
+        }
 
-        var taskSentence = buildTasksSentence(tasks, general, analyzed, metrics);
-        if (taskSentence && sentences.indexOf(taskSentence) === -1) sentences.push(taskSentence);
+        var handoffSentence = buildHandoverHandoffSentence(metrics);
+        if (handoffSentence) sentences.push(handoffSentence);
 
-        var roomSentence = buildRoomSummarySentence(analyzed);
-        if (roomSentence && getUniqueRooms(analyzed).length >= 2) sentences.push(roomSentence);
+        if (aiPrefs.detail === "comprehensive") {
+          var glanceSentence = buildGlanceSummarySentence(metrics);
+          if (glanceSentence && sentences.indexOf(glanceSentence) === -1) {
+            sentences.splice(1, 0, glanceSentence);
+          }
+        }
 
         var limit = getDetailSentenceLimit();
         var summary = sentences.slice(0, limit).join(" ");
@@ -6635,12 +6856,16 @@
               return n.section === "urgent" && isActiveNote(n);
             });
             if (!metrics.urgent) return "";
-            if (urgentNotes.length === 1 && urgentNotes[0].rooms.length === 1) {
-              return "Priority follow-up required for Room " + urgentNotes[0].rooms[0] + ".";
+            if (urgentNotes.length === 1) {
+              var urgentSentence = buildRoomIssueSentence(urgentNotes[0]);
+              if (urgentSentence) return capitalize(urgentSentence);
+              if (urgentNotes[0].rooms.length === 1) {
+                return "Room " + urgentNotes[0].rooms[0] + " requires priority follow-up.";
+              }
             }
             return metrics.urgent === 1
-              ? "One issue requires immediate attention and management follow-up."
-              : metrics.urgent + " issues require immediate attention and management follow-up.";
+              ? "One urgent issue requires immediate follow-up."
+              : metrics.urgent + " urgent issues require immediate follow-up.";
           }
           case "guest": {
             var guestSentence = buildGuestSentence(metrics, analyzed);
@@ -6655,15 +6880,15 @@
             var maintSentence = buildMaintenanceSentence(metrics, analyzed);
             if (maintSentence) return maintSentence;
             return metrics.maintenance === 1
-              ? "One maintenance task is logged and awaiting action."
-              : metrics.maintenance + " maintenance tasks are logged and awaiting action.";
+              ? "One maintenance item requires follow-up."
+              : metrics.maintenance + " maintenance items require follow-up.";
           }
           case "payments": {
             var paySentence = buildPaymentsSentence(classified.payments || [], metrics);
             if (paySentence) return paySentence;
             return metrics.payments === 1
-              ? "One payment issue needs follow-up before the next shift."
-              : metrics.payments + " payment issues need follow-up before the next shift.";
+              ? "One payment issue requires follow-up before the next shift."
+              : metrics.payments + " payment issues require follow-up before the next shift.";
           }
           case "events": {
             return metrics.events === 1
@@ -6679,8 +6904,8 @@
             );
             if (taskSentence) return taskSentence;
             return metrics.tasks === 1
-              ? "One outstanding task remains for the incoming team."
-              : metrics.tasks + " outstanding tasks remain for the incoming team.";
+              ? "One operational task requires follow-up."
+              : metrics.tasks + " operational tasks require follow-up.";
           }
           default:
             return "";
@@ -7674,6 +7899,14 @@
       wireDraftSaveListeners();
       wireIntelligencePartToggle(recommendationsPartToggle, recommendationsPartBody);
       wireIntelligencePartToggle(checklistPartToggle, checklistPartBody);
+      if (advancedDataToggle && advancedDataBody) {
+        advancedDataToggle.addEventListener("click", function () {
+          var isOpen = advancedDataToggle.classList.contains("is-open");
+          advancedDataToggle.classList.toggle("is-open", !isOpen);
+          advancedDataBody.classList.toggle("is-open", !isOpen);
+          advancedDataToggle.setAttribute("aria-expanded", !isOpen);
+        });
+      }
 
       window.addEventListener("beforeunload", function () {
         if (draftSaveTimer) {
