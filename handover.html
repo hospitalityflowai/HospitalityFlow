@@ -2508,6 +2508,7 @@
 
     .saved-handover-actions {
       display: flex;
+      flex-wrap: wrap;
       gap: 8px;
       padding: 0 16px 16px;
     }
@@ -2963,7 +2964,7 @@
               </div>
               <div class="saved-handovers-toolbar">
                 <div class="storage-status" id="storageStatus">
-                  <span><span class="storage-status-dot" aria-hidden="true"></span>Local storage active</span>
+                  <span><span class="storage-status-dot" aria-hidden="true"></span><span id="storageStatusLabel">Offline mode — saved on this device</span></span>
                   <span id="lastBackupLabel">Last backup: Never</span>
                 </div>
               </div>
@@ -2988,6 +2989,12 @@
                       Import Backup
                     </button>
                     <input type="file" id="importBackupInput" accept=".json,application/json" hidden>
+                    <button class="btn btn-data" id="uploadLocalHandoversBtn" type="button">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                      </svg>
+                      Upload local handovers to cloud
+                    </button>
                   </div>
                   <div class="data-actions data-actions-destructive">
                     <button class="btn btn-data btn-data-danger" id="clearAllHistoryBtn" type="button">Clear All History</button>
@@ -3018,6 +3025,7 @@
   <script src="js/auth.js"></script>
   <script src="js/workspace.js"></script>
   <script src="js/hotel-brain-store.js"></script>
+  <script src="js/handover-store.js"></script>
   <script src="hotel-profile-operational.js"></script>
   <script src="shift-intelligence-engine.js"></script>
   <script src="handover-saved.js"></script>
@@ -3181,13 +3189,15 @@
       var advancedDataToggle = document.getElementById("advancedDataToggle");
       var advancedDataBody = document.getElementById("advancedDataBody");
       var lastBackupLabel = document.getElementById("lastBackupLabel");
+      var storageStatusLabel = document.getElementById("storageStatusLabel");
+      var uploadLocalHandoversBtn = document.getElementById("uploadLocalHandoversBtn");
 
       var HOTEL_BRAIN_KEY = "hospitalityFlow_hotelProfile";
       var HOTEL_PROFILE_KEY = HOTEL_BRAIN_KEY;
       var DRAFT_STORAGE_KEY = "hf_handover_draft_v1";
       var LAST_BACKUP_KEY = "hf_handover_last_backup";
       var BACKUP_VERSION = 1;
-      var DRAFT_DEBOUNCE_MS = 800;
+      var DRAFT_DEBOUNCE_MS = 1500;
       var skipDraftSave = false;
       var draftSaveTimer = null;
       var DEFAULT_DEPARTMENTS = [
@@ -7033,9 +7043,21 @@
       }
 
       function updateStorageStatusUI() {
-        if (!lastBackupLabel) return;
-        var lastBackup = localStorage.getItem(LAST_BACKUP_KEY);
-        lastBackupLabel.textContent = "Last backup: " + formatBackupDisplayDate(lastBackup);
+        if (lastBackupLabel) {
+          var lastBackup = localStorage.getItem(LAST_BACKUP_KEY);
+          lastBackupLabel.textContent = "Last backup: " + formatBackupDisplayDate(lastBackup);
+        }
+        updateSyncStatusUI();
+      }
+
+      function updateSyncStatusUI() {
+        if (!storageStatusLabel) return;
+        if (window.HFHandoverStore && HFHandoverStore.getSyncStatus) {
+          var status = HFHandoverStore.getSyncStatus();
+          storageStatusLabel.textContent = status.label;
+          return;
+        }
+        storageStatusLabel.textContent = "Offline mode — saved on this device";
       }
 
       function draftPayloadHasContent(draft) {
@@ -7085,19 +7107,35 @@
         if (skipDraftSave) return;
         try {
           if (!draftPayloadHasContent(buildDraftPayload())) {
-            localStorage.removeItem(DRAFT_STORAGE_KEY);
+            if (window.HFHandoverStore) {
+              HFHandoverStore.clearDraft();
+            } else {
+              localStorage.removeItem(DRAFT_STORAGE_KEY);
+            }
             updateDraftStatusUI(null);
             return;
           }
           var payload = buildDraftPayload();
-          localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(payload));
-          updateDraftStatusUI(payload.savedAt);
+          if (window.HFHandoverStore) {
+            HFHandoverStore.saveDraft(payload).then(function (result) {
+              updateDraftStatusUI(payload.savedAt);
+              if (result && result.cloud) {
+                updateSyncStatusUI();
+              }
+            });
+          } else {
+            localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(payload));
+            updateDraftStatusUI(payload.savedAt);
+          }
         } catch (err) {
           /* localStorage unavailable */
         }
       }
 
       function loadDraftFromStorage() {
+        if (window.HFHandoverStore && HFHandoverStore.getCachedDraft) {
+          return HFHandoverStore.getCachedDraft();
+        }
         try {
           var raw = localStorage.getItem(DRAFT_STORAGE_KEY);
           if (!raw) return null;
@@ -7189,8 +7227,8 @@
         }
       }
 
-      function restoreDraftFromStorage() {
-        var draft = loadDraftFromStorage();
+      function restoreDraftFromStorage(preferredDraft) {
+        var draft = preferredDraft || loadDraftFromStorage();
         if (!draftPayloadHasContent(draft)) return false;
         skipDraftSave = true;
         applyDraftPayload(draft);
@@ -7200,7 +7238,11 @@
       }
 
       function clearDraftStorage() {
-        localStorage.removeItem(DRAFT_STORAGE_KEY);
+        if (window.HFHandoverStore) {
+          HFHandoverStore.clearDraft();
+        } else {
+          localStorage.removeItem(DRAFT_STORAGE_KEY);
+        }
         updateDraftStatusUI(null);
       }
 
@@ -7758,6 +7800,63 @@
         }).filter(function (section) { return section; });
       }
 
+      function buildHotelSnapshotForPdfFromData(snapshot) {
+        snapshot = snapshot || {};
+        return HOTEL_SNAPSHOT_STATS.map(function (stat) {
+          var displayValue = formatSnapshotDisplay(stat.id, snapshot);
+          return {
+            label: SNAPSHOT_PDF_LABELS[stat.id] || stat.label,
+            value: formatSnapshotPdfValue(stat.id, displayValue)
+          };
+        });
+      }
+
+      function buildPdfMetaFromSaved(saved) {
+        return {
+          hotel: saved.hotelName || "Not specified",
+          department: saved.department || "Not specified",
+          shift: getShiftDisplayName(saved.shift || "AM"),
+          date: saved.dateDisplay || saved.date || "Not specified",
+          preparedBy: saved.preparedBy || "Not specified"
+        };
+      }
+
+      function exportSavedHandoverPdf(saved) {
+        if (!saved || !saved.organisedHandover) {
+          showToast("Saved handover is missing generated content.");
+          return;
+        }
+        if (!window.HandoverPdfExporter) {
+          showToast("PDF export is unavailable. Please refresh the page.");
+          return;
+        }
+
+        try {
+          var classified = restoreClassifiedFromSaved(saved);
+          var generatedAt = saved.timestamp
+            ? formatTimestamp(new Date(saved.timestamp))
+            : "Saved handover";
+
+          HandoverPdfExporter.export({
+            meta: buildPdfMetaFromSaved(saved),
+            generatedAt: generatedAt,
+            metrics: saved.dashboardMetrics || getHandoverMetrics(classified),
+            hotelSnapshot: buildHotelSnapshotForPdfFromData(saved.hotelSnapshot || {}),
+            summary: buildPdfSummaryPayload(classified),
+            sections: buildPdfSections(classified),
+            recommendations: (saved.recommendations || []).map(function (rec) {
+              return formatRecommendationForExport(normalizeRecommendation(rec));
+            }),
+            intelligenceChecklist: (saved.shiftIntelligenceChecklist || []).map(function (item) {
+              return formatChecklistForExport(normalizeChecklistItem(item));
+            })
+          });
+          showToast("PDF downloaded successfully.");
+        } catch (err) {
+          showToast("Unable to export PDF. Please try again.");
+        }
+      }
+
       function printHandover() {
         if (!lastClassified) {
           showToast("Generate a handover before printing.");
@@ -7895,6 +7994,23 @@
           HandoverSaved.clearAllHistory();
         });
       }
+      if (uploadLocalHandoversBtn && window.HFHandoverStore) {
+        uploadLocalHandoversBtn.addEventListener("click", function () {
+          uploadLocalHandoversBtn.disabled = true;
+          HFHandoverStore.uploadLocalHandovers()
+            .then(function (result) {
+              if (window.HandoverSaved) HandoverSaved.renderList();
+              updateSyncStatusUI();
+              showToast(result.message || "Upload complete.");
+            })
+            .catch(function (err) {
+              showToast(HFHandoverStore.formatError(err));
+            })
+            .finally(function () {
+              uploadLocalHandoversBtn.disabled = false;
+            });
+        });
+      }
 
       wireDraftSaveListeners();
       wireIntelligencePartToggle(recommendationsPartToggle, recommendationsPartBody);
@@ -7922,12 +8038,12 @@
         }
       });
 
-      initHotelBrainFromCloud(function () {
-        var draftWasRestored = restoreDraftFromStorage();
-        if (!draftWasRestored) {
-          initDate();
-        } else {
+      function finishHandoverPageInit(preferredDraft) {
+        var draftWasRestored = restoreDraftFromStorage(preferredDraft);
+        if (draftWasRestored) {
           showDraftRestoredHint();
+        } else {
+          initDate();
         }
         applyBrainPrefillToForm({ preserveExisting: true });
         updateCharCount();
@@ -7935,6 +8051,28 @@
           renderPreHandoverSnapshot();
         }
         updateStorageStatusUI();
+      }
+
+      initHotelBrainFromCloud(function () {
+        if (window.HFHandoverStore) {
+          HFHandoverStore.onSyncStatusChange(updateSyncStatusUI);
+          HFHandoverStore.init().then(function (result) {
+            if (window.HandoverSaved) HandoverSaved.renderList();
+            var draft = result && result.draft ? result.draft : null;
+            if (draft && draftPayloadHasContent(draft)) {
+              finishHandoverPageInit(draft);
+              return;
+            }
+            return HFHandoverStore.loadDraft().then(function (loadedDraft) {
+              finishHandoverPageInit(loadedDraft);
+            });
+          }).catch(function () {
+            finishHandoverPageInit(null);
+          });
+          return;
+        }
+
+        finishHandoverPageInit(null);
       });
 
       if (window.HandoverSaved) {
@@ -7945,7 +8083,9 @@
           showToast: showToast,
           onSaveRequest: buildSavePayload,
           onOpen: restoreSavedHandover,
+          onEdit: restoreSavedHandover,
           onPrint: printSavedHandover,
+          onExportPdf: exportSavedHandoverPdf,
           onConfirmDelete: function () {
             return window.confirm("Delete this saved handover? This cannot be undone.");
           },
