@@ -328,10 +328,20 @@
           "not yet informed", "not informed", "maintenance not", "awaiting maintenance",
           "needs informing", "not yet notified", "not notified yet"
         ]);
-        var maintDetail = issue && issue.length > 8 ? " regarding " + issue : "";
-        var maintText = maintNotInformed
-          ? "Follow up with Maintenance" + maintDetail + roomOn + " " + nextShiftPhrase(shiftType) + "."
-          : "Inform Maintenance" + maintDetail + roomOn + " and confirm resolution " + nextShiftPhrase(shiftType) + ".";
+        var maintDetail = issue && issue.length > 8 ? issue.replace(/\.$/, "") : "";
+        var roomRef = roomPhrase(note);
+        var maintText;
+        if (maintNotInformed) {
+          maintText = roomRef
+            ? "Follow up with Maintenance on " + roomRef +
+              (maintDetail ? " (" + maintDetail + ")" : "") + " " + nextShiftPhrase(shiftType) + "."
+            : "Follow up with Maintenance" + maintDetail + roomOn + " " + nextShiftPhrase(shiftType) + ".";
+        } else {
+          maintText = roomRef
+            ? "Confirm Maintenance resolution for " + roomRef +
+              (maintDetail ? " (" + maintDetail + ")" : "") + " " + nextShiftPhrase(shiftType) + "."
+            : "Inform Maintenance" + maintDetail + roomOn + " and confirm resolution " + nextShiftPhrase(shiftType) + ".";
+        }
         addCandidate({
           text: maintText,
           priority: maintPriority,
@@ -363,8 +373,11 @@
       }
 
       if (noteContains(line, ["late checkout", "late check-out", "late check out", "checkout extension", "extended checkout"])) {
+        var lateRoom = roomPhrase(note);
         addCandidate({
-          text: "Inform Housekeeping about the late checkout" + roomIn + ".",
+          text: lateRoom
+            ? "Inform Housekeeping that " + lateRoom + " has a late checkout approved."
+            : "Inform Housekeeping about the late checkout" + roomIn + ".",
           priority: "high",
           department: resolveDepartment(["Housekeeping"], "Housekeeping", departments)
         });
@@ -384,8 +397,12 @@
 
       if (note.section === "payments" || isPaymentIssueLine(line)) {
         if (noteContains(line, ["outstanding", "payment", "balance", "folio", "unpaid", "owing", "due"])) {
+          var roomRef = roomPhrase(note);
+          var paymentText = roomRef
+            ? roomRef + " has an outstanding balance. Collect payment before departure to avoid checkout delays."
+            : "Collect outstanding payment before departure to avoid checkout delays.";
           addCandidate({
-            text: "Collect outstanding payment" + roomIn + " before departure.",
+            text: paymentText,
             priority: note.section === "urgent" ? "urgent" : "high",
             department: resolveDepartment(["Front Office", "Reception", "Duty Manager"], "Reception", departments)
           });
@@ -395,8 +412,13 @@
 
       if (noteContains(line, ["complaint", "complain", "unhappy", "dissatisfied", "escalat"]) &&
           noteContains(line, ["guest", "room"]) && note.section !== "general") {
+        var complaintRoom = roomPhrase(note);
         addCandidate({
-          text: "Review the guest complaint" + roomIn + " and escalate to management if unresolved.",
+          text: complaintRoom
+            ? "Review the guest complaint for " + complaintRoom +
+              (issue && issue.length > 8 ? " (" + issue.replace(/\.$/, "") + ")" : "") +
+              " and escalate to management if unresolved."
+            : "Review the guest complaint" + roomIn + " and escalate to management if unresolved.",
           priority: note.section === "urgent" ? "urgent" : "high",
           department: resolveDepartment(["Duty Manager", "Front Office", "Management"], "Duty Manager", departments)
         });
@@ -404,8 +426,14 @@
       }
 
       if (noteContains(line, ["wake-up call", "wakeup call", "wake up call"])) {
+        var timeMatch = line.match(/\b(\d{1,2}[:.]\d{2})\b/);
+        var wakeLabel = timeMatch
+          ? timeMatch[1].replace(".", ":") + " wake-up call"
+          : "wake-up call";
         addCandidate({
-          text: "Confirm the wake-up call" + roomIn + " is scheduled with the Front Office team.",
+          text: roomPhrase(note)
+            ? "Confirm the " + wakeLabel + " for " + roomPhrase(note) + " is scheduled with Reception."
+            : "Confirm the wake-up call" + roomIn + " is scheduled with the Front Office team.",
           priority: "normal",
           department: resolveDepartment(["Front Office", "Reception"], "Reception", departments)
         });
@@ -443,8 +471,12 @@
       if ((note.isFollowUp || note.section === "tasks" || note.section === "urgent") &&
           noteContains(line, ["follow up", "follow-up", "outstanding", "pending", "must", "need to", "ensure"])) {
         if (note.section === "general" && !note.isFollowUp) return;
+        var taskDetail = issue && issue.length > 8 ? issue.replace(/\.$/, "") : "outstanding task";
         addCandidate({
-          text: "Action the outstanding task" + roomIn + " and hand over clearly to the next shift.",
+          text: roomPhrase(note)
+            ? "Action the " + taskDetail.toLowerCase() + " for " + roomPhrase(note) +
+              " and hand over clearly to the next shift."
+            : "Action the outstanding task" + roomIn + " and hand over clearly to the next shift.",
           priority: note.section === "urgent" ? "urgent" : "normal",
           department: resolveDepartment([input.selectedDepartment], fallbackDept, departments)
         });
