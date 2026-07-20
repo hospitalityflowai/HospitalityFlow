@@ -1022,6 +1022,10 @@
       border-top: 1px solid rgba(255, 255, 255, 0.07);
     }
 
+    .waitlist-offer-includes {
+      margin: 10px 0 12px;
+    }
+
     .waitlist-offer-availability {
       margin-top: 12px;
       font-size: 0.78rem;
@@ -1580,35 +1584,42 @@
       </div>
     </section>
 
-    <!-- Founding Hotel Programme -->
+    <!-- Founding Pilot Programme -->
     <section class="waitlist" id="waitlist">
       <div class="container">
         <div class="waitlist-layout reveal">
           <div class="waitlist-info">
-            <h2 class="section-heading">Founding Hotel Programme</h2>
-            <p class="waitlist-lead">An exclusive programme for independent and boutique hotels helping shape the future of Hospitality Flow.</p>
+            <h2 class="section-heading">Founding Pilot Programme</h2>
+            <p class="waitlist-lead">We&rsquo;re looking for 10 independent and boutique hotels to help shape the future of Hospitality Flow.</p>
             <div class="waitlist-offer">
-              <p class="waitlist-offer-label">Founding Hotel Programme</p>
-              <p class="waitlist-offer-text">AI Shift Handover is free for your first year.</p>
-              <p class="waitlist-offer-detail"><strong>Founder pricing:</strong> After that, Founding Hotels continue at a lifetime Founder rate of £49/month while continuously subscribed.</p>
-              <p class="waitlist-offer-detail waitlist-offer-detail--muted"><strong>Future pricing:</strong> Hotels joining after the programme closes will pay the standard £99/month.</p>
-              <p class="waitlist-offer-note">No payment details are required during the first year.</p>
+              <p class="waitlist-offer-label">Founding Pilot Programme</p>
+              <p class="waitlist-offer-text">We&rsquo;re looking for 10 independent and boutique hotels to help shape the future of Hospitality Flow.</p>
+              <p class="waitlist-offer-detail"><strong>As a Founding Pilot Hotel you&rsquo;ll receive:</strong></p>
+              <ul class="waitlist-includes-list waitlist-offer-includes">
+                <li>AI Shift Handover throughout the pilot programme</li>
+                <li>Personal onboarding tailored to your hotel</li>
+                <li>Ongoing support throughout the pilot</li>
+                <li>Direct input into future product development</li>
+                <li>Opportunity to become one of our first published success stories</li>
+              </ul>
+              <p class="waitlist-offer-note">Applications are personally reviewed to ensure we&rsquo;re working with hotels where we can provide the most value.</p>
               <p class="waitlist-offer-availability is-loading" id="founding-availability" aria-live="polite">Checking availability…</p>
             </div>
             <div class="waitlist-includes">
               <p class="waitlist-includes-label">What&rsquo;s included</p>
               <ul class="waitlist-includes-list">
-                <li>Hospitality Flow free for your first year</li>
-                <li>Personal onboarding and ongoing support</li>
+                <li>AI Shift Handover throughout the pilot programme</li>
+                <li>Personal onboarding tailored to your hotel</li>
+                <li>Ongoing support throughout the pilot</li>
                 <li>Direct input into future product development</li>
-                <li>Founding rate of £49 per month after year one</li>
-                <li>Cancel anytime</li>
+                <li>Opportunity to become one of our first published success stories</li>
               </ul>
             </div>
             <div class="waitlist-trust">
-              <p class="waitlist-trust-label">Built from real hotel operations</p>
-              <p class="waitlist-trust-text">Hospitality Flow is being developed from real day-to-day hotel operations—not theoretical workflows.</p>
-              <p class="waitlist-trust-text">Founding Hotels receive personal onboarding and ongoing support, with the opportunity to help shape how Hospitality Flow develops.</p>
+              <p class="waitlist-trust-label">Built by a hotel professional</p>
+              <p class="waitlist-trust-text">Hospitality Flow is developed from real day-to-day operational experience in independent and boutique hotels.</p>
+              <p class="waitlist-trust-text">Every feature is designed to solve practical operational challenges encountered during real hotel shifts—not theoretical workflows.</p>
+              <p class="waitlist-trust-text">Our goal is simple: build the AI operations platform that helps boutique hotels run better.</p>
             </div>
           </div>
 
@@ -1648,7 +1659,7 @@
                 <label for="role">Your role</label>
                 <input type="text" id="role" name="role" required autocomplete="organization-title" placeholder="e.g. General Manager">
               </div>
-              <button type="submit" class="btn btn-primary btn-lg form-submit" id="form-submit-btn">Apply to the Founding Hotel Programme</button>
+              <button type="submit" class="btn btn-primary btn-lg form-submit" id="form-submit-btn">Apply as a Pilot Hotel</button>
               <div class="form-feedback form-feedback--progress" id="form-progress" role="status" aria-live="polite"></div>
               <div class="form-feedback form-feedback--error" id="form-error" role="alert" aria-live="assertive"></div>
             </form>
@@ -1656,7 +1667,7 @@
             <div class="form-success" id="form-success" role="status" aria-live="polite">
               <div class="form-success-icon" aria-hidden="true">✓</div>
               <h3 class="form-success-title">Application received</h3>
-              <p>Thank you for applying to the Founding Hotel Programme.</p>
+              <p>Thank you for applying to the Founding Pilot Programme.</p>
               <p>We'll personally review your application and contact you shortly to arrange onboarding and access.</p>
               <p>We're excited to learn more about your hotel and how AI Shift Handover can support your team.</p>
             </div>
@@ -2020,7 +2031,7 @@
         submitApplication(applicationData).then(function (result) {
           if (!result.ok) {
             submitBtn.disabled = false;
-            submitBtn.textContent = 'Apply to the Founding Hotel Programme';
+            submitBtn.textContent = 'Apply as a Pilot Hotel';
             hideFormFeedback();
             formError.textContent = 'Something went wrong. Please try again or email hello@hospitalityflow.co.uk.';
             formError.classList.add('show');
@@ -2033,7 +2044,7 @@
           success.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'center' });
         }).catch(function () {
           submitBtn.disabled = false;
-          submitBtn.textContent = 'Apply to the Founding Hotel Programme';
+          submitBtn.textContent = 'Apply as a Pilot Hotel';
           hideFormFeedback();
           formError.textContent = 'Something went wrong. Please try again or email hello@hospitalityflow.co.uk.';
           formError.classList.add('show');

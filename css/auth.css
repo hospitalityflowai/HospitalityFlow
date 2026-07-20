@@ -386,7 +386,8 @@ main {
   letter-spacing: -0.02em;
 }
 
-#reset-invalid .btn {
+#reset-invalid .btn,
+#recovery-password-invalid .btn {
   width: 100%;
   margin-top: 8px;
 }

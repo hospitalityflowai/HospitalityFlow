@@ -15,6 +15,7 @@
   };
 
   var MIN_PASSWORD_LENGTH = 8;
+  var RECOVERY_STORAGE_KEY = "hf_password_recovery_active";
 
   function redirect(url) {
     global.location.href = url;
@@ -41,6 +42,9 @@
     }
     return global.HospitalityFlowSupabase.initClient().then(function (client) {
       if (!client) {
+        if (!global.HospitalityFlowSupabase.isSupabaseLibLoaded()) {
+          return Promise.reject(new Error("Could not load the Supabase library. Check your connection and try again."));
+        }
         return Promise.reject(new Error("Could not connect to Supabase. Check your configuration."));
       }
       return client;
@@ -103,16 +107,10 @@
     });
   }
 
-  function signOut() {
-    return ensureClient().then(function (client) {
-      return client.auth.signOut();
-    });
-  }
-
   function requestPasswordReset(email) {
     return ensureClient().then(function (client) {
       return client.auth.resetPasswordForEmail(email, {
-        redirectTo: getPageUrl(ROUTES.resetPassword)
+        redirectTo: getPasswordResetRedirectUrl()
       });
     });
   }
@@ -133,6 +131,74 @@
     return null;
   }
 
+  function getPasswordResetRedirectUrl() {
+    return getPageUrl(ROUTES.resetPassword);
+  }
+
+  function markRecoveryActive() {
+    try {
+      sessionStorage.setItem(RECOVERY_STORAGE_KEY, "1");
+    } catch (e) {
+      /* sessionStorage unavailable */
+    }
+  }
+
+  function clearRecoveryActive() {
+    try {
+      sessionStorage.removeItem(RECOVERY_STORAGE_KEY);
+    } catch (e) {
+      /* sessionStorage unavailable */
+    }
+  }
+
+  function isRecoveryActive() {
+    try {
+      return sessionStorage.getItem(RECOVERY_STORAGE_KEY) === "1";
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function hasRecoveryUrlHint() {
+    var hash = global.location.hash.replace(/^#/, "");
+    if (hash) {
+      try {
+        var hashParams = new URLSearchParams(hash);
+        if (hashParams.get("type") === "recovery") return true;
+      } catch (e) {
+        /* ignore malformed hash */
+      }
+    }
+
+    var search = global.location.search.replace(/^\?/, "");
+    if (search) {
+      try {
+        var queryParams = new URLSearchParams(search);
+        if (queryParams.get("type") === "recovery") return true;
+      } catch (e) {
+        /* ignore malformed query */
+      }
+    }
+
+    return false;
+  }
+
+  function clearRecoveryUrlHash() {
+    if (!global.history || !global.history.replaceState) return;
+    global.history.replaceState({}, document.title, global.location.pathname + global.location.search);
+  }
+
+  function unsubscribeAuthListener(subscription) {
+    if (!subscription) return;
+    if (subscription.data && subscription.data.subscription && subscription.data.subscription.unsubscribe) {
+      subscription.data.subscription.unsubscribe();
+      return;
+    }
+    if (subscription.unsubscribe) {
+      subscription.unsubscribe();
+    }
+  }
+
   function parseAuthHashError() {
     var hash = global.location.hash.replace(/^#/, "");
     if (!hash) return null;
@@ -148,63 +214,63 @@
     }
   }
 
-  function waitForRecoverySession(client, timeoutMs) {
-    var timeout = timeoutMs || 4000;
+  function detectPasswordRecovery(client, timeoutMs) {
+    var urlHint = hasRecoveryUrlHint();
+    var recoveryAttempt = urlHint || isRecoveryActive();
+    var timeout = timeoutMs || (urlHint ? 4000 : 0);
 
     return new Promise(function (resolve) {
       var settled = false;
       var subscription = null;
       var timer = null;
 
-      function finish(session, isRecovery) {
+      function finish(isRecovery, session) {
         if (settled) return;
         settled = true;
         if (timer) clearTimeout(timer);
-        if (subscription && subscription.unsubscribe) {
-          subscription.unsubscribe();
+        unsubscribeAuthListener(subscription);
+
+        if (isRecovery) {
+          markRecoveryActive();
+          clearRecoveryUrlHash();
+        } else if (!session) {
+          clearRecoveryActive();
         }
-        resolve({ session: session, isRecovery: isRecovery });
+
+        resolve({
+          isRecovery: !!isRecovery,
+          session: session || null,
+          recoveryAttempt: recoveryAttempt
+        });
       }
 
       subscription = client.auth.onAuthStateChange(function (event, session) {
         if (event === "PASSWORD_RECOVERY" && session) {
-          finish(session, true);
-          return;
-        }
-        if (session && (event === "SIGNED_IN" || event === "INITIAL_SESSION")) {
-          var hashType = "";
-          if (global.location.hash) {
-            hashType = new URLSearchParams(global.location.hash.replace(/^#/, "")).get("type") || "";
-          }
-          if (hashType === "recovery" || event === "PASSWORD_RECOVERY") {
-            finish(session, true);
-          }
+          finish(true, session);
         }
       });
 
       client.auth.getSession().then(function (result) {
         var session = result.data.session;
-        if (!session) return;
 
-        var hashType = "";
-        if (global.location.hash) {
-          hashType = new URLSearchParams(global.location.hash.replace(/^#/, "")).get("type") || "";
+        if (isRecoveryActive() && session) {
+          finish(true, session);
+          return;
         }
-        if (hashType === "recovery") {
-          finish(session, true);
+
+        if (!urlHint) {
+          finish(false, session);
         }
       });
 
-      timer = setTimeout(function () {
-        client.auth.getSession().then(function (result) {
-          var session = result.data.session;
-          var hashType = "";
-          if (global.location.hash) {
-            hashType = new URLSearchParams(global.location.hash.replace(/^#/, "")).get("type") || "";
-          }
-          finish(session, hashType === "recovery" && !!session);
-        });
-      }, timeout);
+      if (urlHint) {
+        timer = setTimeout(function () {
+          client.auth.getSession().then(function (result) {
+            var session = result.data.session;
+            finish(isRecoveryActive() && !!session, session);
+          });
+        }, timeout || 4000);
+      }
     });
   }
 
@@ -238,6 +304,18 @@
     }
     if (/signup is disabled/i.test(msg)) {
       return "Account registration is not enabled. Please contact support.";
+    }
+    if (/failed to load supabase|supabase js library/i.test(msg)) {
+      return "Could not load Supabase. Please check your connection and try again.";
+    }
+    if (/invalid api key|invalid jwt|apikey/i.test(msg)) {
+      return "Supabase configuration error. Please contact support.";
+    }
+    if (/rate limit|too many requests|email rate limit/i.test(msg)) {
+      return "Too many reset attempts. Please wait a few minutes and try again.";
+    }
+    if (/redirect url|redirect_to/i.test(msg)) {
+      return "Password reset is temporarily unavailable. Please contact hello@hospitalityflow.co.uk.";
     }
 
     return msg;
@@ -445,7 +523,7 @@
           showAlert(
             alertEl,
             "success",
-            "If an account exists for that email, we have sent a password reset link. Check your inbox and spam folder."
+            "Password reset email sent. If an account exists for that address, check your inbox and spam folder, then open the link to set a new password."
           );
           form.reset();
           setFormLoading(form, false, submitBtn, "Sending reset link…", "Send reset link");
@@ -486,7 +564,7 @@
     }
 
     ensureClient().then(function (client) {
-      return waitForRecoverySession(client).then(function (result) {
+      return detectPasswordRecovery(client).then(function (result) {
         if (loadingEl) loadingEl.classList.add("hidden");
         if (contentEl) contentEl.classList.remove("hidden");
 
@@ -527,6 +605,7 @@
               return;
             }
 
+            clearRecoveryActive();
             return signOut().then(function () {
               showAlert(alertEl, "success", "Password updated successfully. Redirecting to sign in…");
               setTimeout(function () {
@@ -544,6 +623,109 @@
       if (contentEl) contentEl.classList.remove("hidden");
       showAlert(alertEl, "error", formatError(err));
     });
+  }
+
+  function setAccountPanelVisible(el, visible) {
+    if (!el) return;
+    el.classList.toggle("hidden", !visible);
+    el.hidden = !visible;
+  }
+
+  function initAccountRecoveryInvalid() {
+    var headingEl = document.getElementById("account-heading");
+    var emailEl = document.getElementById("account-email");
+    var alertEl = document.getElementById("auth-alert");
+    var recoverySection = document.getElementById("password-recovery-section");
+    var invalidEl = document.getElementById("recovery-password-invalid");
+
+    setAccountPanelVisible(document.getElementById("workspace-create"), false);
+    setAccountPanelVisible(document.getElementById("workspace-dashboard"), false);
+    setAccountPanelVisible(document.getElementById("password-section"), false);
+    setAccountPanelVisible(recoverySection, true);
+
+    if (headingEl) headingEl.textContent = "Set new password";
+    if (emailEl) emailEl.textContent = "";
+    if (invalidEl) setAccountPanelVisible(invalidEl, true);
+
+    var form = document.getElementById("recovery-password-form");
+    if (form) setAccountPanelVisible(form, false);
+
+    showAlert(
+      alertEl,
+      "error",
+      "This reset link is invalid or has expired. Request a new password reset email."
+    );
+  }
+
+  function initAccountRecoverySection(session) {
+    var sectionEl = document.getElementById("password-recovery-section");
+    var form = document.getElementById("recovery-password-form");
+    var alertEl = document.getElementById("recovery-password-alert");
+    var submitBtn = document.getElementById("recovery-password-submit");
+    var headingEl = document.getElementById("account-heading");
+    var emailEl = document.getElementById("account-email");
+    var invalidEl = document.getElementById("recovery-password-invalid");
+
+    setAccountPanelVisible(document.getElementById("workspace-create"), false);
+    setAccountPanelVisible(document.getElementById("workspace-dashboard"), false);
+    setAccountPanelVisible(document.getElementById("password-section"), false);
+    setAccountPanelVisible(sectionEl, true);
+    if (invalidEl) setAccountPanelVisible(invalidEl, false);
+
+    if (headingEl) headingEl.textContent = "Set new password";
+    if (emailEl && session && session.user && session.user.email) {
+      emailEl.innerHTML = "Resetting password for <strong>" + escapeHtml(session.user.email) + "</strong>";
+    }
+
+    if (!form || !session) return;
+
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      hideAlert(alertEl);
+      hideAlert(document.getElementById("auth-alert"));
+
+      var password = document.getElementById("recovery-password").value;
+      var confirm = document.getElementById("recovery-password-confirm").value;
+      var validationError = validateNewPassword(password, confirm);
+
+      if (validationError) {
+        showAlert(alertEl, "error", validationError);
+        return;
+      }
+
+      setFormLoading(form, true, submitBtn, "Updating password…", "Set new password");
+
+      updatePassword(password).then(function (result) {
+        if (result.error) {
+          showAlert(alertEl, "error", formatError(result.error));
+          setFormLoading(form, false, submitBtn, "Updating password…", "Set new password");
+          return;
+        }
+
+        clearRecoveryActive();
+        setFormLoading(form, true, submitBtn, "Updating password…", "Set new password");
+        form.querySelectorAll("input").forEach(function (input) {
+          input.disabled = true;
+        });
+
+        showAlert(alertEl, "success", "Password updated successfully. Redirecting to sign in…");
+
+        return signOut().then(function () {
+          setTimeout(function () {
+            redirect(ROUTES.login + "?reset=success");
+          }, 1500);
+        });
+      }).catch(function (err) {
+        showAlert(alertEl, "error", formatError(err));
+        setFormLoading(form, false, submitBtn, "Updating password…", "Set new password");
+      });
+    });
+  }
+
+  function escapeHtml(text) {
+    var div = document.createElement("div");
+    div.textContent = text;
+    return div.innerHTML;
   }
 
   function initChangePasswordSection(session) {
@@ -650,6 +832,9 @@
     initForgotPasswordPage: initForgotPasswordPage,
     initResetPasswordPage: initResetPasswordPage,
     initChangePasswordSection: initChangePasswordSection,
+    initAccountRecoverySection: initAccountRecoverySection,
+    initAccountRecoveryInvalid: initAccountRecoveryInvalid,
+    detectPasswordRecovery: detectPasswordRecovery,
     showLoginResetSuccess: showLoginResetSuccess
   };
 })(window);

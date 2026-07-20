@@ -6,9 +6,9 @@
  *   1. js/supabase-config.js (local, not committed)
  *   2. @supabase/supabase-js loaded from CDN before or when getClient() is first called
  *
- * Usage (future pages):
- *   <script src="js/supabase-config.js"></script>
+ * Usage (auth and account pages):
  *   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+ *   <script src="js/supabase-config.js"></script>
  *   <script src="js/supabase-client.js"></script>
  */
 (function (global) {
@@ -32,6 +32,7 @@
     if (!trimmed) return true;
     if (trimmed === PLACEHOLDER_URL || trimmed === PLACEHOLDER_KEY) return true;
     if (/^YOUR_/i.test(trimmed) || /YOUR_SUPABASE/i.test(trimmed)) return true;
+    if (/PASTE_YOUR/i.test(trimmed)) return true;
     if (/example\.supabase\.co/i.test(trimmed)) return true;
     if (/eyJexample/i.test(trimmed)) return true;
     return false;
@@ -123,6 +124,9 @@
     }
 
     return loadSupabaseCdn().then(function () {
+      if (!isSupabaseLibLoaded()) {
+        return null;
+      }
       clientInstance = createClientInstance();
       return clientInstance;
     }).catch(function () {

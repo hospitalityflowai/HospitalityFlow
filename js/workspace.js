@@ -78,6 +78,9 @@
     if (/hotel details could not be updated|no rows/i.test(msg)) {
       return "Hotel details could not be updated. Confirm you are the workspace owner and try again.";
     }
+    if (/update_hotel_workspace|function.*does not exist|42883/i.test(msg)) {
+      return "Database setup incomplete. Run supabase/migrations/phase5_hotel_workspace_edit.sql in Supabase.";
+    }
 
     return global.HFAuth.formatError(error);
   }
@@ -187,29 +190,27 @@
             }
 
             return client
-              .from("hotels")
-              .update({
-                name: payload.name,
-                property_type: payload.propertyType,
-                number_of_rooms: payload.roomCount,
-                city: payload.city,
-                country: payload.country
+              .rpc("update_hotel_workspace", {
+                p_hotel_id: hotelId,
+                p_name: payload.name,
+                p_property_type: payload.propertyType,
+                p_number_of_rooms: payload.roomCount,
+                p_city: payload.city,
+                p_country: payload.country
               })
-              .eq("id", hotelId)
-              .select("id, name, property_type, number_of_rooms, city, country, created_at")
               .then(function (updateResponse) {
                 if (updateResponse.error) {
                   return Promise.reject(updateResponse.error);
                 }
 
-                var updatedRows = updateResponse.data || [];
-                if (!updatedRows.length) {
+                var hotel = updateResponse.data;
+                if (!hotel || !hotel.id) {
                   return Promise.reject(new Error("Hotel details could not be updated."));
                 }
 
                 cachedWorkspace = {
                   role: membership.role,
-                  hotel: updatedRows[0]
+                  hotel: hotel
                 };
                 return cachedWorkspace;
               });
@@ -377,15 +378,54 @@
     var form = document.getElementById("workspace-form");
     var submitBtn = document.getElementById("workspace-submit");
 
-    global.HFAuth.requireAuth().then(function (session) {
-      if (!session) return;
-
-      if (emailEl) {
-        var email = session.user && session.user.email ? session.user.email : "your account";
-        emailEl.innerHTML = "Signed in as <strong>" + escapeHtml(email) + "</strong>";
+    global.HFAuth.ensureClient().then(function (client) {
+      return global.HFAuth.detectPasswordRecovery(client);
+    }).then(function (recoveryResult) {
+      if (recoveryResult.isRecovery && recoveryResult.session) {
+        if (loadingEl) loadingEl.classList.add("hidden");
+        if (contentEl) contentEl.classList.remove("hidden");
+        global.HFAuth.initAccountRecoverySection(recoveryResult.session);
+        return;
       }
 
-      global.HFAuth.initChangePasswordSection(session);
+      if (recoveryResult.recoveryAttempt && !recoveryResult.session) {
+        if (loadingEl) loadingEl.classList.add("hidden");
+        if (contentEl) contentEl.classList.remove("hidden");
+        global.HFAuth.initAccountRecoveryInvalid();
+        return;
+      }
+
+      return initSignedInAccountPage(
+        recoveryResult.session,
+        alertEl,
+        emailEl,
+        logoutBtn,
+        loadingEl,
+        contentEl,
+        form,
+        submitBtn
+      );
+    }).catch(function (err) {
+      if (loadingEl) loadingEl.classList.add("hidden");
+      if (contentEl) contentEl.classList.remove("hidden");
+      showAlert(alertEl, "error", formatWorkspaceError(err));
+    });
+  }
+
+  function initSignedInAccountPage(session, alertEl, emailEl, logoutBtn, loadingEl, contentEl, form, submitBtn) {
+    var authPromise = session
+      ? Promise.resolve(session)
+      : global.HFAuth.requireAuth();
+
+    return authPromise.then(function (activeSession) {
+      if (!activeSession) return;
+
+      if (emailEl) {
+        var accountEmail = activeSession.user && activeSession.user.email ? activeSession.user.email : "your account";
+        emailEl.innerHTML = "Signed in as <strong>" + escapeHtml(accountEmail) + "</strong>";
+      }
+
+      global.HFAuth.initChangePasswordSection(activeSession);
 
       if (global.HFHotelBrainStore) {
         global.HFHotelBrainStore.preload();
@@ -469,10 +509,6 @@
           });
         }
       });
-    }).catch(function (err) {
-      if (loadingEl) loadingEl.classList.add("hidden");
-      if (contentEl) contentEl.classList.remove("hidden");
-      showAlert(alertEl, "error", formatWorkspaceError(err));
     });
   }
 
