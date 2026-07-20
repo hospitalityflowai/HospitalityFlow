@@ -7479,10 +7479,21 @@
         }
       }
 
+      function getResolvedHotelSnapshotForSave() {
+        captureHotelSnapshotInputs();
+        var extracted = getActiveHotelSnapshot();
+        var resolved = {};
+        HOTEL_SNAPSHOT_STATS.forEach(function (stat) {
+          var display = formatSnapshotDisplay(stat.id, extracted);
+          if (display !== SNAPSHOT_EMPTY) {
+            resolved[stat.id] = display;
+          }
+        });
+        return resolved;
+      }
+
       function buildSavePayload() {
         if (!lastClassified) return null;
-
-        captureHotelSnapshotInputs();
 
         var meta = getHotelMeta();
         return {
@@ -7497,7 +7508,7 @@
           aiSummary: lastSummaryText,
           dashboardMetrics: getHandoverMetrics(lastClassified),
           organisedHandover: buildOrganisedHandover(lastClassified),
-          hotelSnapshot: Object.assign({}, lastHotelSnapshotOverrides),
+          hotelSnapshot: getResolvedHotelSnapshotForSave(),
           recommendations: lastRecommendations.map(normalizeRecommendation),
           shiftIntelligenceChecklist: lastIntelligenceChecklist.map(normalizeChecklistItem),
           timestamp: new Date().toISOString()

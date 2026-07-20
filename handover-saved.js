@@ -319,10 +319,9 @@
         if (showToast) showToast(result.message || "Handover saved.");
       }).catch(function (err) {
         if (showToast) {
-          showToast(global.HFHandoverStore.formatError
-            ? global.HFHandoverStore.formatError(err)
-            : "Saved on this device. Cloud sync unavailable.");
+          showToast("Saved locally — not yet synced");
         }
+        console.error("[HandoverSaved] cloud save failed:", err);
         renderList();
       }).finally(function () {
         saveInProgress = false;
@@ -331,7 +330,7 @@
     }
 
     if (saveHandover(record) && showToast) {
-      showToast("Handover saved locally.");
+      showToast("Saved locally — not yet synced");
     }
   }
 

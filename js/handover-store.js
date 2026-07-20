@@ -182,6 +182,44 @@
     };
   }
 
+  function sectionItemTexts(organised, sectionId) {
+    var items = organised && organised[sectionId] ? organised[sectionId] : [];
+    return items.map(function (item) {
+      if (typeof item === "string") return item;
+      if (!item || typeof item !== "object") return "";
+      return item.text || item.original || item.content || item.label || "";
+    }).filter(Boolean);
+  }
+
+  function buildMetricsPayload(record) {
+    var snapshot = record.hotelSnapshot && typeof record.hotelSnapshot === "object"
+      ? record.hotelSnapshot
+      : {};
+    var organised = record.organisedHandover && typeof record.organisedHandover === "object"
+      ? record.organisedHandover
+      : {};
+
+    return {
+      dashboardMetrics: record.dashboardMetrics || {},
+      hotelSnapshot: snapshot,
+      arrivals: snapshot.arrivals != null ? snapshot.arrivals : null,
+      departures: snapshot.departures != null ? snapshot.departures : null,
+      inHouseGuests: snapshot.inHouse != null ? snapshot.inHouse : null,
+      occupancy: snapshot.occupancy != null ? snapshot.occupancy : null,
+      adr: snapshot.adr != null ? snapshot.adr : null,
+      roomsSold: snapshot.roomsSold != null ? snapshot.roomsSold : null,
+      sections: {
+        urgentIssues: sectionItemTexts(organised, "urgent"),
+        vipGuests: sectionItemTexts(organised, "guest"),
+        maintenanceIssues: sectionItemTexts(organised, "maintenance"),
+        paymentIssues: sectionItemTexts(organised, "payments"),
+        outstandingTasks: sectionItemTexts(organised, "tasks"),
+        events: sectionItemTexts(organised, "events"),
+        generalNotes: sectionItemTexts(organised, "general")
+      }
+    };
+  }
+
   function recordToRow(record, ctx, status) {
     var generated = {
       organisedHandover: record.organisedHandover || {},
@@ -191,7 +229,8 @@
       dashboardMetrics: record.dashboardMetrics || {},
       hotelSnapshot: record.hotelSnapshot || {},
       originalNotes: record.originalNotes || "",
-      date: record.date || null
+      date: record.date || null,
+      sections: buildMetricsPayload(record).sections
     };
 
     if (record.id && !record.cloudId) {
@@ -209,10 +248,7 @@
       shift: record.shift || null,
       handover_date: record.date || null,
       prepared_by: record.preparedBy || null,
-      metrics: {
-        dashboardMetrics: record.dashboardMetrics || {},
-        hotelSnapshot: record.hotelSnapshot || {}
-      },
+      metrics: buildMetricsPayload(record),
       source_notes: record.originalNotes || null,
       generated_handover: generated,
       checklist_state: Array.isArray(record.shiftIntelligenceChecklist)
@@ -294,6 +330,12 @@
       .order("created_at", { ascending: false })
       .then(function (response) {
         if (response.error) {
+          console.error("[HFHandoverStore] fetchSavedHandovers failed:", {
+            workspaceId: workspaceId,
+            message: response.error.message || String(response.error),
+            code: response.error.code || null,
+            details: response.error.details || null
+          });
           return Promise.reject(response.error);
         }
         return (response.data || []).map(rowToRecord);
@@ -447,7 +489,10 @@
           };
         }
 
-        console.error("[HFHandoverStore] init failed:", formatError(err));
+        console.error("[HFHandoverStore] load history failed:", {
+          message: formatError(err),
+          error: err
+        });
         cachedSavedHandovers = readLocalSaved();
         setCloudSyncActive(false, err);
         return {
@@ -484,6 +529,19 @@
     return readLocalDraft(cachedWorkspaceId);
   }
 
+  function saveLocalFallback(localRecord) {
+    var localList = readLocalSaved();
+    localList.unshift(localRecord);
+    writeLocalSaved(localList);
+
+    if (!cloudSyncActive || !cachedSavedHandovers.length) {
+      cachedSavedHandovers = localList.slice();
+    } else {
+      var exists = cachedSavedHandovers.some(function (item) { return item.id === localRecord.id; });
+      if (!exists) cachedSavedHandovers.unshift(localRecord);
+    }
+  }
+
   function saveHandover(record) {
     if (!record) {
       return Promise.resolve({ cloud: false, record: null, message: "Nothing to save." });
@@ -493,10 +551,6 @@
     if (!localRecord.id) {
       localRecord.id = Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8);
     }
-
-    var localList = readLocalSaved();
-    localList.unshift(localRecord);
-    writeLocalSaved(localList);
 
     return requireAuthAndWorkspace()
       .then(function (ctx) {
@@ -512,6 +566,13 @@
             .maybeSingle()
             .then(function (response) {
               if (response.error) {
+                console.error("[HFHandoverStore] insert handover failed:", {
+                  workspaceId: ctx.workspaceId,
+                  userId: ctx.userId,
+                  message: response.error.message || String(response.error),
+                  code: response.error.code || null,
+                  details: response.error.details || null
+                });
                 return Promise.reject(response.error);
               }
 
@@ -537,26 +598,23 @@
               return {
                 cloud: true,
                 record: savedRecord,
-                message: "Saved to your hotel workspace"
+                message: "Saved to cloud"
               };
             });
         });
       })
       .catch(function (err) {
-        console.error("[HFHandoverStore] saveHandover failed:", formatError(err));
+        console.error("[HFHandoverStore] saveHandover failed:", {
+          message: formatError(err),
+          error: err
+        });
         setCloudSyncActive(false, err);
-
-        if (!cachedSavedHandovers.length) {
-          cachedSavedHandovers = localList.slice();
-        } else {
-          var exists = cachedSavedHandovers.some(function (item) { return item.id === localRecord.id; });
-          if (!exists) cachedSavedHandovers.unshift(localRecord);
-        }
+        saveLocalFallback(localRecord);
 
         return {
           cloud: false,
           record: localRecord,
-          message: "Saved on this device. Cloud sync unavailable.",
+          message: "Saved locally — not yet synced",
           error: err
         };
       });
