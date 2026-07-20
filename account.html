@@ -130,6 +130,30 @@
           </div>
         </div>
 
+        <div id="password-recovery-section" class="auth-card account-password-section hidden" hidden>
+          <h2 class="account-section-heading">Set new password</h2>
+          <p class="account-note">Choose a new password for your account. Minimum 8 characters.</p>
+
+          <div id="recovery-password-alert" class="auth-alert" aria-live="polite"></div>
+
+          <div id="recovery-password-invalid" class="hidden" hidden>
+            <p class="account-note">Request a new reset link if this one has expired or already been used.</p>
+            <a href="forgot-password.html" class="btn btn-primary">Request new reset link</a>
+          </div>
+
+          <form id="recovery-password-form" novalidate>
+            <div class="auth-form-group">
+              <label for="recovery-password">New password</label>
+              <input type="password" id="recovery-password" name="password" required autocomplete="new-password" minlength="8" placeholder="At least 8 characters">
+            </div>
+            <div class="auth-form-group">
+              <label for="recovery-password-confirm">Confirm new password</label>
+              <input type="password" id="recovery-password-confirm" name="password-confirm" required autocomplete="new-password" minlength="8" placeholder="Repeat your new password">
+            </div>
+            <button type="submit" class="btn btn-primary" id="recovery-password-submit">Set new password</button>
+          </form>
+        </div>
+
         <div id="password-section" class="auth-card account-password-section hidden" hidden>
           <h2 class="account-section-heading">Change password</h2>
           <p class="account-note">Update your account password. Minimum 8 characters.</p>
@@ -156,6 +180,7 @@
     </div>
   </main>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="js/supabase-config.js"></script>
   <script src="js/supabase-client.js"></script>
   <script src="js/auth.js"></script>
