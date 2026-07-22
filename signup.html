@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex">
-  <meta name="description" content="Create your Hospitality Flow account.">
-  <title>Create account | Hospitality Flow</title>
+  <meta name="description" content="Hospitality Flow account access is currently invitation-only.">
+  <title>Invitation only | Hospitality Flow</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -30,6 +30,11 @@
 
         <div class="auth-card">
           <div id="auth-alert" class="auth-alert" aria-live="polite"></div>
+
+          <div id="signup-invitation-only" class="hidden" hidden>
+            <p class="account-note">If you have received an invitation, open the link in your email to set up your account, then sign in.</p>
+            <a href="login.html" class="btn btn-primary">Go to sign in</a>
+          </div>
 
           <form id="signup-form" novalidate>
             <div class="auth-form-group">
@@ -56,6 +61,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="js/supabase-config.js"></script>
   <script src="js/supabase-client.js"></script>
+  <script src="js/tenant-storage.js"></script>
   <script src="js/auth.js"></script>
   <script>HFAuth.initSignupPage();</script>
 </body>

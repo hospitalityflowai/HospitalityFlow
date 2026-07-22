@@ -1256,7 +1256,7 @@
 
                 <div class="settings-panel settings-panel--muted">
                   <h3 class="subsection-heading">Developer</h3>
-                  <p class="section-intro">Schema version 4 · Storage key <code>hospitalityFlow_hotelProfile</code>. All tools read from this single profile — no duplicate fields.</p>
+                  <p class="section-intro">Schema version 4 · Cloud-backed Hotel Brain with workspace-scoped local cache. All tools read from this single profile — no duplicate fields.</p>
                 </div>
 
                 <div class="settings-panel settings-panel--muted dev-sample-panel">
@@ -1306,7 +1306,9 @@
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="js/supabase-config.js"></script>
   <script src="js/supabase-client.js"></script>
+  <script src="js/tenant-storage.js"></script>
   <script src="js/auth.js"></script>
+  <script src="js/platform-access.js"></script>
   <script src="js/workspace.js"></script>
   <script src="js/hotel-brain-store.js"></script>
   <script src="hotel-profile-knowledge.js"></script>
@@ -1315,7 +1317,6 @@
   <script src="hotel-profile-export.js"></script>
   <script>
     (function () {
-      var STORAGE_KEY = 'hospitalityFlow_hotelProfile';
       var LOGO_MAX_BYTES = 2 * 1024 * 1024;
       var LOGO_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/svg+xml'];
       var LOGO_EXTS = ['.png', '.jpg', '.jpeg', '.webp', '.svg'];
@@ -2786,9 +2787,34 @@
       function loadProfile() {
         profileReady = false;
 
-        window.HFHotelBrainStore.load().then(function (result) {
+        if (window.HFHotelBrainStore && window.HFHotelBrainStore.invalidateLoads) {
+          window.HFHotelBrainStore.invalidateLoads();
+        } else if (window.HFHotelBrainStore) {
+          window.HFHotelBrainStore.clearTenantCache();
+        }
+
+        var loadPromise = window.HFPlatformAccess && window.HFPlatformAccess.requireApprovedAccess
+          ? window.HFPlatformAccess.requireApprovedAccess({ redirect: "account.html?access=pending" })
+          : (window.HFAuth && window.HFAuth.requireAuth
+            ? window.HFAuth.requireAuth()
+            : Promise.resolve(null));
+
+        loadPromise.then(function (session) {
+          if (!session) return null;
+          return window.HFHotelBrainStore.load();
+        }).then(function (result) {
+          result = result || {};
           if (result.error === 'NOT_AUTHENTICATED') {
             showSaveError('Sign in to load your Hotel Brain from the cloud.');
+            seedFreshProfileUI();
+            profileReady = true;
+            if (HPK) HPK.updateCompletionUI();
+            return;
+          }
+          if (result.error === 'NOT_APPROVED') {
+            showSaveError(window.HFPlatformAccess && window.HFPlatformAccess.NOT_APPROVED_MESSAGE
+              ? window.HFPlatformAccess.NOT_APPROVED_MESSAGE
+              : 'Your Hospitality Flow access has not been approved yet.');
             seedFreshProfileUI();
             profileReady = true;
             if (HPK) HPK.updateCompletionUI();

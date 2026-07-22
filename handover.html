@@ -44,7 +44,10 @@
       --shadow-card-hover: 0 4px 12px rgba(7, 14, 26, 0.06), 0 8px 28px rgba(7, 14, 26, 0.05);
       --shadow-summary: 0 1px 2px rgba(74, 143, 196, 0.06), 0 4px 24px rgba(74, 143, 196, 0.1), 0 12px 48px rgba(7, 14, 26, 0.05);
       --shadow-summary-hover: 0 2px 4px rgba(74, 143, 196, 0.08), 0 8px 32px rgba(74, 143, 196, 0.14), 0 16px 56px rgba(7, 14, 26, 0.07);
-      --card-gap: 12px;
+      --card-gap: 10px;
+      --hf-icon-size: 28px;
+      --hf-icon-svg: 14px;
+      --hf-icon-radius: 8px;
       --transition: 0.22s ease;
       --transition-smooth: 0.28s cubic-bezier(0.4, 0, 0.2, 1);
       --max-width: 920px;
@@ -175,26 +178,27 @@
       padding: 0 24px;
     }
 
-    .main { flex: 1; padding: 32px 0 72px; }
+    .main { flex: 1; padding: 24px 0 64px; }
 
     .page-header {
-      margin-bottom: 28px;
-      animation: fadeDown 0.5s ease both;
+      margin-bottom: 20px;
+      animation: fadeDown 0.45s ease both;
     }
 
     .page-title {
-      font-size: clamp(1.4rem, 3.5vw, 1.75rem);
+      font-size: clamp(1.35rem, 3.2vw, 1.72rem);
       font-weight: 700;
       letter-spacing: -0.035em;
       color: var(--navy-900);
       line-height: 1.2;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
 
     .page-subtitle {
-      font-size: 0.95rem;
+      font-size: 0.88rem;
       color: var(--gray-500);
-      max-width: 520px;
+      max-width: 48ch;
+      line-height: 1.5;
     }
 
     .hotel-brain-panel {
@@ -238,6 +242,11 @@
     }
 
     .hotel-brain-panel.is-disconnected .hotel-brain-dot {
+      background: var(--gray-300);
+      box-shadow: 0 0 0 3px rgba(168, 180, 196, 0.2);
+    }
+
+    .hotel-brain-panel.is-partial .hotel-brain-dot {
       background: var(--amber-500);
       box-shadow: 0 0 0 3px rgba(232, 184, 77, 0.18);
     }
@@ -283,19 +292,22 @@
       border-color: rgba(74, 143, 196, 0.35);
     }
 
-    .hotel-brain-panel.is-connected .hotel-brain-sub {
+    .hotel-brain-panel.is-connected .hotel-brain-sub,
+    .hotel-brain-panel.is-partial .hotel-brain-sub {
       color: var(--blue-600);
     }
 
     .form-input--brain-sourced {
-      background: var(--gray-50);
-      color: var(--navy-800);
-      cursor: default;
+      background: var(--white);
+      color: var(--navy-900);
+      cursor: text;
+      border-color: rgba(74, 143, 196, 0.2);
     }
 
     .form-input--brain-sourced:focus {
-      border-color: var(--gray-200);
-      box-shadow: none;
+      border-color: var(--blue-500);
+      box-shadow: 0 0 0 3px rgba(74, 143, 196, 0.12);
+      background: var(--white);
     }
 
     @media (max-width: 560px) {
@@ -312,17 +324,17 @@
     /* ── Cards ── */
     .card {
       background: var(--white);
-      border: 1px solid var(--gray-200);
+      border: 1px solid rgba(7, 14, 26, 0.06);
       border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-sm);
+      box-shadow: 0 1px 2px rgba(7, 14, 26, 0.03);
     }
 
     .card-header {
       display: flex;
       align-items: center;
       gap: 10px;
-      padding: 20px 26px;
-      border-bottom: 1px solid var(--gray-100);
+      padding: 18px 22px 14px;
+      border-bottom: none;
     }
 
     .card-header-icon {
@@ -379,11 +391,11 @@
 
     .handover-meta {
       display: none;
-      padding: 20px 22px;
+      padding: 16px 18px;
       background: var(--white);
-      border: 1px solid rgba(7, 14, 26, 0.08);
-      border-radius: var(--radius-xl);
-      box-shadow: var(--shadow-card);
+      border: 1px solid rgba(7, 14, 26, 0.05);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 1px 3px rgba(7, 14, 26, 0.04);
     }
 
     .handover-meta.is-visible { display: block; }
@@ -391,32 +403,32 @@
     .handover-meta-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 18px 24px;
+      gap: 14px 24px;
     }
 
     .handover-meta-item {
       display: flex;
-      align-items: flex-start;
-      gap: 12px;
+      align-items: center;
+      gap: 10px;
       min-width: 0;
     }
 
     .handover-meta-icon {
-      width: 34px;
-      height: 34px;
-      border-radius: 9px;
+      width: var(--hf-icon-size);
+      height: var(--hf-icon-size);
+      border-radius: var(--hf-icon-radius);
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
       background: var(--gray-50);
-      border: 1px solid rgba(7, 14, 26, 0.06);
+      border: none;
+      color: var(--gray-400);
     }
 
     .handover-meta-icon svg {
-      width: 16px;
-      height: 16px;
-      color: var(--gray-500);
+      width: var(--hf-icon-svg);
+      height: var(--hf-icon-svg);
     }
 
     .handover-meta-body {
@@ -424,23 +436,24 @@
       flex-direction: column;
       gap: 3px;
       min-width: 0;
+      flex: 1;
     }
 
     .handover-meta-label {
-      font-size: 0.68rem;
-      font-weight: 700;
-      color: var(--gray-400);
-      text-transform: uppercase;
-      letter-spacing: 0.07em;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--gray-500);
+      text-transform: none;
+      letter-spacing: 0;
       line-height: 1.2;
     }
 
     .handover-meta-value {
       font-size: 0.92rem;
-      font-weight: 500;
+      font-weight: 600;
       color: var(--navy-900);
-      line-height: 1.4;
-      letter-spacing: -0.01em;
+      line-height: 1.3;
+      letter-spacing: -0.015em;
     }
 
     .form-label {
@@ -715,15 +728,15 @@
     }
 
     .hotel-snapshot-pre {
-      margin-top: 20px;
-      padding-top: 18px;
-      border-top: 1px solid var(--gray-200);
+      margin-top: 22px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(7, 14, 26, 0.05);
     }
 
     .hotel-snapshot-pre-hint {
-      font-size: 0.78rem;
-      color: var(--gray-500);
-      margin-bottom: 10px;
+      font-size: 0.76rem;
+      color: var(--gray-400);
+      margin-bottom: 12px;
       line-height: 1.45;
     }
 
@@ -736,32 +749,32 @@
     .output-section.visible { display: block; }
 
     .output-panel {
-      margin-top: 32px;
-      padding-top: 28px;
-      border-top: 1px solid var(--gray-200);
+      margin-top: 28px;
+      padding-top: 4px;
+      border-top: none;
     }
 
     .output-panel-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
       flex-wrap: wrap;
-      gap: 10px;
+      gap: 8px;
     }
 
     .output-panel-header h2 {
-      font-size: 0.82rem;
+      font-size: 0.88rem;
       font-weight: 600;
-      color: var(--gray-500);
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
+      color: var(--navy-800);
+      letter-spacing: -0.01em;
+      text-transform: none;
     }
 
     .handover-results {
       display: flex;
       flex-direction: column;
-      gap: var(--card-gap);
+      gap: 14px;
     }
 
     /* ── Shift at a Glance ── */
@@ -775,26 +788,26 @@
     }
 
     .shift-glance-header {
-      margin-bottom: 16px;
+      margin-bottom: 14px;
     }
 
     .shift-glance-header h3 {
-      font-size: 0.95rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
+      font-size: 0.94rem;
+      font-weight: 600;
       color: var(--navy-800);
+      letter-spacing: -0.01em;
     }
 
     .shift-glance-group + .shift-glance-group {
-      margin-top: 18px;
+      margin-top: 14px;
     }
 
     .shift-glance-subheading {
-      font-size: 0.7rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--gray-500);
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--navy-700);
+      letter-spacing: -0.01em;
+      text-transform: none;
       margin-bottom: 10px;
     }
 
@@ -805,6 +818,7 @@
 
     .shift-glance-grid--snapshot {
       grid-template-columns: repeat(6, minmax(0, 1fr));
+      align-items: stretch;
     }
 
     .shift-glance-grid--alerts {
@@ -815,24 +829,103 @@
     .glance-snapshot {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
       padding: 12px 14px;
       background: var(--white);
-      border: 1px solid rgba(7, 14, 26, 0.07);
+      border: 1px solid rgba(7, 14, 26, 0.05);
       border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-card);
+      box-shadow: 0 1px 2px rgba(7, 14, 26, 0.03);
       text-align: left;
       width: 100%;
       min-width: 0;
     }
 
+    .shift-glance-grid--snapshot .glance-snapshot {
+      position: relative;
+      overflow: hidden;
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: flex-start;
+      text-align: center;
+      min-height: 102px;
+      padding: 16px 12px 12px;
+      gap: 6px;
+      border: 1px solid rgba(7, 14, 26, 0.06);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card), inset 0 3px 0 0 rgba(74, 143, 196, 0.28);
+    }
+
+    .shift-glance-grid--snapshot .glance-snapshot-icon {
+      order: 3;
+      margin: 6px auto 0;
+      width: var(--hf-icon-size);
+      height: var(--hf-icon-size);
+      opacity: 0.85;
+      background: var(--gray-50);
+      border: 1px solid rgba(7, 14, 26, 0.04);
+    }
+
+    .shift-glance-grid--snapshot .glance-stat-body {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+    }
+
     .glance-snapshot {
-      transition: border-color var(--transition-smooth), box-shadow var(--transition-smooth);
+      cursor: pointer;
+      transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .shift-glance-grid--snapshot .glance-snapshot:hover:not(.is-editing),
+    #preHotelSnapshotGrid .glance-snapshot:hover {
+      transform: translateY(-1px);
+      border-color: rgba(7, 14, 26, 0.12);
+      box-shadow: 0 2px 8px rgba(7, 14, 26, 0.06);
+    }
+
+    .shift-glance-grid--snapshot .glance-snapshot:focus-visible:not(.is-editing),
+    #preHotelSnapshotGrid .glance-snapshot:focus-visible {
+      outline: 2px solid var(--blue-400);
+      outline-offset: 2px;
+    }
+
+    .glance-snapshot.is-editing {
+      cursor: default;
+      transform: none;
+      align-items: flex-start;
     }
 
     .glance-stat {
+      position: relative;
       transition: transform var(--transition-smooth), box-shadow var(--transition-smooth), border-color var(--transition-smooth);
       cursor: pointer;
+      box-shadow: var(--shadow-card), inset 0 3px 0 0 transparent;
+    }
+
+    .glance-stat[data-stat="urgent"] {
+      box-shadow: var(--shadow-card), inset 0 3px 0 0 var(--red-500);
+    }
+
+    .glance-stat[data-stat="vip"] {
+      box-shadow: var(--shadow-card), inset 0 3px 0 0 var(--blue-500);
+    }
+
+    .glance-stat[data-stat="maintenance"] {
+      box-shadow: var(--shadow-card), inset 0 3px 0 0 var(--amber-500);
+    }
+
+    .glance-stat[data-stat="payments"] {
+      box-shadow: var(--shadow-card), inset 0 3px 0 0 var(--navy-700);
+    }
+
+    .glance-stat[data-stat="events"] {
+      box-shadow: var(--shadow-card), inset 0 3px 0 0 #7c5cbf;
+    }
+
+    .glance-stat[data-stat="tasks"] {
+      box-shadow: var(--shadow-card), inset 0 3px 0 0 var(--green-500);
     }
 
     .glance-stat:hover,
@@ -849,63 +942,68 @@
 
     .glance-stat-icon,
     .glance-snapshot-icon {
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
+      width: var(--hf-icon-size);
+      height: var(--hf-icon-size);
+      border-radius: var(--hf-icon-radius);
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
       transition: transform var(--transition-smooth);
+      background: var(--gray-50);
+      color: var(--gray-400);
+      border: none;
     }
 
     .glance-stat:hover .glance-stat-icon {
-      transform: scale(1.06);
+      transform: none;
     }
 
     .glance-stat-icon svg,
     .glance-snapshot-icon svg {
-      width: 17px;
-      height: 17px;
+      width: var(--hf-icon-svg);
+      height: var(--hf-icon-svg);
     }
 
     .glance-snapshot-icon {
-      background: var(--blue-50);
-      color: var(--blue-600);
-      border: 1px solid rgba(74, 143, 196, 0.12);
+      background: var(--gray-50);
+      color: var(--gray-400);
     }
 
     .glance-snapshot-value {
+      order: 1;
       font-size: 1.28rem;
       font-weight: 700;
       letter-spacing: -0.03em;
       color: var(--navy-900);
-      line-height: 1.1;
-      cursor: pointer;
+      line-height: 1.15;
       border-radius: 6px;
-      padding: 1px 4px;
-      margin: -1px -4px;
-      transition: background var(--transition-smooth);
-    }
-
-    .glance-snapshot-value:hover {
-      background: rgba(74, 143, 196, 0.08);
+      padding: 0 2px;
+      margin: 0;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      white-space: normal;
+      pointer-events: none;
     }
 
     .glance-snapshot-value.is-empty {
-      color: var(--gray-400);
+      color: var(--gray-300);
       font-weight: 600;
     }
 
     .glance-snapshot-label {
-      font-size: 0.66rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--gray-500);
-      margin-top: 3px;
-      line-height: 1.35;
-      word-wrap: break-word;
+      order: 2;
+      font-size: 0.7rem;
+      font-weight: 500;
+      text-transform: none;
+      letter-spacing: 0;
+      color: var(--gray-400);
+      margin-top: 0;
+      line-height: 1.3;
+      white-space: normal;
+      overflow: visible;
+      text-overflow: unset;
+      max-width: 100%;
       overflow-wrap: anywhere;
     }
 
@@ -1124,20 +1222,20 @@
     }
 
     .summary-row-icon {
-      width: 30px;
-      height: 30px;
-      border-radius: 8px;
+      width: var(--hf-icon-size);
+      height: var(--hf-icon-size);
+      border-radius: var(--hf-icon-radius);
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      background: var(--white);
-      border: 1px solid rgba(7, 14, 26, 0.06);
+      background: var(--gray-50);
+      border: none;
     }
 
     .summary-row-icon svg {
-      width: 15px;
-      height: 15px;
+      width: var(--hf-icon-svg);
+      height: var(--hf-icon-svg);
     }
 
     .summary-row[data-tone="urgent"] .summary-row-icon { color: var(--red-500); }
@@ -1232,9 +1330,9 @@
     .section-card {
       overflow: hidden;
       border-radius: var(--radius-lg);
-      border: 1px solid rgba(7, 14, 26, 0.07);
+      border: 1px solid rgba(7, 14, 26, 0.05);
       background: var(--white);
-      box-shadow: var(--shadow-card);
+      box-shadow: 0 1px 2px rgba(7, 14, 26, 0.03);
       opacity: 0;
       transform: translateY(12px);
       animation: cardReveal 0.4s ease forwards;
@@ -1267,7 +1365,7 @@
       display: flex;
       align-items: center;
       gap: 12px;
-      padding: 18px 22px;
+      padding: 14px 18px;
       text-align: left;
       transition: background var(--transition-smooth);
     }
@@ -1280,9 +1378,9 @@
     }
 
     .section-icon-wrap {
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
+      width: var(--hf-icon-size);
+      height: var(--hf-icon-size);
+      border-radius: var(--hf-icon-radius);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -1290,9 +1388,12 @@
       transition: transform var(--transition-smooth);
     }
 
-    .section-card:hover .section-icon-wrap { transform: scale(1.05); }
+    .section-card:hover .section-icon-wrap { transform: none; }
 
-    .section-icon-wrap svg { width: 18px; height: 18px; }
+    .section-icon-wrap svg {
+      width: var(--hf-icon-svg);
+      height: var(--hf-icon-svg);
+    }
 
     .section-card[data-section="urgent"] .section-icon-wrap { background: var(--red-50); color: var(--red-500); }
     .section-card[data-section="guest"] .section-icon-wrap { background: var(--blue-50); color: var(--blue-500); }
@@ -1313,7 +1414,7 @@
     .section-emoji { font-size: 1rem; line-height: 1; }
 
     .section-title {
-      font-size: 0.9rem;
+      font-size: 0.92rem;
       font-weight: 700;
       color: var(--navy-900);
       letter-spacing: -0.01em;
@@ -1401,8 +1502,8 @@
     .section-list li.handover-item {
       display: flex;
       align-items: flex-start;
-      gap: 10px;
-      padding: 11px 12px 11px 28px;
+      gap: 8px;
+      padding: 10px 12px 10px 26px;
     }
 
     .section-list li.handover-item::before {
@@ -1454,39 +1555,46 @@
     }
 
     .handover-item-status-select {
-      font-size: 0.62rem;
+      font-size: 0.58rem;
       font-weight: 600;
       color: var(--gray-500);
-      background-color: var(--white);
-      border: 1px solid rgba(7, 14, 26, 0.08);
+      background-color: var(--gray-50);
+      border: 1px solid rgba(7, 14, 26, 0.07);
       border-radius: 100px;
-      padding: 3px 8px 3px 6px;
-      max-width: 96px;
+      padding: 2px 6px 2px 5px;
+      max-width: 78px;
+      min-height: 22px;
       cursor: pointer;
       appearance: none;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
       background-repeat: no-repeat;
-      background-position: right 6px center;
-      padding-right: 18px;
+      background-position: right 5px center;
+      padding-right: 16px;
       transition: color var(--transition-smooth), background-color var(--transition-smooth), border-color var(--transition-smooth);
     }
 
-    .handover-item-status-select.status-open {
-      color: #c0392b;
+    .handover-item-status-select.status-pending {
+      color: var(--gray-600);
+      background-color: var(--gray-50);
+      border-color: rgba(7, 14, 26, 0.08);
+    }
+
+    .handover-item-status-select.status-pending.status-context-urgent {
+      color: #a94442;
       background-color: var(--red-50);
-      border-color: rgba(232, 93, 93, 0.28);
+      border-color: rgba(232, 93, 93, 0.22);
     }
 
-    .handover-item-status-select.status-in-progress {
-      color: #b8860b;
+    .handover-item-status-select.status-follow-up {
+      color: #9a7b2e;
       background-color: var(--amber-50);
-      border-color: rgba(232, 184, 77, 0.32);
+      border-color: rgba(232, 184, 77, 0.28);
     }
 
-    .handover-item-status-select.status-completed {
+    .handover-item-status-select.status-done {
       color: #2d8a5e;
       background-color: var(--green-50);
-      border-color: rgba(93, 206, 138, 0.32);
+      border-color: rgba(93, 206, 138, 0.28);
     }
 
     .handover-item-status-select:focus-visible {
@@ -1494,22 +1602,30 @@
       outline-offset: 1px;
     }
 
-    .handover-item.is-completed {
-      background: rgba(248, 250, 252, 0.7);
+    .handover-item.is-done {
+      background: rgba(248, 250, 252, 0.72);
       border-color: rgba(7, 14, 26, 0.04);
     }
 
-    .handover-item.is-completed .handover-item-text {
+    .handover-item.is-done .handover-item-text {
       color: var(--gray-500);
     }
 
-    .handover-item.is-completed::before {
+    .handover-item.is-done::before {
       background: var(--green-500) !important;
       opacity: 0.55;
     }
 
-    .handover-item.is-in-progress .handover-item-text {
+    .handover-item.is-follow-up .handover-item-text {
       color: var(--navy-800);
+    }
+
+    .recommendation-item.is-done {
+      background: rgba(248, 250, 252, 0.72);
+    }
+
+    .recommendation-item.is-done .recommendation-item-text {
+      color: var(--gray-500);
     }
 
     .handover-item.is-editing {
@@ -1579,10 +1695,6 @@
       color: var(--gray-600);
     }
 
-    .glance-snapshot.is-editing {
-      align-items: flex-start;
-    }
-
     .snapshot-edit-input {
       width: 100%;
       margin-top: 6px;
@@ -1635,9 +1747,58 @@
     }
 
     .glance-snapshot-hint {
-      font-size: 0.58rem;
-      color: var(--gray-400);
-      margin-top: 4px;
+      display: none;
+    }
+
+    #preHotelSnapshotGrid .glance-snapshot {
+      position: relative;
+      overflow: hidden;
+      flex-direction: column;
+      align-items: stretch;
+      text-align: center;
+      min-height: 102px;
+      padding: 16px 12px 12px;
+      gap: 6px;
+      border: 1px solid rgba(7, 14, 26, 0.06);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card), inset 0 3px 0 0 rgba(74, 143, 196, 0.28);
+    }
+
+    #preHotelSnapshotGrid .glance-snapshot-icon {
+      order: 3;
+      margin: 6px auto 0;
+      width: var(--hf-icon-size);
+      height: var(--hf-icon-size);
+      opacity: 0.85;
+      background: var(--gray-50);
+      border: 1px solid rgba(7, 14, 26, 0.04);
+    }
+
+    #preHotelSnapshotGrid .glance-stat-body {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+    }
+
+    #preHotelSnapshotGrid .snapshot-field-input {
+      order: 1;
+      font-size: 1.28rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      text-align: center;
+      width: 100%;
+      border: none;
+      background: transparent;
+      padding: 0;
+      color: var(--navy-900);
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
+
+    #preHotelSnapshotGrid .glance-snapshot-label {
+      order: 2;
     }
 
     @media (max-width: 600px) {
@@ -1778,17 +1939,16 @@
     .recommendation-item.priority-high { border-left-color: var(--amber-500); }
     .recommendation-item.priority-normal { border-left-color: var(--blue-400); }
 
-    .recommendation-item.is-completed {
-      opacity: 0.72;
+    .recommendation-item.is-done {
+      opacity: 0.78;
       background: var(--gray-50);
     }
 
-    .recommendation-item.is-completed .recommendation-item-text {
-      text-decoration: line-through;
-      color: var(--gray-400);
+    .recommendation-item.is-done .recommendation-item-text {
+      color: var(--gray-500);
     }
 
-    .recommendation-item.is-in-progress {
+    .recommendation-item.is-follow-up {
       background: #fffdf8;
     }
 
@@ -2004,148 +2164,10 @@
       display: block;
     }
 
-    .intelligence-checklist-groups {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .intelligence-checklist-group {
-      background: var(--white);
-      border: 1px solid var(--gray-200);
-      border-radius: var(--radius);
-      overflow: hidden;
-    }
-
-    .intelligence-checklist-group-toggle {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      width: 100%;
-      padding: 12px 14px;
-      background: var(--gray-50);
-      border: none;
-      cursor: pointer;
-      font-size: 0.78rem;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      color: var(--gray-500);
-    }
-
-    .intelligence-checklist-group.is-open .intelligence-checklist-group-body {
-      display: block;
-    }
-
-    .intelligence-checklist-group-body {
-      display: none;
-      padding: 8px 10px 10px;
-    }
-
-    .intelligence-checklist-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      padding: 10px 12px;
-      border-radius: calc(var(--radius) - 2px);
-      transition: background var(--transition);
-    }
-
-    .intelligence-checklist-item:hover {
-      background: var(--gray-50);
-    }
-
-    .intelligence-checklist-item.is-complete {
-      opacity: 0.72;
-    }
-
-    .intelligence-checklist-item.is-complete .intelligence-checklist-text {
-      text-decoration: line-through;
-      color: var(--gray-400);
-    }
-
-    .intelligence-checklist-item.is-na {
-      opacity: 0.55;
-    }
-
-    .intelligence-checklist-item.is-na .intelligence-checklist-text {
-      color: var(--gray-400);
-    }
-
-    .intelligence-checklist-check {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      flex: 1;
-      min-width: 0;
-      cursor: pointer;
-    }
-
-    .intelligence-checklist-check input {
-      margin-top: 3px;
-      flex-shrink: 0;
-      accent-color: var(--blue-500);
-    }
-
-    .intelligence-checklist-copy {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      min-width: 0;
-    }
-
-    .intelligence-checklist-text {
-      font-size: 0.88rem;
-      color: var(--navy-900);
-      line-height: 1.45;
-    }
-
-    .intelligence-checklist-meta {
-      font-size: 0.72rem;
-      font-weight: 600;
-      color: var(--gray-400);
-    }
-
-    .intelligence-checklist-na {
-      flex-shrink: 0;
-      min-height: 28px;
-      padding: 0 8px;
-      font-size: 0.72rem;
-      font-weight: 600;
-      color: var(--gray-500);
-      background: var(--white);
-      border: 1px solid var(--gray-200);
-      border-radius: 6px;
-    }
-
-    .intelligence-checklist-na:hover,
-    .intelligence-checklist-na.is-active {
-      color: var(--navy-700);
-      border-color: var(--gray-300);
-      background: var(--gray-50);
-    }
-
-    .intelligence-checklist-na.is-active {
-      color: var(--blue-600);
-      border-color: rgba(74, 143, 196, 0.35);
-      background: var(--blue-50);
-    }
-
-    .intelligence-checklist-empty {
-      font-size: 0.86rem;
-      color: var(--gray-400);
-      text-align: center;
-      padding: 18px 12px;
-      background: var(--gray-50);
-      border: 1px dashed var(--gray-200);
-      border-radius: var(--radius);
-      line-height: 1.5;
-    }
-
     @media print {
       @page {
         size: A4 portrait;
-        margin: 10mm 12mm;
+        margin: 12mm 14mm;
       }
 
       .topnav,
@@ -2160,21 +2182,28 @@
       .handover-item-toolbar,
       .recommendation-item-toolbar,
       .recommendation-item-delete-btn,
-      .intelligence-checklist-na,
       .shift-intelligence-part-toggle,
-      .intelligence-checklist-group-toggle,
       .snapshot-edit-actions,
       .glance-snapshot-hint,
       .output-panel-header,
       .shift-intelligence-badge,
       .summary-icon,
-      .summary-stats[hidden] { display: none !important; }
+      .summary-stats[hidden],
+      .shift-glance-header,
+      .handover-meta-icon,
+      .glance-snapshot-icon,
+      .glance-stat-icon,
+      .section-icon-wrap,
+      .summary-row-icon,
+      .shift-intelligence-header-text p { display: none !important; }
 
       html, body {
         background: #fff !important;
         color: var(--navy-900) !important;
         height: auto !important;
         overflow: visible !important;
+        font-size: 11pt !important;
+        line-height: 1.45 !important;
       }
 
       .main { padding: 0 !important; }
@@ -2213,61 +2242,213 @@
       }
 
       .handover-meta,
-      .shift-glance,
-      .summary-card,
-      .section-card:not(.empty),
-      .shift-intelligence-card.is-visible {
+      .shift-glance-group:first-child {
         break-inside: avoid;
         page-break-inside: avoid;
         box-shadow: none !important;
       }
 
+      .summary-card {
+        break-inside: auto;
+        page-break-inside: auto;
+        box-shadow: none !important;
+      }
+
       .handover-meta {
-        padding: 12px 14px !important;
+        padding: 8px 12px !important;
+        border: 1px solid rgba(7, 14, 26, 0.12) !important;
+        border-radius: 6px !important;
       }
 
       .handover-meta-grid {
         grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-        gap: 8px 14px !important;
+        gap: 8px 12px !important;
+      }
+
+      .handover-meta-item {
+        gap: 0 !important;
+        align-items: flex-start !important;
+        display: block !important;
+      }
+
+      .handover-meta-label {
+        font-size: 0.68rem !important;
+        line-height: 1.2 !important;
+        margin-bottom: 2px !important;
       }
 
       .handover-meta-value {
+        font-size: 0.88rem !important;
+        line-height: 1.35 !important;
         white-space: normal !important;
+        display: block !important;
+        width: 100% !important;
       }
 
-      .shift-glance-header h3 {
-        font-size: 0.88rem !important;
-        margin-bottom: 8px !important;
+      .shift-glance-group + .shift-glance-group {
+        margin-top: 8px !important;
       }
 
       .shift-glance-subheading {
+        font-size: 0.78rem !important;
+        font-weight: 600 !important;
         margin-bottom: 6px !important;
+        break-after: avoid;
+        page-break-after: avoid;
+      }
+
+      .shift-glance-grid {
+        gap: 8px !important;
       }
 
       .shift-glance-grid--snapshot {
-        grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
-        gap: 6px !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 8px !important;
       }
 
       .shift-glance-grid--alerts {
-        grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-        gap: 6px !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 8px !important;
       }
 
       .glance-stat,
       .glance-snapshot {
-        padding: 8px 10px !important;
-        gap: 8px !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        padding: 7px 8px !important;
+        gap: 4px !important;
+        box-shadow: none !important;
+        min-height: 0 !important;
+        border-radius: 6px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+      }
+
+      .shift-glance-grid--snapshot .glance-snapshot {
+        padding: 7px 8px !important;
+      }
+
+      .glance-snapshot-value {
+        font-size: 0.95rem !important;
+        line-height: 1.2 !important;
+        white-space: normal !important;
+      }
+
+      .glance-snapshot-label {
+        font-size: 0.68rem !important;
+        line-height: 1.2 !important;
+      }
+
+      .glance-stat-value {
+        font-size: 0.98rem !important;
+      }
+
+      .glance-stat-label {
+        font-size: 0.68rem !important;
+      }
+
+      .glance-stat[data-stat="urgent"] {
+        box-shadow: inset 0 2px 0 0 var(--red-500) !important;
+      }
+
+      .glance-stat[data-stat="vip"] {
+        box-shadow: inset 0 2px 0 0 var(--blue-500) !important;
+      }
+
+      .glance-stat[data-stat="maintenance"] {
+        box-shadow: inset 0 2px 0 0 var(--amber-500) !important;
+      }
+
+      .glance-stat[data-stat="payments"] {
+        box-shadow: inset 0 2px 0 0 var(--navy-700) !important;
+      }
+
+      .glance-stat[data-stat="events"] {
+        box-shadow: inset 0 2px 0 0 #7c5cbf !important;
+      }
+
+      .glance-stat[data-stat="tasks"] {
+        box-shadow: inset 0 2px 0 0 var(--green-500) !important;
+      }
+
+      .summary-card::before,
+      .summary-card::after {
+        display: none !important;
       }
 
       .summary-card .card-body {
-        padding: 14px 16px !important;
+        padding: 10px 12px !important;
       }
 
-      .summary-text,
-      .summary-rows {
-        font-size: 0.82rem !important;
+      .summary-label {
+        font-size: 0.78rem !important;
+        margin-bottom: 6px !important;
+        break-after: avoid;
+        page-break-after: avoid;
+      }
+
+      .summary-text {
+        font-size: 10pt !important;
         line-height: 1.45 !important;
+        margin-bottom: 8px !important;
+        display: block !important;
+        width: 100% !important;
+        white-space: normal !important;
+      }
+
+      .summary-rows {
+        gap: 6px !important;
+        display: flex !important;
+        flex-direction: column !important;
+      }
+
+      .summary-row {
+        display: block !important;
+        gap: 0 !important;
+        padding: 0 0 6px !important;
+        border: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+
+      .summary-row-body {
+        display: block !important;
+        width: 100% !important;
+      }
+
+      .summary-row-heading {
+        display: block !important;
+        margin-bottom: 3px !important;
+      }
+
+      .summary-row-title {
+        font-size: 0.72rem !important;
+        display: inline !important;
+      }
+
+      .summary-row-count {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        display: inline-flex !important;
+        margin-left: 6px !important;
+      }
+
+      .summary-row-text {
+        font-size: 9.5pt !important;
+        line-height: 1.45 !important;
+        margin-bottom: 0 !important;
+        display: block !important;
+        width: 100% !important;
+        white-space: normal !important;
+        overflow-wrap: break-word !important;
+        word-break: normal !important;
+      }
+
+      .sections-grid {
+        gap: 8px !important;
       }
 
       .section-card:not(.empty) {
@@ -2276,6 +2457,21 @@
         transform: none !important;
         animation: none !important;
         border: 1px solid rgba(7, 14, 26, 0.1) !important;
+        break-inside: auto;
+        page-break-inside: auto;
+        box-shadow: none !important;
+        border-radius: 6px !important;
+      }
+
+      .section-toggle {
+        padding: 7px 10px !important;
+        pointer-events: none;
+        break-after: avoid;
+        page-break-after: avoid;
+      }
+
+      .section-title {
+        font-size: 0.88rem !important;
       }
 
       .section-card .section-body,
@@ -2285,19 +2481,49 @@
         display: block !important;
       }
 
-      .section-toggle {
-        padding: 10px 14px !important;
-        pointer-events: none;
-      }
-
       .section-body-inner {
-        padding: 0 14px 10px 14px !important;
+        padding: 0 10px 8px !important;
       }
 
-      .section-list li {
-        padding: 8px 10px 8px 22px !important;
-        font-size: 0.8rem !important;
-        line-height: 1.4 !important;
+      .section-list {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 6px !important;
+      }
+
+      .section-list li,
+      .handover-item {
+        display: block !important;
+        width: 100% !important;
+        padding: 8px 10px 8px 18px !important;
+        font-size: 10pt !important;
+        line-height: 1.45 !important;
+        break-inside: auto !important;
+        page-break-inside: auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
+      }
+
+      .handover-item-main,
+      .handover-item-text {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        flex: none !important;
+      }
+
+      .handover-item-text {
+        font-size: 10pt !important;
+        line-height: 1.45 !important;
+        white-space: normal !important;
+        overflow-wrap: break-word !important;
+        word-break: normal !important;
+      }
+
+      .section-list li::before,
+      .section-list li.handover-item::before {
+        top: 0.72em !important;
       }
 
       .shift-intelligence-card[hidden] {
@@ -2308,49 +2534,62 @@
         display: block !important;
         opacity: 1 !important;
         transform: none !important;
+        break-inside: auto;
+        page-break-inside: auto;
       }
 
       .shift-intelligence-card .card-body {
-        padding: 14px 16px !important;
+        padding: 10px 12px !important;
       }
 
       .shift-intelligence-header {
-        margin-bottom: 10px !important;
-        padding-bottom: 8px !important;
+        margin-bottom: 8px !important;
+        padding-bottom: 5px !important;
+        break-after: avoid;
+        page-break-after: avoid;
       }
 
       .shift-intelligence-header-text h3 {
-        font-size: 0.92rem !important;
+        font-size: 0.88rem !important;
       }
 
-      .shift-intelligence-header-text p {
-        font-size: 0.75rem !important;
+      .shift-intelligence-part {
+        margin-top: 8px !important;
+      }
+
+      .shift-intelligence-part + .shift-intelligence-part {
+        margin-top: 10px !important;
+        padding-top: 8px !important;
       }
 
       .shift-intelligence-part-body,
-      .shift-intelligence-part-body.is-open,
-      .intelligence-checklist-group-body,
-      .intelligence-checklist-group.is-open .intelligence-checklist-group-body {
+      .shift-intelligence-part-body.is-open {
         display: block !important;
         max-height: none !important;
         overflow: visible !important;
       }
 
-      .recommendation-item,
-      .intelligence-checklist-item {
-        padding: 6px 8px !important;
-        font-size: 0.78rem !important;
-        line-height: 1.35 !important;
+      .shift-intelligence-part-toggle-text strong {
+        font-size: 0.82rem !important;
+        break-after: avoid;
+        page-break-after: avoid;
       }
 
-      .recommendation-item-toolbar {
-        display: none !important;
+      .recommendation-item {
+        display: block !important;
+        width: 100% !important;
+        padding: 5px 0 5px 14px !important;
+        font-size: 9.5pt !important;
+        line-height: 1.45 !important;
+        break-inside: auto !important;
+        page-break-inside: auto !important;
+        border: none !important;
+        background: transparent !important;
       }
 
-      .recommendations-empty,
-      .intelligence-checklist-empty {
-        font-size: 0.78rem !important;
-        padding: 10px !important;
+      .recommendations-empty {
+        font-size: 9.5pt !important;
+        padding: 6px !important;
       }
     }
 
@@ -2430,11 +2669,11 @@
     }
 
     .saved-handovers-header h2 {
-      font-size: 0.82rem;
+      font-size: 0.88rem;
       font-weight: 600;
-      color: var(--gray-500);
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
+      color: var(--navy-800);
+      letter-spacing: -0.01em;
+      text-transform: none;
     }
 
     .saved-handovers-count {
@@ -2447,88 +2686,161 @@
       border-radius: 100px;
     }
 
+    .saved-handovers-header-main {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .handover-archive-search {
+      flex: 1 1 180px;
+      max-width: 280px;
+      min-height: 36px;
+      padding: 8px 12px;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-md);
+      font-size: 0.82rem;
+      color: var(--navy-800);
+      background: var(--white);
+    }
+
+    .handover-archive-search:focus {
+      outline: 2px solid rgba(74, 143, 196, 0.35);
+      outline-offset: 1px;
+      border-color: rgba(74, 143, 196, 0.45);
+    }
+
     .saved-handovers-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: var(--card-gap);
-    }
-
-    .saved-handover-card {
       display: flex;
       flex-direction: column;
+      gap: 10px;
+    }
+
+    .handover-archive-month {
+      border: 1px solid rgba(7, 14, 26, 0.06);
+      border-radius: var(--radius-lg);
+      background: var(--white);
+      box-shadow: 0 1px 2px rgba(7, 14, 26, 0.03);
+      overflow: hidden;
+    }
+
+    .handover-archive-month-toggle {
+      width: 100%;
+      display: flex;
+      align-items: center;
       justify-content: space-between;
-      min-height: 100%;
-      transition: transform var(--transition-smooth), box-shadow var(--transition-smooth), border-color var(--transition-smooth);
+      gap: 12px;
+      padding: 12px 16px;
+      border: none;
+      background: var(--gray-50);
+      cursor: pointer;
+      text-align: left;
     }
 
-    .saved-handover-card:hover {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-card-hover);
-      border-color: rgba(7, 14, 26, 0.11);
-    }
-
-    .saved-handover-body {
-      padding: 18px 20px 14px;
-    }
-
-    .saved-handover-meta {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px 16px;
-    }
-
-    .saved-handover-field {
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-      min-width: 0;
-    }
-
-    .saved-handover-field.full {
-      grid-column: 1 / -1;
-    }
-
-    .saved-handover-label {
-      font-size: 0.68rem;
+    .handover-archive-month-title {
+      font-size: 0.88rem;
       font-weight: 600;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      color: var(--gray-400);
+      color: var(--navy-800);
     }
 
-    .saved-handover-value {
-      font-size: 0.9rem;
+    .handover-archive-chevron {
+      width: 16px;
+      height: 16px;
+      color: var(--gray-400);
+      transition: transform 0.18s ease;
+      flex-shrink: 0;
+    }
+
+    .handover-archive-month-toggle.is-open .handover-archive-chevron {
+      transform: rotate(180deg);
+    }
+
+    .handover-archive-month-body {
+      display: none;
+      padding: 8px 12px 12px;
+    }
+
+    .handover-archive-month-body.is-open {
+      display: block;
+    }
+
+    .handover-archive-day + .handover-archive-day {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--gray-100);
+    }
+
+    .handover-archive-day-title {
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: var(--gray-500);
+      margin: 0 0 6px 4px;
+    }
+
+    .handover-archive-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 12px;
+      border: 1px solid rgba(7, 14, 26, 0.05);
+      border-radius: var(--radius-md);
+      background: var(--white);
+    }
+
+    .handover-archive-row + .handover-archive-row {
+      margin-top: 6px;
+    }
+
+    .handover-archive-row-main {
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+
+    .handover-archive-row-title {
+      font-size: 0.84rem;
       font-weight: 600;
       color: var(--navy-800);
       line-height: 1.35;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      word-break: break-word;
     }
 
-    .saved-handover-actions {
+    .handover-archive-row-preview {
+      margin-top: 3px;
+      font-size: 0.76rem;
+      color: var(--gray-400);
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .handover-archive-row-actions {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
-      padding: 0 16px 16px;
+      gap: 6px;
+      justify-content: flex-end;
+      flex: 0 0 auto;
+      max-width: 100%;
     }
 
-    .saved-handover-actions .btn-secondary {
-      flex: 1;
-      min-width: 0;
-      min-height: 38px;
-      font-size: 0.85rem;
+    .handover-archive-row-actions .btn-secondary {
+      min-height: 32px;
+      padding: 6px 10px;
+      font-size: 0.74rem;
     }
 
-    .saved-handover-delete {
-      color: var(--red-500);
-      border-color: rgba(232, 93, 93, 0.25);
-    }
+    @media (max-width: 720px) {
+      .handover-archive-row {
+        flex-direction: column;
+      }
 
-    .saved-handover-delete:hover {
-      background: var(--red-50);
-      border-color: rgba(232, 93, 93, 0.45);
-      color: #c94a4a;
+      .handover-archive-row-actions {
+        width: 100%;
+        justify-content: flex-start;
+      }
     }
 
     .saved-handovers-empty {
@@ -2742,19 +3054,6 @@
                   <input class="form-input" type="text" id="hotelName" placeholder="Enter hotel name">
                 </div>
                 <div class="form-group full">
-                  <label class="form-label" for="department">Department</label>
-                  <select class="form-input" id="department">
-                    <option value="Reception" selected>Reception</option>
-                    <option value="Housekeeping">Housekeeping</option>
-                    <option value="Food &amp; Beverage">Food &amp; Beverage</option>
-                    <option value="Maintenance">Maintenance</option>
-                    <option value="Night Team">Night Team</option>
-                    <option value="Duty Manager">Duty Manager</option>
-                    <option value="Management">Management</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-                <div class="form-group full">
                   <label class="form-label" for="preparedBy">Prepared By</label>
                   <input class="form-input" type="text" id="preparedBy" placeholder="Enter your name">
                 </div>
@@ -2933,34 +3232,21 @@
                       </div>
                     </div>
 
-                    <div class="shift-intelligence-part" id="shiftIntelligenceChecklistPart">
-                      <button class="shift-intelligence-part-toggle is-open" id="checklistPartToggle" type="button" aria-expanded="true" aria-controls="checklistPartBody">
-                        <span class="shift-intelligence-part-toggle-text">
-                          <strong>Shift Intelligence Checklist</strong>
-                          <span class="shift-intelligence-part-sub">What might the team have forgotten?</span>
-                        </span>
-                        <svg class="shift-intelligence-part-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
-                      </button>
-                      <div class="shift-intelligence-part-body is-open" id="checklistPartBody">
-                        <div class="intelligence-checklist-groups" id="intelligenceChecklistGroups"></div>
-                        <p class="intelligence-checklist-empty" id="intelligenceChecklistEmpty" hidden>
-                          No operational checklist items identified for this shift.<br>
-                          Checklist items appear when shift type and handover context require them.
-                        </p>
-                      </div>
-                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </section>
 
-          <!-- Saved Handovers -->
-          <section class="saved-handovers-section" id="savedHandoversSection" aria-label="Saved handovers">
+          <!-- Previous Handovers -->
+          <section class="saved-handovers-section" id="savedHandoversSection" aria-label="Previous handovers">
             <div class="saved-handovers-panel">
               <div class="saved-handovers-header">
-                <h2 id="savedHandoversTitle">Saved Handovers</h2>
-                <span class="saved-handovers-count" id="savedHandoversCount"></span>
+                <div class="saved-handovers-header-main">
+                  <h2 id="savedHandoversTitle">Previous Handovers</h2>
+                  <span class="saved-handovers-count" id="savedHandoversCount"></span>
+                </div>
+                <input type="search" class="handover-archive-search" id="savedHandoversSearch" placeholder="Search handovers…" aria-label="Search previous handovers">
               </div>
               <div class="saved-handovers-toolbar">
                 <div class="storage-status" id="storageStatus">
@@ -3019,10 +3305,13 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="handover-report.js"></script>
   <script src="handover-pdf.js"></script>
   <script src="js/supabase-config.js"></script>
   <script src="js/supabase-client.js"></script>
+  <script src="js/tenant-storage.js"></script>
   <script src="js/auth.js"></script>
+  <script src="js/platform-access.js"></script>
   <script src="js/workspace.js"></script>
   <script src="js/hotel-brain-store.js"></script>
   <script src="js/handover-store.js"></script>
@@ -3049,16 +3338,32 @@
         {
           id: "guest",
           emoji: "🏨",
-          title: "Guest Information",
+          title: "VIP / Guest Information",
           keywords: [
             "guest", "room", "checkout", "check out", "check-in", "checkin",
             "check in", "arrival", "arriving", "departure", "departing",
             "vip", "suite", "occupancy", "stay", "reservation", "booking",
             "late checkout", "early check", "no show", "walk-in", "walk in",
             "breakfast", "dietary", "allergy", "wheelchair", "celebration",
-            "honeymoon", "anniversary", "corporate", "group"
+            "honeymoon", "anniversary", "corporate", "group", "package",
+            "parcel", "amenity", "iron", "ironing board", "wake-up", "wakeup",
+            "wake up call", "transfer", "taxi", "car service"
           ],
           icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M9 8h1"/><path d="M9 12h1"/><path d="M9 16h1"/><path d="M14 8h1"/><path d="M14 12h1"/><path d="M14 16h1"/><path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"/></svg>'
+        },
+        {
+          id: "tasks",
+          emoji: "📋",
+          title: "Outstanding Tasks",
+          keywords: [
+            "task", "todo", "to do", "to-do", "outstanding", "pending",
+            "follow up", "follow-up", "followup", "remind", "schedule",
+            "incomplete", "outstanding task",
+            "action", "assign", "handover to", "need to", "must", "ensure",
+            "check back", "callback", "call back", "arrange", "organise",
+            "organize", "prepare", "stock", "order", "deliver", "collect"
+          ],
+          icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14l2 2 4-4"/></svg>'
         },
         {
           id: "maintenance",
@@ -3077,7 +3382,7 @@
         {
           id: "payments",
           emoji: "💳",
-          title: "Payments",
+          title: "Payment Issues",
           keywords: [
             "payment", "pay ", "paid", "card", "pdq", "pos", "charge",
             "charging", "refund", "deposit", "invoice", "bill", "billing",
@@ -3098,25 +3403,26 @@
           icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>'
         },
         {
-          id: "tasks",
-          emoji: "📋",
-          title: "Outstanding Tasks",
-          keywords: [
-            "task", "todo", "to do", "to-do", "outstanding", "pending",
-            "follow up", "follow-up", "followup", "remind", "schedule",
-            "complete", "completed", "incomplete", "outstanding task",
-            "action", "assign", "handover to", "need to", "must", "ensure",
-            "check back", "callback", "call back", "arrange", "organise",
-            "organize", "prepare", "stock", "order", "deliver", "collect"
-          ],
-          icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14l2 2 4-4"/></svg>'
-        },
-        {
           id: "general",
           emoji: "📝",
-          title: "General Notes",
-          keywords: [],
+          title: "General Updates",
+          keywords: [
+            "update", "general", "note", "brief", "reminder", "staff",
+            "operational", "lost property", "lost item", "found in", "pool",
+            "temperature", "inventory", "floor", "handover note"
+          ],
           icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>'
+        },
+        {
+          id: "completed",
+          emoji: "✅",
+          title: "Completed Actions",
+          keywords: [
+            "completed", "complete", "done", "resolved", "fixed", "sorted",
+            "handled", "closed", "finished", "already booked", "audit complete",
+            "night audit", "pm accounts", "accounts complete"
+          ],
+          icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>'
         }
       ];
 
@@ -3134,15 +3440,10 @@
       var recommendationsCard = shiftIntelligenceCard;
       var recommendationsList = document.getElementById("recommendationsList");
       var recommendationsEmpty = document.getElementById("recommendationsEmpty");
-      var intelligenceChecklistGroups = document.getElementById("intelligenceChecklistGroups");
-      var intelligenceChecklistEmpty = document.getElementById("intelligenceChecklistEmpty");
       var recommendationsPartToggle = document.getElementById("recommendationsPartToggle");
-      var checklistPartToggle = document.getElementById("checklistPartToggle");
       var recommendationsPartBody = document.getElementById("recommendationsPartBody");
-      var checklistPartBody = document.getElementById("checklistPartBody");
       var toast = document.getElementById("toast");
       var hotelName = document.getElementById("hotelName");
-      var department = document.getElementById("department");
       var handoverDate = document.getElementById("handoverDate");
       var preparedBy = document.getElementById("preparedBy");
       var summaryOverview = document.getElementById("summaryOverview");
@@ -3192,14 +3493,37 @@
       var storageStatusLabel = document.getElementById("storageStatusLabel");
       var uploadLocalHandoversBtn = document.getElementById("uploadLocalHandoversBtn");
 
-      var HOTEL_BRAIN_KEY = "hospitalityFlow_hotelProfile";
-      var HOTEL_PROFILE_KEY = HOTEL_BRAIN_KEY;
-      var DRAFT_STORAGE_KEY = "hf_handover_draft_v1";
-      var LAST_BACKUP_KEY = "hf_handover_last_backup";
       var BACKUP_VERSION = 1;
       var DRAFT_DEBOUNCE_MS = 1500;
       var skipDraftSave = false;
       var draftSaveTimer = null;
+
+      function getStorageWorkspaceId() {
+        if (window.HFHandoverStore && HFHandoverStore.getSyncStatus) {
+          var status = HFHandoverStore.getSyncStatus();
+          if (status && status.workspaceId) return status.workspaceId;
+        }
+        if (window.HFWorkspace && HFWorkspace.getCachedWorkspace) {
+          var ws = HFWorkspace.getCachedWorkspace();
+          if (ws && ws.hotel && ws.hotel.id) return ws.hotel.id;
+        }
+        return null;
+      }
+
+      function readLastBackupAt() {
+        var workspaceId = getStorageWorkspaceId();
+        if (window.HFHandoverStore && HFHandoverStore.readLastBackup && workspaceId) {
+          return HFHandoverStore.readLastBackup(workspaceId);
+        }
+        return null;
+      }
+
+      function writeLastBackupAt(value) {
+        var workspaceId = getStorageWorkspaceId();
+        if (window.HFHandoverStore && HFHandoverStore.writeLastBackup && workspaceId && value != null) {
+          HFHandoverStore.writeLastBackup(workspaceId, value);
+        }
+      }
       var DEFAULT_DEPARTMENTS = [
         "Reception", "Housekeeping", "Food & Beverage", "Maintenance",
         "Night Team", "Duty Manager", "Management", "Other"
@@ -3240,7 +3564,7 @@
         generate: "Generate Handover",
         copy: "Copy Handover",
         save: "Save Handover",
-        saved: "Saved Handovers",
+        saved: "Previous Handovers",
         aiSummary: "AI Summary",
         assistant: "AI Shift Handover"
       };
@@ -3249,7 +3573,7 @@
         copy: "Copy Handover",
         save: "Save Handover",
         organised: "Organised Handover",
-        saved: "Saved Handovers"
+        saved: "Previous Handovers"
       };
 
       /**
@@ -3280,6 +3604,8 @@
       }
 
       var hotelProfile = null;
+      var hotelBrainLoadResult = null;
+      var hotelBrainLoadComplete = false;
       var hotelBrainContext = null;
       var hotelBrainInternalInstructions = "";
       var uiLabels = clonePlatformLabels();
@@ -3306,11 +3632,24 @@
         return copy;
       }
 
-      function loadHotelProfileFromStorage() {
-        if (window.HFHotelBrainStore) {
-          return window.HFHotelBrainStore.getCached();
+      function getResolvedWorkspaceHotelId() {
+        if (window.HFWorkspace && window.HFWorkspace.getCachedWorkspace) {
+          var ws = window.HFWorkspace.getCachedWorkspace();
+          if (ws && ws.hotel && ws.hotel.id) {
+            return ws.hotel.id;
+          }
+        }
+        if (hotelBrainLoadResult && hotelBrainLoadResult.hotelId) {
+          return hotelBrainLoadResult.hotelId;
         }
         return null;
+      }
+
+      function loadHotelProfileFromStorage() {
+        if (!window.HFHotelBrainStore) {
+          return null;
+        }
+        return window.HFHotelBrainStore.getCached(getResolvedWorkspaceHotelId());
       }
 
       function trimText(value) {
@@ -3346,14 +3685,24 @@
 
         if (profile.policiesStructured) {
           var groups = profile.policiesStructured;
-          return ["guest", "payment", "operational", "custom"].some(function (groupId) {
+          var hasStructuredPolicy = ["guest", "payment", "operational", "custom"].some(function (groupId) {
             var group = groups[groupId] || {};
             return Object.keys(group).some(function (key) {
               var entry = group[key];
               return entry && (trimText(entry.summary) || trimText(entry.instructions));
             });
           });
+          if (hasStructuredPolicy) return true;
         }
+
+        var operationalKnowledge = profile.operationalKnowledge || {};
+        if (trimText(operationalKnowledge.staffingContext)) return true;
+        if ((operationalKnowledge.handoverSources || []).some(function (source) {
+          return source && trimText(source.name);
+        })) return true;
+        if ((operationalKnowledge.knowledgeEntries || []).some(function (entry) {
+          return entry && (trimText(entry.title) || trimText(entry.content) || trimText(entry.summary));
+        })) return true;
 
         if ((profile.guestServices && summarizeGuestServicesForContext(profile.guestServices).length)) return true;
         if ((profile.otaChannels || []).length) return true;
@@ -3481,8 +3830,47 @@
         return "";
       }
 
+      function resolveActiveHotelProfile() {
+        if (hotelProfile && typeof hotelProfile === "object") {
+          return hotelProfile;
+        }
+        if (window.HFHotelBrainStore) {
+          return window.HFHotelBrainStore.getCached(getResolvedWorkspaceHotelId());
+        }
+        return null;
+      }
+
+      function resolveHotelBrainConnectionStatus() {
+        if (!hotelBrainLoadComplete) {
+          return "pending";
+        }
+        if (hotelBrainLoadResult && hotelBrainLoadResult.error) {
+          var profileOnError = resolveActiveHotelProfile();
+          if (!profileOnError) {
+            return "none";
+          }
+        }
+
+        var profile = resolveActiveHotelProfile();
+        if (!profile) {
+          return "none";
+        }
+        if (isHotelBrainConfigured(profile)) {
+          return "connected";
+        }
+        if (window.HFHotelBrainStore && window.HFHotelBrainStore.profileHasContent &&
+            window.HFHotelBrainStore.profileHasContent(profile)) {
+          return "partial";
+        }
+        if (hotelBrainLoadResult && hotelBrainLoadResult.hotelId) {
+          return "partial";
+        }
+        return "none";
+      }
+
       function isHotelBrainConnected() {
-        return isHotelBrainConfigured(hotelProfile);
+        var status = resolveHotelBrainConnectionStatus();
+        return status === "connected" || status === "partial";
       }
 
       function getPrefillHotelName() {
@@ -3506,24 +3894,15 @@
           hotelName.value = name;
         }
 
-        if (connected && name) {
-          hotelName.readOnly = true;
-          hotelName.classList.add("form-input--brain-sourced");
-          hotelName.setAttribute("aria-readonly", "true");
-          hotelName.title = "From Hotel Brain — update in Hotel Brain profile";
-        } else {
-          hotelName.readOnly = false;
-          hotelName.classList.remove("form-input--brain-sourced");
-          hotelName.removeAttribute("aria-readonly");
-          hotelName.removeAttribute("title");
-        }
+        hotelName.readOnly = false;
+        hotelName.removeAttribute("aria-readonly");
 
-        if (connected && configuredDepartments.length) {
-          var currentDept = department.value;
-          var deptKnown = configuredDepartments.indexOf(currentDept) !== -1;
-          if (!preserveExisting || !deptKnown) {
-            applyDepartmentValue(configuredDepartments[0]);
-          }
+        if (connected && name) {
+          hotelName.classList.add("form-input--brain-sourced");
+          hotelName.title = "Prefilled from Hotel Brain — you can edit for this handover";
+        } else {
+          hotelName.classList.remove("form-input--brain-sourced");
+          hotelName.removeAttribute("title");
         }
 
         if (hotelSnapshotHint) {
@@ -3662,8 +4041,8 @@
         ["generalNotes", "hotelStandards", "vipRules", "commonTerms", "operationalNotes", "localRecommendations", "aiInstructions"].forEach(function (key) {
           if (trimText(hk[key])) count += 1;
         });
-        if (context.policyLines.length) count += 1;
-        if (context.roomTypeSummary.length) count += 1;
+        if (context.policyLines && context.policyLines.length) count += 1;
+        if (context.roomTypeSummary && context.roomTypeSummary.length) count += 1;
         if ((context.terminology || []).some(function (entry) { return trimText(entry.term); })) count += 1;
         if (trimText(context.combinedInstructions)) count += 1;
         if ((context.guestServices && summarizeGuestServicesForContext(context.guestServices).length)) count += 1;
@@ -3674,14 +4053,34 @@
       function renderHotelBrainPanel() {
         if (!hotelBrainPanel) return;
 
-        var connected = isHotelBrainConfigured(hotelProfile);
-        hotelBrainPanel.classList.toggle("is-connected", connected);
-        hotelBrainPanel.classList.toggle("is-disconnected", !connected);
+        var status = resolveHotelBrainConnectionStatus();
+        hotelBrainPanel.classList.toggle("is-connected", status === "connected");
+        hotelBrainPanel.classList.toggle("is-partial", status === "partial");
+        hotelBrainPanel.classList.toggle("is-disconnected", status === "none" || status === "pending");
 
-        if (!connected) {
-          var workspaceName = window.HFWorkspace && window.HFWorkspace.getWorkspaceHotelName
-            ? window.HFWorkspace.getWorkspaceHotelName()
-            : null;
+        var workspaceName = window.HFWorkspace && window.HFWorkspace.getWorkspaceHotelName
+          ? window.HFWorkspace.getWorkspaceHotelName()
+          : null;
+
+        if (status === "pending") {
+          if (hotelBrainTitle) hotelBrainTitle.textContent = "Loading Hotel Brain…";
+          if (hotelBrainMeta) {
+            hotelBrainMeta.textContent = workspaceName
+              ? workspaceName + " · Checking Hotel Brain for this workspace."
+              : "Checking Hotel Brain for this workspace.";
+          }
+          if (hotelBrainSub) {
+            hotelBrainSub.textContent = "";
+            hotelBrainSub.hidden = true;
+          }
+          if (hotelBrainLink) {
+            hotelBrainLink.textContent = "Hotel Profile";
+            hotelBrainLink.setAttribute("href", "hotel-profile.html");
+          }
+          return;
+        }
+
+        if (status === "none") {
           if (hotelBrainTitle) hotelBrainTitle.textContent = "Hotel Brain Not Configured";
           if (hotelBrainMeta) {
             hotelBrainMeta.textContent = workspaceName
@@ -3699,16 +4098,24 @@
           return;
         }
 
-        var general = (hotelBrainContext && hotelBrainContext.general) || (hotelProfile && hotelProfile.general) || {};
+        var activeProfile = resolveActiveHotelProfile();
+        var general = (hotelBrainContext && hotelBrainContext.general) ||
+          (activeProfile && activeProfile.general) || {};
         var hotelName = (window.HFWorkspace && window.HFWorkspace.resolveDisplayHotelName)
           ? window.HFWorkspace.resolveDisplayHotelName(general.hotelName)
           : trimText(general.hotelName);
-        if (!hotelName) hotelName = "Hotel Brain Connected";
+        if (!hotelName) {
+          hotelName = status === "partial" ? "Hotel Brain Partially Configured" : "Hotel Brain Connected";
+        }
         var roomCount = getTotalRoomCount() || trimText(general.totalRooms);
         var hotelType = trimText(general.hotelType);
         var knowledgeCount = countLoadedKnowledgeSections(hotelBrainContext);
 
-        if (hotelBrainTitle) hotelBrainTitle.textContent = "Hotel Brain Connected";
+        if (hotelBrainTitle) {
+          hotelBrainTitle.textContent = status === "partial"
+            ? "Hotel Brain Partially Configured"
+            : "Hotel Brain Connected";
+        }
         if (hotelBrainMeta) {
           var metaParts = [hotelName];
           if (roomCount) metaParts.push(roomCount + (roomCount === "1" ? " room" : " rooms"));
@@ -3716,7 +4123,11 @@
           hotelBrainMeta.textContent = metaParts.join(" · ");
         }
         if (hotelBrainSub) {
-          hotelBrainSub.textContent = knowledgeCount > 0 ? "Knowledge loaded" : "Preferences loaded";
+          if (status === "partial") {
+            hotelBrainSub.textContent = "Some Hotel Brain sections still need completing";
+          } else {
+            hotelBrainSub.textContent = knowledgeCount > 0 ? "Knowledge loaded" : "Preferences loaded";
+          }
           hotelBrainSub.hidden = false;
         }
         if (hotelBrainLink) {
@@ -3806,31 +4217,55 @@
       }
 
       function reloadHotelBrain() {
-        hotelProfile = loadHotelProfileFromStorage();
-        applyHotelProfileConfig(hotelProfile);
+        var cached = loadHotelProfileFromStorage();
+        if (cached) {
+          hotelProfile = cached;
+          applyHotelProfileConfig(hotelProfile);
+        }
         mergeTerminologyKeywords();
       }
 
       function initHotelBrainFromCloud(done) {
+        var authPromise = window.HFAuth && window.HFAuth.getSession
+          ? window.HFAuth.getSession().catch(function () { return null; })
+          : Promise.resolve(null);
         var workspacePromise = window.HFWorkspace
           ? window.HFWorkspace.getUserWorkspace().catch(function () { return null; })
           : Promise.resolve(null);
+        var loadPromise = window.HFHotelBrainStore
+          ? window.HFHotelBrainStore.load().catch(function (err) {
+              return { profile: null, error: err || "LOAD_FAILED" };
+            })
+          : Promise.resolve({ profile: null, error: "NO_STORE" });
 
-        function finishInit() {
-          reloadHotelBrain();
-          applyHotelProfileToUI();
-          if (done) done();
+        function finishInit(loadResult) {
+          loadResult = loadResult || {};
+          hotelBrainLoadResult = loadResult;
+          hotelBrainLoadComplete = true;
+
+          try {
+            var profile = loadResult.profile || null;
+            var expectedHotelId = loadResult.hotelId || null;
+
+            if (!profile && window.HFHotelBrainStore && !loadResult.error && expectedHotelId) {
+              profile = window.HFHotelBrainStore.getCached(expectedHotelId);
+            }
+
+            hotelProfile = profile || null;
+            applyHotelProfileConfig(hotelProfile);
+            applyHotelProfileToUI();
+          } catch (err) {
+            console.error("[Handover] Hotel Brain init failed:", err);
+          } finally {
+            if (done) done();
+          }
         }
 
-        if (!window.HFHotelBrainStore) {
-          workspacePromise.then(finishInit);
-          return;
-        }
-
-        Promise.all([
-          window.HFHotelBrainStore.load(),
-          workspacePromise
-        ]).then(finishInit).catch(finishInit);
+        Promise.all([authPromise, workspacePromise, loadPromise]).then(function (results) {
+          finishInit(results[2] || {});
+        }).catch(function (err) {
+          finishInit({ profile: null, error: err || "LOAD_FAILED" });
+        });
       }
 
       function applyHotelProfileConfig(profile) {
@@ -3874,6 +4309,7 @@
           })
           .filter(Boolean);
         if (mappedShifts.length) configuredShifts = mappedShifts;
+        selectedShift = normalizeShiftCode(selectedShift);
 
         if (profile.general && profile.general.logo) {
           hotelLogoDataUrl = profile.general.logo;
@@ -3997,23 +4433,82 @@
         });
       }
 
-      function populateDepartmentSelect() {
-        var current = department.value;
-        department.innerHTML = "";
-        configuredDepartments.forEach(function (name, index) {
-          var opt = document.createElement("option");
-          opt.value = name;
-          opt.textContent = name;
-          if (name === current || (!current && index === 0)) opt.selected = true;
-          department.appendChild(opt);
+      function normalizeShiftCode(code) {
+        if (!code) return configuredShifts[0] ? configuredShifts[0].code : "AM";
+        var raw = String(code).trim();
+        var lower = raw.toLowerCase();
+
+        var exact = configuredShifts.filter(function (s) {
+          return String(s.code).toLowerCase() === lower || String(s.name).toLowerCase() === lower;
+        })[0];
+        if (exact) return exact.code;
+
+        var fuzzy = configuredShifts.filter(function (s) {
+          var codeLower = String(s.code).toLowerCase();
+          var nameLower = String(s.name).toLowerCase();
+          if (/^(night|nt|overnight)$/.test(lower)) {
+            return /night|nt|overnight/.test(codeLower + " " + nameLower);
+          }
+          if (/^(am|morning)$/.test(lower)) {
+            return /\bam\b|morning/.test(codeLower + " " + nameLower);
+          }
+          if (/^(pm|afternoon|evening)$/.test(lower)) {
+            return /\bpm\b|afternoon|evening/.test(codeLower + " " + nameLower);
+          }
+          return false;
+        })[0];
+        return fuzzy ? fuzzy.code : raw;
+      }
+
+      function shiftsMatch(a, b) {
+        return normalizeShiftCode(a) === normalizeShiftCode(b);
+      }
+
+      function syncShiftButtonUI() {
+        shiftButtons = document.querySelectorAll(".shift-btn");
+        shiftButtons.forEach(function (btn) {
+          var isActive = shiftsMatch(btn.getAttribute("data-shift"), selectedShift);
+          btn.classList.toggle("active", isActive);
+          btn.setAttribute("aria-pressed", isActive ? "true" : "false");
         });
-        if (current && configuredDepartments.indexOf(current) === -1) {
-          var extra = document.createElement("option");
-          extra.value = current;
-          extra.textContent = current;
-          extra.selected = true;
-          department.insertBefore(extra, department.firstChild);
+      }
+
+      function onSelectedShiftChanged(fromUser) {
+        if (fromUser) shiftTouchedByUser = true;
+        syncShiftButtonUI();
+        scheduleDraftSave();
+        if (lastClassified && fromUser) {
+          renderHandoverMeta(lastGeneratedTime);
+          lastHandoverText = formatHandoverText(lastClassified);
+          try {
+            var intelligence = generateShiftIntelligence(lastClassified, notesInput.value);
+            lastRecommendations = intelligence.recommendations || [];
+            renderShiftIntelligence();
+          } catch (err) {
+            console.error("[Handover] Shift intelligence refresh failed:", err);
+          }
         }
+      }
+
+      function setSelectedShift(shift, options) {
+        options = options || {};
+        if (options.respectUserSelection && shiftTouchedByUser) return;
+        selectedShift = normalizeShiftCode(shift);
+        if (options.fromUser) {
+          onSelectedShiftChanged(true);
+        } else {
+          syncShiftButtonUI();
+        }
+      }
+
+      function wireShiftSelectorOnce() {
+        if (!shiftSelector || shiftSelectorWired) return;
+        shiftSelectorWired = true;
+        shiftSelector.addEventListener("click", function (event) {
+          var btn = event.target.closest(".shift-btn");
+          if (!btn || !shiftSelector.contains(btn)) return;
+          setSelectedShift(btn.getAttribute("data-shift"), { fromUser: true });
+        });
       }
 
       function getShiftButtonLabel(shift) {
@@ -4026,31 +4521,27 @@
 
       function renderShiftSelector() {
         if (!shiftSelector) return;
+        selectedShift = normalizeShiftCode(selectedShift);
         shiftSelector.innerHTML = "";
-        configuredShifts.forEach(function (shift, index) {
+        configuredShifts.forEach(function (shift) {
           var btn = document.createElement("button");
-          btn.className = "shift-btn" + (index === 0 ? " active" : "");
+          var isActive = shiftsMatch(shift.code, selectedShift);
+          btn.className = "shift-btn" + (isActive ? " active" : "");
           btn.type = "button";
           btn.setAttribute("data-shift", shift.code);
+          btn.setAttribute("aria-pressed", isActive ? "true" : "false");
           btn.textContent = getShiftButtonLabel(shift);
           if (shift.start && shift.end) {
             btn.title = shift.start + " – " + shift.end;
           }
           shiftSelector.appendChild(btn);
         });
-        wireShiftButtons();
+        shiftButtons = document.querySelectorAll(".shift-btn");
       }
 
       function wireShiftButtons() {
-        shiftButtons = document.querySelectorAll(".shift-btn");
-        shiftButtons.forEach(function (btn) {
-          btn.addEventListener("click", function () {
-            shiftButtons.forEach(function (b) { b.classList.remove("active"); });
-            btn.classList.add("active");
-            selectedShift = btn.getAttribute("data-shift");
-            scheduleDraftSave();
-          });
-        });
+        wireShiftSelectorOnce();
+        syncShiftButtonUI();
       }
 
       function restoreCopyButtonHtml() {
@@ -4072,39 +4563,28 @@
           var workspaceOnlyName = window.HFWorkspace && window.HFWorkspace.getWorkspaceHotelName
             ? window.HFWorkspace.getWorkspaceHotelName()
             : null;
-          if (workspaceOnlyName) {
-            if (!hotelName.value.trim()) hotelName.value = workspaceOnlyName;
-            if (navHotelLabel) navHotelLabel.textContent = workspaceOnlyName;
-            if (pageTitle) pageTitle.textContent = workspaceOnlyName + " — " + uiLabels.assistant;
-            document.title = workspaceOnlyName + " — " + uiLabels.assistant + " — Hospitality Flow";
+          if (workspaceOnlyName && !hotelName.value.trim()) {
+            hotelName.value = workspaceOnlyName;
           }
           applyHotelLogo("");
-          populateDepartmentSelect();
           renderShiftSelector();
           wireShiftButtons();
+          applyUiLabelsToPage();
           applyBrainPrefillToForm({ preserveExisting: true });
           return;
         }
 
-        var displayHotelName = getPrefillHotelName();
-
         applyHotelLogo(hotelLogoDataUrl);
-        populateDepartmentSelect();
         renderShiftSelector();
         wireShiftButtons();
         applyUiLabelsToPage();
         applyBrainPrefillToForm({ preserveExisting: true });
-
-        if (displayHotelName) {
-          if (navHotelLabel) navHotelLabel.textContent = displayHotelName;
-          if (pageTitle) pageTitle.textContent = displayHotelName + " — " + uiLabels.assistant;
-          document.title = displayHotelName + " — " + uiLabels.assistant + " — Hospitality Flow";
-        }
       }
 
       function getShiftDisplayName(code) {
-        var match = configuredShifts.filter(function (s) { return s.code === code; })[0];
-        return match ? (match.name || match.code) : code;
+        var normalized = normalizeShiftCode(code);
+        var match = configuredShifts.filter(function (s) { return shiftsMatch(s.code, normalized); })[0];
+        return match ? (match.name || match.code) : normalized;
       }
 
       function getDetailSentenceLimit() {
@@ -4281,22 +4761,33 @@
 
 
       var selectedShift = configuredShifts[0] ? configuredShifts[0].code : "AM";
+      var shiftTouchedByUser = false;
+      var shiftSelectorWired = false;
       var lastHandoverText = "";
       var lastSummaryText = "";
       var lastGeneratedTime = "";
       var lastClassified = null;
       var lastHotelSnapshotOverrides = {};
+      var lastNormalizedSnapshot = null;
       var activeHandoverEditId = null;
       var lastRecommendations = [];
       var activeRecommendationEditId = null;
-      var lastIntelligenceChecklist = [];
 
       var ACTIONABLE_SECTIONS = ["urgent", "guest", "maintenance", "payments", "events", "tasks"];
       var ITEM_STATUSES = [
-        { id: "open", label: "Open" },
-        { id: "in_progress", label: "In Progress" },
-        { id: "completed", label: "Completed" }
+        { id: "pending", label: "Pending" },
+        { id: "follow_up", label: "Follow-up" },
+        { id: "done", label: "Done" }
       ];
+
+      function normalizeItemStatus(status) {
+        if (status === "done" || status === "completed") return "done";
+        if (status === "follow_up" || status === "follow-up" || status === "in_progress" || status === "in-progress") {
+          return "follow_up";
+        }
+        if (status === "pending" || status === "open") return "pending";
+        return "pending";
+      }
 
       var EDIT_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
       var DELETE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>';
@@ -4322,14 +4813,14 @@
           return {
             id: raw.id || createItemId(),
             text: String(raw.text),
-            status: raw.status || "open",
+            status: normalizeItemStatus(raw.status || "pending"),
             sectionId: sectionId
           };
         }
         return {
           id: createItemId(),
           text: String(raw),
-          status: "open",
+          status: "pending",
           sectionId: sectionId
         };
       }
@@ -4366,14 +4857,14 @@
       }
 
       function formatStatusLabel(status) {
-        var match = ITEM_STATUSES.filter(function (entry) { return entry.id === status; })[0];
-        return match ? match.label : "Open";
+        var match = ITEM_STATUSES.filter(function (entry) { return entry.id === normalizeItemStatus(status); })[0];
+        return match ? match.label : "Pending";
       }
 
       function formatStatusPhrase(status) {
-        if (status === "completed") return "Completed during this shift.";
-        if (status === "in_progress") return "Continue monitoring.";
-        if (status === "open") return "Requires follow-up.";
+        status = normalizeItemStatus(status);
+        if (status === "done") return "Marked done during this shift.";
+        if (status === "follow_up") return "Needs follow-up.";
         return "";
       }
 
@@ -4381,11 +4872,14 @@
         var text = normalizeAdrInText(getItemText(item));
         if (!item || typeof item === "string") return text;
         if (!isActionableSection(item.sectionId)) return text;
-        var status = item.status || "open";
+        var status = normalizeItemStatus(item.status || "pending");
         var phrase = formatStatusPhrase(status);
         if (!phrase) return text;
-        if (status === "open") return text + " " + phrase;
         return text + " — " + phrase;
+      }
+
+      function formatItemForPdf(item) {
+        return normalizeAdrInText(getItemText(item));
       }
 
       function findItemInClassified(classified, itemId) {
@@ -4410,9 +4904,8 @@
       }
 
       function normalizeRecommendationStatus(status) {
-        if (status === "in-progress") return "in_progress";
-        if (status === "in_progress" || status === "completed" || status === "open") return status;
-        return "open";
+        if (status === "in-progress") return "follow_up";
+        return normalizeItemStatus(status);
       }
 
       function normalizeRecommendation(raw) {
@@ -4422,7 +4915,7 @@
             text: String(raw || ""),
             priority: "normal",
             department: getDefaultDepartment(),
-            status: "open"
+            status: "pending"
           };
         }
         return {
@@ -4430,7 +4923,7 @@
           text: String(raw.text || ""),
           priority: raw.priority || "normal",
           department: raw.department || getDefaultDepartment(),
-          status: normalizeRecommendationStatus(raw.status || "open")
+          status: normalizeRecommendationStatus(raw.status || "pending")
         };
       }
 
@@ -4444,7 +4937,7 @@
         var statusPhrase = formatStatusPhrase(normalized.status);
         return "[" + formatRecommendationPriorityLabel(normalized.priority) +
           " · " + normalized.department + "] " + normalized.text +
-          (statusPhrase && normalized.status !== "open" ? " — " + statusPhrase : "");
+          (statusPhrase && normalized.status !== "pending" ? " — " + statusPhrase : "");
       }
 
       function resolveRecommendationDepartment(candidates, fallback) {
@@ -4507,22 +5000,8 @@
       }
 
       /**
-       * Shift Intelligence — recommendations + operational checklist via ShiftIntelligenceEngine.
+       * Shift Intelligence — recommendations via ShiftIntelligenceEngine.
        */
-      function normalizeChecklistItem(raw) {
-        if (window.ShiftIntelligenceEngine && ShiftIntelligenceEngine.normalizeChecklistItem) {
-          return ShiftIntelligenceEngine.normalizeChecklistItem(raw, getDefaultDepartment());
-        }
-        return {
-          id: raw && raw.id ? raw.id : createItemId(),
-          text: raw && raw.text ? String(raw.text) : "",
-          category: raw && raw.category ? raw.category : "Operations",
-          department: raw && raw.department ? raw.department : getDefaultDepartment(),
-          priority: raw && raw.priority ? raw.priority : "normal",
-          status: raw && raw.status ? raw.status : "pending"
-        };
-      }
-
       function buildIntelligenceInput(classified, rawNotesText) {
         return {
           shiftCode: selectedShift,
@@ -4532,51 +5011,23 @@
           metrics: getHandoverMetrics(classified),
           brainContext: hotelBrainContext,
           departments: configuredDepartments,
-          selectedDepartment: department.value,
-          hotelSnapshot: Object.assign({}, lastHotelSnapshotOverrides),
+          selectedDepartment: getDefaultDepartment(),
+          hotelSnapshot: getCommittedSnapshot(),
           applyTextPreferences: applyRecommendationPreferences
         };
       }
 
       function generateShiftIntelligence(classified, rawNotesText) {
         if (!window.ShiftIntelligenceEngine) {
-          return { recommendations: [], checklist: [] };
+          return { recommendations: [] };
         }
-        return ShiftIntelligenceEngine.analyze(buildIntelligenceInput(classified, rawNotesText));
+        var result = ShiftIntelligenceEngine.analyze(buildIntelligenceInput(classified, rawNotesText));
+        return { recommendations: result.recommendations || [] };
       }
 
       function generateRecommendations(classified, rawNotesText) {
         var result = generateShiftIntelligence(classified, rawNotesText);
         return result.recommendations || [];
-      }
-
-      function findChecklistItemById(id) {
-        for (var i = 0; i < lastIntelligenceChecklist.length; i++) {
-          if (lastIntelligenceChecklist[i].id === id) {
-            return { index: i, item: lastIntelligenceChecklist[i] };
-          }
-        }
-        return null;
-      }
-
-      function formatChecklistForExport(item) {
-        var normalized = normalizeChecklistItem(item);
-        var statusLabel = normalized.status === "complete"
-          ? "Complete"
-          : normalized.status === "not_applicable"
-            ? "N/A"
-            : "Pending";
-        return "[" + statusLabel + " · " + normalized.department + "] " + normalized.text;
-      }
-
-      function setChecklistItemStatus(id, status) {
-        var found = findChecklistItemById(id);
-        if (!found) return;
-        found.item.status = status;
-        lastIntelligenceChecklist[found.index] = found.item;
-        renderIntelligenceChecklist();
-        syncHandoverExports();
-        scheduleDraftSave();
       }
 
       function wireIntelligencePartToggle(toggleBtn, bodyEl) {
@@ -4589,125 +5040,10 @@
         });
       }
 
-      function renderIntelligenceChecklist() {
-        if (!intelligenceChecklistGroups) return;
-
-        intelligenceChecklistGroups.innerHTML = "";
-
-        if (!lastIntelligenceChecklist.length) {
-          if (intelligenceChecklistEmpty) intelligenceChecklistEmpty.hidden = false;
-          return;
-        }
-
-        if (intelligenceChecklistEmpty) intelligenceChecklistEmpty.hidden = true;
-
-        var byCategory = {};
-        lastIntelligenceChecklist.forEach(function (item) {
-          var normalized = normalizeChecklistItem(item);
-          if (!byCategory[normalized.category]) byCategory[normalized.category] = [];
-          byCategory[normalized.category].push(normalized);
-        });
-
-        Object.keys(byCategory).sort().forEach(function (category) {
-          var group = document.createElement("div");
-          group.className = "intelligence-checklist-group is-open";
-
-          var toggle = document.createElement("button");
-          toggle.type = "button";
-          toggle.className = "intelligence-checklist-group-toggle";
-          toggle.setAttribute("aria-expanded", "true");
-          toggle.innerHTML =
-            category +
-            '<svg class="shift-intelligence-part-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>';
-
-          var body = document.createElement("div");
-          body.className = "intelligence-checklist-group-body";
-
-          byCategory[category].forEach(function (item) {
-            body.appendChild(buildChecklistItemElement(item));
-          });
-
-          toggle.addEventListener("click", function () {
-            var isOpen = group.classList.contains("is-open");
-            group.classList.toggle("is-open", !isOpen);
-            toggle.setAttribute("aria-expanded", !isOpen);
-          });
-
-          group.appendChild(toggle);
-          group.appendChild(body);
-          intelligenceChecklistGroups.appendChild(group);
-        });
-      }
-
-      function buildChecklistItemElement(item) {
-        var normalized = normalizeChecklistItem(item);
-        var row = document.createElement("div");
-        row.className = "intelligence-checklist-item";
-        row.setAttribute("data-checklist-id", normalized.id);
-
-        if (normalized.status === "complete") row.classList.add("is-complete");
-        if (normalized.status === "not_applicable") row.classList.add("is-na");
-
-        var label = document.createElement("label");
-        label.className = "intelligence-checklist-check";
-
-        var checkbox = document.createElement("input");
-        checkbox.type = "checkbox";
-        checkbox.checked = normalized.status === "complete";
-        checkbox.setAttribute("aria-label", "Mark checklist item complete");
-
-        var copy = document.createElement("div");
-        copy.className = "intelligence-checklist-copy";
-
-        var text = document.createElement("span");
-        text.className = "intelligence-checklist-text";
-        text.textContent = normalized.text;
-
-        var meta = document.createElement("span");
-        meta.className = "intelligence-checklist-meta";
-        meta.textContent = normalized.category + " · " + normalized.department;
-
-        copy.appendChild(text);
-        copy.appendChild(meta);
-        label.appendChild(checkbox);
-        label.appendChild(copy);
-
-        var naBtn = document.createElement("button");
-        naBtn.type = "button";
-        naBtn.className = "intelligence-checklist-na" + (normalized.status === "not_applicable" ? " is-active" : "");
-        naBtn.textContent = "N/A";
-        naBtn.setAttribute("aria-label", "Mark checklist item not applicable");
-
-        checkbox.addEventListener("change", function () {
-          if (checkbox.checked) {
-            setChecklistItemStatus(normalized.id, "complete");
-          } else {
-            setChecklistItemStatus(normalized.id, "pending");
-          }
-        });
-
-        naBtn.addEventListener("click", function () {
-          var found = findChecklistItemById(normalized.id);
-          var currentStatus = found ? found.item.status : normalized.status;
-          if (currentStatus === "not_applicable") {
-            setChecklistItemStatus(normalized.id, "pending");
-          } else {
-            setChecklistItemStatus(normalized.id, "not_applicable");
-          }
-        });
-
-        row.appendChild(label);
-        row.appendChild(naBtn);
-        return row;
-      }
-
       function renderShiftIntelligence() {
         if (!shiftIntelligenceCard) return;
 
-        var hasRecommendations = lastRecommendations.length > 0;
-        var hasChecklist = lastIntelligenceChecklist.length > 0;
-
-        if (!hasRecommendations && !hasChecklist) {
+        if (!lastRecommendations.length) {
           hideShiftIntelligencePanel();
           return;
         }
@@ -4715,7 +5051,6 @@
         shiftIntelligenceCard.hidden = false;
         shiftIntelligenceCard.classList.add("is-visible");
         renderRecommendations();
-        renderIntelligenceChecklist();
       }
 
       function findRecommendationById(id) {
@@ -4752,8 +5087,8 @@
         li.className = "recommendation-item priority-" + normalized.priority;
         li.setAttribute("data-recommendation-id", normalized.id);
 
-        if (normalized.status === "completed") li.classList.add("is-completed");
-        if (normalized.status === "in_progress") li.classList.add("is-in-progress");
+        if (normalized.status === "done") li.classList.add("is-done");
+        if (normalized.status === "follow_up") li.classList.add("is-follow-up");
 
         var main = document.createElement("div");
         main.className = "recommendation-item-main";
@@ -4914,8 +5249,6 @@
           recommendationsList.hidden = true;
         }
         if (recommendationsEmpty) recommendationsEmpty.hidden = true;
-        if (intelligenceChecklistGroups) intelligenceChecklistGroups.innerHTML = "";
-        if (intelligenceChecklistEmpty) intelligenceChecklistEmpty.hidden = true;
       }
 
       function hideRecommendationsPanel() {
@@ -4947,7 +5280,7 @@
         var found = findItemInClassified(lastClassified, itemId);
         if (!found) return;
 
-        found.item.status = status;
+        found.item.status = normalizeItemStatus(status);
         lastClassified[found.sectionId][found.index] = found.item;
         renderSections(lastClassified);
         syncHandoverExports();
@@ -4959,8 +5292,8 @@
         li.className = "handover-item";
         li.setAttribute("data-item-id", normalized.id);
 
-        if (normalized.status === "completed") li.classList.add("is-completed");
-        if (normalized.status === "in_progress") li.classList.add("is-in-progress");
+        if (normalized.status === "done") li.classList.add("is-done");
+        if (normalized.status === "follow_up") li.classList.add("is-follow-up");
 
         var main = document.createElement("div");
         main.className = "handover-item-main";
@@ -4988,6 +5321,7 @@
         if (isActionableSection(sectionId)) {
           var statusSelect = document.createElement("select");
           statusSelect.className = "handover-item-status-select status-" + normalized.status.replace(/_/g, "-");
+          if (sectionId === "urgent") statusSelect.classList.add("status-context-urgent");
           statusSelect.setAttribute("aria-label", "Item status");
 
           ITEM_STATUSES.forEach(function (entry) {
@@ -5164,19 +5498,21 @@
       }
 
       function isPaymentIssueLine(line) {
-        if (isResolvedNote(line)) return false;
-        return noteContains(line, [
-          "not charging", "not working", "failed", "declined", "error",
-          "issue", "problem", "outstanding", "refund", "dispute"
-        ]);
+        if (isCompletedActionNote(line)) return false;
+        return isPaymentRelatedLine(line);
       }
 
       function isPaymentRelatedLine(line) {
         return noteContains(line, [
-          "payment", "pay ", "paid", "card", "pdq", "pos", "charge",
-          "charging", "invoice", "bill", "billing", "account", "pm account",
-          "accounts", "folio", "pre-auth", "preauth", "settlement", "transaction"
-        ]);
+          "payment", "paid", "pdq", "pos", "invoice", "billing",
+          "pm account", "accounts", "folio", "pre-auth", "preauth",
+          "settlement", "transaction", "declined", "open balance",
+          "outstanding balance", "minibar charge", "no show charge"
+        ]) ||
+          matchesKeyword(line, "pay") ||
+          matchesKeyword(line, "charge") ||
+          matchesKeyword(line, "bill") ||
+          matchesKeyword(line, "card");
       }
 
       function isGuestRelatedNote(line) {
@@ -5236,17 +5572,32 @@
         "shock", "short circuit", "overflow", "blocked drain"
       ];
 
-      function isResolvedNote(line) {
+      function isCompletedActionNote(line) {
         var hasPositive = noteContains(line, [
           "completed", "complete", "done", "resolved", "fixed", "sorted",
-          "repaired", "addressed", "handled", "closed"
+          "repaired", "addressed", "handled", "closed", "finished",
+          "already booked", "booked and confirmed", "taxi booked", "taxis booked",
+          "audit complete", "audit completed", "night audit complete", "night audit completed",
+          "pm accounts complete", "pm accounts completed", "accounts complete", "accounts completed",
+          "wake-up call done", "wake up call done", "wakeup call done",
+          "wake-up calls completed", "wake up calls completed", "calls completed"
         ]);
         var hasNegative = noteContains(line, [
           "not complete", "not completed", "not done", "not fixed",
           "not resolved", "incomplete", "still not", "still broken",
-          "still leaking", "still pending", "unresolved", "not yet"
+          "still leaking", "still pending", "unresolved", "not yet",
+          "needs to be completed", "to be completed", "must complete"
         ]);
-        return hasPositive && !hasNegative;
+        if (hasNegative) return false;
+        if (hasPositive) return true;
+        if (noteContains(line, ["night audit", "pm account"]) && noteContains(line, ["done", "complete", "finished"])) {
+          return true;
+        }
+        return false;
+      }
+
+      function isResolvedNote(line) {
+        return isCompletedActionNote(line);
       }
 
       function extractRoomNumbers(line) {
@@ -5350,10 +5701,10 @@
 
       function classifyLine(line) {
         var scores = {};
-        var priority = ["urgent", "maintenance", "guest", "payments", "events", "tasks"];
+        var priority = ["urgent", "guest", "tasks", "maintenance", "payments", "events"];
 
         SECTIONS.forEach(function (section) {
-          if (section.id === "general") return;
+          if (section.id === "general" || section.id === "completed") return;
           scores[section.id] = 0;
           section.keywords.forEach(function (keyword) {
             if (matchesKeyword(line, keyword)) {
@@ -5374,18 +5725,28 @@
             bestId = id;
           }
         });
-        return bestId || "general";
+        if (!bestId || bestScore <= 1) return "general";
+        return bestId;
       }
 
       function classifyAnalyzedNote(note) {
         var line = note.original;
 
-        if (isResolvedNote(line)) return "general";
+        if (isCompletedActionNote(line)) return "completed";
+
+        if (noteContains(line, ["lost property", "lost item", "found in lobby", "found in the"])) {
+          return "general";
+        }
+
+        if (/^\s*general\s*:/i.test(line)) {
+          return "general";
+        }
 
         if (noteContains(line, CRITICAL_MAINT_TERMS)) return "urgent";
 
         if (note.isCarriedOver &&
-            (isMaintenanceNote(line) || noteContains(line, ["issue", "broken", "pending", "outstanding"]))) {
+            (isMaintenanceNote(line) || isMaintenanceDominant(line) ||
+              noteContains(line, ["broken", "leak", "leaking", "not working", "still not", "still broken", "still leaking"]))) {
           return "urgent";
         }
 
@@ -5418,6 +5779,10 @@
         if (note.isFollowUp && guestRelated) return "guest";
         if (note.isFollowUp && (maintDominant || isMaintenanceFollowUp(line))) return "maintenance";
 
+        if (noteContains(line, ["package", "parcel", "delivery held", "held at reception"])) {
+          return "guest";
+        }
+
         if (isOperationalTask(line) && !guestRelated && !maintDominant) return "tasks";
 
         if (isEventNote(line) && !maintDominant && !isPaymentIssueLine(line)) return "events";
@@ -5443,9 +5808,34 @@
           return "general";
         }
 
-        if (base === "tasks" && isResolvedNote(line)) return "general";
+        if (base === "tasks" && isResolvedNote(line)) return "completed";
 
         return base;
+      }
+
+      function getSectionTitleById(sectionId) {
+        var match = SECTIONS.filter(function (section) { return section.id === sectionId; })[0];
+        return match ? match.title : sectionId;
+      }
+
+      function getOrganisedSectionDefs() {
+        return SECTIONS.map(function (section) {
+          return { id: section.id, title: section.title };
+        });
+      }
+
+      function ensureNoteCoverage(analyzed) {
+        var sectionIds = {};
+        SECTIONS.forEach(function (section) {
+          sectionIds[section.id] = true;
+        });
+
+        analyzed.forEach(function (note) {
+          if (!note.section || !sectionIds[note.section]) {
+            note.section = "general";
+            finalizeNote(note);
+          }
+        });
       }
 
       function buildNoteTags(note) {
@@ -5527,17 +5917,7 @@
 
       function getNotesForSection(analyzed, sectionId) {
         return analyzed.filter(function (note) {
-          if (note.section !== sectionId) return false;
-          switch (sectionId) {
-            case "payments":
-              return isPaymentIssueLine(note.original);
-            case "tasks":
-              return isActiveNote(note);
-            case "general":
-              return true;
-            default:
-              return isActiveNote(note);
-          }
+          return note.section === sectionId;
         });
       }
 
@@ -5551,6 +5931,7 @@
           note.section = classifyAnalyzedNote(note);
           finalizeNote(note);
         });
+        ensureNoteCoverage(analyzed);
 
         var classified = {};
         SECTIONS.forEach(function (section) {
@@ -5607,7 +5988,12 @@
       }
 
       function getHandoverMetrics(classified) {
-        return classified._metrics || computeHandoverMetrics(classified._analyzed || []);
+        var metrics = classified._metrics;
+        if (!metrics || !metrics.display) {
+          metrics = computeHandoverMetrics(classified._analyzed || []);
+          classified._metrics = metrics;
+        }
+        return metrics;
       }
 
       function getUniqueRooms(analyzed) {
@@ -5638,7 +6024,6 @@
       function getHotelMeta() {
         return {
           hotel: hotelName.value.trim() || "Not specified",
-          department: department.value || "Not specified",
           shift: getShiftDisplayName(selectedShift),
           date: formatDisplayDate(handoverDate.value),
           preparedBy: preparedBy.value.trim() || "Not specified"
@@ -5652,7 +6037,6 @@
       var META_FIELD_ICONS = {
         hotel: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><path d="M9 9h1"/><path d="M9 13h1"/><path d="M9 17h1"/></svg>',
         preparedBy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
-        department: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>',
         date: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
         generated: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
         shiftAM: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>',
@@ -5679,9 +6063,8 @@
           { label: "Hotel", value: formatMetaDisplayValue(meta.hotel), icon: META_FIELD_ICONS.hotel },
           { label: "Shift", value: meta.shift, icon: getShiftMetaIcon(meta.shift) },
           { label: "Prepared By", value: formatMetaDisplayValue(meta.preparedBy), icon: META_FIELD_ICONS.preparedBy },
-          { label: "Department", value: formatMetaDisplayValue(meta.department), icon: META_FIELD_ICONS.department },
           { label: "Date", value: formatMetaDisplayValue(meta.date), icon: META_FIELD_ICONS.date },
-          { label: "Generated Time", value: generatedTime || "Not entered", icon: META_FIELD_ICONS.generated }
+          { label: "Generated", value: generatedTime || "Not entered", icon: META_FIELD_ICONS.generated }
         ];
 
         handoverMetaGrid.innerHTML = "";
@@ -6031,9 +6414,10 @@
 
       function buildOpeningSentence(metrics, analyzed) {
         var possessive = getShiftPossessive();
-        var urgentCount = metrics.display.urgent;
-        var hasFollowUpWork = metrics.display.maintenance + metrics.display.guest +
-          metrics.display.payments + metrics.display.tasks + metrics.display.events > 0;
+        var display = (metrics && metrics.display) || {};
+        var urgentCount = display.urgent || 0;
+        var hasFollowUpWork = (display.maintenance || 0) + (display.guest || 0) +
+          (display.payments || 0) + (display.tasks || 0) + (display.events || 0) > 0;
 
         if (urgentCount === 0) {
           if (!hasFollowUpWork) {
@@ -6283,7 +6667,7 @@
         },
         {
           id: "occupancy",
-          label: "Occupancy %",
+          label: "Occupancy",
           icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>'
         },
         {
@@ -6303,7 +6687,7 @@
       var SNAPSHOT_PDF_LABELS = {
         arrivals: "Arrivals",
         departures: "Departures",
-        inHouse: "In-House Guests",
+        inHouse: "In-house Guests",
         occupancy: "Occupancy",
         adr: "ADR",
         roomsSold: "Rooms Sold"
@@ -6311,6 +6695,111 @@
 
       function getActiveHotelSnapshot() {
         return extractHotelSnapshot(notesInput.value);
+      }
+
+      function readRawSnapshotFromForm() {
+        var raw = {};
+        HOTEL_SNAPSHOT_STATS.forEach(function (stat) {
+          raw[stat.id] = "";
+        });
+
+        if (preHotelSnapshotGrid) {
+          preHotelSnapshotGrid.querySelectorAll(".snapshot-field-input").forEach(function (input) {
+            var statId = input.getAttribute("data-snapshot-input");
+            if (statId) raw[statId] = String(input.value || "").trim();
+          });
+        }
+
+        if (shiftSnapshotGrid && shiftSnapshotGrid.children.length) {
+          shiftSnapshotGrid.querySelectorAll(".glance-snapshot[data-snapshot]").forEach(function (card) {
+            if (card.classList.contains("is-editing")) return;
+            var statId = card.getAttribute("data-snapshot");
+            if (!statId || (raw[statId] && raw[statId] !== SNAPSHOT_EMPTY)) return;
+            var valueEl = card.querySelector(".glance-snapshot-value");
+            if (!valueEl) return;
+            var display = String(valueEl.textContent || "").trim();
+            if (display && display !== SNAPSHOT_EMPTY) raw[statId] = display;
+          });
+        }
+
+        return raw;
+      }
+
+      function formatSnapshotValueFromExtracted(statId, value) {
+        if (value === null || value === undefined || value === "") return SNAPSHOT_EMPTY;
+
+        switch (statId) {
+          case "occupancy": {
+            var extractedOcc = parseOccupancyNumber(value);
+            return extractedOcc === null ? SNAPSHOT_EMPTY : formatOccupancyPercent(extractedOcc);
+          }
+          case "adr":
+            return formatAdrDisplay(value);
+          default:
+            return String(value);
+        }
+      }
+
+      function formatSnapshotDisplayValue(statId, storedValue) {
+        if (!storedValue || storedValue === SNAPSHOT_EMPTY) return SNAPSHOT_EMPTY;
+
+        switch (statId) {
+          case "adr":
+            return formatAdrDisplay(storedValue);
+          case "occupancy": {
+            var occNum = parseOccupancyNumber(storedValue);
+            return occNum === null ? SNAPSHOT_EMPTY : formatOccupancyPercent(occNum);
+          }
+          default:
+            return String(storedValue);
+        }
+      }
+
+      function buildNormalizedSnapshot(notesText) {
+        var rawForm = readRawSnapshotFromForm();
+        var extracted = extractHotelSnapshot(notesText || "");
+        var normalized = {};
+
+        HOTEL_SNAPSHOT_STATS.forEach(function (stat) {
+          var raw = rawForm[stat.id];
+          if (raw && raw !== SNAPSHOT_EMPTY) {
+            var stored = normalizeSnapshotStoredValue(stat.id, raw);
+            if (stored) {
+              var display = formatSnapshotDisplayValue(stat.id, stored);
+              if (display !== SNAPSHOT_EMPTY) {
+                normalized[stat.id] = display;
+              }
+              return;
+            }
+          }
+
+          var ext = extracted[stat.id];
+          var fromExtract = formatSnapshotValueFromExtracted(stat.id, ext);
+          if (fromExtract !== SNAPSHOT_EMPTY) {
+            normalized[stat.id] = fromExtract;
+          }
+        });
+
+        return normalized;
+      }
+
+      function commitSnapshotState(notesText) {
+        captureHotelSnapshotInputs();
+        var rawForm = readRawSnapshotFromForm();
+        lastNormalizedSnapshot = buildNormalizedSnapshot(
+          notesText != null ? notesText : notesInput.value
+        );
+        lastHotelSnapshotOverrides = {};
+        HOTEL_SNAPSHOT_STATS.forEach(function (stat) {
+          if (lastNormalizedSnapshot[stat.id]) {
+            lastHotelSnapshotOverrides[stat.id] = lastNormalizedSnapshot[stat.id];
+          }
+        });
+        return lastNormalizedSnapshot;
+      }
+
+      function getCommittedSnapshot() {
+        return commitSnapshotState();
       }
 
       function hasSnapshotOverride(statId) {
@@ -6368,9 +6857,7 @@
           preHotelSnapshotGrid.querySelectorAll(".snapshot-field-input").forEach(function (input) {
             var statId = input.getAttribute("data-snapshot-input");
             if (!statId) return;
-            var raw = String(input.value || "").trim();
-            if (!raw || raw === SNAPSHOT_EMPTY) return;
-            syncSnapshotOverrideFromInput(statId, raw);
+            syncSnapshotOverrideFromInput(statId, input.value);
           });
         }
 
@@ -6381,8 +6868,7 @@
             var valueEl = card.querySelector(".glance-snapshot-value");
             if (!statId || !valueEl) return;
             var display = String(valueEl.textContent || "").trim();
-            if (!display || display === SNAPSHOT_EMPTY) return;
-            syncSnapshotOverrideFromInput(statId, display);
+            syncSnapshotOverrideFromInput(statId, display === SNAPSHOT_EMPTY ? "" : display);
           });
         }
 
@@ -6421,10 +6907,10 @@
         }
       }
 
-      function buildHotelSnapshotForPdf() {
-        var snapshot = getActiveHotelSnapshot();
+      function buildHotelSnapshotPdfRows(snapshot) {
+        snapshot = snapshot || {};
         return HOTEL_SNAPSHOT_STATS.map(function (stat) {
-          var displayValue = formatSnapshotDisplay(stat.id, snapshot);
+          var displayValue = snapshot[stat.id] || SNAPSHOT_EMPTY;
           return {
             label: SNAPSHOT_PDF_LABELS[stat.id] || stat.label,
             value: formatSnapshotPdfValue(stat.id, displayValue)
@@ -6432,19 +6918,25 @@
         });
       }
 
-      function renderHotelSnapshotIntoGrid(gridEl, snapshot) {
+      function buildHotelSnapshotForPdf() {
+        return buildHotelSnapshotPdfRows(getCommittedSnapshot());
+      }
+
+      function renderHotelSnapshotIntoGrid(gridEl, normalizedSnapshot) {
         if (!gridEl) return;
         gridEl.innerHTML = "";
         HOTEL_SNAPSHOT_STATS.forEach(function (stat) {
-          gridEl.appendChild(renderSnapshotCard(stat, snapshot));
+          gridEl.appendChild(renderSnapshotCard(stat, normalizedSnapshot || {}));
         });
       }
 
       function refreshHotelSnapshotDisplays() {
+        commitSnapshotState();
         renderPreHandoverSnapshot();
         if (lastClassified) {
-          renderHotelSnapshotIntoGrid(shiftSnapshotGrid, getActiveHotelSnapshot());
+          renderHotelSnapshotIntoGrid(shiftSnapshotGrid, lastNormalizedSnapshot || {});
           lastHandoverText = formatHandoverText(lastClassified);
+          scheduleDraftSave();
         }
       }
 
@@ -6469,8 +6961,16 @@
         input.placeholder = SNAPSHOT_EMPTY;
         input.value = hasSnapshotOverride(stat.id) ? String(lastHotelSnapshotOverrides[stat.id]) : "";
 
+        function syncGeneratedSnapshotFromForm() {
+          if (!lastClassified) return;
+          commitSnapshotState();
+          renderHotelSnapshotIntoGrid(shiftSnapshotGrid, lastNormalizedSnapshot || {});
+          lastHandoverText = formatHandoverText(lastClassified);
+        }
+
         input.addEventListener("input", function () {
           syncSnapshotOverrideFromInput(stat.id, input.value);
+          syncGeneratedSnapshotFromForm();
           scheduleDraftSave();
         });
 
@@ -6483,6 +6983,7 @@
           if (hasSnapshotOverride(stat.id)) {
             input.value = String(lastHotelSnapshotOverrides[stat.id]);
           }
+          syncGeneratedSnapshotFromForm();
           scheduleDraftSave();
         });
 
@@ -6492,8 +6993,13 @@
 
         body.appendChild(input);
         body.appendChild(label);
-        card.appendChild(iconWrap);
         card.appendChild(body);
+        card.appendChild(iconWrap);
+
+        card.addEventListener("click", function (event) {
+          if (event.target === input || input.contains(event.target)) return;
+          input.focus();
+        });
 
         return card;
       }
@@ -6507,10 +7013,10 @@
       }
 
       function buildHotelSnapshotTextLines() {
-        var snapshot = getActiveHotelSnapshot();
+        var snapshot = getCommittedSnapshot();
         return HOTEL_SNAPSHOT_STATS.map(function (stat) {
           var label = SNAPSHOT_PDF_LABELS[stat.id] || stat.label;
-          var value = formatSnapshotDisplay(stat.id, snapshot);
+          var value = snapshot[stat.id] || SNAPSHOT_EMPTY;
           return label + ": " + value;
         });
       }
@@ -6600,47 +7106,34 @@
           str = adrLineMatch[1].trim();
         }
 
-        var numeric = str.replace(/^[£$€]\s*/, "").trim();
+        var numeric = str.replace(/^[£$€]\s*/, "").replace(/,/g, "").trim();
         if (!numeric || !/\d/.test(numeric)) return SNAPSHOT_EMPTY;
-        return "£" + numeric;
+        var num = parseFloat(numeric);
+        if (isNaN(num)) return currencySymbol + numeric;
+        return currencySymbol + num.toFixed(2);
       }
 
       function formatSnapshotDisplay(statId, snapshot) {
+        if (lastNormalizedSnapshot && lastNormalizedSnapshot[statId]) {
+          return lastNormalizedSnapshot[statId];
+        }
+
         if (hasSnapshotOverride(statId)) {
-          if (statId === "adr") {
-            return formatAdrDisplay(lastHotelSnapshotOverrides[statId]);
-          }
-          if (statId === "occupancy") {
-            var occNum = parseOccupancyNumber(lastHotelSnapshotOverrides[statId]);
-            return occNum === null ? SNAPSHOT_EMPTY : formatOccupancyPercent(occNum);
-          }
-          return String(lastHotelSnapshotOverrides[statId]);
+          return formatSnapshotDisplayValue(statId, lastHotelSnapshotOverrides[statId]);
         }
 
-        var value = snapshot[statId];
-
-        if (value === null || value === undefined) return SNAPSHOT_EMPTY;
-
-        switch (statId) {
-          case "occupancy": {
-            var extractedOcc = parseOccupancyNumber(value);
-            return extractedOcc === null ? SNAPSHOT_EMPTY : formatOccupancyPercent(extractedOcc);
-          }
-          case "adr":
-            return formatAdrDisplay(value);
-          default:
-            return String(value);
-        }
+        return formatSnapshotValueFromExtracted(statId, snapshot ? snapshot[statId] : null);
       }
 
       function bindSnapshotEdit(card, stat) {
         var valueEl = card.querySelector(".glance-snapshot-value");
         if (!valueEl) return;
 
-        valueEl.setAttribute("title", "Click to enter value");
-        valueEl.setAttribute("role", "button");
-        valueEl.setAttribute("tabindex", "0");
-        valueEl.setAttribute("aria-label", "Enter " + stat.label);
+        card.classList.add("is-interactive");
+        card.setAttribute("title", "Click to edit");
+        card.setAttribute("role", "button");
+        card.setAttribute("tabindex", "0");
+        card.setAttribute("aria-label", "Edit " + stat.label);
 
         function openEditor() {
           if (card.classList.contains("is-editing")) return;
@@ -6680,11 +7173,20 @@
             scheduleDraftSave();
           }
 
-          saveBtn.addEventListener("click", applySave);
-          cancelBtn.addEventListener("click", closeEditor);
+          saveBtn.addEventListener("click", function (event) {
+            event.stopPropagation();
+            applySave();
+          });
+          cancelBtn.addEventListener("click", function (event) {
+            event.stopPropagation();
+            closeEditor();
+          });
           input.addEventListener("keydown", function (event) {
             if (event.key === "Enter") applySave();
             if (event.key === "Escape") closeEditor();
+          });
+          input.addEventListener("click", function (event) {
+            event.stopPropagation();
           });
 
           actions.appendChild(saveBtn);
@@ -6694,8 +7196,13 @@
           input.focus();
         }
 
-        valueEl.addEventListener("click", openEditor);
-        valueEl.addEventListener("keydown", function (event) {
+        card.addEventListener("click", function (event) {
+          if (card.classList.contains("is-editing")) return;
+          if (event.target.closest(".snapshot-edit-actions")) return;
+          openEditor();
+        });
+        card.addEventListener("keydown", function (event) {
+          if (card.classList.contains("is-editing")) return;
           if (event.key === "Enter" || event.key === " ") {
             event.preventDefault();
             openEditor();
@@ -6703,8 +7210,9 @@
         });
       }
 
-      function renderSnapshotCard(stat, snapshot) {
-        var displayValue = formatSnapshotDisplay(stat.id, snapshot);
+      function renderSnapshotCard(stat, normalizedSnapshot) {
+        normalizedSnapshot = normalizedSnapshot || {};
+        var displayValue = normalizedSnapshot[stat.id] || SNAPSHOT_EMPTY;
         var isEmpty = displayValue === SNAPSHOT_EMPTY;
 
         var card = document.createElement("div");
@@ -6727,15 +7235,10 @@
         label.className = "glance-snapshot-label";
         label.textContent = stat.label;
 
-        var hint = document.createElement("div");
-        hint.className = "glance-snapshot-hint";
-        hint.textContent = "Tap to enter";
-
         body.appendChild(valueEl);
         body.appendChild(label);
-        body.appendChild(hint);
-        card.appendChild(iconWrap);
         card.appendChild(body);
+        card.appendChild(iconWrap);
         bindSnapshotEdit(card, stat);
 
         return card;
@@ -6805,12 +7308,11 @@
 
       function renderShiftAtAGlance(classified) {
         var stats = calculateShiftStats(classified);
-        var snapshot = getActiveHotelSnapshot();
 
         shiftSnapshotGrid.innerHTML = "";
         shiftAlertsGrid.innerHTML = "";
 
-        renderHotelSnapshotIntoGrid(shiftSnapshotGrid, snapshot);
+        renderHotelSnapshotIntoGrid(shiftSnapshotGrid, lastNormalizedSnapshot || {});
 
         var alertCount = 0;
         GLANCE_STATS.forEach(function (stat) {
@@ -7044,7 +7546,7 @@
 
       function updateStorageStatusUI() {
         if (lastBackupLabel) {
-          var lastBackup = localStorage.getItem(LAST_BACKUP_KEY);
+          var lastBackup = readLastBackupAt();
           lastBackupLabel.textContent = "Last backup: " + formatBackupDisplayDate(lastBackup);
         }
         updateSyncStatusUI();
@@ -7067,7 +7569,6 @@
         if (draft.preparedBy && String(draft.preparedBy).trim()) return true;
         if (draft.hotelSnapshot && Object.keys(draft.hotelSnapshot).length) return true;
         if (Array.isArray(draft.recommendations) && draft.recommendations.length) return true;
-        if (Array.isArray(draft.shiftIntelligenceChecklist) && draft.shiftIntelligenceChecklist.length) return true;
         if (draft.aiSummary && String(draft.aiSummary).trim()) return true;
         return false;
       }
@@ -7078,16 +7579,14 @@
         var payload = {
           savedAt: now,
           hotelName: hotelName.value.trim(),
-          department: department.value,
           preparedBy: preparedBy.value.trim(),
           shift: selectedShift,
           date: handoverDate.value,
           notes: notesInput.value,
-          hotelSnapshot: Object.assign({}, lastHotelSnapshotOverrides),
+          hotelSnapshot: getCommittedSnapshot(),
           aiSummary: lastSummaryText || "",
           generatedTime: lastGeneratedTime || "",
           recommendations: lastRecommendations.map(normalizeRecommendation),
-          shiftIntelligenceChecklist: lastIntelligenceChecklist.map(normalizeChecklistItem),
           hasGeneratedOutput: !!lastClassified
         };
         if (lastClassified) {
@@ -7109,8 +7608,6 @@
           if (!draftPayloadHasContent(buildDraftPayload())) {
             if (window.HFHandoverStore) {
               HFHandoverStore.clearDraft();
-            } else {
-              localStorage.removeItem(DRAFT_STORAGE_KEY);
             }
             updateDraftStatusUI(null);
             return;
@@ -7123,12 +7620,9 @@
                 updateSyncStatusUI();
               }
             });
-          } else {
-            localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(payload));
-            updateDraftStatusUI(payload.savedAt);
           }
         } catch (err) {
-          /* localStorage unavailable */
+          /* draft save unavailable */
         }
       }
 
@@ -7136,35 +7630,13 @@
         if (window.HFHandoverStore && HFHandoverStore.getCachedDraft) {
           return HFHandoverStore.getCachedDraft();
         }
-        try {
-          var raw = localStorage.getItem(DRAFT_STORAGE_KEY);
-          if (!raw) return null;
-          var parsed = JSON.parse(raw);
-          return parsed && typeof parsed === "object" ? parsed : null;
-        } catch (err) {
-          return null;
-        }
-      }
-
-      function applyDepartmentValue(deptValue) {
-        var dept = deptValue || getDefaultDepartment();
-        var deptFound = Array.from(department.options).some(function (opt) { return opt.value === dept; });
-        if (deptFound) {
-          department.value = dept;
-        } else if (dept) {
-          var opt = document.createElement("option");
-          opt.value = dept;
-          opt.textContent = dept;
-          opt.selected = true;
-          department.insertBefore(opt, department.firstChild);
-        }
+        return null;
       }
 
       function applyDraftPayload(draft) {
         hotelName.value = draft.hotelName || "";
-        applyDepartmentValue(draft.department);
         preparedBy.value = draft.preparedBy || "";
-        setSelectedShift(draft.shift || "AM");
+        setSelectedShift(draft.shift || "AM", { respectUserSelection: true });
         if (draft.date) handoverDate.value = draft.date;
         notesInput.value = draft.notes || "";
         updateCharCount();
@@ -7172,15 +7644,15 @@
         lastHotelSnapshotOverrides = draft.hotelSnapshot
           ? Object.assign({}, draft.hotelSnapshot)
           : {};
+        lastNormalizedSnapshot = draft.hasGeneratedOutput && draft.hotelSnapshot
+          ? Object.assign({}, draft.hotelSnapshot)
+          : null;
 
         if (draft.hasGeneratedOutput && draft.organisedHandover) {
           lastSummaryText = draft.aiSummary || "";
           lastClassified = restoreClassifiedFromSaved(draft);
           lastRecommendations = Array.isArray(draft.recommendations)
             ? draft.recommendations.map(normalizeRecommendation)
-            : [];
-          lastIntelligenceChecklist = Array.isArray(draft.shiftIntelligenceChecklist)
-            ? draft.shiftIntelligenceChecklist.map(normalizeChecklistItem)
             : [];
           lastGeneratedTime = draft.generatedTime || "";
           renderSummaryUI(lastClassified);
@@ -7201,7 +7673,6 @@
           lastSummaryText = "";
           lastClassified = null;
           lastRecommendations = [];
-          lastIntelligenceChecklist = [];
           lastGeneratedTime = "";
           lastHandoverText = "";
           activeHandoverEditId = null;
@@ -7240,8 +7711,6 @@
       function clearDraftStorage() {
         if (window.HFHandoverStore) {
           HFHandoverStore.clearDraft();
-        } else {
-          localStorage.removeItem(DRAFT_STORAGE_KEY);
         }
         updateDraftStatusUI(null);
       }
@@ -7264,8 +7733,8 @@
         lastGeneratedTime = "";
         lastClassified = null;
         lastRecommendations = [];
-        lastIntelligenceChecklist = [];
         lastHotelSnapshotOverrides = {};
+        lastNormalizedSnapshot = null;
         activeHandoverEditId = null;
         activeRecommendationEditId = null;
         hideShiftIntelligencePanel();
@@ -7279,8 +7748,8 @@
 
       function resetHandoverForm() {
         hotelName.value = "";
-        applyDepartmentValue(getDefaultDepartment());
         preparedBy.value = "";
+        shiftTouchedByUser = false;
         setSelectedShift(configuredShifts[0] ? configuredShifts[0].code : "AM");
         initDate();
         notesInput.value = "";
@@ -7325,7 +7794,7 @@
           savedHandovers: window.HandoverSaved ? HandoverSaved.loadAll() : [],
           hotelBrain: hotelBrain,
           settings: {
-            lastBackupAt: localStorage.getItem(LAST_BACKUP_KEY) || null
+            lastBackupAt: readLastBackupAt()
           }
         };
       }
@@ -7378,7 +7847,7 @@
           URL.revokeObjectURL(url);
 
           var exportedAt = payload.exportedAt;
-          localStorage.setItem(LAST_BACKUP_KEY, exportedAt);
+          writeLastBackupAt(exportedAt);
           updateStorageStatusUI();
           showToast("Backup exported.");
         } catch (err) {
@@ -7416,13 +7885,15 @@
         }
 
         if (data.draft && draftPayloadHasContent(data.draft)) {
-          localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(data.draft));
-        } else {
-          localStorage.removeItem(DRAFT_STORAGE_KEY);
+          if (window.HFHandoverStore) {
+            HFHandoverStore.saveDraft(data.draft);
+          }
+        } else if (window.HFHandoverStore) {
+          HFHandoverStore.clearDraft();
         }
 
         if (data.settings && data.settings.lastBackupAt) {
-          localStorage.setItem(LAST_BACKUP_KEY, data.settings.lastBackupAt);
+          writeLastBackupAt(data.settings.lastBackupAt);
         }
 
         reloadHotelBrain();
@@ -7464,10 +7935,18 @@
       }
 
       function wireDraftSaveListeners() {
-        [hotelName, preparedBy, handoverDate, department].forEach(function (el) {
+        function onHandoverDetailsChanged() {
+          scheduleDraftSave();
+          if (lastClassified) {
+            renderHandoverMeta(lastGeneratedTime);
+            lastHandoverText = formatHandoverText(lastClassified);
+          }
+        }
+
+        [hotelName, preparedBy, handoverDate].forEach(function (el) {
           if (!el) return;
-          el.addEventListener("input", scheduleDraftSave);
-          el.addEventListener("change", scheduleDraftSave);
+          el.addEventListener("input", onHandoverDetailsChanged);
+          el.addEventListener("change", onHandoverDetailsChanged);
         });
         notesInput.addEventListener("input", scheduleDraftSave);
         if (preHotelSnapshotGrid) {
@@ -7480,16 +7959,7 @@
       }
 
       function getResolvedHotelSnapshotForSave() {
-        captureHotelSnapshotInputs();
-        var extracted = getActiveHotelSnapshot();
-        var resolved = {};
-        HOTEL_SNAPSHOT_STATS.forEach(function (stat) {
-          var display = formatSnapshotDisplay(stat.id, extracted);
-          if (display !== SNAPSHOT_EMPTY) {
-            resolved[stat.id] = display;
-          }
-        });
-        return resolved;
+        return getCommittedSnapshot();
       }
 
       function buildSavePayload() {
@@ -7499,7 +7969,6 @@
         return {
           id: Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8),
           hotelName: hotelName.value.trim() || "Not specified",
-          department: department.value || "Not specified",
           preparedBy: preparedBy.value.trim() || "Not specified",
           shift: selectedShift,
           date: handoverDate.value,
@@ -7510,7 +7979,6 @@
           organisedHandover: buildOrganisedHandover(lastClassified),
           hotelSnapshot: getResolvedHotelSnapshotForSave(),
           recommendations: lastRecommendations.map(normalizeRecommendation),
-          shiftIntelligenceChecklist: lastIntelligenceChecklist.map(normalizeChecklistItem),
           timestamp: new Date().toISOString()
         };
       }
@@ -7528,22 +7996,14 @@
         return classified;
       }
 
-      function setSelectedShift(shift) {
-        selectedShift = shift || (configuredShifts[0] ? configuredShifts[0].code : "AM");
-        shiftButtons.forEach(function (btn) {
-          btn.classList.toggle("active", btn.getAttribute("data-shift") === selectedShift);
-        });
-      }
-
       function restoreSavedHandover(saved, options) {
         options = options || {};
         skipDraftSave = true;
         hideDraftRestoredHint();
 
         hotelName.value = saved.hotelName === "Not specified" ? "" : (saved.hotelName || "");
-        var dept = saved.department === "Not specified" ? getDefaultDepartment() : (saved.department || getDefaultDepartment());
-        applyDepartmentValue(dept);
         preparedBy.value = saved.preparedBy === "Not specified" ? "" : (saved.preparedBy || "");
+        shiftTouchedByUser = false;
         setSelectedShift(saved.shift || "AM");
         handoverDate.value = saved.date || handoverDate.value;
         notesInput.value = saved.originalNotes || "";
@@ -7554,12 +8014,12 @@
         lastRecommendations = Array.isArray(saved.recommendations)
           ? saved.recommendations.map(normalizeRecommendation)
           : [];
-        lastIntelligenceChecklist = Array.isArray(saved.shiftIntelligenceChecklist)
-          ? saved.shiftIntelligenceChecklist.map(normalizeChecklistItem)
-          : [];
         lastHotelSnapshotOverrides = saved.hotelSnapshot
           ? Object.assign({}, saved.hotelSnapshot)
           : {};
+        lastNormalizedSnapshot = saved.hotelSnapshot
+          ? Object.assign({}, saved.hotelSnapshot)
+          : null;
 
         renderSummaryUI(lastClassified);
         renderShiftAtAGlance(lastClassified);
@@ -7590,10 +8050,20 @@
       }
 
       function printSavedHandover(saved) {
-        restoreSavedHandover(saved, { forPrint: true });
-        requestAnimationFrame(function () {
-          window.print();
-        });
+        if (!saved || !saved.organisedHandover) {
+          showToast("Saved handover is missing generated content.");
+          return;
+        }
+        if (!window.HandoverReport) {
+          showToast("Print is unavailable. Please refresh the page.");
+          return;
+        }
+
+        try {
+          HandoverReport.print(buildHandoverReportPayloadFromSaved(saved));
+        } catch (err) {
+          showToast("Unable to print. Please try again.");
+        }
       }
 
       function formatHandoverText(classified) {
@@ -7609,7 +8079,6 @@
         parts.push(uiLabels.organised.toUpperCase() + " — Hospitality Flow");
         parts.push("════════════════════════════════");
         parts.push("Hotel:       " + meta.hotel);
-        parts.push("Department:  " + meta.department);
         parts.push("Shift:       " + meta.shift);
         parts.push("Date:        " + meta.date);
         parts.push("Prepared by: " + meta.preparedBy);
@@ -7634,7 +8103,7 @@
           parts.push("");
         });
 
-        if (lastRecommendations.length || lastIntelligenceChecklist.length) {
+        if (lastRecommendations.length) {
           parts.push("SHIFT INTELLIGENCE");
           parts.push("Operational checks from the Hotel Brain and your current shift.");
           parts.push("");
@@ -7645,15 +8114,6 @@
           parts.push("What should the next shift do?");
           lastRecommendations.forEach(function (rec) {
             parts.push("• " + formatRecommendationForExport(rec));
-          });
-          parts.push("");
-        }
-
-        if (lastIntelligenceChecklist.length) {
-          parts.push("SHIFT INTELLIGENCE CHECKLIST");
-          parts.push("What might the team have forgotten?");
-          lastIntelligenceChecklist.forEach(function (item) {
-            parts.push("□ " + formatChecklistForExport(item));
           });
           parts.push("");
         }
@@ -7725,8 +8185,17 @@
           return;
         }
 
-        reloadHotelBrain();
-        renderHotelBrainPanel();
+        try {
+          reloadHotelBrain();
+        } catch (err) {
+          console.error("[Handover] reloadHotelBrain failed:", err);
+        }
+
+        try {
+          renderHotelBrainPanel();
+        } catch (err) {
+          console.error("[Handover] renderHotelBrainPanel failed:", err);
+        }
 
         captureHotelSnapshotInputs();
 
@@ -7734,41 +8203,51 @@
         generateBtn.disabled = true;
 
         setTimeout(function () {
-          var lines = parseNotes(text);
-          var classified = classifyNotes(lines);
-          var now = new Date();
+          try {
+            var lines = parseNotes(text);
+            var classified = classifyNotes(lines);
+            var now = new Date();
 
-          lastSummaryText = generateSummary(classified);
-          enrichClassifiedWithItems(classified);
-          captureHotelSnapshotInputs();
-          renderSections(classified);
-          renderSummaryUI(classified);
-          renderShiftAtAGlance(classified);
-          renderPreHandoverSnapshot();
-          var intelligence = generateShiftIntelligence(classified, text);
-          lastRecommendations = intelligence.recommendations || [];
-          lastIntelligenceChecklist = intelligence.checklist || [];
-          renderShiftIntelligence();
-          lastGeneratedTime = formatTimestamp(now);
-          renderHandoverMeta(lastGeneratedTime);
-          renderSummaryStats(classified);
-          showSummaryCard();
+            commitSnapshotState(text);
 
-          lastHandoverText = formatHandoverText(classified);
-          lastClassified = classified;
-          outputSection.classList.add("visible");
-          copyBtn.disabled = false;
-          exportPdfBtn.disabled = false;
-          printHandoverBtn.disabled = false;
-          saveHandoverBtn.disabled = false;
+            lastSummaryText = generateSummary(classified);
+            enrichClassifiedWithItems(classified);
+            renderSections(classified);
+            renderSummaryUI(classified);
+            renderShiftAtAGlance(classified);
+            renderPreHandoverSnapshot();
+            var intelligence = generateShiftIntelligence(classified, text);
+            lastRecommendations = intelligence.recommendations || [];
+            renderShiftIntelligence();
+            lastGeneratedTime = formatTimestamp(now);
+            renderHandoverMeta(lastGeneratedTime);
+            renderSummaryStats(classified);
+            showSummaryCard();
 
-          generateBtn.classList.remove("loading");
-          generateBtn.disabled = false;
-          showToast(uiLabels.handover + " generated successfully!");
-          scheduleDraftSave();
+            lastHandoverText = formatHandoverText(classified);
+            lastClassified = classified;
+            outputSection.classList.add("visible");
+            copyBtn.disabled = false;
+            exportPdfBtn.disabled = false;
+            printHandoverBtn.disabled = false;
+            saveHandoverBtn.disabled = false;
 
-          document.getElementById(shiftGlance.classList.contains("is-visible") ? "shiftGlance" : "summaryCard")
-            .scrollIntoView({ behavior: "smooth", block: "nearest" });
+            showToast(uiLabels.handover + " generated successfully!");
+            scheduleDraftSave();
+
+            var scrollTarget = shiftGlance && shiftGlance.classList.contains("is-visible")
+              ? shiftGlance
+              : summaryCard;
+            if (scrollTarget) {
+              scrollTarget.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            }
+          } catch (err) {
+            console.error("[Handover] Generate failed:", err);
+            showToast("Could not generate handover. Please try again.");
+          } finally {
+            generateBtn.classList.remove("loading");
+            generateBtn.disabled = false;
+          }
         }, 650);
       }
 
@@ -7798,37 +8277,68 @@
       }
 
       function buildPdfSections(classified) {
-        return SECTIONS.map(function (section) {
-          var items = classified[section.id] || [];
+        return getOrganisedSectionDefs().map(function (def) {
+          var items = classified[def.id] || [];
           if (!items.length) return null;
           return {
-            title: section.title,
-            emoji: section.emoji,
+            title: def.title,
             items: items.map(function (item) {
-              return formatItemForExport(normalizeHandoverItem(item, section.id));
+              return formatItemForPdf(normalizeHandoverItem(item, def.id));
             })
           };
         }).filter(function (section) { return section; });
       }
 
       function buildHotelSnapshotForPdfFromData(snapshot) {
-        snapshot = snapshot || {};
-        return HOTEL_SNAPSHOT_STATS.map(function (stat) {
-          var displayValue = formatSnapshotDisplay(stat.id, snapshot);
-          return {
-            label: SNAPSHOT_PDF_LABELS[stat.id] || stat.label,
-            value: formatSnapshotPdfValue(stat.id, displayValue)
-          };
-        });
+        return buildHotelSnapshotPdfRows(snapshot || {});
       }
 
       function buildPdfMetaFromSaved(saved) {
         return {
           hotel: saved.hotelName || "Not specified",
-          department: saved.department || "Not specified",
           shift: getShiftDisplayName(saved.shift || "AM"),
           date: saved.dateDisplay || saved.date || "Not specified",
           preparedBy: saved.preparedBy || "Not specified"
+        };
+      }
+
+      function buildHandoverReportPayload(classified, options) {
+        options = options || {};
+        captureHotelSnapshotInputs();
+        commitSnapshotState();
+
+        var generatedAt = options.generatedAt;
+        if (!generatedAt) {
+          generatedAt = formatTimestamp(new Date());
+        }
+
+        return {
+          meta: options.meta || getPdfMeta(),
+          generatedAt: generatedAt,
+          hotelSnapshot: buildHotelSnapshotForPdfFromData(
+            options.snapshot || getCommittedSnapshot()
+          ),
+          summary: buildPdfSummaryPayload(classified),
+          sections: buildPdfSections(classified),
+          recommendations: (options.recommendations || lastRecommendations).map(function (rec) {
+            return formatRecommendationForExport(normalizeRecommendation(rec));
+          })
+        };
+      }
+
+      function buildHandoverReportPayloadFromSaved(saved) {
+        var classified = restoreClassifiedFromSaved(saved);
+        return {
+          meta: buildPdfMetaFromSaved(saved),
+          generatedAt: saved.timestamp
+            ? formatTimestamp(new Date(saved.timestamp))
+            : "Saved handover",
+          hotelSnapshot: buildHotelSnapshotForPdfFromData(saved.hotelSnapshot || {}),
+          summary: buildPdfSummaryPayload(classified),
+          sections: buildPdfSections(classified),
+          recommendations: (saved.recommendations || []).map(function (rec) {
+            return formatRecommendationForExport(normalizeRecommendation(rec));
+          })
         };
       }
 
@@ -7843,25 +8353,7 @@
         }
 
         try {
-          var classified = restoreClassifiedFromSaved(saved);
-          var generatedAt = saved.timestamp
-            ? formatTimestamp(new Date(saved.timestamp))
-            : "Saved handover";
-
-          HandoverPdfExporter.export({
-            meta: buildPdfMetaFromSaved(saved),
-            generatedAt: generatedAt,
-            metrics: saved.dashboardMetrics || getHandoverMetrics(classified),
-            hotelSnapshot: buildHotelSnapshotForPdfFromData(saved.hotelSnapshot || {}),
-            summary: buildPdfSummaryPayload(classified),
-            sections: buildPdfSections(classified),
-            recommendations: (saved.recommendations || []).map(function (rec) {
-              return formatRecommendationForExport(normalizeRecommendation(rec));
-            }),
-            intelligenceChecklist: (saved.shiftIntelligenceChecklist || []).map(function (item) {
-              return formatChecklistForExport(normalizeChecklistItem(item));
-            })
-          });
+          HandoverPdfExporter.export(buildHandoverReportPayloadFromSaved(saved));
           showToast("PDF downloaded successfully.");
         } catch (err) {
           showToast("Unable to export PDF. Please try again.");
@@ -7873,10 +8365,16 @@
           showToast("Generate a handover before printing.");
           return;
         }
-        outputSection.classList.add("visible");
-        requestAnimationFrame(function () {
-          window.print();
-        });
+        if (!window.HandoverReport) {
+          showToast("Print is unavailable. Please refresh the page.");
+          return;
+        }
+
+        try {
+          HandoverReport.print(buildHandoverReportPayload(lastClassified));
+        } catch (err) {
+          showToast("Unable to print. Please try again.");
+        }
       }
 
       function exportHandoverPdf() {
@@ -7889,24 +8387,8 @@
           return;
         }
 
-        captureHotelSnapshotInputs();
-
         try {
-          var now = new Date();
-          HandoverPdfExporter.export({
-            meta: getPdfMeta(),
-            generatedAt: formatTimestamp(now),
-            metrics: getHandoverMetrics(lastClassified),
-            hotelSnapshot: buildHotelSnapshotForPdf(),
-            summary: buildPdfSummaryPayload(lastClassified),
-            sections: buildPdfSections(lastClassified),
-            recommendations: lastRecommendations.map(function (rec) {
-              return formatRecommendationForExport(normalizeRecommendation(rec));
-            }),
-            intelligenceChecklist: lastIntelligenceChecklist.map(function (item) {
-              return formatChecklistForExport(normalizeChecklistItem(item));
-            })
-          });
+          HandoverPdfExporter.export(buildHandoverReportPayload(lastClassified));
           showToast("PDF downloaded successfully.");
         } catch (err) {
           showToast("Unable to export PDF. Please try again.");
@@ -7921,6 +8403,7 @@
 
         captureHotelSnapshotInputs();
         if (lastClassified) {
+          commitSnapshotState();
           lastHandoverText = formatHandoverText(lastClassified);
         }
 
@@ -8025,7 +8508,6 @@
 
       wireDraftSaveListeners();
       wireIntelligencePartToggle(recommendationsPartToggle, recommendationsPartBody);
-      wireIntelligencePartToggle(checklistPartToggle, checklistPartBody);
       if (advancedDataToggle && advancedDataBody) {
         advancedDataToggle.addEventListener("click", function () {
           var isOpen = advancedDataToggle.classList.contains("is-open");
@@ -8050,7 +8532,14 @@
       });
 
       function finishHandoverPageInit(preferredDraft) {
-        var draftWasRestored = restoreDraftFromStorage(preferredDraft);
+        wireShiftSelectorOnce();
+        var draftWasRestored = false;
+        try {
+          draftWasRestored = restoreDraftFromStorage(preferredDraft);
+        } catch (err) {
+          console.error("[Handover] Draft restore failed:", err);
+        }
+
         if (draftWasRestored) {
           showDraftRestoredHint();
         } else {
@@ -8062,7 +8551,15 @@
           renderPreHandoverSnapshot();
         }
         updateStorageStatusUI();
+        renderHotelBrainPanel();
       }
+
+      var bootHandoverPage = window.HFPlatformAccess && window.HFPlatformAccess.requireApprovedAccess
+        ? window.HFPlatformAccess.requireApprovedAccess({ redirect: "account.html?access=pending" })
+        : (window.HFAuth && window.HFAuth.requireAuth ? window.HFAuth.requireAuth() : Promise.resolve(null));
+
+      bootHandoverPage.then(function (session) {
+        if (!session) return;
 
       initHotelBrainFromCloud(function () {
         if (window.HFHandoverStore) {
@@ -8085,12 +8582,14 @@
 
         finishHandoverPageInit(null);
       });
+      });
 
       if (window.HandoverSaved) {
         HandoverSaved.init({
           gridEl: document.getElementById("savedHandoversGrid"),
           emptyEl: document.getElementById("savedHandoversEmpty"),
           countEl: document.getElementById("savedHandoversCount"),
+          searchEl: document.getElementById("savedHandoversSearch"),
           showToast: showToast,
           onSaveRequest: buildSavePayload,
           onOpen: restoreSavedHandover,

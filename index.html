@@ -1274,6 +1274,21 @@
       margin-top: 12px;
     }
 
+    .form-success-email-warning {
+      margin-top: 16px !important;
+      padding: 12px 14px;
+      border-radius: 8px;
+      background: rgba(224, 122, 122, 0.12);
+      border: 1px solid rgba(224, 122, 122, 0.28);
+      color: #f0c4c4 !important;
+      font-size: 0.88rem !important;
+    }
+
+    .form-success-email-warning a {
+      color: var(--blue-400);
+      text-decoration: underline;
+    }
+
     /* ── Footer ── */
     .footer {
       padding: 44px 0 28px;
@@ -1669,6 +1684,7 @@
               <p>Thank you for applying to the Founding Pilot Programme.</p>
               <p>We'll personally review your application and contact you shortly to arrange onboarding and access.</p>
               <p>We're excited to learn more about your hotel and how AI Shift Handover can support your team.</p>
+              <p class="form-success-email-warning" id="form-success-email-warning" hidden>Your application was saved successfully, but we could not send a confirmation email right now. If you do not hear from us within a few days, please contact <a href="mailto:hello@hospitalityflow.co.uk">hello@hospitalityflow.co.uk</a>.</p>
             </div>
           </div>
         </div>
@@ -1945,6 +1961,7 @@
       /* Waitlist form */
       var form = document.getElementById('waitlist-form');
       var success = document.getElementById('form-success');
+      var successEmailWarning = document.getElementById('form-success-email-warning');
       var formProgress = document.getElementById('form-progress');
       var formError = document.getElementById('form-error');
       var submitBtn = document.getElementById('form-submit-btn');
@@ -1973,7 +1990,6 @@
         }
       });
 
-      /* Early Access application — replace submitApplication() body when connecting Supabase/API */
       function collectApplicationData() {
         return {
           firstName: document.getElementById('first-name').value.trim(),
@@ -2035,6 +2051,10 @@
             formError.textContent = 'Something went wrong. Please try again or email hello@hospitalityflow.co.uk.';
             formError.classList.add('show');
             return;
+          }
+
+          if (successEmailWarning) {
+            successEmailWarning.hidden = !result.emailWarning;
           }
 
           form.style.display = 'none';

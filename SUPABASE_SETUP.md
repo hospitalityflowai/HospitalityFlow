@@ -143,7 +143,7 @@ Set **Site URL** to `https://hospitalityflow.co.uk` and add redirect URLs for `a
 | Authentication | SOP / Rota drafts |
 | Hotel workspace (Phase 3) | Saved handovers (local) |
 | Hotel Brain profile (Phase 4) | |
-| Early Access applications (later) | |
+| Early Access applications | |
 
 Phase 1 does not change any existing product behaviour.
 
@@ -248,6 +248,59 @@ Optional: customise the reset email template under **Authentication** → **Emai
 **“Current password is incorrect” on account page**
 
 - Re-enter your current password carefully. The change-password form verifies it before updating.
+
+### QA / development — frequent password reset testing
+
+**Current bottleneck: Supabase Auth (GoTrue)** — not Resend, not the Edge Function itself.
+
+Password reset uses `auth.resetPasswordForEmail()` which sends mail through **Supabase Auth’s mailer** (built-in or your Auth SMTP settings). The confirmed error is:
+
+- HTTP `429`
+- Code `over_email_send_rate_limit`
+- Message `email rate limit exceeded`
+
+**Resend** is only used by the `send-early-access-emails` function for Founding Pilot application emails. It does not send password-reset mail.
+
+#### Option A — recommended for repeated E2E QA (no email rate limit)
+
+Temporary **development-only** mode bypasses Auth email sending and logs a recovery link to Edge Function logs instead.
+
+1. Copy `js/dev-flags.example.js` → `js/dev-flags.js` (gitignored).
+2. Set on the linked project (QA only):
+
+   ```bash
+   supabase secrets set PASSWORD_RESET_DEV_RELAXED=true
+   supabase secrets set PASSWORD_RESET_DEV_KEY=<long-random-string>
+   ```
+
+3. In `js/dev-flags.js` set:
+
+   ```javascript
+   PASSWORD_RESET_DEV_RELAXED: true,
+   PASSWORD_RESET_DEV_KEY: "<same-long-random-string>"
+   ```
+
+4. Redeploy `request-password-reset`.
+5. Submit forgot-password → open **Edge Functions → request-password-reset → Logs** → copy `[DEV-QA] Recovery link generated without sending email`.
+6. Open that link to complete reset (invitation-only access checks still apply).
+
+**Before public launch:** unset both secrets, set `PASSWORD_RESET_DEV_RELAXED: false`, redeploy.
+
+#### Option B — raise Supabase Auth rate limits temporarily
+
+In Supabase Dashboard:
+
+1. **Authentication** → **Rate Limits** (or **Project Settings** → **Auth** → rate limits, depending on dashboard version).
+2. Increase limits for **email sending** / **password recovery** (e.g. emails per hour per address).
+3. Wait for the current window to expire if already rate-limited.
+
+This cannot be changed from Edge Function code. Local CLI projects can tune `[auth.rate_limit]` in `config.toml` when using `supabase start`.
+
+#### Production safety
+
+- Invitation-only logic (`is_password_reset_allowed`) is unchanged in both modes.
+- Dev mode requires **both** server secrets **and** matching client key header.
+- Browser still receives the same neutral success message; recovery URLs appear only in function logs.
 
 ---
 
@@ -413,6 +466,70 @@ Workspace owners can edit hotel details (name, property type, rooms, city, count
 | Other roles | No — view only |
 
 After saving, the workspace card updates immediately. Handover and SOP use the workspace hotel name for display when you are signed in.
+
+---
+
+## 13. Founding Pilot applications & transactional email (Resend)
+
+The landing page (`index.html`) saves applications to `early_access_applications`, then invokes the **`send-early-access-emails`** Edge Function. Resend API keys live only in Supabase secrets — never in browser code.
+
+### Run the migrations (required once)
+
+1. Supabase → **SQL Editor** → run [`phase6_early_access_applications.sql`](supabase/migrations/phase6_early_access_applications.sql) if not already applied.
+2. Run [`phase9_early_access_email_tracking.sql`](supabase/migrations/phase9_early_access_email_tracking.sql) (adds email delivery timestamps and `submit_early_access_application` RPC).
+
+### Deploy the Edge Function
+
+Install the [Supabase CLI](https://supabase.com/docs/guides/cli), link your project, then deploy:
+
+```bash
+supabase functions deploy send-early-access-emails
+```
+
+Function config: [`supabase/config.toml`](supabase/config.toml) sets `verify_jwt = false` so anonymous visitors can invoke it after submitting the form. The function validates that the `applicationId` exists before sending email.
+
+### Set Supabase secrets
+
+In the Supabase dashboard → **Edge Functions** → **Secrets**, or via CLI:
+
+```bash
+supabase secrets set RESEND_API_KEY=re_xxxxxxxx
+supabase secrets set RESEND_FROM_EMAIL="Hospitality Flow <hello@hospitalityflow.co.uk>"
+supabase secrets set OWNER_NOTIFICATION_EMAIL=hello@hospitalityflow.co.uk
+```
+
+| Secret | Purpose |
+|--------|---------|
+| `RESEND_API_KEY` | Resend API key (never expose in frontend) |
+| `RESEND_FROM_EMAIL` | Verified sender in Resend (display name + address) |
+| `OWNER_NOTIFICATION_EMAIL` | Internal alert recipient for new applications |
+| `RESEND_REPLY_TO` | Optional — reply-to for applicant confirmation (defaults to omit) |
+
+`SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are provided automatically to Edge Functions.
+
+### Resend setup
+
+1. Create a Resend account and verify your sending domain (`hospitalityflow.co.uk`).
+2. Add the DNS records Resend requires (SPF, DKIM).
+3. Use the verified address in `RESEND_FROM_EMAIL`.
+
+### Behaviour
+
+| Step | What happens |
+|------|----------------|
+| Applicant submits form | Row inserted via `submit_early_access_application` RPC |
+| Edge Function invoked | Loads row by ID (service role), sends applicant + owner emails via Resend |
+| Both emails succeed | Success message shown; `applicant_email_sent_at` / `owner_email_sent_at` updated |
+| Email delivery fails | Application is **not** lost; failure logged in function logs; user sees success with an email delivery notice |
+| Retry / duplicate invoke | Idempotent — already-sent emails are skipped using timestamp columns |
+
+### Testing
+
+1. Apply the migrations and deploy the function with secrets set.
+2. Submit a test application on the landing page Founding Pilot form.
+3. Confirm the row appears in Supabase → **Table Editor** → `early_access_applications`.
+4. Confirm applicant and owner inboxes receive the branded HTML emails.
+5. Check **Edge Functions** → **Logs** if emails do not arrive.
 
 ---
 

@@ -331,6 +331,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="js/supabase-config.js"></script>
   <script src="js/supabase-client.js"></script>
+  <script src="js/tenant-storage.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/workspace.js"></script>
   <script src="js/hotel-brain-store.js"></script>
@@ -339,11 +340,19 @@
   "use strict";
 
   var DRAFT_KEY = "hospitalityFlowSopDraft";
-  var HOTEL_PROFILE_KEY = "hospitalityFlow_hotelProfile";
   var AUTO_SAVE_DELAY = 650;
   var isGenerating = false;
   var isRestoring = false;
   var autoSaveTimer = null;
+  var sopWorkspaceId = null;
+
+  function draftStorageScope() {
+    if (sopWorkspaceId) return sopWorkspaceId;
+    if (window.HFTenantStorage) {
+      return window.HFTenantStorage.resolveScopeId();
+    }
+    return null;
+  }
 
   var DEFAULT_DEPARTMENTS = [
     "Front Office", "Housekeeping", "Food & Beverage", "Maintenance",
@@ -362,11 +371,38 @@
   };
   var dateLocale = { locale: "en-GB", hour12: false, isoDate: false };
 
-  function loadHotelProfileFromStorage() {
-    if (window.HFHotelBrainStore) {
-      return window.HFHotelBrainStore.getCached();
+  function getResolvedWorkspaceHotelId() {
+    if (window.HFWorkspace && window.HFWorkspace.getCachedWorkspace) {
+      var ws = window.HFWorkspace.getCachedWorkspace();
+      if (ws && ws.hotel && ws.hotel.id) {
+        return ws.hotel.id;
+      }
     }
     return null;
+  }
+
+  function loadHotelProfileFromStorage() {
+    if (window.HFHotelBrainStore) {
+      return window.HFHotelBrainStore.getCached(getResolvedWorkspaceHotelId());
+    }
+    return null;
+  }
+
+  function writeDraft(manual) {
+    var scope = draftStorageScope();
+    if (!scope || !window.HFTenantStorage) {
+      if (manual) showToast("Sign in and create your workspace to save drafts.");
+      return false;
+    }
+    try {
+      window.HFTenantStorage.setRaw(DRAFT_KEY, JSON.stringify(buildDraftPayload()), scope);
+      setSaveStatus("saved", "Saved");
+      if (manual) showToast("Draft saved locally.");
+      return true;
+    } catch (e) {
+      if (manual) showToast("Could not save draft.");
+      return false;
+    }
   }
 
   function buildTerminologyMap(terminology) {
@@ -1146,18 +1182,6 @@
     };
   }
 
-  function writeDraft(manual) {
-    try {
-      localStorage.setItem(DRAFT_KEY, JSON.stringify(buildDraftPayload()));
-      setSaveStatus("saved", "Saved");
-      if (manual) showToast("Draft saved locally.");
-      return true;
-    } catch (e) {
-      if (manual) showToast("Could not save draft.");
-      return false;
-    }
-  }
-
   function scheduleAutoSave() {
     if (isRestoring) return;
     setSaveStatus("saving", "Saving…");
@@ -1166,10 +1190,14 @@
   }
 
   function readDraft() {
+    var scope = draftStorageScope();
+    if (!scope || !window.HFTenantStorage) return null;
     try {
-      var raw = localStorage.getItem(DRAFT_KEY);
+      var raw = window.HFTenantStorage.getRaw(DRAFT_KEY, scope);
       return raw ? JSON.parse(raw) : null;
-    } catch (e) { return null; }
+    } catch (e) {
+      return null;
+    }
   }
 
   function restoreDraft() {
@@ -1207,7 +1235,10 @@
   function clearDraft() {
     if (!window.confirm("Clear saved draft and reset the form?")) return;
     window.clearTimeout(autoSaveTimer);
-    localStorage.removeItem(DRAFT_KEY);
+    var scope = draftStorageScope();
+    if (scope && window.HFTenantStorage) {
+      window.HFTenantStorage.remove(DRAFT_KEY, scope);
+    }
     els.hotelName.value = "";
     if (hotelProfile && hotelProfile.general && hotelProfile.general.hotelName) {
       els.hotelName.value = hotelProfile.general.hotelName;
@@ -1383,6 +1414,10 @@
       window.HFHotelBrainStore.load(),
       workspacePromise
     ]).then(function (results) {
+      var workspace = results[1];
+      if (workspace && workspace.hotel && workspace.hotel.id) {
+        sopWorkspaceId = workspace.hotel.id;
+      }
       finishInit(results[0] && results[0].profile ? results[0].profile : null);
     }).catch(function () {
       finishInit(null);

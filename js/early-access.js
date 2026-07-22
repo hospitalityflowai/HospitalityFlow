@@ -3,12 +3,15 @@
  *
  * Requires js/supabase-config.js and js/supabase-client.js (loaded first).
  * Public visitors may only read aggregate availability via RPC — never application rows.
+ * Applications are submitted through the submit-early-access-application Edge Function,
+ * which saves the row and triggers internal email delivery server-side.
  */
 (function (global) {
   "use strict";
 
   var FOUNDING_TOTAL = 10;
   var FALLBACK_MESSAGE = "10 pilot places currently available.";
+  var SUBMIT_FUNCTION_NAME = "submit-early-access-application";
 
   function formatAvailabilityMessage(remaining) {
     if (remaining <= 0) {
@@ -63,6 +66,16 @@
     });
   }
 
+  function normalizeEmail(email) {
+    return String(email || "").trim().toLowerCase();
+  }
+
+  function parseRoomCount(value) {
+    if (value == null || value === "") return null;
+    var parsed = parseInt(String(value), 10);
+    return isNaN(parsed) ? null : parsed;
+  }
+
   function submitApplication(data) {
     var supabaseApi = global.HospitalityFlowSupabase;
     if (!supabaseApi || !supabaseApi.isConfigured()) {
@@ -74,29 +87,41 @@
       return Promise.resolve({ ok: true, offline: true });
     }
 
-    var roomCount = data.roomCount ? parseInt(data.roomCount, 10) : null;
-    if (roomCount !== null && isNaN(roomCount)) {
-      roomCount = null;
-    }
-
     return supabaseApi.initClient().then(function (client) {
       if (!client) {
         return { ok: false };
       }
 
-      return client.from("early_access_applications").insert({
-        first_name: data.firstName,
-        email: data.email,
-        property_name: data.propertyName,
-        property_type: data.propertyType,
-        room_count: roomCount,
-        role: data.role,
-        source: data.source || "early-access-programme"
-      }).then(function (result) {
-        if (result.error) {
-          return { ok: false, error: result.error };
+      return client.functions.invoke(SUBMIT_FUNCTION_NAME, {
+        body: {
+          firstName: String(data.firstName || "").trim(),
+          email: normalizeEmail(data.email),
+          propertyName: String(data.propertyName || "").trim(),
+          propertyType: String(data.propertyType || "").trim(),
+          roomCount: parseRoomCount(data.roomCount),
+          role: String(data.role || "").trim(),
+          source: data.source || "early-access-programme"
         }
-        return { ok: true };
+      }).then(function (fnResult) {
+        if (fnResult.error) {
+          console.error("[early-access] Submit function invoke failed:", fnResult.error);
+          return { ok: false, error: fnResult.error };
+        }
+
+        var payload = fnResult.data || {};
+        if (payload.ok === false) {
+          console.error("[early-access] Submit function error:", payload.error);
+          return { ok: false, error: payload.error || "Application could not be saved." };
+        }
+
+        return {
+          ok: true,
+          applicationSaved: payload.applicationSaved !== false,
+          emailWarning: !!payload.emailWarning
+        };
+      }).catch(function (err) {
+        console.error("[early-access] Submit function request failed:", err);
+        return { ok: false, error: err };
       });
     }).catch(function () {
       return { ok: false };

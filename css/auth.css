@@ -277,6 +277,15 @@ main {
   text-align: center;
 }
 
+.auth-invitation-note {
+  color: var(--gray-500);
+  font-size: 0.84rem;
+  line-height: 1.5;
+  max-width: 36ch;
+  margin-left: auto;
+  margin-right: auto;
+}
+
 .auth-loading {
   text-align: center;
   padding: 48px 0;

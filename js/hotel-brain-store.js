@@ -1,7 +1,7 @@
 /**
  * Hospitality Flow — Hotel Brain cloud store (Phase 4)
  * One profile per hotel workspace in Supabase. Requires auth + hotel membership.
- * Keeps hospitalityFlow_hotelProfile in localStorage as a cache for backwards compatibility.
+ * Local cache is scoped by workspace_id via HFTenantStorage.
  */
 (function (global) {
   "use strict";
@@ -12,7 +12,13 @@
 
   var cachedProfile = null;
   var cachedHotelId = null;
+  var cachedUserId = null;
   var loadPromise = null;
+  var loadGeneration = 0;
+
+  function tenantStorage() {
+    return global.HFTenantStorage || null;
+  }
 
   function ensureClient() {
     return global.HFAuth.ensureClient();
@@ -26,25 +32,29 @@
     return global.HFWorkspace.getUserWorkspace();
   }
 
-  function readLocalProfile() {
-    try {
-      var raw = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (!raw) return null;
-      var parsed = JSON.parse(raw);
-      if (typeof parsed === "string") parsed = JSON.parse(parsed);
-      return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : null;
-    } catch (err) {
-      return null;
-    }
+  function trimText(value) {
+    return String(value == null ? "" : value).trim();
   }
 
-  function writeLocalProfile(profile) {
-    if (!profile || typeof profile !== "object") return;
+  function normalizeName(value) {
+    return trimText(value).toLowerCase().replace(/\s+/g, " ");
+  }
+
+  function writeLocalProfile(profile, workspaceId) {
+    if (!profile || typeof profile !== "object" || !workspaceId) return;
+    var ts = tenantStorage();
+    if (!ts) return;
     try {
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(profile));
+      ts.setRaw(LOCAL_STORAGE_KEY, JSON.stringify(profile), workspaceId);
     } catch (err) {
       /* localStorage full or unavailable */
     }
+  }
+
+  function clearScopedLocalProfile(workspaceId) {
+    var ts = tenantStorage();
+    if (!ts || !workspaceId) return;
+    ts.remove(LOCAL_STORAGE_KEY, workspaceId);
   }
 
   function profileHasContent(profile) {
@@ -67,9 +77,40 @@
     return false;
   }
 
+  function namesRoughlyMatch(profileName, workspaceName) {
+    var left = normalizeName(profileName);
+    var right = normalizeName(workspaceName);
+    if (!left || !right) return true;
+    if (left === right) return true;
+    if (left.indexOf(right) !== -1 || right.indexOf(left) !== -1) return true;
+    return false;
+  }
+
+  function profileBelongsToWorkspace(profile, hotel) {
+    if (!profile || !profileHasContent(profile)) return true;
+    if (!hotel) return false;
+
+    if (profile._workspaceHotelId && hotel.id && profile._workspaceHotelId !== hotel.id) {
+      return false;
+    }
+
+    var profileName = profile.general && profile.general.hotelName;
+    var workspaceName = hotel.name;
+    if (!trimText(workspaceName)) return false;
+    if (!trimText(profileName)) return false;
+
+    return namesRoughlyMatch(profileName, workspaceName);
+  }
+
+  function stampProfileWorkspace(profile, hotelId) {
+    var copy = JSON.parse(JSON.stringify(profile));
+    copy._workspaceHotelId = hotelId;
+    return copy;
+  }
+
   function createEmptyProfile(hotel) {
     hotel = hotel || {};
-    return {
+    return stampProfileWorkspace({
       schemaVersion: PROFILE_SCHEMA_VERSION,
       savedAt: new Date().toISOString(),
       general: {
@@ -135,7 +176,7 @@
         sampleDataRegistry: [],
         sampleDataLoaded: {}
       }
-    };
+    }, hotel.id || "");
   }
 
   function formatError(error) {
@@ -146,6 +187,11 @@
 
     if (error === "NOT_AUTHENTICATED") {
       return "Sign in to access Hotel Brain cloud sync.";
+    }
+    if (error === "NOT_APPROVED") {
+      return global.HFPlatformAccess && global.HFPlatformAccess.NOT_APPROVED_MESSAGE
+        ? global.HFPlatformAccess.NOT_APPROVED_MESSAGE
+        : "Your Hospitality Flow access has not been approved yet.";
     }
     if (error === "NO_WORKSPACE") {
       return "Create your hotel workspace on the Account page before using Hotel Brain.";
@@ -166,23 +212,45 @@
     return global.HFAuth.formatError(error);
   }
 
-  function setCache(hotelId, profile) {
+  function setCache(hotelId, profile, userId) {
     cachedHotelId = hotelId || null;
+    cachedUserId = userId || null;
     cachedProfile = profile ? JSON.parse(JSON.stringify(profile)) : null;
-    if (cachedProfile) {
-      writeLocalProfile(cachedProfile);
+    if (cachedProfile && cachedHotelId) {
+      writeLocalProfile(cachedProfile, cachedHotelId);
     }
   }
 
-  function getCached() {
-    if (cachedProfile) {
-      return JSON.parse(JSON.stringify(cachedProfile));
+  function getCached(expectedHotelId) {
+    if (!cachedProfile || !cachedHotelId) {
+      return null;
     }
-    return readLocalProfile();
+    if (expectedHotelId && cachedHotelId !== expectedHotelId) {
+      return null;
+    }
+    return JSON.parse(JSON.stringify(cachedProfile));
   }
 
   function getCachedHotelId() {
     return cachedHotelId;
+  }
+
+  function clearTenantCache() {
+    cachedProfile = null;
+    cachedHotelId = null;
+    cachedUserId = null;
+    loadPromise = null;
+  }
+
+  function invalidateLoads() {
+    loadGeneration += 1;
+    clearTenantCache();
+  }
+
+  function purgeLegacyStorage() {
+    if (tenantStorage()) {
+      tenantStorage().clearLegacyKeys();
+    }
   }
 
   function requireAuthAndWorkspace() {
@@ -190,21 +258,48 @@
       return Promise.reject("SUPABASE_NOT_CONFIGURED");
     }
 
-    return getSession().then(function (session) {
+    purgeLegacyStorage();
+
+      return getSession().then(function (session) {
       if (!session) {
         return Promise.reject("NOT_AUTHENTICATED");
       }
+
+      var accessPromise = global.HFPlatformAccess && global.HFPlatformAccess.checkPlatformAccess
+        ? global.HFPlatformAccess.checkPlatformAccess()
+        : Promise.resolve({ allowed: true });
+
+      return accessPromise.then(function (access) {
+        if (!access.allowed) {
+          return Promise.reject("NOT_APPROVED");
+        }
+
+      if (tenantStorage() && session.user && session.user.id) {
+        var ctx = tenantStorage().readTenantContext();
+        if (!ctx || ctx.userId !== session.user.id) {
+          tenantStorage().writeTenantContext({
+            userId: session.user.id,
+            workspaceId: null
+          });
+        }
+      }
+
       return getWorkspace().then(function (workspace) {
         if (!workspace || !workspace.hotel || !workspace.hotel.id) {
           return Promise.reject("NO_WORKSPACE");
+        }
+        if (tenantStorage()) {
+          tenantStorage().updateTenantWorkspace(workspace.hotel.id);
         }
         return {
           session: session,
           workspace: workspace,
           hotelId: workspace.hotel.id,
-          hotel: workspace.hotel
+          hotel: workspace.hotel,
+          userId: session.user.id
         };
       });
+    });
     });
   }
 
@@ -246,62 +341,79 @@
       });
   }
 
+  function resolveProfileForWorkspace(ctx, row, client, generation) {
+    if (generation !== loadGeneration) {
+      return Promise.reject(new Error("STALE_LOAD"));
+    }
+
+    if (row && row.profile_data && typeof row.profile_data === "object") {
+      if (profileBelongsToWorkspace(row.profile_data, ctx.hotel)) {
+        var accepted = stampProfileWorkspace(row.profile_data, ctx.hotelId);
+        setCache(ctx.hotelId, accepted, ctx.userId);
+        return {
+          profile: getCached(ctx.hotelId),
+          hotelId: ctx.hotelId,
+          created: false,
+          updatedAt: row.updated_at || null,
+          isolated: true
+        };
+      }
+
+      console.warn(
+        "[HFHotelBrainStore] Discarded cross-workspace profile for hotel",
+        ctx.hotelId
+      );
+      clearScopedLocalProfile(ctx.hotelId);
+    }
+
+    var emptyProfile = createEmptyProfile(ctx.hotel);
+    return upsertProfile(client, ctx.hotelId, emptyProfile).then(function (saved) {
+      if (generation !== loadGeneration) {
+        return Promise.reject(new Error("STALE_LOAD"));
+      }
+      var normalized = stampProfileWorkspace(saved || emptyProfile, ctx.hotelId);
+      setCache(ctx.hotelId, normalized, ctx.userId);
+      return {
+        profile: getCached(ctx.hotelId),
+        hotelId: ctx.hotelId,
+        created: true,
+        updatedAt: null,
+        reset: !!(row && row.profile_data),
+        isolated: true
+      };
+    });
+  }
+
   function load(options) {
     options = options || {};
     if (loadPromise && !options.force) {
       return loadPromise;
     }
 
+    var generation = ++loadGeneration;
+    clearTenantCache();
+
     loadPromise = requireAuthAndWorkspace()
       .then(function (ctx) {
+        if (generation !== loadGeneration) {
+          return Promise.reject(new Error("STALE_LOAD"));
+        }
+
         return ensureClient().then(function (client) {
           return fetchProfile(client, ctx.hotelId).then(function (row) {
-            if (row && row.profile_data && typeof row.profile_data === "object") {
-              setCache(ctx.hotelId, row.profile_data);
-              return {
-                profile: getCached(),
-                hotelId: ctx.hotelId,
-                created: false,
-                updatedAt: row.updated_at || null
-              };
-            }
-
-            var localProfile = readLocalProfile();
-            if (profileHasContent(localProfile)) {
-              return upsertProfile(client, ctx.hotelId, localProfile).then(function (saved) {
-                setCache(ctx.hotelId, saved || localProfile);
-                return {
-                  profile: getCached(),
-                  hotelId: ctx.hotelId,
-                  created: false,
-                  migratedFromLocal: true,
-                  updatedAt: null
-                };
-              });
-            }
-
-            var emptyProfile = createEmptyProfile(ctx.hotel);
-            return upsertProfile(client, ctx.hotelId, emptyProfile).then(function (saved) {
-              setCache(ctx.hotelId, saved || emptyProfile);
-              return {
-                profile: getCached(),
-                hotelId: ctx.hotelId,
-                created: true,
-                updatedAt: null
-              };
-            });
+            return resolveProfileForWorkspace(ctx, row, client, generation);
           });
         });
       })
       .catch(function (err) {
-        if (err === "NOT_AUTHENTICATED" || err === "NO_WORKSPACE" || err === "SUPABASE_NOT_CONFIGURED") {
-          var localProfile = readLocalProfile();
-          if (localProfile) {
-            setCache(null, localProfile);
-            return { profile: getCached(), error: err, offline: true };
-          }
-          setCache(null, null);
+        if (generation === loadGeneration) {
+          clearTenantCache();
+        }
+        if (err === "NOT_AUTHENTICATED" || err === "NO_WORKSPACE" || err === "NOT_APPROVED" || err === "SUPABASE_NOT_CONFIGURED") {
           return { profile: null, error: err };
+        }
+        if (err && err.message === "STALE_LOAD") {
+          return { profile: null, error: "STALE_LOAD" };
         }
         return Promise.reject(err);
       })
@@ -327,16 +439,19 @@
       payload.schemaVersion = PROFILE_SCHEMA_VERSION;
     }
 
-    writeLocalProfile(payload);
-
     return requireAuthAndWorkspace()
       .then(function (ctx) {
+        if (!profileBelongsToWorkspace(payload, ctx.hotel)) {
+          return Promise.reject(new Error("Profile does not belong to the current workspace."));
+        }
+        payload = stampProfileWorkspace(payload, ctx.hotelId);
         return ensureClient().then(function (client) {
-          setCache(ctx.hotelId, payload);
+          setCache(ctx.hotelId, payload, ctx.userId);
           return upsertProfile(client, ctx.hotelId, payload).then(function (saved) {
-            setCache(ctx.hotelId, saved || payload);
+            var normalized = stampProfileWorkspace(saved || payload, ctx.hotelId);
+            setCache(ctx.hotelId, normalized, ctx.userId);
             return {
-              profile: getCached(),
+              profile: getCached(ctx.hotelId),
               hotelId: ctx.hotelId
             };
           });
@@ -345,11 +460,9 @@
   }
 
   function preload() {
-    return load().catch(function () {
-      var localProfile = readLocalProfile();
-      if (localProfile) {
-        setCache(null, localProfile);
-        return { profile: getCached(), offline: true };
+    return load().catch(function (err) {
+      if (!err || err.message !== "STALE_LOAD") {
+        clearTenantCache();
       }
       return { profile: null };
     });
@@ -365,7 +478,11 @@
     getCached: getCached,
     getCachedHotelId: getCachedHotelId,
     setCache: setCache,
+    clearTenantCache: clearTenantCache,
+    invalidateLoads: invalidateLoads,
     createEmptyProfile: createEmptyProfile,
+    profileHasContent: profileHasContent,
+    profileBelongsToWorkspace: profileBelongsToWorkspace,
     formatError: formatError
   };
 })(window);

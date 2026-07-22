@@ -7,6 +7,13 @@
 
   var DRAFT_KEY = "hf-rota-generator-draft-v2";
 
+  function draftStorageScope() {
+    if (window.HFTenantStorage) {
+      return window.HFTenantStorage.resolveScopeId();
+    }
+    return null;
+  }
+
   var DEFAULT_SHIFTS = [
     { id: "AM", code: "AM", name: "AM", start: "07:00", end: "15:00", isDefault: true },
     { id: "PM", code: "PM", name: "PM", start: "15:00", end: "23:00", isDefault: true },
@@ -1512,8 +1519,13 @@
   }
 
   function writeDraft(manual) {
+    var scope = draftStorageScope();
+    if (!scope || !window.HFTenantStorage) {
+      if (manual) showToast("Sign in to save rota drafts to this account.");
+      return false;
+    }
     try {
-      localStorage.setItem(DRAFT_KEY, JSON.stringify(buildDraftPayload()));
+      window.HFTenantStorage.setRaw(DRAFT_KEY, JSON.stringify(buildDraftPayload()), scope);
       setSaveStatus("saved", "Saved");
       if (manual) showToast("Draft saved locally.");
       return true;
@@ -1531,11 +1543,14 @@
   }
 
   function readDraft() {
+    var scope = draftStorageScope();
+    if (!scope || !window.HFTenantStorage) return null;
     try {
-      var raw = localStorage.getItem(DRAFT_KEY);
-      if (!raw) raw = localStorage.getItem("hf-rota-generator-draft-v1");
+      var raw = window.HFTenantStorage.getRaw(DRAFT_KEY, scope);
       return raw ? JSON.parse(raw) : null;
-    } catch (e) { return null; }
+    } catch (e) {
+      return null;
+    }
   }
 
   function restoreDraft() {
@@ -1607,8 +1622,10 @@
   function clearDraft() {
     if (!confirm("Clear saved draft and reset the form?")) return;
     clearTimeout(autoSaveTimer);
-    localStorage.removeItem(DRAFT_KEY);
-    localStorage.removeItem("hf-rota-generator-draft-v1");
+    var scope = draftStorageScope();
+    if (scope && window.HFTenantStorage) {
+      window.HFTenantStorage.remove(DRAFT_KEY, scope);
+    }
     els.hotelName.value = "";
     els.department.value = "";
     els.periodType.value = "week";

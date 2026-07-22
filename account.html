@@ -30,6 +30,12 @@
 
         <div id="auth-alert" class="auth-alert" aria-live="polite"></div>
 
+        <div id="access-pending" class="auth-card hidden" hidden>
+          <h2 class="account-section-heading">Access pending approval</h2>
+          <p class="account-note">Your Founding Pilot application has been received. Hospitality Flow is invitation-only, and we will email you if your application is approved.</p>
+          <p class="account-note">If you believe this is an error, contact hello@hospitalityflow.co.uk.</p>
+        </div>
+
         <!-- Phase 3: one hotel per user; multi-property switcher comes in a later phase -->
         <div id="workspace-create" class="hidden" hidden>
           <p class="auth-lead">Set up your first hotel workspace to get started with Hospitality Flow.</p>
@@ -183,7 +189,9 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="js/supabase-config.js"></script>
   <script src="js/supabase-client.js"></script>
+  <script src="js/tenant-storage.js"></script>
   <script src="js/auth.js"></script>
+  <script src="js/platform-access.js"></script>
   <script src="js/workspace.js"></script>
   <script>HFWorkspace.initAccountPage();</script>
 </body>

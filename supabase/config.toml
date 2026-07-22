@@ -1,0 +1,19 @@
+# Supabase local / CLI configuration
+# https://supabase.com/docs/guides/cli/config
+
+[functions.send-early-access-emails]
+verify_jwt = false
+
+[functions.submit-early-access-application]
+verify_jwt = false
+
+# Internal-only email dispatch secret (never expose to browser):
+#   supabase secrets set EARLY_ACCESS_EMAILS_INTERNAL_SECRET=<long-random-string>
+# Required by send-early-access-emails and submit-early-access-application.
+
+# TEMPORARY DEVELOPMENT / QA ONLY — request-password-reset secrets (set via CLI, not committed):
+#   supabase secrets set PASSWORD_RESET_DEV_RELAXED=true
+#   supabase secrets set PASSWORD_RESET_DEV_KEY=<long-random-string>
+# BEFORE PUBLIC LAUNCH: unset both secrets and redeploy the function.
+# [functions.request-password-reset]
+# verify_jwt = false

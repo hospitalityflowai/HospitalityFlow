@@ -22,6 +22,10 @@
 
   var cachedWorkspace = null;
 
+  function clearCachedWorkspace() {
+    cachedWorkspace = null;
+  }
+
   function isOwnerRole(role) {
     return String(role || "").toLowerCase() === "owner";
   }
@@ -81,6 +85,11 @@
     if (/update_hotel_workspace|function.*does not exist|42883/i.test(msg)) {
       return "Database setup incomplete. Run supabase/migrations/phase5_hotel_workspace_edit.sql in Supabase.";
     }
+    if (/platform access has not been approved/i.test(msg)) {
+      return global.HFPlatformAccess && global.HFPlatformAccess.NOT_APPROVED_MESSAGE
+        ? global.HFPlatformAccess.NOT_APPROVED_MESSAGE
+        : "Your Hospitality Flow access has not been approved yet.";
+    }
 
     return global.HFAuth.formatError(error);
   }
@@ -113,6 +122,9 @@
             var row = response.data && response.data.length ? response.data[0] : null;
             var workspace = normalizeMembershipRow(row);
             cachedWorkspace = workspace;
+            if (global.HFTenantStorage && workspace && workspace.hotel && workspace.hotel.id) {
+              global.HFTenantStorage.updateTenantWorkspace(workspace.hotel.id);
+            }
             return workspace;
           });
       });
@@ -369,6 +381,29 @@
     if (headingEl) headingEl.textContent = "Create your hotel workspace";
   }
 
+  function renderAccessPendingPanel(alertEl) {
+    setWorkspacePanelVisible(document.getElementById("workspace-create"), false);
+    setWorkspacePanelVisible(document.getElementById("workspace-dashboard"), false);
+    setWorkspacePanelVisible(document.getElementById("password-section"), false);
+    setWorkspacePanelVisible(document.getElementById("password-recovery-section"), false);
+
+    var pendingEl = document.getElementById("access-pending");
+    if (pendingEl) {
+      setWorkspacePanelVisible(pendingEl, true);
+    }
+
+    var headingEl = document.getElementById("account-heading");
+    if (headingEl) headingEl.textContent = "Access pending approval";
+
+    showAlert(
+      alertEl,
+      "error",
+      global.HFPlatformAccess && global.HFPlatformAccess.NOT_APPROVED_MESSAGE
+        ? global.HFPlatformAccess.NOT_APPROVED_MESSAGE
+        : "Your Hospitality Flow access has not been approved yet."
+    );
+  }
+
   function initAccountPage() {
     var alertEl = document.getElementById("auth-alert");
     var emailEl = document.getElementById("account-email");
@@ -384,6 +419,23 @@
       if (recoveryResult.isRecovery && recoveryResult.session) {
         if (loadingEl) loadingEl.classList.add("hidden");
         if (contentEl) contentEl.classList.remove("hidden");
+
+        if (global.HFPlatformAccess && global.HFPlatformAccess.checkPlatformAccess) {
+          return global.HFPlatformAccess.checkPlatformAccess().then(function (access) {
+            if (!access.allowed) {
+              return global.HFAuth.signOut().then(function () {
+                global.HFAuth.initAccountRecoveryInvalid();
+                showAlert(
+                  document.getElementById("auth-alert"),
+                  "error",
+                  global.HFPlatformAccess.NOT_APPROVED_MESSAGE
+                );
+              });
+            }
+            global.HFAuth.initAccountRecoverySection(recoveryResult.session);
+          });
+        }
+
         global.HFAuth.initAccountRecoverySection(recoveryResult.session);
         return;
       }
@@ -425,13 +477,76 @@
         emailEl.innerHTML = "Signed in as <strong>" + escapeHtml(accountEmail) + "</strong>";
       }
 
+      if (global.HFPlatformAccess && global.HFPlatformAccess.checkPlatformAccess) {
+        return global.HFPlatformAccess.checkPlatformAccess().then(function (access) {
+          if (!access.allowed) {
+            if (loadingEl) loadingEl.classList.add("hidden");
+            if (contentEl) contentEl.classList.remove("hidden");
+            renderAccessPendingPanel(alertEl);
+            bindLogoutButton(logoutBtn, alertEl);
+            return;
+          }
+
+          global.HFAuth.initChangePasswordSection(activeSession);
+
+          if (global.HFHotelBrainStore) {
+            global.HFHotelBrainStore.preload();
+          }
+
+          return loadSignedInWorkspace(
+            alertEl,
+            logoutBtn,
+            loadingEl,
+            contentEl,
+            form,
+            submitBtn
+          );
+        });
+      }
+
       global.HFAuth.initChangePasswordSection(activeSession);
 
       if (global.HFHotelBrainStore) {
         global.HFHotelBrainStore.preload();
       }
 
-      return getUserWorkspace().then(function (workspace) {
+      return loadSignedInWorkspace(
+        alertEl,
+        logoutBtn,
+        loadingEl,
+        contentEl,
+        form,
+        submitBtn
+      );
+    });
+  }
+
+  function bindLogoutButton(logoutBtn, alertEl) {
+    if (!logoutBtn) return;
+
+    logoutBtn.addEventListener("click", function () {
+      hideAlert(alertEl);
+      logoutBtn.disabled = true;
+      logoutBtn.textContent = "Signing out…";
+
+      global.HFAuth.signOut().then(function (result) {
+        if (result.error) {
+          showAlert(alertEl, "error", global.HFAuth.formatError(result.error));
+          logoutBtn.disabled = false;
+          logoutBtn.textContent = "Sign out";
+          return;
+        }
+        global.location.href = global.HFAuth.ROUTES.login;
+      }).catch(function (err) {
+        showAlert(alertEl, "error", global.HFAuth.formatError(err));
+        logoutBtn.disabled = false;
+        logoutBtn.textContent = "Sign out";
+      });
+    });
+  }
+
+  function loadSignedInWorkspace(alertEl, logoutBtn, loadingEl, contentEl, form, submitBtn) {
+    return getUserWorkspace().then(function (workspace) {
         if (loadingEl) loadingEl.classList.add("hidden");
         if (contentEl) contentEl.classList.remove("hidden");
 
@@ -488,28 +603,9 @@
         }
 
         if (logoutBtn) {
-          logoutBtn.addEventListener("click", function () {
-            hideAlert(alertEl);
-            logoutBtn.disabled = true;
-            logoutBtn.textContent = "Signing out…";
-
-            global.HFAuth.signOut().then(function (result) {
-              if (result.error) {
-                showAlert(alertEl, "error", global.HFAuth.formatError(result.error));
-                logoutBtn.disabled = false;
-                logoutBtn.textContent = "Sign out";
-                return;
-              }
-              global.location.href = global.HFAuth.ROUTES.login;
-            }).catch(function (err) {
-              showAlert(alertEl, "error", global.HFAuth.formatError(err));
-              logoutBtn.disabled = false;
-              logoutBtn.textContent = "Sign out";
-            });
-          });
+          bindLogoutButton(logoutBtn, alertEl);
         }
       });
-    });
   }
 
   function escapeHtml(text) {
@@ -522,6 +618,7 @@
     PROPERTY_TYPES: PROPERTY_TYPES,
     getUserWorkspace: getUserWorkspace,
     getCachedWorkspace: getCachedWorkspace,
+    clearCachedWorkspace: clearCachedWorkspace,
     getWorkspaceHotelName: getWorkspaceHotelName,
     resolveDisplayHotelName: resolveDisplayHotelName,
     createWorkspace: createWorkspace,

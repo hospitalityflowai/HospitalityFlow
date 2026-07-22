@@ -9,8 +9,8 @@
   var STATUS_SAVED = "saved";
   var STATUS_DRAFT = "draft";
   var LOCAL_SAVED_KEY = "hf_saved_handovers";
-  var LOCAL_DRAFT_PREFIX = "hf_handover_draft_v1";
-  var LEGACY_DRAFT_KEY = "hf_handover_draft_v1";
+  var LOCAL_DRAFT_KEY = "hf_handover_draft_v1";
+  var LAST_BACKUP_KEY = "hf_handover_last_backup";
 
   var cachedWorkspaceId = null;
   var cachedUserId = null;
@@ -57,6 +57,11 @@
     if (error === "NOT_AUTHENTICATED") {
       return "Sign in to sync handovers to your hotel workspace.";
     }
+    if (error === "NOT_APPROVED") {
+      return global.HFPlatformAccess && global.HFPlatformAccess.NOT_APPROVED_MESSAGE
+        ? global.HFPlatformAccess.NOT_APPROVED_MESSAGE
+        : "Your Hospitality Flow access has not been approved yet.";
+    }
     if (error === "NO_WORKSPACE") {
       return "Create your hotel workspace on the Account page before cloud handover sync.";
     }
@@ -76,9 +81,16 @@
     return global.HFAuth.formatError(error);
   }
 
-  function readLocalSaved() {
+  function tenantStorage() {
+    return global.HFTenantStorage || null;
+  }
+
+  function readLocalSaved(workspaceId) {
+    if (!workspaceId) return [];
+    var ts = tenantStorage();
+    if (!ts) return [];
     try {
-      var raw = localStorage.getItem(LOCAL_SAVED_KEY);
+      var raw = ts.getRaw(LOCAL_SAVED_KEY, workspaceId);
       if (!raw) return [];
       var parsed = JSON.parse(raw);
       return Array.isArray(parsed) ? parsed : [];
@@ -87,26 +99,23 @@
     }
   }
 
-  function writeLocalSaved(list) {
+  function writeLocalSaved(list, workspaceId) {
+    if (!workspaceId) return;
+    var ts = tenantStorage();
+    if (!ts) return;
     try {
-      localStorage.setItem(LOCAL_SAVED_KEY, JSON.stringify(list));
+      ts.setRaw(LOCAL_SAVED_KEY, JSON.stringify(list), workspaceId);
     } catch (err) {
       /* localStorage unavailable */
     }
   }
 
-  function draftStorageKey(workspaceId) {
-    if (workspaceId) return LOCAL_DRAFT_PREFIX + "_" + workspaceId;
-    return LEGACY_DRAFT_KEY;
-  }
-
   function readLocalDraft(workspaceId) {
+    if (!workspaceId) return null;
+    var ts = tenantStorage();
+    if (!ts) return null;
     try {
-      var key = draftStorageKey(workspaceId);
-      var raw = localStorage.getItem(key);
-      if (!raw && workspaceId) {
-        raw = localStorage.getItem(LEGACY_DRAFT_KEY);
-      }
+      var raw = ts.getRaw(LOCAL_DRAFT_KEY, workspaceId);
       if (!raw) return null;
       var parsed = JSON.parse(raw);
       return parsed && typeof parsed === "object" ? parsed : null;
@@ -116,16 +125,39 @@
   }
 
   function writeLocalDraft(workspaceId, draft) {
+    if (!workspaceId) return;
+    var ts = tenantStorage();
+    if (!ts) return;
+    if (!draft) {
+      ts.remove(LOCAL_DRAFT_KEY, workspaceId);
+      return;
+    }
     try {
-      if (!draft) {
-        localStorage.removeItem(draftStorageKey(workspaceId));
-        if (workspaceId) localStorage.removeItem(LEGACY_DRAFT_KEY);
-        return;
-      }
-      localStorage.setItem(draftStorageKey(workspaceId), JSON.stringify(draft));
+      ts.setRaw(LOCAL_DRAFT_KEY, JSON.stringify(draft), workspaceId);
     } catch (err) {
       /* localStorage unavailable */
     }
+  }
+
+  function readLastBackup(workspaceId) {
+    if (!workspaceId) return null;
+    var ts = tenantStorage();
+    return ts ? ts.getRaw(LAST_BACKUP_KEY, workspaceId) : null;
+  }
+
+  function writeLastBackup(workspaceId, value) {
+    if (!workspaceId || value == null) return;
+    var ts = tenantStorage();
+    if (ts) ts.setRaw(LAST_BACKUP_KEY, value, workspaceId);
+  }
+
+  function clearTenantCache() {
+    cachedWorkspaceId = null;
+    cachedUserId = null;
+    cachedSavedHandovers = [];
+    cloudSyncActive = false;
+    lastCloudError = null;
+    initPromise = null;
   }
 
   function requireAuthAndWorkspace() {
@@ -137,9 +169,31 @@
       if (!session || !session.user) {
         return Promise.reject("NOT_AUTHENTICATED");
       }
+
+      var accessPromise = global.HFPlatformAccess && global.HFPlatformAccess.checkPlatformAccess
+        ? global.HFPlatformAccess.checkPlatformAccess()
+        : Promise.resolve({ allowed: true });
+
+      return accessPromise.then(function (access) {
+        if (!access.allowed) {
+          return Promise.reject("NOT_APPROVED");
+        }
+
+      if (tenantStorage() && session.user && session.user.id) {
+        var ctx = tenantStorage().readTenantContext();
+        if (!ctx || ctx.userId !== session.user.id) {
+          tenantStorage().writeTenantContext({
+            userId: session.user.id,
+            workspaceId: ctx && ctx.userId === session.user.id ? ctx.workspaceId : null
+          });
+        }
+      }
       return getWorkspace().then(function (workspace) {
         if (!workspace || !workspace.hotel || !workspace.hotel.id) {
           return Promise.reject("NO_WORKSPACE");
+        }
+        if (tenantStorage()) {
+          tenantStorage().updateTenantWorkspace(workspace.hotel.id);
         }
         return {
           session: session,
@@ -148,6 +202,7 @@
           userId: session.user.id
         };
       });
+    });
     });
   }
 
@@ -475,15 +530,13 @@
         });
       })
       .catch(function (err) {
-        if (err === "NOT_AUTHENTICATED" || err === "NO_WORKSPACE" || err === "SUPABASE_NOT_CONFIGURED") {
-          cachedWorkspaceId = null;
-          cachedUserId = null;
-          cachedSavedHandovers = readLocalSaved();
-          setCloudSyncActive(false, err);
+        clearTenantCache();
+        setCloudSyncActive(false, err);
+        if (err === "NOT_AUTHENTICATED" || err === "NO_WORKSPACE" || err === "NOT_APPROVED" || err === "SUPABASE_NOT_CONFIGURED") {
           return {
             workspaceId: null,
-            savedHandovers: cachedSavedHandovers.slice(),
-            draft: readLocalDraft(null),
+            savedHandovers: [],
+            draft: null,
             cloud: false,
             error: err
           };
@@ -493,12 +546,10 @@
           message: formatError(err),
           error: err
         });
-        cachedSavedHandovers = readLocalSaved();
-        setCloudSyncActive(false, err);
         return {
-          workspaceId: cachedWorkspaceId,
-          savedHandovers: cachedSavedHandovers.slice(),
-          draft: readLocalDraft(cachedWorkspaceId),
+          workspaceId: null,
+          savedHandovers: [],
+          draft: null,
           cloud: false,
           error: err
         };
@@ -522,7 +573,10 @@
     if (cachedSavedHandovers.length) {
       return cachedSavedHandovers.slice();
     }
-    return readLocalSaved();
+    if (cachedWorkspaceId) {
+      return readLocalSaved(cachedWorkspaceId);
+    }
+    return [];
   }
 
   function getCachedDraft() {
@@ -530,9 +584,10 @@
   }
 
   function saveLocalFallback(localRecord) {
-    var localList = readLocalSaved();
+    if (!cachedWorkspaceId) return;
+    var localList = readLocalSaved(cachedWorkspaceId);
     localList.unshift(localRecord);
-    writeLocalSaved(localList);
+    writeLocalSaved(localList, cachedWorkspaceId);
 
     if (!cloudSyncActive || !cachedSavedHandovers.length) {
       cachedSavedHandovers = localList.slice();
@@ -579,7 +634,7 @@
               var savedRecord = rowToRecord(response.data);
               cachedSavedHandovers.unshift(savedRecord);
 
-              var localList = readLocalSaved();
+              var localList = readLocalSaved(ctx.workspaceId);
               var replaced = false;
               localList = localList.map(function (item) {
                 if (item.id === localRecord.id) {
@@ -591,7 +646,7 @@
               if (!replaced) {
                 localList.unshift(savedRecord);
               }
-              writeLocalSaved(localList);
+              writeLocalSaved(localList, ctx.workspaceId);
 
               setCloudSyncActive(true);
 
@@ -621,8 +676,10 @@
   }
 
   function deleteHandover(id) {
-    var localList = readLocalSaved().filter(function (item) { return item.id !== id; });
-    writeLocalSaved(localList);
+    if (cachedWorkspaceId) {
+      var localList = readLocalSaved(cachedWorkspaceId).filter(function (item) { return item.id !== id; });
+      writeLocalSaved(localList, cachedWorkspaceId);
+    }
     cachedSavedHandovers = cachedSavedHandovers.filter(function (item) {
       return item.id !== id && item.cloudId !== id;
     });
@@ -738,13 +795,18 @@
   }
 
   function uploadLocalHandovers() {
-    var localRecords = readLocalSaved();
-    if (!localRecords.length) {
-      return Promise.resolve({ uploaded: 0, skipped: 0, cloud: false, message: "No local handovers to upload." });
-    }
-
     return requireAuthAndWorkspace()
       .then(function (ctx) {
+        var localRecords = readLocalSaved(ctx.workspaceId);
+        if (!localRecords.length) {
+          return Promise.resolve({
+            uploaded: 0,
+            skipped: 0,
+            cloud: true,
+            message: "No local handovers to upload."
+          });
+        }
+
         return ensureClient().then(function (client) {
           return client
             .from(TABLE_NAME)
@@ -829,19 +891,22 @@
   }
 
   function saveAllLocal(list) {
-    writeLocalSaved(Array.isArray(list) ? list : []);
+    if (!cachedWorkspaceId) return;
+    writeLocalSaved(Array.isArray(list) ? list : [], cachedWorkspaceId);
     if (!cloudSyncActive) {
-      cachedSavedHandovers = readLocalSaved();
+      cachedSavedHandovers = readLocalSaved(cachedWorkspaceId);
     }
   }
 
   function loadAllLocal() {
-    return readLocalSaved();
+    if (!cachedWorkspaceId) return [];
+    return readLocalSaved(cachedWorkspaceId);
   }
 
   global.HFHandoverStore = {
     TABLE_NAME: TABLE_NAME,
     LOCAL_SAVED_KEY: LOCAL_SAVED_KEY,
+    LAST_BACKUP_KEY: LAST_BACKUP_KEY,
     init: init,
     reloadForWorkspace: reloadForWorkspace,
     getSavedHandovers: getSavedHandovers,
@@ -855,6 +920,9 @@
     onSyncStatusChange: onSyncStatusChange,
     saveAllLocal: saveAllLocal,
     loadAllLocal: loadAllLocal,
+    readLastBackup: readLastBackup,
+    writeLastBackup: writeLastBackup,
+    clearTenantCache: clearTenantCache,
     formatError: formatError
   };
 })(window);

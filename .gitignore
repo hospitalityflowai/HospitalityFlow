@@ -1,6 +1,9 @@
 # Local Supabase credentials — never commit
 js/supabase-config.js
 
+# Temporary QA flags — never commit (see js/dev-flags.example.js)
+js/dev-flags.js
+
 # Node (local dev server)
 node_modules/
 

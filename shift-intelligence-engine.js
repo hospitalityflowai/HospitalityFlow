@@ -277,10 +277,127 @@
     var line = String(note.original || "");
     var cleaned = line
       .replace(/\broom\s+\d+[a-z]?\b/gi, "")
+      .replace(/^\[[^\]]+\]\s*/, "")
       .replace(/\s+/g, " ")
-      .trim();
-    if (cleaned.length > 80) cleaned = cleaned.slice(0, 77) + "…";
+      .trim()
+      .replace(/\.$/, "");
+    if (cleaned.length > 90) cleaned = cleaned.slice(0, 87) + "…";
     return cleaned;
+  }
+
+  function extractGuestPreference(line) {
+    var text = String(line || "").trim();
+    var lower = text.toLowerCase();
+    var parts = [];
+
+    if (/twin\s+setup|twin\s+bed|twin\s+room/i.test(text)) parts.push("confirm the twin setup");
+    if (/double|king|suite/i.test(text) && !/twin/i.test(text)) {
+      var bedMatch = text.match(/\b(double|king|suite)\b/i);
+      if (bedMatch) parts.push("confirm the " + bedMatch[1].toLowerCase() + " setup");
+    }
+    if (/avoid accessibility|not accessibility|no accessibility|prefers.*avoid accessibility/i.test(lower)) {
+      parts.push("note the guest's preference to avoid accessibility rooms");
+    } else if (/accessibility|accessible|mobility|wheelchair/i.test(lower)) {
+      parts.push("confirm accessibility requirements");
+    }
+    if (/late checkout|early check-in|early checkin/i.test(lower)) {
+      parts.push("confirm arrival or checkout timing with the team");
+    }
+    if (/allerg|dietary|gluten|nut/i.test(lower)) {
+      var dietMatch = text.match(/(?:allerg(?:y|ic)|dietary|gluten|nut)[:\s-]*([^.\n]+)/i);
+      if (dietMatch) parts.push("note dietary requirement: " + dietMatch[1].trim());
+    }
+
+    if (parts.length) return parts.join(" and ");
+
+    var generic = text.match(/(?:preference|prefers|requested|needs|requires)[:\s-]+(.+?)(?:\.|$)/i);
+    if (generic && generic[1]) {
+      var detail = generic[1].trim().replace(/\.$/, "");
+      if (detail.length > 8) return detail.charAt(0).toLowerCase() + detail.slice(1);
+    }
+    return "";
+  }
+
+  function ownerDepartmentForIssue(note, departments, fallbackDept) {
+    if (note.section === "maintenance") {
+      return resolveDepartment(["Maintenance", "Engineering"], "Maintenance", departments);
+    }
+    if (note.section === "payments") {
+      return resolveDepartment(["Reception", "Front Office"], "Reception", departments);
+    }
+    if (note.section === "guest" || note.isVip) {
+      return resolveDepartment(["Front Office", "Reception", "Duty Manager"], "Front Office", departments);
+    }
+    if (noteContains(note.original, ["housekeeping", "clean", "turndown", "linen"])) {
+      return resolveDepartment(["Housekeeping"], "Housekeeping", departments);
+    }
+    if (noteContains(note.original, ["transfer", "taxi", "concierge"])) {
+      return resolveDepartment(["Concierge", "Front Office"], "Concierge", departments);
+    }
+    return resolveDepartment([fallbackDept], fallbackDept, departments);
+  }
+
+  function paymentActionText(note, shiftType) {
+    var roomRef = roomPhrase(note);
+    var detail = briefIssuePhrase(note);
+    var owner = "Reception";
+    var balanceHint = noteContains(note.original, ["open balance", "outstanding balance", "balance due"])
+      ? "open balance"
+      : noteContains(note.original, ["folio", "deposit", "pre-auth", "preauth"])
+        ? "folio/deposit issue"
+        : "outstanding payment";
+
+    if (roomRef) {
+      var action = roomRef + " has an " + balanceHint + ". " + owner +
+        " should verify payment before departure and update the next shift if unresolved.";
+      if (detail && detail.length > 10 && detail.toLowerCase().indexOf("balance") === -1) {
+        action = roomRef + " has an " + balanceHint + " (" + detail + "). " + owner +
+          " should verify payment before departure and update the next shift if unresolved.";
+      }
+      return action;
+    }
+    return owner + " should resolve the " + balanceHint + " before departure and brief " +
+      nextShiftPhrase(shiftType) + ".";
+  }
+
+  function vipActionText(note, shiftType, brainContext) {
+    var roomRef = roomPhrase(note);
+    var line = note.original || "";
+    var preference = extractGuestPreference(line);
+    var vipArrival = noteContains(line, ["arriv", "tomorrow", "tonight", "checking in", "due in"]);
+    var vipInHouse = noteContains(line, ["in house", "in-house", "staying", "checked in", "currently"]);
+    var owner = "Front Office";
+
+    if (vipArrival && roomRef) {
+      var text = roomRef + " VIP arrival: ";
+      if (preference) {
+        text += preference.charAt(0).toLowerCase() + preference.slice(1);
+      } else {
+        text += "confirm room setup, amenities and welcome handling";
+      }
+      text += " " + nextShiftPhrase(shiftType) + ".";
+      if (brainContext && brainContext.hotelKnowledge && trimText(brainContext.hotelKnowledge.vipRules)) {
+        text = text.replace(/\.$/, "") + ", following hotel VIP standards.";
+      }
+      return text;
+    }
+
+    if (vipInHouse && roomRef) {
+      var inHouseDetail = preference || briefIssuePhrase(note);
+      if (inHouseDetail && inHouseDetail.length > 8) {
+        return roomRef + " in-house VIP: " + inHouseDetail + ". " + owner +
+          " should confirm the guest's needs are met " + nextShiftPhrase(shiftType) + ".";
+      }
+      return roomRef + " in-house VIP guest needs active monitoring — confirm requests and special handling with " +
+        owner.toLowerCase() + " " + nextShiftPhrase(shiftType) + ".";
+    }
+
+    if (roomRef) {
+      return roomRef + " VIP guest: " + (preference || "confirm special requirements and brief the incoming team") +
+        " " + nextShiftPhrase(shiftType) + ".";
+    }
+    return owner + " should review VIP guest requirements and brief the incoming team " +
+      nextShiftPhrase(shiftType) + ".";
   }
 
   function nextShiftPhrase(shiftType) {
@@ -331,16 +448,18 @@
         var maintDetail = issue && issue.length > 8 ? issue.replace(/\.$/, "") : "";
         var roomRef = roomPhrase(note);
         var maintText;
+        var ownerDept = resolveDepartment(["Maintenance", "Engineering"], "Maintenance", departments);
         if (maintNotInformed) {
           maintText = roomRef
-            ? "Follow up with Maintenance on " + roomRef +
-              (maintDetail ? " (" + maintDetail + ")" : "") + " " + nextShiftPhrase(shiftType) + "."
-            : "Follow up with Maintenance" + maintDetail + roomOn + " " + nextShiftPhrase(shiftType) + ".";
+            ? ownerDept + " must be notified about " + roomRef +
+              (maintDetail ? " (" + maintDetail + ")" : "") + " and progress confirmed " + nextShiftPhrase(shiftType) + "."
+            : ownerDept + " must be notified" + roomOn +
+              (maintDetail ? " (" + maintDetail + ")" : "") + " and progress confirmed " + nextShiftPhrase(shiftType) + ".";
         } else {
           maintText = roomRef
-            ? "Confirm Maintenance resolution for " + roomRef +
-              (maintDetail ? " (" + maintDetail + ")" : "") + " " + nextShiftPhrase(shiftType) + "."
-            : "Inform Maintenance" + maintDetail + roomOn + " and confirm resolution " + nextShiftPhrase(shiftType) + ".";
+            ? "Confirm " + ownerDept + " resolution for " + roomRef +
+              (maintDetail ? " (" + maintDetail + ")" : "") + " and update the next shift if still open."
+            : ownerDept + " should resolve" + maintDetail + roomOn + " and confirm completion " + nextShiftPhrase(shiftType) + ".";
         }
         addCandidate({
           text: maintText,
@@ -351,21 +470,8 @@
       }
 
       if (note.isVip || (note.section === "guest" && detectVip(line))) {
-        var vipArrival = noteContains(line, ["arriv", "tomorrow", "tonight", "checking in", "due in"]);
-        var vipPrep = noteContains(line, ["welcome", "amenity", "amenities", "prepare", "preparing", "still needs", "card"]);
-        var vipText;
-        if (vipArrival && vipPrep) {
-          vipText = "Prepare welcome card and amenities for the VIP arrival" + roomIn + ".";
-        } else if (vipArrival) {
-          vipText = "Brief the incoming shift on the VIP arrival" + roomIn + " and confirm preparations.";
-        } else {
-          vipText = "Review VIP guest requirements" + roomIn + " and brief the next shift.";
-        }
-        if (brainContext && brainContext.hotelKnowledge && trimText(brainContext.hotelKnowledge.vipRules)) {
-          vipText = vipText.replace(/\.$/, "") + ", following hotel VIP standards.";
-        }
         addCandidate({
-          text: vipText,
+          text: vipActionText(note, shiftType, brainContext),
           priority: "high",
           department: resolveDepartment(["Duty Manager", "Front Office", "Reception"], "Front Office", departments)
         });
@@ -376,8 +482,8 @@
         var lateRoom = roomPhrase(note);
         addCandidate({
           text: lateRoom
-            ? "Inform Housekeeping that " + lateRoom + " has a late checkout approved."
-            : "Inform Housekeeping about the late checkout" + roomIn + ".",
+            ? "Housekeeping must hold " + lateRoom + " from early cleaning — late checkout is approved. Confirm release time with Reception."
+            : "Housekeeping must hold the room from early cleaning — late checkout approved" + roomIn + ".",
           priority: "high",
           department: resolveDepartment(["Housekeeping"], "Housekeeping", departments)
         });
@@ -396,13 +502,9 @@
       }
 
       if (note.section === "payments" || isPaymentIssueLine(line)) {
-        if (noteContains(line, ["outstanding", "payment", "balance", "folio", "unpaid", "owing", "due"])) {
-          var roomRef = roomPhrase(note);
-          var paymentText = roomRef
-            ? roomRef + " has an outstanding balance. Collect payment before departure to avoid checkout delays."
-            : "Collect outstanding payment before departure to avoid checkout delays.";
+        if (noteContains(line, ["outstanding", "payment", "balance", "folio", "unpaid", "owing", "due", "deposit", "pre-auth", "preauth"])) {
           addCandidate({
-            text: paymentText,
+            text: paymentActionText(note, shiftType),
             priority: note.section === "urgent" ? "urgent" : "high",
             department: resolveDepartment(["Front Office", "Reception", "Duty Manager"], "Reception", departments)
           });
@@ -471,14 +573,16 @@
       if ((note.isFollowUp || note.section === "tasks" || note.section === "urgent") &&
           noteContains(line, ["follow up", "follow-up", "outstanding", "pending", "must", "need to", "ensure"])) {
         if (note.section === "general" && !note.isFollowUp) return;
-        var taskDetail = issue && issue.length > 8 ? issue.replace(/\.$/, "") : "outstanding task";
+        var taskDetail = briefIssuePhrase(note);
+        var taskOwner = ownerDepartmentForIssue(note, departments, fallbackDept);
+        var taskPriority = note.section === "urgent" ? "urgent" : "normal";
         addCandidate({
           text: roomPhrase(note)
-            ? "Action the " + taskDetail.toLowerCase() + " for " + roomPhrase(note) +
-              " and hand over clearly to the next shift."
-            : "Action the outstanding task" + roomIn + " and hand over clearly to the next shift.",
-          priority: note.section === "urgent" ? "urgent" : "normal",
-          department: resolveDepartment([input.selectedDepartment], fallbackDept, departments)
+            ? taskOwner + ": action " + (taskDetail && taskDetail.length > 8 ? taskDetail : "the outstanding task") +
+              " for " + roomPhrase(note) + " and confirm handover to the next shift."
+            : taskOwner + ": action the outstanding task" + roomIn + " and confirm handover to the next shift.",
+          priority: taskPriority,
+          department: taskOwner
         });
       }
     });
