@@ -42,7 +42,7 @@ function upsertCachedSavedRecord(cache, savedRecord, previousId) {
   return next;
 }
 
-function simulateCloudSave(record, cloudRows) {
+function simulateCloudSave(record, cloudRows, insertIdFactory) {
   var cloudId = resolveCloudHandoverId(record);
   if (cloudId) {
     var updatedRow = Object.assign({}, record, { id: cloudId, cloudId: cloudId });
@@ -54,18 +54,20 @@ function simulateCloudSave(record, cloudRows) {
       cloud: true,
       updated: true,
       record: updatedRow,
-      operation: "UPDATE"
+      operation: "UPDATE",
+      message: "Updated in cloud"
     };
   }
 
-  var insertedId = "a1000000-0000-4000-8000-000000000001";
+  var insertedId = insertIdFactory();
   var insertedRow = Object.assign({}, record, { id: insertedId, cloudId: insertedId });
   cloudRows.push(insertedRow);
   return {
     cloud: true,
     updated: false,
     record: insertedRow,
-    operation: "INSERT"
+    operation: "INSERT",
+    message: "Saved to cloud"
   };
 }
 
@@ -80,6 +82,96 @@ function applyCloudSavedHandoverId(editingState, result) {
   return editingState.value;
 }
 
+function createEditModeSession() {
+  var insertCounter = 0;
+  return {
+    isEditingExistingSavedHandover: false,
+    editingSavedHandoverId: null,
+    cloudRows: [],
+    nextInsertId: function () {
+      insertCounter += 1;
+      return "a1000000-0000-4000-8000-" + String(insertCounter).padStart(12, "0");
+    }
+  };
+}
+
+function startNewHandover(session) {
+  session.isEditingExistingSavedHandover = false;
+  session.editingSavedHandoverId = null;
+}
+
+function restoreSavedHandover(session, saved) {
+  session.isEditingExistingSavedHandover = true;
+  session.editingSavedHandoverId = saved.cloudId || saved.id || null;
+}
+
+function generateHandover(session) {
+  if (!session.isEditingExistingSavedHandover) {
+    session.editingSavedHandoverId = null;
+  }
+}
+
+function buildSavePayloadFromSession(session) {
+  return {
+    id: session.editingSavedHandoverId || "local-temp-id",
+    cloudId: session.editingSavedHandoverId || null,
+    hotelName: "Test Hotel"
+  };
+}
+
+function saveFromSession(session) {
+  var payload = buildSavePayloadFromSession(session);
+  var result = simulateCloudSave(payload, session.cloudRows, session.nextInsertId);
+  session.editingSavedHandoverId = applyCloudSavedHandoverId(
+    { value: session.editingSavedHandoverId },
+    result
+  );
+  return result;
+}
+
+function runEditModeFlowSimulations() {
+  var archiveUuid = "b2000000-0000-4000-8000-000000000002";
+
+  var flowA = createEditModeSession();
+  startNewHandover(flowA);
+  generateHandover(flowA);
+  var flowASave = saveFromSession(flowA);
+
+  var flowB = createEditModeSession();
+  startNewHandover(flowB);
+  generateHandover(flowB);
+  saveFromSession(flowB);
+  var flowBSave = saveFromSession(flowB);
+
+  var flowC = createEditModeSession();
+  startNewHandover(flowC);
+  generateHandover(flowC);
+  saveFromSession(flowC);
+  generateHandover(flowC);
+  var flowCSave = saveFromSession(flowC);
+
+  var flowD = createEditModeSession();
+  restoreSavedHandover(flowD, { id: archiveUuid, cloudId: archiveUuid });
+  generateHandover(flowD);
+  var flowDSave = saveFromSession(flowD);
+
+  var flowE = createEditModeSession();
+  restoreSavedHandover(flowE, { id: archiveUuid, cloudId: archiveUuid });
+  startNewHandover(flowE);
+  generateHandover(flowE);
+  var flowESave = saveFromSession(flowE);
+
+  return {
+    flowA: flowASave,
+    flowB: flowBSave,
+    flowC: flowCSave,
+    flowD: flowDSave,
+    flowE: flowESave,
+    flowCRowCount: flowC.cloudRows.length,
+    flowERowCount: flowE.cloudRows.length
+  };
+}
+
 function buildSavePayload(editingSavedHandoverId) {
   return {
     id: editingSavedHandoverId || "local-temp-id",
@@ -92,21 +184,27 @@ function runSimulation() {
   var cloudRows = [];
   var cache = [];
   var editingSavedHandoverId = null;
+  var insertCounter = 0;
+  function nextInsertId() {
+    insertCounter += 1;
+    return "a1000000-0000-4000-8000-" + String(insertCounter).padStart(12, "0");
+  }
 
   var firstPayload = buildSavePayload(editingSavedHandoverId);
-  var firstResult = simulateCloudSave(firstPayload, cloudRows);
+  var firstResult = simulateCloudSave(firstPayload, cloudRows, nextInsertId);
   editingSavedHandoverId = applyCloudSavedHandoverId({ value: editingSavedHandoverId }, firstResult);
   cache = upsertCachedSavedRecord(cache, firstResult.record, firstPayload.id);
 
   var secondPayload = buildSavePayload(editingSavedHandoverId);
-  var secondResult = simulateCloudSave(secondPayload, cloudRows);
+  var secondResult = simulateCloudSave(secondPayload, cloudRows, nextInsertId);
   cache = upsertCachedSavedRecord(cache, secondResult.record, secondPayload.id);
 
   editingSavedHandoverId = firstResult.record.cloudId || firstResult.record.id;
   var reopenedPayload = buildSavePayload(editingSavedHandoverId);
   var reopenedResult = simulateCloudSave(
     Object.assign({}, reopenedPayload, { hotelName: "Edited Hotel" }),
-    cloudRows
+    cloudRows,
+    nextInsertId
   );
   cache = upsertCachedSavedRecord(cache, reopenedResult.record, reopenedPayload.id);
 
@@ -157,6 +255,30 @@ function main() {
     pass("Successful cloud save updates editingSavedHandoverId");
   }
 
+  if (!/isEditingExistingSavedHandover/.test(page)) {
+    fail("handover.html must track isEditingExistingSavedHandover");
+  } else {
+    pass("Edit mode flag present in handover.html");
+  }
+
+  if (!/restoreSavedHandover[\s\S]*isEditingExistingSavedHandover = true/.test(page)) {
+    fail("restoreSavedHandover must enable archive edit mode");
+  } else {
+    pass("restoreSavedHandover sets archive edit mode");
+  }
+
+  if (!/clearHandoverOutputState[\s\S]*isEditingExistingSavedHandover = false/.test(page)) {
+    fail("clearHandoverOutputState must disable archive edit mode");
+  } else {
+    pass("clearHandoverOutputState clears archive edit mode");
+  }
+
+  if (!/generateHandover[\s\S]*if \(!isEditingExistingSavedHandover\)[\s\S]*editingSavedHandoverId = null/.test(page)) {
+    fail("generateHandover must clear UUID for normal new-handover sessions");
+  } else {
+    pass("generateHandover clears UUID outside archive edit mode");
+  }
+
   if (!/onSaveComplete/.test(savedUi)) {
     fail("handover-saved.js must expose onSaveComplete callback");
   } else {
@@ -200,6 +322,38 @@ function main() {
     fail("Cache should not contain duplicate entries after update flow");
   } else {
     pass("No duplicate cache entry");
+  }
+
+  var flows = runEditModeFlowSimulations();
+
+  if (flows.flowA.operation !== "INSERT" || flows.flowA.message !== "Saved to cloud") {
+    fail("Flow A (New → Generate → Save) should INSERT with Saved to cloud");
+  } else {
+    pass("Flow A: New → Generate → Save = INSERT / Saved to cloud");
+  }
+
+  if (flows.flowB.operation !== "UPDATE" || flows.flowB.message !== "Updated in cloud") {
+    fail("Flow B (Save again without generating) should UPDATE with Updated in cloud");
+  } else {
+    pass("Flow B: Save again without generating = UPDATE / Updated in cloud");
+  }
+
+  if (flows.flowC.operation !== "INSERT" || flows.flowC.message !== "Saved to cloud" || flows.flowCRowCount !== 2) {
+    fail("Flow C (Generate again in normal session → Save) should INSERT a new record");
+  } else {
+    pass("Flow C: Generate again in normal session → Save = INSERT / Saved to cloud");
+  }
+
+  if (flows.flowD.operation !== "UPDATE" || flows.flowD.message !== "Updated in cloud") {
+    fail("Flow D (Open archived → regenerate → Save) should UPDATE with Updated in cloud");
+  } else {
+    pass("Flow D: Open archived → regenerate → Save = UPDATE / Updated in cloud");
+  }
+
+  if (flows.flowE.operation !== "INSERT" || flows.flowE.message !== "Saved to cloud") {
+    fail("Flow E (Open archived → New → Generate → Save) should INSERT with Saved to cloud");
+  } else {
+    pass("Flow E: Open archived → New → Generate → Save = INSERT / Saved to cloud");
   }
 
   if (failed) process.exit(1);
