@@ -44,8 +44,11 @@
       --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.24);
       --transition: 0.25s ease;
       --max-width: 1200px;
+      --content-max: 640px;
       --header-height: 72px;
-      --section-padding: 48px;
+      --section-padding: 64px;
+      --surface-bg: rgba(12, 24, 41, 0.45);
+      --surface-border: rgba(255, 255, 255, 0.08);
     }
 
     *, *::before, *::after {
@@ -312,6 +315,16 @@
     /* ── Sections ── */
     section { padding: var(--section-padding) 0; }
 
+    main > section:not(.hero) {
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .surface-panel {
+      background: var(--surface-bg);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius-lg);
+    }
+
     .section-label {
       display: inline-block;
       font-size: 0.8rem;
@@ -326,20 +339,45 @@
       font-size: clamp(1.5rem, 3.2vw, 2rem);
       font-weight: 700;
       letter-spacing: -0.03em;
-      line-height: 1.25;
+      line-height: 1.2;
       margin-bottom: 12px;
+      color: var(--white);
     }
 
     .section-text {
-      font-size: 0.98rem;
+      font-size: 0.9375rem;
       color: var(--gray-300);
-      max-width: 560px;
+      max-width: var(--content-max);
+      line-height: 1.65;
+    }
+
+    .type-label {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--gray-400);
+      margin-bottom: 8px;
+    }
+
+    .type-card-title {
+      font-size: 1.0625rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: var(--white);
+      line-height: 1.35;
+      margin-bottom: 10px;
+    }
+
+    .type-body {
+      font-size: 0.9375rem;
+      color: var(--gray-300);
       line-height: 1.65;
     }
 
     .section-header {
       text-align: center;
-      margin-bottom: 24px;
+      margin-bottom: 32px;
     }
 
     .section-header .section-text { margin: 0 auto; }
@@ -432,6 +470,14 @@
       margin-bottom: 0;
     }
 
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      margin-top: 28px;
+    }
+
     .hero-audience-badge {
       display: inline-flex;
       align-items: center;
@@ -469,13 +515,6 @@
       max-width: 520px;
     }
 
-    .hero-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      align-items: center;
-    }
-
     .hero-visual {
       animation: fadeUp 0.8s ease 0.15s forwards;
       opacity: 0;
@@ -485,12 +524,11 @@
     }
 
     .hero-preview {
-      background: linear-gradient(180deg, rgba(26, 48, 85, 0.55) 0%, var(--navy-800) 100%);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: var(--surface-bg);
+      border: 1px solid var(--surface-border);
       border-radius: var(--radius-lg);
-      padding: 24px;
+      padding: 28px 28px 24px;
       width: 100%;
-      box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255, 255, 255, 0.04);
     }
 
     .hero-shift-badge {
@@ -498,69 +536,74 @@
       align-items: center;
       justify-content: center;
       padding: 7px 16px;
-      margin-bottom: 14px;
-      font-size: 0.68rem;
+      margin-bottom: 16px;
+      font-size: 0.6875rem;
       font-weight: 600;
       letter-spacing: 0.1em;
       text-transform: uppercase;
-      color: var(--gray-200);
+      color: var(--gray-300);
       background: rgba(12, 24, 41, 0.72);
-      border: 1px solid rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: 100px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.14);
     }
 
     .hero-preview-label {
-      font-size: 0.72rem;
+      font-size: 0.6875rem;
       font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 0.07em;
-      color: var(--gray-300);
-      margin-bottom: 16px;
+      letter-spacing: 0.12em;
+      color: var(--gray-400);
+      margin-bottom: 18px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .hero-preview-sections {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
 
     .hero-preview-section {
-      padding: 12px 14px;
+      padding: 14px 16px;
       background: var(--navy-900);
-      border: 1px solid rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.06);
       border-radius: var(--radius);
-      margin-bottom: 8px;
     }
-
-    .hero-preview-section:last-child { margin-bottom: 0; }
 
     .hero-preview-section strong {
       display: block;
-      font-size: 0.72rem;
+      font-size: 0.6875rem;
       font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--blue-400);
-      margin-bottom: 6px;
+      letter-spacing: 0.1em;
+      color: var(--gray-400);
+      margin-bottom: 8px;
     }
 
     .hero-preview-section span {
-      font-size: 0.82rem;
-      color: var(--gray-300);
-      line-height: 1.55;
+      display: block;
+      font-size: 0.8125rem;
+      color: var(--gray-200);
+      line-height: 1.6;
     }
 
     /* ── Interactive Demo ── */
-    .demo {
-      background: var(--navy-950);
-      padding: 48px 0 64px;
-    }
-
     .demo-flow-label {
       text-align: center;
-      font-size: 0.85rem;
+      font-size: 0.8125rem;
       font-weight: 500;
       color: var(--gray-400);
-      margin-bottom: 20px;
-      letter-spacing: 0.02em;
+      margin-bottom: 24px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
     }
 
-    .demo-flow-label span { color: var(--blue-400); }
+    .demo-flow-label span {
+      color: var(--gray-300);
+      text-transform: none;
+      letter-spacing: normal;
+    }
 
     .demo-wrapper {
       display: grid;
@@ -572,8 +615,8 @@
     }
 
     .demo-panel {
-      background: var(--navy-800);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: var(--surface-bg);
+      border: 1px solid var(--surface-border);
       border-radius: var(--radius-lg);
       display: flex;
       flex-direction: column;
@@ -585,11 +628,13 @@
     .demo-panel-header {
       padding: 14px 20px;
       min-height: 48px;
-      background: rgba(0, 0, 0, 0.22);
+      background: rgba(0, 0, 0, 0.15);
       border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-      font-size: 0.78rem;
+      font-size: 0.75rem;
       font-weight: 600;
-      color: var(--gray-300);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--gray-400);
       display: flex;
       align-items: center;
       gap: 8px;
@@ -677,25 +722,28 @@
     .demo-placeholder-outline {
       display: flex;
       flex-direction: column;
-      gap: 11px;
+      gap: 10px;
     }
 
     .demo-placeholder-section {
       display: block;
-      font-size: 0.72rem;
+      font-size: 0.6875rem;
       font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: rgba(122, 135, 153, 0.5);
+      letter-spacing: 0.1em;
+      color: rgba(122, 135, 153, 0.45);
       line-height: 1.4;
+      padding: 14px 16px;
+      border: 1px dashed rgba(255, 255, 255, 0.06);
+      border-radius: var(--radius);
     }
 
     .demo-output-section {
-      padding: 12px 14px;
+      padding: 14px 16px;
       background: var(--navy-900);
-      border: 1px solid rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.06);
       border-radius: var(--radius);
-      margin-bottom: 8px;
+      margin-bottom: 10px;
       opacity: 0;
       transform: translateY(8px);
       transition: opacity 0.35s ease, transform 0.35s ease;
@@ -709,29 +757,31 @@
     .demo-output-section:last-child { margin-bottom: 0; }
 
     .demo-output-section h4 {
-      font-size: 0.72rem;
+      font-size: 0.6875rem;
       font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--blue-400);
-      margin-bottom: 6px;
+      letter-spacing: 0.1em;
+      color: var(--gray-400);
+      margin-bottom: 8px;
     }
 
     .demo-output-section .handover-subtitle {
-      font-size: 0.72rem;
+      font-size: 0.6875rem;
       font-weight: 600;
-      color: var(--gray-200);
-      margin-bottom: 6px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--gray-400);
+      margin-bottom: 8px;
       line-height: 1.45;
     }
 
     .demo-output-section .handover-room {
-      font-size: 0.82rem;
+      font-size: 0.8125rem;
       font-weight: 600;
       color: var(--gray-100);
       margin-top: 4px;
       margin-bottom: 2px;
-      line-height: 1.45;
+      line-height: 1.5;
     }
 
     .demo-output-section .handover-room:first-of-type {
@@ -739,9 +789,9 @@
     }
 
     .demo-output-section p {
-      color: var(--gray-300);
-      font-size: 0.82rem;
-      line-height: 1.55;
+      color: var(--gray-200);
+      font-size: 0.8125rem;
+      line-height: 1.6;
       margin-bottom: 2px;
     }
 
@@ -785,10 +835,10 @@
 
     .demo-footnote {
       text-align: center;
-      font-size: 0.82rem;
-      color: var(--gray-500);
-      line-height: 1.65;
-      max-width: 560px;
+      font-size: 0.8125rem;
+      color: var(--gray-400);
+      line-height: 1.6;
+      max-width: var(--content-max);
       margin: 32px auto 0;
     }
 
@@ -798,73 +848,113 @@
     }
 
     /* ── One Intelligent Foundation ── */
-    .hotel-brain {
-      background: var(--navy-900);
-      padding: 48px 0;
+    .foundation-block {
+      padding: 36px 40px;
     }
 
-    .foundation-block {
+    .foundation-block.surface-panel {
       max-width: var(--max-width);
       margin: 0 auto;
-      padding: 36px 40px;
-      background: rgba(18, 34, 64, 0.4);
-      border: 1px solid rgba(74, 143, 196, 0.12);
-      border-radius: var(--radius-lg);
     }
 
-    .foundation-block .section-heading {
+    .foundation-header {
+      margin-bottom: 32px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .foundation-header .section-heading {
+      margin-bottom: 10px;
+    }
+
+    .foundation-intro {
+      max-width: var(--content-max);
+      margin: 0;
+    }
+
+    .foundation-stack {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 0 24px;
+      align-items: stretch;
       margin-bottom: 28px;
     }
 
-    .foundation-features {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 24px;
-      margin-bottom: 24px;
-    }
-
-    .foundation-feature {
+    .foundation-tier {
       padding: 24px;
-      background: rgba(7, 14, 26, 0.35);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: var(--radius-lg);
+      background: rgba(7, 14, 26, 0.25);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius);
       min-width: 0;
     }
 
     .foundation-feature-title {
-      font-size: 1.05rem;
-      font-weight: 700;
+      font-size: 1.0625rem;
+      font-weight: 600;
       color: var(--white);
       letter-spacing: -0.02em;
       margin-bottom: 10px;
-      line-height: 1.3;
+      line-height: 1.35;
     }
 
     .foundation-feature-text {
-      font-size: 0.92rem;
+      font-size: 0.9375rem;
       color: var(--gray-300);
-      line-height: 1.6;
+      line-height: 1.65;
+    }
+
+    .foundation-connector {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 0 4px;
+      min-width: 72px;
+    }
+
+    .foundation-connector-line {
+      display: block;
+      width: 1px;
+      flex: 1;
+      min-height: 24px;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .foundation-connector-label {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--gray-400);
+      white-space: nowrap;
+    }
+
+    .foundation-footer {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding-top: 28px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
     }
 
     .foundation-closing {
-      font-size: 0.88rem;
+      font-size: 0.875rem;
       color: var(--gray-400);
       line-height: 1.6;
-      max-width: 640px;
-      margin-bottom: 24px;
+      max-width: var(--content-max);
+      margin: 0;
+      flex: 1;
     }
 
     .foundation-demo-link {
       display: inline-flex;
+      flex-shrink: 0;
     }
 
     /* ── Waitlist ── */
-    .waitlist {
-      background: var(--navy-950);
-      border-top: 1px solid rgba(255, 255, 255, 0.04);
-      padding: 48px 0 64px;
-    }
-
     .waitlist-layout {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -884,9 +974,8 @@
     }
 
     .waitlist-lead,
-    .waitlist-trust-text,
     .waitlist-review-note {
-      font-size: 0.95rem;
+      font-size: 0.9375rem;
       color: var(--gray-300);
       line-height: 1.65;
     }
@@ -896,64 +985,46 @@
     }
 
     .waitlist-offer {
-      padding: 24px 26px;
-      margin-bottom: 24px;
-      background: rgba(18, 34, 64, 0.5);
-      border: 1px solid rgba(74, 143, 196, 0.22);
-      border-radius: var(--radius-lg);
-      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.04);
-    }
-
-    .waitlist-offer-label {
-      font-size: 0.7rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--blue-400);
-      margin-bottom: 12px;
+      padding: 28px;
+      margin-bottom: 0;
     }
 
     .waitlist-offer-text {
-      font-size: 0.95rem;
+      font-size: 0.9375rem;
       color: var(--gray-100);
       line-height: 1.6;
-      margin-bottom: 12px;
+      margin-bottom: 20px;
+      max-width: var(--content-max);
     }
 
     .waitlist-offer-detail {
-      font-size: 0.88rem;
-      color: var(--gray-300);
-      line-height: 1.55;
-    }
-
-    .waitlist-offer-detail + .waitlist-offer-detail {
-      margin-top: 8px;
-    }
-
-    .waitlist-offer-detail--muted {
-      font-size: 0.84rem;
-      color: var(--gray-400);
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--gray-200);
+      line-height: 1.5;
+      margin-bottom: 12px;
     }
 
     .waitlist-offer-note {
-      font-size: 0.84rem;
-      color: var(--gray-300);
-      line-height: 1.5;
-      margin-top: 14px;
-      padding-top: 14px;
-      border-top: 1px solid rgba(255, 255, 255, 0.07);
+      font-size: 0.8125rem;
+      color: var(--gray-400);
+      line-height: 1.55;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      max-width: var(--content-max);
     }
 
     .waitlist-offer-includes {
-      margin: 10px 0 12px;
+      margin: 0;
     }
 
     .waitlist-offer-availability {
-      margin-top: 12px;
-      font-size: 0.78rem;
+      margin-top: 14px;
+      font-size: 0.8125rem;
       font-weight: 500;
-      color: var(--blue-400);
-      letter-spacing: 0.02em;
+      color: var(--gray-300);
+      letter-spacing: 0.01em;
       min-height: 1.25em;
     }
 
@@ -962,36 +1033,30 @@
       font-weight: 400;
     }
 
-    .waitlist-note {
-      font-size: 0.88rem;
-      color: var(--gray-400);
-      line-height: 1.55;
-      margin-bottom: 10px;
+    .pilot-credibility {
+      margin-top: 28px;
+      padding-top: 24px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      max-width: var(--content-max);
     }
 
-    .waitlist-includes {
-      margin-bottom: 16px;
-    }
-
-    .waitlist-includes-label {
-      font-size: 0.68rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.07em;
+    .pilot-credibility-text {
+      font-size: 0.875rem;
       color: var(--gray-400);
-      margin-bottom: 12px;
+      line-height: 1.6;
+      margin: 0;
     }
 
     .waitlist-includes-list {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 10px;
     }
 
     .waitlist-includes-list li {
-      font-size: 0.88rem;
+      font-size: 0.875rem;
       color: var(--gray-300);
-      line-height: 1.5;
+      line-height: 1.55;
       padding-left: 22px;
       position: relative;
     }
@@ -1006,45 +1071,19 @@
       font-size: 0.82rem;
     }
 
-    .waitlist-trust {
-      padding-top: 20px;
-      margin-bottom: 0;
-      border-top: 1px solid rgba(255, 255, 255, 0.06);
-    }
-
-    .waitlist-trust-label {
-      font-size: 0.68rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.07em;
-      color: var(--gray-400);
-      margin-bottom: 12px;
-    }
-
-    .waitlist-trust-text + .waitlist-trust-text {
-      margin-top: 10px;
-    }
-
-    .waitlist-review-note {
-      margin-top: 10px;
-    }
-
     .waitlist-form-card {
-      background: rgba(18, 34, 64, 0.55);
-      border: 1px solid rgba(74, 143, 196, 0.18);
-      border-radius: var(--radius-lg);
       padding: 32px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.04);
     }
 
     .form-group { margin-bottom: 18px; }
 
     .form-group label {
       display: block;
-      font-size: 0.875rem;
+      font-size: 0.8125rem;
       font-weight: 500;
+      letter-spacing: 0.01em;
       margin-bottom: 8px;
-      color: var(--gray-200);
+      color: var(--gray-300);
     }
 
     .form-group input,
@@ -1305,7 +1344,23 @@
       .hero-grid { grid-template-columns: 1fr; gap: 40px; }
       .hero-visual { max-width: 440px; margin: 0 auto; width: 100%; }
       .foundation-block { padding: 28px 28px; }
-      .foundation-features { grid-template-columns: 1fr; gap: 16px; }
+      .foundation-stack {
+        grid-template-columns: 1fr;
+        gap: 0;
+      }
+      .foundation-connector {
+        flex-direction: row;
+        padding: 20px 0;
+        min-width: 0;
+        width: 100%;
+      }
+      .foundation-connector-line {
+        width: auto;
+        height: 1px;
+        flex: 1;
+        min-height: 0;
+      }
+      .foundation-footer { flex-direction: column; align-items: flex-start; }
       .waitlist-layout { grid-template-columns: 1fr; gap: 36px; max-width: 560px; }
       .demo-wrapper { grid-template-columns: 1fr; gap: 12px; max-width: 560px; align-items: start; }
       .demo-arrow { transform: rotate(90deg); padding: 4px 0; align-self: center; }
@@ -1320,7 +1375,7 @@
 
     @media (max-width: 768px) {
       :root {
-        --section-padding: 40px;
+        --section-padding: 48px;
         --header-height: 64px;
       }
 
@@ -1431,21 +1486,23 @@
             <span class="hero-shift-badge">AI-Generated Shift Handover</span>
             <div class="hero-preview">
               <div class="hero-preview-label">Structured Handover Preview</div>
-              <div class="hero-preview-section">
-                <strong>Urgent Issues</strong>
-                <span>Room 24 — Air conditioning not cooling properly. Maintenance follow-up required.</span>
-              </div>
-              <div class="hero-preview-section">
-                <strong>VIP Guests</strong>
-                <span>VIP arriving tomorrow at 11:00 — allocate a quiet upper-floor room. Room 42 if available.</span>
-              </div>
-              <div class="hero-preview-section">
-                <strong>Outstanding Tasks</strong>
-                <span>Room 15 and Room 37 — guest adapters to be collected before departure.</span>
-              </div>
-              <div class="hero-preview-section">
-                <strong>Tomorrow's Priorities</strong>
-                <span>Follow-up Room 18 open balance.<br>Prepare Room 42 for the VIP arrival.<br>Confirm Room 56 airport transfer for 10:15.</span>
+              <div class="hero-preview-sections">
+                <div class="hero-preview-section">
+                  <strong>Urgent Issues</strong>
+                  <span>Room 24 — Air conditioning not cooling properly. Maintenance follow-up required.</span>
+                </div>
+                <div class="hero-preview-section">
+                  <strong>VIP Guests</strong>
+                  <span>VIP arriving tomorrow at 11:00 — allocate a quiet upper-floor room. Room 42 if available.</span>
+                </div>
+                <div class="hero-preview-section">
+                  <strong>Outstanding Tasks</strong>
+                  <span>Room 15 and Room 37 — guest adapters to be collected before departure.</span>
+                </div>
+                <div class="hero-preview-section">
+                  <strong>Tomorrow&rsquo;s Priorities</strong>
+                  <span>Follow-up Room 18 open balance.<br>Prepare Room 42 for the VIP arrival.<br>Confirm Room 56 airport transfer for 10:15.</span>
+                </div>
               </div>
             </div>
           </div>
@@ -1456,20 +1513,32 @@
     <!-- One Intelligent Foundation -->
     <section class="hotel-brain" id="hotel-brain">
       <div class="container">
-        <div class="foundation-block reveal">
-          <h2 class="section-heading" id="product">One Intelligent Foundation</h2>
-          <div class="foundation-features">
-            <div class="foundation-feature">
+        <div class="foundation-block surface-panel reveal">
+          <div class="foundation-header">
+            <h2 class="section-heading" id="product">One Intelligent Foundation</h2>
+            <p class="foundation-intro type-body">Hotel Brain powers AI Shift Handover — and every workflow Hospitality Flow builds from real hotel needs.</p>
+          </div>
+          <div class="foundation-stack">
+            <div class="foundation-tier">
+              <p class="type-label">Foundation</p>
               <h3 class="foundation-feature-title">Hotel Brain™</h3>
-              <p class="foundation-feature-text">Every hotel operates differently. Hotel Brain stores your property knowledge, standards, rooms, guest preferences and operational rules in one intelligent foundation.</p>
+              <p class="foundation-feature-text">Your property knowledge, standards, rooms, guest preferences and operational rules — organised in one intelligent foundation.</p>
             </div>
-            <div class="foundation-feature">
+            <div class="foundation-connector" aria-hidden="true">
+              <span class="foundation-connector-line"></span>
+              <span class="foundation-connector-label">Powers</span>
+              <span class="foundation-connector-line"></span>
+            </div>
+            <div class="foundation-tier">
+              <p class="type-label">Current Workflow</p>
               <h3 class="foundation-feature-title">AI Shift Handover</h3>
               <p class="foundation-feature-text">Turn scattered shift notes into clear, structured handovers informed by your hotel&rsquo;s own knowledge.</p>
             </div>
           </div>
-          <p class="foundation-closing">Hospitality Flow will grow through additional AI workflows powered by the same Hotel Brain, based on real hotel needs.</p>
-          <a href="#handover-demo" class="btn btn-secondary foundation-demo-link">Try Interactive Demo</a>
+          <div class="foundation-footer">
+            <p class="foundation-closing">Hospitality Flow will grow through additional AI workflows powered by the same Hotel Brain, based on real hotel needs.</p>
+            <a href="#handover-demo" class="btn btn-secondary foundation-demo-link">Try Interactive Demo</a>
+          </div>
         </div>
       </div>
     </section>
@@ -1536,7 +1605,7 @@
           </div>
         </div>
 
-        <p class="demo-footnote reveal">The full platform also includes hotel details, arrivals, departures, occupancy, shift information, saved handovers and export tools.</p>
+        <p class="demo-footnote reveal">Includes hotel details, arrivals, departures, occupancy, saved handovers and export tools.</p>
       </div>
     </section>
 
@@ -1546,10 +1615,9 @@
         <div class="waitlist-layout reveal">
           <div class="waitlist-info">
             <h2 class="section-heading">Founding Pilot Programme</h2>
-            <div class="waitlist-offer">
-              <p class="waitlist-offer-label">Founding Pilot Programme</p>
-              <p class="waitlist-offer-text">We&rsquo;re looking for 10 independent and boutique hotels to help shape the future of Hospitality Flow.</p>
-              <p class="waitlist-offer-detail"><strong>As a Founding Pilot Hotel you&rsquo;ll receive:</strong></p>
+            <div class="waitlist-offer surface-panel">
+              <p class="waitlist-offer-text">We&rsquo;re looking for 10 independent and boutique hotels to help shape Hospitality Flow.</p>
+              <p class="waitlist-offer-detail">As a Founding Pilot Hotel you&rsquo;ll receive:</p>
               <ul class="waitlist-includes-list waitlist-offer-includes">
                 <li>AI Shift Handover throughout the pilot programme</li>
                 <li>Personal onboarding tailored to your hotel</li>
@@ -1560,25 +1628,13 @@
               <p class="waitlist-offer-note">Applications are personally reviewed to ensure we&rsquo;re working with hotels where we can provide the most value.</p>
               <p class="waitlist-offer-availability is-loading" id="founding-availability" aria-live="polite">Checking availability…</p>
             </div>
-            <div class="waitlist-includes">
-              <p class="waitlist-includes-label">What&rsquo;s included</p>
-              <ul class="waitlist-includes-list">
-                <li>AI Shift Handover throughout the pilot programme</li>
-                <li>Personal onboarding tailored to your hotel</li>
-                <li>Ongoing support throughout the pilot</li>
-                <li>Direct input into future product development</li>
-                <li>Opportunity to become one of our first published success stories</li>
-              </ul>
-            </div>
-            <div class="waitlist-trust">
-              <p class="waitlist-trust-label">Built by a hotel professional</p>
-              <p class="waitlist-trust-text">Hospitality Flow is developed from real day-to-day operational experience in independent and boutique hotels.</p>
-              <p class="waitlist-trust-text">Every feature is designed to solve practical operational challenges encountered during real hotel shifts—not theoretical workflows.</p>
-              <p class="waitlist-trust-text">Our goal is simple: build an AI operations platform for boutique hotels — starting with AI Shift Handover, powered by Hotel Brain.</p>
+            <div class="pilot-credibility">
+              <p class="type-label">Built from real hotel operations</p>
+              <p class="pilot-credibility-text">Hospitality Flow is designed around practical challenges faced by independent and boutique hotel teams.</p>
             </div>
           </div>
 
-          <div class="waitlist-form-card">
+          <div class="waitlist-form-card surface-panel">
             <form id="waitlist-form" novalidate>
               <div class="form-group">
                 <label for="first-name">First name</label>
