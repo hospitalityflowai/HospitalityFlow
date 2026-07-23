@@ -8,17 +8,27 @@
   var SCHEMA_V3 = 3;
 
   var PROFILE_SECTIONS = [
-    { id: 'general', label: 'General Hotel Details', shortLabel: 'General', icon: 'home' },
-    { id: 'rooms-facilities', label: 'Rooms & Facilities', shortLabel: 'Rooms & Facilities', icon: 'grid' },
-    { id: 'departments-shifts', label: 'Departments & Shifts', shortLabel: 'Departments', icon: 'users' },
-    { id: 'policies', label: 'Policies', shortLabel: 'Policies', icon: 'document' },
-    { id: 'reservations-payments', label: 'Reservations & Payments', shortLabel: 'Reservations & Payments', icon: 'card' },
-    { id: 'guest-services', label: 'Guest Services', shortLabel: 'Guest Services', icon: 'concierge' },
-    { id: 'inventory', label: 'Inventory', shortLabel: 'Inventory', icon: 'box' },
-    { id: 'operations', label: 'Operations', shortLabel: 'Operations', icon: 'activity' },
-    { id: 'operational-knowledge', label: 'Operational Knowledge', shortLabel: 'Operational Knowledge', icon: 'activity' },
-    { id: 'hotel-knowledge', label: 'Hotel Knowledge', shortLabel: 'Hotel Knowledge', icon: 'knowledge' },
-    { id: 'advanced-settings', label: 'Advanced Settings', shortLabel: 'Advanced', icon: 'settings' }
+    { id: 'general', label: 'General Hotel Details', shortLabel: 'General', icon: 'home', layer: 'essential' },
+    { id: 'rooms-facilities', label: 'Rooms & Facilities', shortLabel: 'Rooms & Facilities', icon: 'grid', layer: 'essential' },
+    { id: 'departments-shifts', label: 'Departments & Shifts', shortLabel: 'Departments', icon: 'users', layer: 'essential' },
+    { id: 'policies', label: 'Policies', shortLabel: 'Policies', icon: 'document', layer: 'essential' },
+    { id: 'hotel-knowledge', label: 'Hotel Knowledge', shortLabel: 'Hotel Knowledge', icon: 'knowledge', layer: 'essential' },
+    { id: 'reservations-payments', label: 'Reservations & Payments', shortLabel: 'Reservations & Payments', icon: 'card', layer: 'optional' },
+    { id: 'guest-services', label: 'Guest Services', shortLabel: 'Guest Services', icon: 'concierge', layer: 'optional' },
+    { id: 'inventory', label: 'Inventory', shortLabel: 'Inventory', icon: 'box', layer: 'optional' },
+    { id: 'operations', label: 'Operations', shortLabel: 'Operations', icon: 'activity', layer: 'optional' },
+    { id: 'operational-knowledge', label: 'Operational Knowledge', shortLabel: 'Operational Knowledge', icon: 'activity', layer: 'optional' },
+    { id: 'advanced-settings', label: 'Advanced Settings', shortLabel: 'Advanced', icon: 'settings', layer: 'advanced' }
+  ];
+
+  var NAV_LAYERS = [
+    { id: 'essential', label: 'Essential Setup', defaultExpanded: true },
+    { id: 'optional', label: 'Optional Modules', defaultExpanded: false },
+    { id: 'advanced', label: 'Advanced', defaultExpanded: false }
+  ];
+
+  var ESSENTIAL_PROGRESS_SECTIONS = [
+    'general', 'rooms-facilities', 'departments-shifts', 'policies', 'hotel-knowledge'
   ];
 
   var PROGRESS_SECTIONS = [
@@ -113,6 +123,12 @@
     { type: 'direct', label: 'Direct bookings' },
     { type: 'corporate', label: 'Corporate bookings' },
     { type: 'other', label: 'Other channels' }
+  ];
+
+  var TRACKER_GROUPS = [
+    { id: 'guest', label: 'Guest & keys', keys: ['lostProperty', 'physicalKeys', 'keyCards', 'noShows', 'guestProfile'] },
+    { id: 'finance', label: 'Finance & balances', keys: ['complimentary', 'refunds', 'openBalances'] },
+    { id: 'reporting', label: 'Reports & handovers', keys: ['dailyLineup', 'glitchReport', 'managerFlash', 'outOfOrder', 'airportTransfers', 'morningEmail'] }
   ];
 
   var TRACKER_DEFS = [
@@ -368,6 +384,9 @@
       list.appendChild(buildSimplePolicyCard(item.group, item.key, item.label, entry, false));
     });
     root.appendChild(list);
+    bindDisclosureCards(list, '.policy-card', function (card) {
+      return card.classList.contains('disclosure-card--filled');
+    });
     if (allowCustom) {
       var customWrap = document.createElement('div');
       customWrap.className = 'policy-custom-list';
@@ -381,7 +400,9 @@
       addBtn.className = 'add-row-btn';
       addBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add another policy';
       addBtn.addEventListener('click', function () {
-        customWrap.appendChild(buildSimplePolicyCard('custom', 'custom_' + Date.now(), 'Custom policy', emptyPolicyEntry('Custom policy'), true));
+        var newCard = buildSimplePolicyCard('custom', 'custom_' + Date.now(), 'Custom policy', emptyPolicyEntry('Custom policy'), true);
+        customWrap.appendChild(newCard);
+        setDisclosureExpanded(newCard, true);
         root.dispatchEvent(new CustomEvent('profile-change', { bubbles: true }));
       });
       root.appendChild(addBtn);
@@ -407,15 +428,24 @@
   }
 
   function buildSimplePolicyCard(groupId, key, label, entry, isCustom) {
+    var hasContent = policyEntryHasContent(entry);
     var card = document.createElement('div');
-    card.className = 'policy-card';
+    card.className = 'policy-card disclosure-card disclosure-card--collapsed' + (hasContent ? ' disclosure-card--filled' : '');
     card.setAttribute('data-policy-key', key);
     card.setAttribute('data-policy-group-id', groupId);
+    var metaText = hasContent ? (trimDisclosureText(entry.summary) || 'Configured') : 'Not configured';
     card.innerHTML =
       '<div class="policy-card-header">' +
+      '<button type="button" class="disclosure-card-toggle policy-card-toggle" aria-expanded="' + (hasContent ? 'true' : 'false') + '">' +
+      '<span class="policy-card-title-wrap">' +
       '<span class="policy-card-title">' + esc(label) + '</span>' +
+      '<span class="disclosure-card-meta">' + esc(metaText.length > 48 ? metaText.substring(0, 48) + '…' : metaText) + '</span>' +
+      '</span>' +
+      disclosureChevron() +
+      '</button>' +
       (isCustom ? '<button type="button" class="icon-btn remove-custom-policy" aria-label="Remove policy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>' : '') +
       '</div>' +
+      '<div class="disclosure-card-body"' + (hasContent ? '' : ' hidden') + '>' +
       '<input type="hidden" data-f="title" value="' + esc(entry.title || label) + '">' +
       '<div class="form-group"><label class="form-label">Short summary</label><input class="form-input" data-f="summary" value="' + esc(entry.summary) + '" placeholder="One-line summary for staff"></div>' +
       '<div class="form-group"><label class="form-label">Detailed instructions</label><textarea class="notes-textarea" data-f="instructions" style="min-height:72px" placeholder="What should staff do?">' + esc(entry.instructions) + '</textarea></div>' +
@@ -423,7 +453,8 @@
       (isCustom ? '<div class="form-group"><label class="form-label">Policy name</label><input class="form-input" data-f="title-edit" value="' + esc(entry.title || label) + '" placeholder="e.g. Day-use rooms"></div>' : '') +
       '<input type="hidden" data-f="approvalLevel" value="' + esc(entry.approvalLevel) + '">' +
       '<input type="hidden" data-f="escalation" value="' + esc(entry.escalation) + '">' +
-      '<input type="hidden" data-f="lastUpdated" value="' + esc(entry.lastUpdated) + '">';
+      '<input type="hidden" data-f="lastUpdated" value="' + esc(entry.lastUpdated) + '">' +
+      '</div>';
     if (isCustom) {
       var titleEdit = card.querySelector('[data-f="title-edit"]');
       var titleHidden = card.querySelector('[data-f="title"]');
@@ -435,6 +466,8 @@
         });
       }
     }
+    bindDisclosureCard(card, hasContent);
+    bindPolicyCardInputs(card);
     return card;
   }
 
@@ -452,6 +485,7 @@
       ch.label = ch.label || def.label;
       root.appendChild(buildReservationCard(ch, idx));
     });
+    bindDisclosureCards(root, '.reservation-card');
     root.querySelectorAll('[data-more-toggle]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var card = btn.closest('[data-ota-channel]');
@@ -466,15 +500,20 @@
   }
 
   function buildReservationCard(ch, idx) {
+    var hasContent = otaChannelHasContent(ch);
+    var metaText = hasContent ? 'Configured' : 'Not configured';
     var card = document.createElement('div');
-    card.className = 'reservation-card';
+    card.className = 'reservation-card disclosure-card disclosure-card--collapsed' + (hasContent ? ' disclosure-card--filled' : '');
     card.setAttribute('data-ota-channel', idx);
     card.innerHTML =
-      '<div class="reservation-card-header" data-collapse-toggle>' +
-      '<h4>' + esc(ch.label) + '</h4>' +
-      '<button type="button" class="collapse-toggle" aria-label="Expand channel" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>' +
-      '</div>' +
-      '<div class="reservation-card-body">' +
+      '<button type="button" class="reservation-card-header disclosure-card-toggle" data-collapse-toggle aria-expanded="false">' +
+      '<span class="reservation-card-title">' + esc(ch.label) + '</span>' +
+      '<span class="reservation-card-status">' +
+      '<span class="disclosure-card-meta">' + metaText + '</span>' +
+      disclosureChevron() +
+      '</span>' +
+      '</button>' +
+      '<div class="reservation-card-body disclosure-card-body" hidden>' +
       '<input type="hidden" data-f="type" value="' + esc(ch.type) + '">' +
       '<input type="hidden" data-f="label" value="' + esc(ch.label) + '">' +
       '<div class="form-grid">' +
@@ -512,25 +551,62 @@
     });
   }
 
+  function trackerByKey(trackers, key) {
+    var list = trackers || [];
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].key === key) return list[i];
+    }
+    for (var j = 0; j < TRACKER_DEFS.length; j++) {
+      if (TRACKER_DEFS[j].key === key) return emptyTracker(TRACKER_DEFS[j].key, TRACKER_DEFS[j].label);
+    }
+    return emptyTracker(key, key);
+  }
+
   function renderTrackers(root, trackers) {
     if (!root) return;
     root.innerHTML = '';
-    (trackers || []).forEach(function (tr, idx) {
-      root.appendChild(buildTrackerCard(tr, idx));
+    TRACKER_GROUPS.forEach(function (group) {
+      var enabledCount = 0;
+      var configuredCount = 0;
+      group.keys.forEach(function (key) {
+        var tr = trackerByKey(trackers, key);
+        if (tr.enabled) enabledCount += 1;
+        if (trackerHasContent(tr)) configuredCount += 1;
+      });
+
+      var groupEl = document.createElement('div');
+      groupEl.className = 'tracker-group disclosure-card disclosure-card--collapsed';
+      groupEl.setAttribute('data-tracker-group', group.id);
+      groupEl.innerHTML =
+        '<button type="button" class="disclosure-card-toggle tracker-group-toggle" aria-expanded="false">' +
+        '<span class="tracker-group-label">' + esc(group.label) + '</span>' +
+        '<span class="disclosure-card-meta">' + enabledCount + ' enabled · ' + group.keys.length + ' trackers</span>' +
+        disclosureChevron() +
+        '</button>' +
+        '<div class="disclosure-card-body tracker-group-body" hidden></div>';
+
+      var body = groupEl.querySelector('.tracker-group-body');
+      group.keys.forEach(function (key) {
+        body.appendChild(buildTrackerCard(trackerByKey(trackers, key), key));
+      });
+      root.appendChild(groupEl);
+      bindDisclosureCard(groupEl, false);
     });
   }
 
   function buildTrackerCard(tr, idx) {
+    var hasContent = trackerHasContent(tr);
     var card = document.createElement('div');
-    card.className = 'tracker-card';
+    card.className = 'tracker-card disclosure-card disclosure-card--collapsed' + (hasContent ? ' disclosure-card--filled' : '');
     card.setAttribute('data-tracker', tr.key);
     card.innerHTML =
       '<div class="tracker-card-header">' +
       '<label class="tracker-enabled"><input type="checkbox" data-f="enabled"' + (tr.enabled ? ' checked' : '') + '> ' + esc(tr.label) + '</label>' +
+      '<button type="button" class="btn-text disclosure-card-toggle tracker-config-toggle" aria-expanded="false" aria-label="Configure ' + esc(tr.label) + '">Configure</button>' +
       '</div>' +
       '<input type="hidden" data-f="key" value="' + esc(tr.key) + '">' +
       '<input type="hidden" data-f="label" value="' + esc(tr.label) + '">' +
-      '<div class="entry-card-grid">' +
+      '<div class="disclosure-card-body entry-card-grid" hidden>' +
       field('Responsible department', 'department', tr.department) +
       fieldArea('Required fields', 'requiredFields', tr.requiredFields) +
       fieldArea('Escalation rules', 'escalationRules', tr.escalationRules) +
@@ -538,6 +614,14 @@
       field('Retention period', 'retentionPeriod', tr.retentionPeriod) +
       fieldArea('Custom notes', 'notes', tr.notes) +
       '</div>';
+    var configToggle = card.querySelector('.tracker-config-toggle');
+    var body = card.querySelector('.disclosure-card-body');
+    if (configToggle && body) {
+      configToggle.addEventListener('click', function (e) {
+        e.stopPropagation();
+        setDisclosureExpanded(card, configToggle.getAttribute('aria-expanded') !== 'true');
+      });
+    }
     return card;
   }
 
@@ -565,6 +649,95 @@
     return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
   }
 
+  function trimDisclosureText(v) {
+    return String(v == null ? '' : v).trim();
+  }
+
+  function policyEntryHasContent(entry) {
+    if (!entry) return false;
+    return !!(trimDisclosureText(entry.summary) || trimDisclosureText(entry.instructions) || trimDisclosureText(entry.charge));
+  }
+
+  function otaChannelHasContent(ch) {
+    if (!ch) return false;
+    return ['paymentModel', 'prepaidOrPayAtProperty', 'refundable', 'cancellationDeadline', 'virtualCardActivation',
+      'cardExpiryRules', 'commissionNotes', 'invoiceRules', 'refundProcedure', 'specialInstructions'].some(function (key) {
+      return !!trimDisclosureText(ch[key]);
+    });
+  }
+
+  function trackerHasContent(tr) {
+    if (!tr) return false;
+    return !!(tr.enabled || trimDisclosureText(tr.notes) || trimDisclosureText(tr.department) ||
+      trimDisclosureText(tr.requiredFields) || trimDisclosureText(tr.escalationRules) ||
+      trimDisclosureText(tr.emailRecipients) || trimDisclosureText(tr.retentionPeriod));
+  }
+
+  function disclosureChevron() {
+    return '<span class="disclosure-card-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></span>';
+  }
+
+  function setDisclosureExpanded(card, expanded) {
+    if (!card) return;
+    var toggle = card.querySelector('.disclosure-card-toggle');
+    var body = card.querySelector('.disclosure-card-body');
+    card.classList.toggle('disclosure-card--collapsed', !expanded);
+    card.classList.remove('profile-card--collapsed');
+    if (toggle) toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+    if (body) body.hidden = !expanded;
+  }
+
+  function bindDisclosureCard(card, startExpanded) {
+    if (!card || card.getAttribute('data-disclosure-bound')) return;
+    var toggle = card.querySelector('.disclosure-card-toggle');
+    if (!toggle) return;
+    card.setAttribute('data-disclosure-bound', '1');
+    setDisclosureExpanded(card, !!startExpanded);
+    toggle.addEventListener('click', function (e) {
+      if (e.target.closest('.icon-btn, .remove-custom-policy, .tracker-enabled, input, textarea, select, button:not(.disclosure-card-toggle)')) return;
+      setDisclosureExpanded(card, toggle.getAttribute('aria-expanded') !== 'true');
+    });
+    toggle.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        setDisclosureExpanded(card, toggle.getAttribute('aria-expanded') !== 'true');
+      }
+    });
+  }
+
+  function bindDisclosureCards(root, selector, expandIf) {
+    if (!root) return;
+    var cards = root.querySelectorAll(selector || '.disclosure-card');
+    cards.forEach(function (card) {
+      var expanded = expandIf ? expandIf(card) : false;
+      bindDisclosureCard(card, expanded);
+    });
+  }
+
+  function updatePolicyCardMeta(card) {
+    if (!card) return;
+    var meta = card.querySelector('.disclosure-card-meta');
+    if (!meta) return;
+    var summary = (card.querySelector('[data-f="summary"]') || {}).value || '';
+    var instructions = (card.querySelector('[data-f="instructions"]') || {}).value || '';
+    if (trimDisclosureText(summary)) meta.textContent = summary.length > 48 ? summary.substring(0, 48) + '…' : summary;
+    else if (trimDisclosureText(instructions)) meta.textContent = 'Configured';
+    else meta.textContent = 'Not configured';
+    card.classList.toggle('disclosure-card--filled', policyEntryHasContent({
+      summary: summary,
+      instructions: instructions,
+      charge: (card.querySelector('[data-f="charge"]') || {}).value || ''
+    }));
+  }
+
+  function bindPolicyCardInputs(card) {
+    if (!card || card.getAttribute('data-policy-input-bound')) return;
+    card.setAttribute('data-policy-input-bound', '1');
+    card.querySelectorAll('[data-f="summary"], [data-f="instructions"], [data-f="charge"]').forEach(function (el) {
+      el.addEventListener('input', function () { updatePolicyCardMeta(card); });
+    });
+  }
+
   function updateEmptyState(listEl, emptyId, show) {
     var el = document.getElementById(emptyId);
     if (el) el.classList.toggle('is-hidden', !show);
@@ -573,34 +746,102 @@
     }
   }
 
+  function buildSectionNavLink(sec, isFirst) {
+    var link = document.createElement('a');
+    link.className = 'section-nav-link' + (isFirst ? ' active' : '');
+    link.href = '#' + sec.id;
+    link.setAttribute('data-section', sec.id);
+    link.innerHTML =
+      '<span class="nav-icon">' + sectionIconSvg(sec.icon) + '</span>' +
+      '<span class="nav-label">' + esc(sec.shortLabel || sec.label) + '</span>' +
+      '<span class="nav-check" aria-hidden="true">✓</span>';
+    return link;
+  }
+
+  function buildMobileNavLink(sec, isFirst) {
+    var mLink = document.createElement('a');
+    mLink.className = 'mobile-nav-link' + (isFirst ? ' active' : '');
+    mLink.href = '#' + sec.id;
+    mLink.setAttribute('data-section', sec.id);
+    mLink.textContent = sec.shortLabel || sec.label;
+    return mLink;
+  }
+
+  function buildMobileLayerChip(label) {
+    var chip = document.createElement('span');
+    chip.className = 'mobile-nav-layer-chip';
+    chip.setAttribute('aria-hidden', 'true');
+    chip.textContent = label;
+    return chip;
+  }
+
+  function toggleNavGroup(toggle, panel) {
+    var expanded = toggle.getAttribute('aria-expanded') !== 'true';
+    toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+    panel.hidden = !expanded;
+    toggle.classList.toggle('is-expanded', expanded);
+  }
+
   function initSidebarNav(ctx) {
     var sectionNav = document.getElementById('sectionNav');
     var mobileNav = document.getElementById('mobileNav');
     if (!sectionNav) return;
 
-    sectionNav.querySelectorAll('.section-nav-link').forEach(function (l) { l.remove(); });
+    sectionNav.innerHTML = '';
     if (mobileNav) {
       mobileNav.innerHTML = '';
       mobileNav.hidden = false;
     }
 
-    PROFILE_SECTIONS.forEach(function (sec, i) {
-      var link = document.createElement('a');
-      link.className = 'section-nav-link' + (i === 0 ? ' active' : '');
-      link.href = '#' + sec.id;
-      link.setAttribute('data-section', sec.id);
-      link.innerHTML =
-        '<span class="nav-icon">' + sectionIconSvg(sec.icon) + '</span>' +
-        '<span class="nav-label">' + esc(sec.shortLabel || sec.label) + '</span>' +
-        '<span class="nav-check" aria-hidden="true">✓</span>';
-      sectionNav.appendChild(link);
+    var firstSectionId = PROFILE_SECTIONS.length ? PROFILE_SECTIONS[0].id : 'general';
+
+    NAV_LAYERS.forEach(function (layer) {
+      var layerSections = PROFILE_SECTIONS.filter(function (sec) { return sec.layer === layer.id; });
+      if (!layerSections.length) return;
+
+      var group = document.createElement('div');
+      group.className = 'section-nav-group';
+      group.setAttribute('data-nav-layer', layer.id);
+
+      var toggle = document.createElement('button');
+      toggle.type = 'button';
+      toggle.className = 'section-nav-group-toggle' + (layer.defaultExpanded ? ' is-expanded' : '');
+      toggle.setAttribute('aria-expanded', layer.defaultExpanded ? 'true' : 'false');
+      toggle.setAttribute('aria-controls', 'section-nav-group-' + layer.id);
+      toggle.innerHTML =
+        '<span class="section-nav-group-label">' + esc(layer.label) + '</span>' +
+        '<span class="section-nav-group-chevron" aria-hidden="true">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>' +
+        '</span>';
+
+      var panel = document.createElement('div');
+      panel.id = 'section-nav-group-' + layer.id;
+      panel.className = 'section-nav-group-panel';
+      panel.hidden = !layer.defaultExpanded;
+
+      layerSections.forEach(function (sec) {
+        panel.appendChild(buildSectionNavLink(sec, sec.id === firstSectionId));
+      });
+
+      toggle.addEventListener('click', function () {
+        toggleNavGroup(toggle, panel);
+      });
+      toggle.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          toggleNavGroup(toggle, panel);
+        }
+      });
+
+      group.appendChild(toggle);
+      group.appendChild(panel);
+      sectionNav.appendChild(group);
+
       if (mobileNav) {
-        var mLink = document.createElement('a');
-        mLink.className = 'mobile-nav-link' + (i === 0 ? ' active' : '');
-        mLink.href = '#' + sec.id;
-        mLink.setAttribute('data-section', sec.id);
-        mLink.textContent = sec.shortLabel || sec.label;
-        mobileNav.appendChild(mLink);
+        mobileNav.appendChild(buildMobileLayerChip(layer.label));
+        layerSections.forEach(function (sec) {
+          mobileNav.appendChild(buildMobileNavLink(sec, sec.id === firstSectionId));
+        });
       }
     });
 
@@ -735,6 +976,60 @@
     return { overall: overall, sections: sections, completed: done, total: PROGRESS_SECTIONS.length };
   }
 
+  function computeEssentialProgress() {
+    var sections = {};
+    var done = 0;
+    ESSENTIAL_PROGRESS_SECTIONS.forEach(function (id) {
+      var complete = isSectionComplete(id);
+      sections[id] = complete;
+      if (complete) done += 1;
+    });
+    var total = ESSENTIAL_PROGRESS_SECTIONS.length;
+    var overall = total ? Math.round((done / total) * 100) : 0;
+    return { overall: overall, sections: sections, completed: done, total: total, isComplete: done === total && total > 0 };
+  }
+
+  function updateEssentialProgressUI() {
+    var progress = computeEssentialProgress();
+    var panel = document.getElementById('essentialProgressPanel');
+    var titleEl = document.getElementById('essentialProgressTitle');
+    var pctEl = document.getElementById('essentialProgressPct');
+    var fillEl = document.getElementById('essentialProgressFill');
+    var countEl = document.getElementById('essentialProgressCount');
+    var messageEl = document.getElementById('essentialProgressMessage');
+    var barEl = document.getElementById('essentialProgressBar');
+
+    if (panel) {
+      panel.classList.toggle('is-complete', progress.isComplete);
+    }
+    if (titleEl) {
+      titleEl.textContent = progress.isComplete
+        ? 'Essential Setup Complete'
+        : 'Essential Setup — ' + progress.completed + ' of ' + progress.total + ' complete';
+    }
+    if (pctEl) pctEl.textContent = progress.overall + '%';
+    if (fillEl) fillEl.style.width = progress.overall + '%';
+    if (countEl) countEl.textContent = progress.completed + ' / ' + progress.total;
+    if (messageEl) {
+      messageEl.textContent = progress.isComplete
+        ? 'Core setup complete. Your Hotel Brain is ready to power AI Shift Handover. Continue adding knowledge over time to make Hospitality Flow even smarter.'
+        : 'Complete the core sections first. Optional modules can be added over time.';
+    }
+    var brainStatusEl = document.getElementById('hotelBrainStatus');
+    if (brainStatusEl) {
+      brainStatusEl.textContent = progress.isComplete ? 'Ready' : 'Building';
+      brainStatusEl.classList.toggle('progress-stat-value--ready', progress.isComplete);
+      brainStatusEl.classList.toggle('progress-stat-value--building', !progress.isComplete);
+      brainStatusEl.classList.remove('progress-stat-value--muted');
+    }
+    if (barEl) {
+      barEl.setAttribute('aria-valuenow', String(progress.overall));
+      barEl.setAttribute('aria-label', progress.isComplete
+        ? 'Essential Setup complete'
+        : 'Essential Setup ' + progress.overall + ' percent complete');
+    }
+  }
+
   function updateSectionStatuses() {
     document.querySelectorAll('.section-nav-link').forEach(function (link) {
       var id = link.getAttribute('data-section');
@@ -753,9 +1048,10 @@
     if (countEl) countEl.textContent = progress.completed + ' / ' + progress.total;
     if (barEl) {
       barEl.setAttribute('aria-valuenow', String(progress.overall));
-      barEl.setAttribute('aria-label', 'Hotel Brain ' + progress.overall + ' percent complete');
+      barEl.setAttribute('aria-label', 'Full profile coverage ' + progress.overall + ' percent complete');
     }
     updateSectionStatuses();
+    updateEssentialProgressUI();
   }
   function initProfileStatusPanel() { /* removed */ }
   function initSearch() { /* removed */ }
@@ -789,11 +1085,14 @@
   global.HotelProfileKnowledge = {
     SCHEMA_V3: SCHEMA_V3,
     PROFILE_SECTIONS: PROFILE_SECTIONS,
+    NAV_LAYERS: NAV_LAYERS,
+    ESSENTIAL_PROGRESS_SECTIONS: ESSENTIAL_PROGRESS_SECTIONS,
     POLICY_GROUPS: POLICY_GROUPS,
     PRIMARY_POLICIES: PRIMARY_POLICIES,
     RESERVATION_CHANNELS: RESERVATION_CHANNELS,
     OTA_CHANNEL_TYPES: OTA_CHANNEL_TYPES,
     TRACKER_DEFS: TRACKER_DEFS,
+    TRACKER_GROUPS: TRACKER_GROUPS,
     SUPPLY_CATEGORY_HINTS: SUPPLY_CATEGORY_HINTS,
     migrateToV3: migrateToV3,
     syncLegacyPoliciesFromStructured: syncLegacyPoliciesFromStructured,
@@ -815,6 +1114,8 @@
       return { summaries: [], overall: p.overall };
     },
     computeProfileProgress: computeProfileProgress,
+    computeEssentialProgress: computeEssentialProgress,
+    updateEssentialProgressUI: updateEssentialProgressUI,
     isSectionComplete: isSectionComplete,
     initSearch: initSearch,
     confirmDelete: confirmDelete,
@@ -823,6 +1124,10 @@
     emptyPolicyEntry: emptyPolicyEntry,
     defaultTrackers: defaultTrackers,
     appendOtaChannel: appendOtaChannel,
+    bindDisclosureCards: bindDisclosureCards,
+    bindDisclosureCard: bindDisclosureCard,
+    setDisclosureExpanded: setDisclosureExpanded,
+    anyPolicyFilled: anyPolicyFilled,
     updateSectionStatuses: updateSectionStatuses
   };
 })(typeof window !== 'undefined' ? window : globalThis);
