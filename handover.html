@@ -3978,8 +3978,13 @@
           }
         }
 
-        if (profile.roomFacilities && profile.roomFacilities.length && global.HotelProfileOperational) {
-          var roomInventorySummary = global.HotelProfileOperational.summarizeRoomFacilitiesForContext(
+        if (
+          profile.roomFacilities &&
+          profile.roomFacilities.length &&
+          window.HotelProfileOperational &&
+          typeof window.HotelProfileOperational.summarizeRoomFacilitiesForContext === "function"
+        ) {
+          var roomInventorySummary = window.HotelProfileOperational.summarizeRoomFacilitiesForContext(
             profile.roomFacilities
           );
           if (trimText(roomInventorySummary)) internalSections.push(roomInventorySummary);
@@ -7965,6 +7970,20 @@
         return getCommittedSnapshot();
       }
 
+      function applyCloudSavedHandoverId(result) {
+        if (!result || !result.cloud || !result.record) {
+          return;
+        }
+
+        var cloudId = result.record.cloudId || result.record.id;
+        if (
+          cloudId &&
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(cloudId))
+        ) {
+          editingSavedHandoverId = String(cloudId);
+        }
+      }
+
       function buildSavePayload() {
         if (!lastClassified) return null;
 
@@ -8600,6 +8619,7 @@
           searchEl: document.getElementById("savedHandoversSearch"),
           showToast: showToast,
           onSaveRequest: buildSavePayload,
+          onSaveComplete: applyCloudSavedHandoverId,
           onOpen: restoreSavedHandover,
           onEdit: restoreSavedHandover,
           onPrint: printSavedHandover,

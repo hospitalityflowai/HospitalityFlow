@@ -566,17 +566,27 @@
     return init({ force: true });
   }
 
+  function isValidSavedHandoverRecord(item) {
+    return !!(item && typeof item === "object");
+  }
+
+  function filterSavedHandoverList(list) {
+    if (!Array.isArray(list)) return [];
+    return list.filter(isValidSavedHandoverRecord);
+  }
+
   function getSavedHandovers() {
+    var list;
     if (cloudSyncActive) {
-      return cachedSavedHandovers.slice();
+      list = cachedSavedHandovers.slice();
+    } else if (cachedSavedHandovers.length) {
+      list = cachedSavedHandovers.slice();
+    } else if (cachedWorkspaceId) {
+      list = readLocalSaved(cachedWorkspaceId);
+    } else {
+      list = [];
     }
-    if (cachedSavedHandovers.length) {
-      return cachedSavedHandovers.slice();
-    }
-    if (cachedWorkspaceId) {
-      return readLocalSaved(cachedWorkspaceId);
-    }
-    return [];
+    return filterSavedHandoverList(list);
   }
 
   function getCachedDraft() {
@@ -669,9 +679,29 @@
                   cloudId: cloudId,
                   message: response.error.message || String(response.error),
                   code: response.error.code || null,
-                  details: response.error.details || null
+                  details: response.error.details || null,
+                  hint: response.error.hint || null
                 });
                 return Promise.reject(response.error);
+              }
+
+              if (!response.data) {
+                var noRowError = {
+                  message: "SAVE_NO_ROW_RETURNED",
+                  code: "SAVE_NO_ROW_RETURNED",
+                  details: null,
+                  hint: cloudId ? "UPDATE matched no rows" : "INSERT returned no row"
+                };
+                console.error("[HFHandoverStore] save handover failed:", {
+                  workspaceId: ctx.workspaceId,
+                  userId: ctx.userId,
+                  cloudId: cloudId,
+                  message: noRowError.message,
+                  code: noRowError.code,
+                  details: noRowError.details,
+                  hint: noRowError.hint
+                });
+                return Promise.reject(noRowError);
               }
 
               var savedRecord = rowToRecord(response.data);
@@ -705,6 +735,9 @@
       .catch(function (err) {
         console.error("[HFHandoverStore] saveHandover failed:", {
           message: formatError(err),
+          code: err && err.code ? err.code : null,
+          details: err && err.details ? err.details : null,
+          hint: err && err.hint ? err.hint : null,
           error: err
         });
         setCloudSyncActive(false, err);

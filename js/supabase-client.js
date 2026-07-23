@@ -20,6 +20,7 @@
     "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js";
 
   var clientInstance = null;
+  var clientInitPromise = null;
   var cdnLoadPromise = null;
 
   function getConfig() {
@@ -112,6 +113,7 @@
 
   function resetClient() {
     clientInstance = null;
+    clientInitPromise = null;
   }
 
   /**
@@ -123,15 +125,29 @@
       return Promise.resolve(null);
     }
 
-    return loadSupabaseCdn().then(function () {
+    if (clientInstance) {
+      return Promise.resolve(clientInstance);
+    }
+
+    if (clientInitPromise) {
+      return clientInitPromise;
+    }
+
+    clientInitPromise = loadSupabaseCdn().then(function () {
       if (!isSupabaseLibLoaded()) {
         return null;
       }
-      clientInstance = createClientInstance();
+      if (!clientInstance) {
+        clientInstance = createClientInstance();
+      }
       return clientInstance;
     }).catch(function () {
       return null;
+    }).finally(function () {
+      clientInitPromise = null;
     });
+
+    return clientInitPromise;
   }
 
   global.HospitalityFlowSupabase = {

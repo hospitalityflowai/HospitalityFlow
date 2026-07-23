@@ -14,6 +14,7 @@
   var onPrint = null;
   var onExportPdf = null;
   var onSaveRequest = null;
+  var onSaveComplete = null;
   var showToast = null;
   var onConfirmDelete = null;
   var onConfirmClearAll = null;
@@ -50,6 +51,7 @@
   }
 
   function getHandoverDateKey(item) {
+    if (!item || typeof item !== "object") return "unknown";
     if (item.date && /^\d{4}-\d{2}-\d{2}$/.test(item.date)) return item.date;
     if (item.timestamp) {
       var stamp = new Date(item.timestamp);
@@ -384,6 +386,7 @@
     onPrint = options.onPrint;
     onExportPdf = options.onExportPdf;
     onSaveRequest = options.onSaveRequest;
+    onSaveComplete = options.onSaveComplete;
     showToast = options.showToast;
     onConfirmDelete = options.onConfirmDelete;
     onConfirmClearAll = options.onConfirmClearAll;
@@ -409,14 +412,40 @@
     if (useCloudStore()) {
       saveInProgress = true;
       global.HFHandoverStore.saveHandover(record).then(function (result) {
-        renderList();
+        try {
+          renderList();
+        } catch (renderErr) {
+          console.error("[HandoverSaved] renderList failed:", renderErr);
+        }
+        if (onSaveComplete) {
+          onSaveComplete(result);
+        }
         if (showToast) showToast(result.message || "Handover saved.");
+        if (!result.cloud && result.error) {
+          console.error("[HandoverSaved] cloud save failed:", {
+            message: result.error.message || String(result.error),
+            code: result.error.code || null,
+            details: result.error.details || null,
+            hint: result.error.hint || null,
+            error: result.error
+          });
+        }
       }).catch(function (err) {
         if (showToast) {
           showToast("Saved locally — not yet synced");
         }
-        console.error("[HandoverSaved] cloud save failed:", err);
-        renderList();
+        console.error("[HandoverSaved] saveHandover rejected:", {
+          message: err && err.message ? err.message : String(err),
+          code: err && err.code ? err.code : null,
+          details: err && err.details ? err.details : null,
+          hint: err && err.hint ? err.hint : null,
+          error: err
+        });
+        try {
+          renderList();
+        } catch (renderErr) {
+          console.error("[HandoverSaved] renderList failed:", renderErr);
+        }
       }).finally(function () {
         saveInProgress = false;
       });
