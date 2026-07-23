@@ -166,7 +166,16 @@ Shared modules: `js/auth.js`, `css/auth.css`
 ### Enable email auth in Supabase
 
 1. Supabase dashboard → **Authentication** → **Providers** → **Email** → ensure enabled.
-2. **Authentication** → **URL Configuration** — add your site URL and redirect URLs, e.g.:
+2. **Disable public sign-up (required for invitation-only pilot):**
+   - **Dashboard:** **Authentication** → **Providers** → **Email** → turn **off** **Enable sign ups**  
+     — or **Authentication** → **Settings** → turn **off** **Allow new users to sign up** (wording varies by dashboard version).
+   - **CLI (linked project):** this repo sets `auth.enable_signup = false` and `auth.email.enable_signup = false` in [`supabase/config.toml`](supabase/config.toml). Push with:
+     ```powershell
+     npx supabase config push
+     ```
+   - **Verify:** run `node scripts/verify-server-signups-disabled.mjs` (reads project auth config via Supabase CLI/Management API when logged in).
+   - The UI also blocks sign-up in `js/auth.js` (`PUBLIC_SIGNUP_ENABLED = false`), but **Dashboard/CLI sign-up disable is the server-side enforcement** — without it, anyone with the anon key can call `auth.signUp()`.
+3. **Authentication** → **URL Configuration** — add your site URL and redirect URLs, e.g.:
    - `http://localhost:5500/account.html` (local)
    - `http://localhost:5500/reset-password.html` (local password reset)
    - `https://your-domain.co.uk/account.html` (production)
@@ -471,22 +480,31 @@ After saving, the workspace card updates immediately. Handover and SOP use the w
 
 ## 13. Founding Pilot applications & transactional email (Resend)
 
-The landing page (`index.html`) saves applications to `early_access_applications`, then invokes the **`send-early-access-emails`** Edge Function. Resend API keys live only in Supabase secrets — never in browser code.
+The landing page (`index.html`) submits applications through the public **`submit-early-access-application`** Edge Function, which saves the row via RPC and calls **`send-early-access-emails` internally** (protected by `EARLY_ACCESS_EMAILS_INTERNAL_SECRET`). The browser must **not** call `send-early-access-emails` directly. Resend API keys live only in Supabase secrets — never in browser code.
 
 ### Run the migrations (required once)
 
 1. Supabase → **SQL Editor** → run [`phase6_early_access_applications.sql`](supabase/migrations/phase6_early_access_applications.sql) if not already applied.
 2. Run [`phase9_early_access_email_tracking.sql`](supabase/migrations/phase9_early_access_email_tracking.sql) (adds email delivery timestamps and `submit_early_access_application` RPC).
 
-### Deploy the Edge Function
+### Deploy Edge Functions (required)
 
-Install the [Supabase CLI](https://supabase.com/docs/guides/cli), link your project, then deploy:
+Install the [Supabase CLI](https://supabase.com/docs/guides/cli), link your project, set the internal secret, then deploy **both** functions:
 
-```bash
-supabase functions deploy send-early-access-emails
+```powershell
+# Generate once; store offline — never commit or expose in frontend
+$bytes = New-Object byte[] 32
+[Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes)
+$secret = [Convert]::ToBase64String($bytes)
+npx supabase secrets set "EARLY_ACCESS_EMAILS_INTERNAL_SECRET=$secret"
+
+npx supabase functions deploy send-early-access-emails
+npx supabase functions deploy submit-early-access-application
 ```
 
-Function config: [`supabase/config.toml`](supabase/config.toml) sets `verify_jwt = false` so anonymous visitors can invoke it after submitting the form. The function validates that the `applicationId` exists before sending email.
+Function config: [`supabase/config.toml`](supabase/config.toml) sets `verify_jwt = false` for the public submit function only. The email function rejects requests without `X-Early-Access-Internal-Secret`.
+
+Verify: `node scripts/test-early-access-email-security.mjs` and `node scripts/verify-early-access-setup.mjs`.
 
 ### Set Supabase secrets
 
@@ -496,6 +514,7 @@ In the Supabase dashboard → **Edge Functions** → **Secrets**, or via CLI:
 supabase secrets set RESEND_API_KEY=re_xxxxxxxx
 supabase secrets set RESEND_FROM_EMAIL="Hospitality Flow <hello@hospitalityflow.co.uk>"
 supabase secrets set OWNER_NOTIFICATION_EMAIL=hello@hospitalityflow.co.uk
+supabase secrets set EARLY_ACCESS_EMAILS_INTERNAL_SECRET=<long-random-string>
 ```
 
 | Secret | Purpose |
@@ -503,6 +522,7 @@ supabase secrets set OWNER_NOTIFICATION_EMAIL=hello@hospitalityflow.co.uk
 | `RESEND_API_KEY` | Resend API key (never expose in frontend) |
 | `RESEND_FROM_EMAIL` | Verified sender in Resend (display name + address) |
 | `OWNER_NOTIFICATION_EMAIL` | Internal alert recipient for new applications |
+| `EARLY_ACCESS_EMAILS_INTERNAL_SECRET` | Server-only header secret for internal email dispatch |
 | `RESEND_REPLY_TO` | Optional — reply-to for applicant confirmation (defaults to omit) |
 
 `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are provided automatically to Edge Functions.

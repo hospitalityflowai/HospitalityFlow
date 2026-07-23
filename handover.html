@@ -4770,6 +4770,7 @@
       var lastHotelSnapshotOverrides = {};
       var lastNormalizedSnapshot = null;
       var activeHandoverEditId = null;
+      var editingSavedHandoverId = null;
       var lastRecommendations = [];
       var activeRecommendationEditId = null;
 
@@ -7737,6 +7738,7 @@
         lastNormalizedSnapshot = null;
         activeHandoverEditId = null;
         activeRecommendationEditId = null;
+        editingSavedHandoverId = null;
         hideShiftIntelligencePanel();
         copyBtn.disabled = true;
         exportPdfBtn.disabled = true;
@@ -7770,6 +7772,7 @@
         skipDraftSave = true;
         resetHandoverForm();
         clearDraftStorage();
+        editingSavedHandoverId = null;
         skipDraftSave = false;
         hideDraftRestoredHint();
         notesInput.focus();
@@ -7966,8 +7969,11 @@
         if (!lastClassified) return null;
 
         var meta = getHotelMeta();
+        var saveId = editingSavedHandoverId
+          || (Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8));
         return {
-          id: Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8),
+          id: saveId,
+          cloudId: editingSavedHandoverId || null,
           hotelName: hotelName.value.trim() || "Not specified",
           preparedBy: preparedBy.value.trim() || "Not specified",
           shift: selectedShift,
@@ -8000,6 +8006,8 @@
         options = options || {};
         skipDraftSave = true;
         hideDraftRestoredHint();
+
+        editingSavedHandoverId = saved.cloudId || saved.id || null;
 
         hotelName.value = saved.hotelName === "Not specified" ? "" : (saved.hotelName || "");
         preparedBy.value = saved.preparedBy === "Not specified" ? "" : (saved.preparedBy || "");

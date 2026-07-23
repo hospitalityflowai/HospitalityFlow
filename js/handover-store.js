@@ -597,13 +597,45 @@
     }
   }
 
+  var CLOUD_HANDOVER_ID_RE =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+  function resolveCloudHandoverId(record) {
+    if (!record) return null;
+    if (record.cloudId && CLOUD_HANDOVER_ID_RE.test(String(record.cloudId))) {
+      return String(record.cloudId);
+    }
+    if (record.id && CLOUD_HANDOVER_ID_RE.test(String(record.id))) {
+      return String(record.id);
+    }
+    return null;
+  }
+
+  function upsertCachedSavedRecord(savedRecord, previousId) {
+    var replaced = false;
+    cachedSavedHandovers = cachedSavedHandovers.map(function (item) {
+      if (item.id === savedRecord.id || (previousId && item.id === previousId)) {
+        replaced = true;
+        return savedRecord;
+      }
+      return item;
+    });
+    if (!replaced) {
+      cachedSavedHandovers.unshift(savedRecord);
+    }
+  }
+
   function saveHandover(record) {
     if (!record) {
       return Promise.resolve({ cloud: false, record: null, message: "Nothing to save." });
     }
 
     var localRecord = Object.assign({}, record);
-    if (!localRecord.id) {
+    var cloudId = resolveCloudHandoverId(localRecord);
+    if (cloudId) {
+      localRecord.id = cloudId;
+      localRecord.cloudId = cloudId;
+    } else if (!localRecord.id) {
       localRecord.id = Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8);
     }
 
@@ -614,16 +646,27 @@
 
         return ensureClient().then(function (client) {
           var row = recordToRow(localRecord, ctx, STATUS_SAVED);
-          return client
-            .from(TABLE_NAME)
-            .insert(row)
+          var previousId = localRecord.id;
+          var query = cloudId
+            ? client
+              .from(TABLE_NAME)
+              .update(row)
+              .eq("id", cloudId)
+              .eq("workspace_id", ctx.workspaceId)
+              .eq("status", STATUS_SAVED)
+            : client
+              .from(TABLE_NAME)
+              .insert(row);
+
+          return query
             .select("*")
             .maybeSingle()
             .then(function (response) {
               if (response.error) {
-                console.error("[HFHandoverStore] insert handover failed:", {
+                console.error("[HFHandoverStore] save handover failed:", {
                   workspaceId: ctx.workspaceId,
                   userId: ctx.userId,
+                  cloudId: cloudId,
                   message: response.error.message || String(response.error),
                   code: response.error.code || null,
                   details: response.error.details || null
@@ -632,12 +675,12 @@
               }
 
               var savedRecord = rowToRecord(response.data);
-              cachedSavedHandovers.unshift(savedRecord);
+              upsertCachedSavedRecord(savedRecord, previousId);
 
               var localList = readLocalSaved(ctx.workspaceId);
               var replaced = false;
               localList = localList.map(function (item) {
-                if (item.id === localRecord.id) {
+                if (item.id === savedRecord.id || item.id === previousId) {
                   replaced = true;
                   return Object.assign({}, savedRecord);
                 }
@@ -653,7 +696,8 @@
               return {
                 cloud: true,
                 record: savedRecord,
-                message: "Saved to cloud"
+                updated: !!cloudId,
+                message: cloudId ? "Updated in cloud" : "Saved to cloud"
               };
             });
         });

@@ -1,6 +1,22 @@
 # Supabase local / CLI configuration
 # https://supabase.com/docs/guides/cli/config
 
+# Invitation-only: disable public Auth sign-up server-side.
+# Keep production site_url and redirect URLs explicit — partial config push
+# otherwise resets remote auth settings to local CLI defaults.
+[auth]
+site_url = "https://hospitalityflow.co.uk"
+additional_redirect_urls = ["https://hospitalityflow.co.uk/**"]
+enable_signup = false
+
+[auth.email]
+enable_signup = false
+enable_confirmations = true
+
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
+
 [functions.send-early-access-emails]
 verify_jwt = false
 
