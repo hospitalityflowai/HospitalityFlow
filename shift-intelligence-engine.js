@@ -421,6 +421,46 @@
     return resolveDepartment([fallbackDept], fallbackDept, departments);
   }
 
+  function trimBrainText(value) {
+    return String(value == null ? "" : value).trim();
+  }
+
+  function firstGuidanceSentence(text, maxLen) {
+    var raw = trimBrainText(text);
+    if (!raw) return "";
+    var sentence = raw.split(/[\n.!?]/)[0] || raw;
+    sentence = trimBrainText(sentence);
+    maxLen = maxLen || 140;
+    if (sentence.length > maxLen) sentence = sentence.slice(0, maxLen - 1).replace(/\s+\S*$/, "") + "…";
+    return sentence;
+  }
+
+  function findVipHotelBrainGuidance(brainContext) {
+    var result = { okAction: "", vipRules: "" };
+    if (!brainContext) return result;
+    var hk = brainContext.hotelKnowledge || {};
+    result.vipRules = trimBrainText(hk.vipRules);
+
+    var entries = (brainContext.operationalKnowledge && brainContext.operationalKnowledge.knowledgeEntries) || [];
+    for (var i = 0; i < entries.length; i++) {
+      var entry = entries[i];
+      if (!entry || entry.active === false) continue;
+      var triggers = entry.triggerKeywords || [];
+      var isVip = /vip/i.test(entry.category || "") || /vip/i.test(entry.title || "") ||
+        triggers.some(function (kw) { return /vip/i.test(String(kw || "")); });
+      if (!isVip) continue;
+      var follow = trimBrainText(entry.followUpInstruction);
+      if (follow) {
+        result.okAction = follow;
+        break;
+      }
+      if (!result.okAction && trimBrainText(entry.content)) {
+        result.okAction = firstGuidanceSentence(entry.content, 120);
+      }
+    }
+    return result;
+  }
+
   function vipActionText(note, shiftType, brainContext) {
     var roomRef = roomPhrase(note);
     var line = note.original || "";
@@ -446,16 +486,30 @@
       extras.push("twin set-up as requested");
     }
 
+    var base;
     if (vipArrival) {
       if (extras.length) {
-        return "Front Office – Review VIP arrival" + (roomRef ? " " + roomRef : "") +
+        base = "Front Office – Review VIP arrival" + (roomRef ? " " + roomRef : "") +
           " notes (" + extras.slice(0, 2).join("; ") + ") before arrival.";
+      } else {
+        base = "Front Office – Review VIP arrival" + (roomRef ? " " + roomRef : "") +
+          " notes before arrival.";
       }
-      return "Front Office – Review VIP arrival" + (roomRef ? " " + roomRef : "") +
-        " notes before arrival.";
+    } else {
+      base = "Front Office – Review VIP notes" + (roomRef ? " for " + roomRef : "") +
+        " for this shift.";
     }
-    return "Front Office – Review VIP notes" + (roomRef ? " for " + roomRef : "") +
-      " for this shift.";
+
+    /* Enrich with Hotel Brain VIP guidance — never replace shift-note facts. */
+    var guidance = findVipHotelBrainGuidance(brainContext);
+    if (guidance.okAction) {
+      return base + " Hotel Brain: " + guidance.okAction;
+    }
+    if (guidance.vipRules) {
+      var snippet = firstGuidanceSentence(guidance.vipRules, 140);
+      if (snippet) return base + " Hotel VIP rules: " + snippet + ".";
+    }
+    return base;
   }
 
   function nextShiftPhrase(shiftType) {
@@ -622,6 +676,21 @@
     });
 
     if (global.HotelProfileOperational && brainContext) {
+      var okMatched = global.HotelProfileOperational.getShiftIntelligenceKnowledge(
+        brainContext,
+        shiftType,
+        input.rawNotesText || ""
+      );
+      (okMatched.matchedActions || []).forEach(function (action) {
+        if (!action || !action.followUpInstruction) return;
+        /* VIP note recommendations already enrich with Hotel Brain VIP guidance — avoid duplicate lines. */
+        if (/vip/i.test(action.category || "") || /vip/i.test(action.title || "")) return;
+        addCandidate({
+          text: action.actionText || action.followUpInstruction,
+          priority: action.priority || "normal",
+          department: resolveDepartment([action.department], fallbackDept, departments)
+        });
+      });
       global.HotelProfileOperational.getRoomAttributeReminders(
         brainContext,
         input.rawNotesText || ""

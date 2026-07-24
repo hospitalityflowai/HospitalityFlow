@@ -94,51 +94,62 @@
 
     list.push(entry("vip-prep", "VIP", "VIP preparation procedure",
       "Review VIP notes before arrival. Confirm room allocation. Prepare welcome card when required. Confirm amenities or packages. Brief the next shift. Confirm benefits, discounts and invoice instructions. Verify agreed discounts are applied to the final invoice.",
-      { department: "Duty Management", triggerKeywords: ["vip"], triggersRequired: true, priority: "high" }));
+      { department: "Duty Management", triggerKeywords: ["vip"], triggersRequired: true, priority: "high",
+        followUpInstruction: "Confirm VIP room allocation, welcome card, amenities and invoice/discount instructions before arrival." }));
 
     list.push(entry("regular-guests", "Guest Services", "Regular guest preferences",
       "Review stored room preferences. Avoid unsuitable room allocation where known. Regular guests may prefer higher floors. Do not assume every regular guest has the same preference.",
-      { department: "Reception", triggerKeywords: ["regular guest", "returning guest"], triggersRequired: false }));
+      { department: "Reception", triggerKeywords: ["regular guest", "returning guest"], triggersRequired: true,
+        followUpInstruction: "Review known room preferences and avoid unsuitable allocation for the returning guest." }));
 
     list.push(entry("physical-keys", "Security", "Physical key procedure",
       "The property uses physical room keys. Issue keys during check-in. Track unreturned keys. Remind guests to return keys at checkout. Contact guests when keys are taken accidentally. Support postal return. Record lost or unreturned keys. Configured replacement charge: £150 (editable).",
-      { department: "Reception", triggerKeywords: ["physical key", "key not returned", "lost key", "guest took key", "key follow-up"], triggersRequired: false, priority: "high" }));
+      { department: "Reception", triggerKeywords: ["physical key", "key not returned", "lost key", "guest took key", "key follow-up"], triggersRequired: true, priority: "high",
+        followUpInstruction: "Track the key issue, arrange return or replacement, and record follow-up." }));
 
     list.push(entry("adapters", "Guest Services", "Travel adapter loan procedure",
       "Adapters are issued to guests. Track which room received the adapter. Confirm return before or during checkout. Configured charge or deposit: £20 (editable). Low stock should generate an operational reminder.",
-      { department: "Reception", triggerKeywords: ["adapter", "travel adapter"], triggersRequired: false }));
+      { department: "Reception", triggerKeywords: ["adapter", "travel adapter"], triggersRequired: true,
+        followUpInstruction: "Confirm which room holds the adapter and whether return or charge is still outstanding." }));
 
     list.push(entry("airport-transfers", "Guest Services", "Airport transfer workflow",
       "Record transfer time. Confirm booking or supplier. Confirm guest details in the operational record. Pass unresolved transfers to the next shift. Do not invent confirmation status.",
-      { department: "Reception", triggerKeywords: ["airport transfer", "transfer", "taxi"], triggersRequired: true }));
+      { department: "Reception", triggerKeywords: ["airport transfer", "transfer", "taxi"], triggersRequired: true,
+        followUpInstruction: "Confirm transfer time, supplier and whether booking is still unresolved." }));
 
     list.push(entry("wake-up-calls", "Guest Services", "Wake-up call workflow",
       "Record requested time. Review scheduled calls during shift takeover. Confirm completed calls in the operational record. Pass missed or unresolved calls clearly.",
-      { department: "Reception", triggerKeywords: ["wake-up call", "wakeup call"], triggersRequired: true }));
+      { department: "Reception", triggerKeywords: ["wake-up call", "wakeup call"], triggersRequired: true,
+        followUpInstruction: "Confirm the wake-up call is loaded and pass any missed calls clearly." }));
 
     list.push(entry("packages-occasions", "Guest Services", "Packages and special occasions",
       "Review seasonal packages, birthday packages, balloons, welcome arrangements and special requests. Confirm timing, responsible department and follow-up.",
-      { department: "Reception", triggerKeywords: ["package", "balloon", "birthday", "special occasion"], triggersRequired: true }));
+      { department: "Reception", triggerKeywords: ["package", "balloon", "birthday", "special occasion"], triggersRequired: true,
+        followUpInstruction: "Confirm package/occasion timing, owner and outstanding follow-up." }));
 
     list.push(entry("arrival-checks", "Arrivals", "Arrival procedure checks",
       "Review remaining arrivals, late arrivals, VIP status, regular-guest preferences, room allocation, accessible-room requirements, interconnecting-room requests, registration cards, welcome cards, packages, prepayments, outstanding balances, OTA contact details and guest-profile data quality.",
-      { department: "Reception", shifts: ["night", "pm", "middle"], triggerKeywords: ["arrival", "checking in"], triggersRequired: false, priority: "high" }));
+      { department: "Reception", shifts: ["night", "pm", "middle"], triggerKeywords: ["arrival", "checking in"], triggersRequired: true, priority: "high",
+        followUpInstruction: "Review remaining arrivals for VIP, preferences, allocation, packages and open balances." }));
 
     list.push(entry("room-attributes", "Arrivals", "Room attribute reference (staff allocation)",
       "Use configured room attributes as factual reference — bed size, twin capability, extra bed, sofa bed, accessible, street facing, dark room, bathtub and interconnecting pairs. Shower configuration is unknown unless separately confirmed. Room allocation remains a staff decision.",
-      { department: "Reception", checklistEnabled: false, triggerKeywords: ["twin", "accessible", "interconnect", "bathtub", "sofa bed", "extra bed", "street facing", "dark room", "room allocation"], triggersRequired: false }));
+      { department: "Reception", checklistEnabled: false, triggerKeywords: ["twin", "accessible", "interconnect", "bathtub", "sofa bed", "extra bed", "street facing", "dark room", "quiet", "lower ground", "away from lift", "room allocation"], triggersRequired: true }));
 
     list.push(entry("departure-checks", "Departures", "Departure procedure checks",
       "Review open balance, final invoice, discounts or benefits applied, late checkout, physical key returned, loan items returned, airport transfer, invoice request, outstanding guest complaint, lost property, luggage storage and follow-up required.",
-      { department: "Reception", shifts: ["am", "pm", "middle"], triggerKeywords: ["departure", "checkout", "check out"], triggersRequired: false }));
+      { department: "Reception", shifts: ["am", "pm", "middle"], triggerKeywords: ["departure", "checkout", "check out"], triggersRequired: true,
+        followUpInstruction: "Complete departure checks for balance, late checkout, keys, loans and follow-up." }));
 
     list.push(entry("hk-release", "Housekeeping", "Housekeeping and room release",
       "Review housekeeping status during shift takeover. Track rooms awaiting release. Prioritise rooms when arrival or operational urgency requires it. Pass unresolved room-release issues to the next shift. Do not claim a room is ready unless confirmed.",
-      { department: "Housekeeping", triggerKeywords: ["room not released", "waiting for housekeeping", "room ready", "dirty room", "inspected", "out of order", "out of service"], triggersRequired: false, priority: "high" }));
+      { department: "Housekeeping", triggerKeywords: ["room not released", "waiting for housekeeping", "room ready", "dirty room", "inspected", "out of order", "out of service"], triggersRequired: true, priority: "high",
+        followUpInstruction: "Prioritise room release and pass unresolved housekeeping status clearly." }));
 
     list.push(entry("maintenance", "Maintenance", "Maintenance follow-up knowledge",
       "Record room number or location. Describe the issue. Record whether Maintenance was informed. Record guest impact and temporary solution. Record completion only when confirmed. Escalate urgent safety or room-availability issues.",
-      { department: "Maintenance", triggerKeywords: ["maintenance", "repair", "broken", "leak", "not working"], triggersRequired: true, priority: "high" }));
+      { department: "Maintenance", triggerKeywords: ["maintenance", "repair", "broken", "leak", "not working"], triggersRequired: true, priority: "high",
+        followUpInstruction: "Confirm Maintenance informed, guest impact and whether the fault is still open." }));
 
     list.push(entry("maint-priority-urgent", "Maintenance", "Maintenance priority — Urgent",
       "Safety issue; security issue; water leak; electrical risk; guest cannot safely use the room.",
@@ -154,31 +165,36 @@
 
     list.push(entry("lost-property", "Guest Services", "Lost property procedure",
       "Record item, date found, location, storage location, guest contact status, collection status, postage status and required follow-up. Use the configured retention or disposal policy.",
-      { department: "Reception", triggerKeywords: ["lost property", "lost item", "left item"], triggersRequired: true }));
+      { department: "Reception", triggerKeywords: ["lost property", "lost item", "left item"], triggersRequired: true,
+        followUpInstruction: "Log lost property with storage location and guest contact/follow-up status." }));
 
     list.push(entry("no-shows", "Finance", "No-show procedure",
       "Confirm reservation status. Review payment or guarantee rules. Apply hotel-configured no-show procedure. Record required financial follow-up. Update the operational tracker. Pass unresolved cases to the next shift.",
-      { department: "Reception", triggerKeywords: ["no show", "no-show"], triggersRequired: true }));
+      { department: "Reception", triggerKeywords: ["no show", "no-show"], triggersRequired: true,
+        followUpInstruction: "Apply the hotel no-show procedure and record financial follow-up." }));
 
     list.push(entry("complaints", "Guest Services", "Guest complaints and glitch reports",
       "Record complaint clearly with room or area when relevant. Record action already taken and authorised compensation only. Record owner for follow-up and status. Pass unresolved complaints to the next shift. Include relevant issues in the glitch or guest-issue report.",
-      { department: "Duty Management", triggerKeywords: ["complaint", "glitch", "unhappy", "escalat"], triggersRequired: true, priority: "high" }));
+      { department: "Duty Management", triggerKeywords: ["complaint", "glitch", "unhappy", "escalat"], triggersRequired: true, priority: "high",
+        followUpInstruction: "Record complaint action, owner and recovery status; escalate if unresolved." }));
 
     list.push(entry("expedia-prepaid", "Payments", "Expedia prepaid operational note",
       "Hotel-configured understanding: charging may be completed after 05:00 on the day of arrival. OTA rules and contracts must be verified by management.",
-      { department: "Reception", checklistEnabled: false }));
+      { department: "Reception", checklistEnabled: false, triggerKeywords: ["expedia", "prepaid"], triggersRequired: true }));
 
     list.push(entry("booking-prepaid", "Payments", "Booking.com prepaid operational note",
       "Hotel-configured understanding: charging may be completed immediately. OTA rules and contracts must be verified by management.",
-      { department: "Reception", checklistEnabled: false }));
+      { department: "Reception", checklistEnabled: false, triggerKeywords: ["booking.com", "prepaid"], triggersRequired: true }));
 
     list.push(entry("payment-checks", "Finance", "Payment and balance checks",
       "Review outstanding balances, open balances, failed payments, pay-on-arrival reservations, deposits, no-show charges, refund procedures, chargeback risk and missing invoice discounts.",
-      { department: "Reception", triggerKeywords: ["outstanding", "balance", "payment", "folio", "deposit"], triggersRequired: false, priority: "high" }));
+      { department: "Reception", triggerKeywords: ["outstanding", "balance", "payment", "folio", "deposit"], triggersRequired: true, priority: "high",
+        followUpInstruction: "Review open balances and confirm payment or escalation status." }));
 
     list.push(entry("inventory-supplies", "Inventory", "Operational supply monitoring",
-      "Monitor welcome cards, printer cartridges, pens, pencils, sticky notes, travel adapters, registration-card paper and guest loan items. Record low-stock notes and reorder instructions.",
-      { department: "Reception", triggerKeywords: ["low stock", "out of stock", "welcome card", "cartridge", "adapter"], triggersRequired: false }));
+      "Monitor welcome cards, travel adapters and guest loan items. Record low-stock notes and reorder instructions for guest-impacting items only.",
+      { department: "Reception", triggerKeywords: ["low stock", "out of stock", "welcome card", "adapter"], triggersRequired: true,
+        followUpInstruction: "Check guest-impacting stock and record reorder follow-up if low." }));
 
     return list;
   }
@@ -262,28 +278,28 @@
     var layout = [
       { roomNo: "1", floor: "Lower ground", lowerGround: true, notes: "Lower-ground room" },
       { roomNo: "2", floor: "Lower ground", lowerGround: true, notes: "Lower-ground room" },
-      { roomNo: "3", floor: "Lower ground", lowerGround: true, notes: "Lower-ground room" },
-      { roomNo: "4", floor: "Lower ground", lowerGround: true, notes: "Lower-ground room" },
+      { roomNo: "3", floor: "Lower ground", lowerGround: true, quietFacing: true, awayFromLift: true, notes: "Lower-ground quiet room, away from lift" },
+      { roomNo: "4", floor: "Lower ground", lowerGround: true, quietFacing: true, notes: "Lower-ground quiet room" },
       { roomNo: "5", floor: "Lower ground", lowerGround: true, notes: "Lower-ground room" },
       { roomNo: "11", floor: "1" },
       { roomNo: "12", floor: "1" },
-      { roomNo: "14", floor: "1" },
-      { roomNo: "15", floor: "1" },
-      { roomNo: "16", floor: "1" },
+      { roomNo: "14", floor: "1", quietFacing: true, awayFromLift: true, notes: "Quiet / away from lift" },
+      { roomNo: "15", floor: "1", quietFacing: true, notes: "Quiet-facing room" },
+      { roomNo: "16", floor: "1", awayFromLift: true, notes: "Away from lift" },
       { roomNo: "21", floor: "2" },
       { roomNo: "22", floor: "2" },
       { roomNo: "23", floor: "2", notes: "Accessible room" },
-      { roomNo: "24", floor: "2" },
-      { roomNo: "25", floor: "2" },
+      { roomNo: "24", floor: "2", quietFacing: true },
+      { roomNo: "25", floor: "2", quietFacing: true, awayFromLift: true, notes: "Quiet / away from lift" },
       { roomNo: "31", floor: "3" },
       { roomNo: "32", floor: "3" },
       { roomNo: "33", floor: "3", notes: "Accessible room" },
-      { roomNo: "34", floor: "3" },
-      { roomNo: "35", floor: "3" },
+      { roomNo: "34", floor: "3", quietFacing: true, awayFromLift: true },
+      { roomNo: "35", floor: "3", quietFacing: true },
       { roomNo: "41", floor: "4" },
       { roomNo: "42", floor: "4" },
       { roomNo: "43", floor: "4", notes: "Accessible room" },
-      { roomNo: "Lear's Loft", floor: "Premium", notes: "Premium room category — Lear's Loft" }
+      { roomNo: "Lear's Loft", floor: "Premium", awayFromLift: true, notes: "Premium room category — Lear's Loft" }
     ];
 
     function normalizeRoomKey(roomNo) {
@@ -309,9 +325,10 @@
         shower: false,
         accessible: !!attrs.accessible,
         connectingRoom: attrs.connectingRoom || "",
-        quietFacing: false,
+        quietFacing: !!item.quietFacing || (!attrs.streetFacing && !!attrs.darkRoom && !item.lowerGround),
         darkRoom: !!attrs.darkRoom,
         lowerGround: !!item.lowerGround,
+        awayFromLift: !!item.awayFromLift,
         maxOccupancy: "2",
         notes: item.notes || "",
         customFeatures: "",
@@ -409,10 +426,8 @@
       supplies: [
         { name: "Travel adapters", category: "Guest loan items", minStock: "5", replacementCharge: "20", guestCharge: "20", loanItem: "yes", reorderNotes: "Monitor stock — low stock generates operational reminder.", sampleDataId: SAMPLE_ID + ":supply:adapters", isSampleData: true },
         { name: "Welcome cards", category: "Welcome materials", minStock: "10", reorderNotes: "Welcome cards can run low — monitor stock.", sampleDataId: SAMPLE_ID + ":supply:welcome", isSampleData: true },
-        { name: "Printer cartridges", category: "Printing supplies", reorderNotes: "Monitor printer cartridge levels.", sampleDataId: SAMPLE_ID + ":supply:cartridges", isSampleData: true },
-        { name: "Registration card paper", category: "Printing supplies", sampleDataId: SAMPLE_ID + ":supply:regcards", isSampleData: true },
-        { name: "Pens and pencils", category: "Stationery", sampleDataId: SAMPLE_ID + ":supply:stationery", isSampleData: true },
-        { name: "Sticky notes", category: "Stationery", reorderNotes: "Basic stationery shortages affect operations.", sampleDataId: SAMPLE_ID + ":supply:stickies", isSampleData: true }
+        { name: "Umbrellas", category: "Guest loan items", minStock: "4", loanItem: "yes", reorderNotes: "Track by room; confirm return at checkout.", sampleDataId: SAMPLE_ID + ":supply:umbrellas", isSampleData: true },
+        { name: "Phone chargers", category: "Guest loan items", minStock: "4", loanItem: "yes", reorderNotes: "Track by room; confirm return at checkout.", sampleDataId: SAMPLE_ID + ":supply:chargers", isSampleData: true }
       ],
       otaChannels: [
         {
