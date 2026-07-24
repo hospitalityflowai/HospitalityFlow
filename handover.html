@@ -1734,10 +1734,22 @@
     }
 
     .snapshot-field-input:focus {
-      outline: 2px solid rgba(74, 143, 196, 0.22);
+      outline: 2px solid rgba(74, 143, 196, 0.28);
       outline-offset: 1px;
-      border-color: rgba(74, 143, 196, 0.28);
+      border-color: rgba(74, 143, 196, 0.35);
       background: var(--white);
+    }
+
+    #preHotelSnapshotGrid .glance-snapshot:focus-within {
+      border-color: rgba(74, 143, 196, 0.35);
+      box-shadow: var(--shadow-card), inset 0 3px 0 0 rgba(74, 143, 196, 0.45), 0 0 0 2px rgba(74, 143, 196, 0.16);
+    }
+
+    #preHotelSnapshotGrid .snapshot-field-input:focus {
+      outline: 2px solid rgba(74, 143, 196, 0.28);
+      outline-offset: 0;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.92);
     }
 
     .snapshot-edit-actions {
@@ -3072,7 +3084,7 @@
               </div>
               <div class="hotel-snapshot-pre">
                 <h4 class="shift-glance-subheading">Hotel Snapshot</h4>
-                <p class="hotel-snapshot-pre-hint">Enter metrics manually, or leave blank to extract from notes when you generate the handover.</p>
+                <p class="hotel-snapshot-pre-hint">Enter today's hotel figures, or leave them blank and AI will extract them from your shift notes.</p>
                 <div class="shift-glance-grid shift-glance-grid--snapshot" id="preHotelSnapshotGrid"></div>
               </div>
             </div>
@@ -3322,94 +3334,131 @@
     (function () {
       "use strict";
 
+      /* Duty Manager report order — one best category per issue */
       var SECTIONS = [
         {
           id: "urgent",
           emoji: "🚨",
-          title: "Urgent Issues",
+          title: "Safety & Urgent",
+          category: "Safety",
           keywords: [
-            "urgent", "emergency", "asap", "immediately", "critical", "alarm",
-            "fire", "flood", "leak", "leaking", "broken", "not working",
-            "complaint", "angry", "escalat", "security", "police", "ambulance",
-            "evacuat", "power cut", "no hot water", "no water", "gas smell"
+            "emergency", "critical", "alarm", "fire", "flood", "security", "police",
+            "ambulance", "evacuat", "power cut", "no hot water", "no water", "gas smell",
+            "injury", "hazard", "unsafe", "trapped"
           ],
           icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
         },
         {
-          id: "guest",
-          emoji: "🏨",
-          title: "VIP / Guest Information",
+          id: "vip",
+          emoji: "⭐",
+          title: "VIP",
+          category: "VIP",
           keywords: [
-            "guest", "room", "checkout", "check out", "check-in", "checkin",
-            "check in", "arrival", "arriving", "departure", "departing",
-            "vip", "suite", "occupancy", "stay", "reservation", "booking",
-            "late checkout", "early check", "no show", "walk-in", "walk in",
-            "breakfast", "dietary", "allergy", "wheelchair", "celebration",
-            "honeymoon", "anniversary", "corporate", "group", "package",
-            "parcel", "amenity", "iron", "ironing board", "wake-up", "wakeup",
-            "wake up call", "transfer", "taxi", "car service"
+            "vip", "v.i.p", "platinum", "celebrity", "high profile", "high-profile",
+            "preferred guest", "executive guest", "important guest", "premier member"
           ],
-          icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M9 8h1"/><path d="M9 12h1"/><path d="M9 16h1"/><path d="M14 8h1"/><path d="M14 12h1"/><path d="M14 16h1"/><path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"/></svg>'
+          icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>'
         },
         {
-          id: "tasks",
-          emoji: "📋",
-          title: "Outstanding Tasks",
+          id: "guest",
+          emoji: "🏨",
+          title: "Guest Follow-up",
+          category: "Guest Follow-up",
           keywords: [
-            "task", "todo", "to do", "to-do", "outstanding", "pending",
-            "follow up", "follow-up", "followup", "remind", "schedule",
-            "incomplete", "outstanding task",
-            "action", "assign", "handover to", "need to", "must", "ensure",
-            "check back", "callback", "call back", "arrange", "organise",
-            "organize", "prepare", "stock", "order", "deliver", "collect"
+            "guest", "complaint", "complain", "unhappy", "dissatisfied", "checkout",
+            "check out", "late checkout", "request", "requested", "amenity", "breakfast",
+            "dietary", "allergy", "wake-up", "wakeup", "transfer", "taxi", "noise"
           ],
-          icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14l2 2 4-4"/></svg>'
+          icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M9 8h1"/><path d="M9 12h1"/><path d="M9 16h1"/><path d="M14 8h1"/><path d="M14 12h1"/><path d="M14 16h1"/><path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"/></svg>'
         },
         {
           id: "maintenance",
           emoji: "🔧",
           title: "Maintenance",
+          category: "Maintenance",
           keywords: [
             "maintenance", "repair", "fix", "hvac", "ac ", " a/c", "air con",
             "plumb", "electric", "lift", "elevator", "boiler", "heating",
-            "light", "bulb", "tap", "toilet", "shower", "drain", "paint",
-            "carpet", "door lock", "key card", "wifi", "wi-fi", "internet",
-            "tv", "television", "fridge", "minibar", "equipment", "faulty",
-            "engineer", "contractor", "work order"
+            "light", "bulb", "tap", "toilet", "shower", "drain", "leak", "leaking",
+            "broken", "faulty", "engineer", "contractor", "work order", "tv", "remote"
           ],
           icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>'
         },
         {
           id: "payments",
           emoji: "💳",
-          title: "Payment Issues",
+          title: "Finance",
+          category: "Finance",
           keywords: [
-            "payment", "pay ", "paid", "card", "pdq", "pos", "charge",
-            "charging", "refund", "deposit", "invoice", "bill", "billing",
-            "account", "pm account", "accounts", "folio", "pre-auth",
-            "preauth", "settlement", "cash", "credit", "debit", "transaction",
-            "receipt", "outstanding balance", "minibar charge", "no show charge"
+            "payment", "pay ", "paid", "card", "pdq", "pos", "charge", "refund",
+            "deposit", "invoice", "bill", "billing", "folio", "pre-auth", "preauth",
+            "settlement", "declined", "open balance", "outstanding balance", "minibar charge"
           ],
           icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>'
         },
         {
           id: "events",
-          emoji: "🎉",
-          title: "Events",
+          emoji: "🛎️",
+          title: "Reception",
+          category: "Reception",
           keywords: [
-            "wedding", "conference", "meeting", "private dinner", "event",
-            "function", "banquet", "birthday", "group event", "conference room"
+            "arrival", "arriving", "departure", "departing", "check-in", "checkin",
+            "check in", "no show", "walk-in", "walk in", "wedding", "conference",
+            "meeting", "event", "function", "group checking", "room block", "reservation"
           ],
-          icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>'
+          icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'
+        },
+        {
+          id: "tasks",
+          emoji: "🧹",
+          title: "Housekeeping",
+          category: "Housekeeping",
+          keywords: [
+            "housekeeping", "clean", "turndown", "linen", "dnd", "dirty", "vacant",
+            "release", "pillow", "towel", "make up", "makeup room"
+          ],
+          icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 22V8l9-6 9 6v14"/><path d="M9 22V12h6v10"/></svg>'
+        },
+        {
+          id: "inventory",
+          emoji: "📦",
+          title: "Inventory",
+          category: "Inventory",
+          keywords: [
+            "inventory", "stock", "restock", "adapter", "loan", "iron", "ironing board",
+            "order supplies", "out of stock"
+          ],
+          icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>'
+        },
+        {
+          id: "deliveries",
+          emoji: "📫",
+          title: "Deliveries",
+          category: "Deliveries",
+          keywords: [
+            "package", "parcel", "delivery", "courier", "held at reception", "delivery held"
+          ],
+          icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>'
+        },
+        {
+          id: "lostproperty",
+          emoji: "🔍",
+          title: "Lost Property",
+          category: "Lost Property",
+          keywords: [
+            "lost property", "lost item", "left behind", "found in", "left in lounge", "left phone"
+          ],
+          icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'
         },
         {
           id: "general",
           emoji: "📝",
-          title: "General Updates",
+          title: "General Operations",
+          category: "General Operations",
           keywords: [
-            "update", "general", "note", "brief", "reminder", "staff",
-            "operational", "lost property", "lost item", "found in", "pool",
-            "temperature", "inventory", "floor", "handover note"
+            "update", "general", "note", "brief", "reminder", "staff", "operational",
+            "pool", "temperature", "floor", "wifi", "wi-fi", "internet", "pms", "opera",
+            "system", "printer", "fob", "key card"
           ],
           icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>'
         },
@@ -3417,6 +3466,7 @@
           id: "completed",
           emoji: "✅",
           title: "Completed Actions",
+          category: "Completed",
           keywords: [
             "completed", "complete", "done", "resolved", "fixed", "sorted",
             "handled", "closed", "finished", "already booked", "audit complete",
@@ -3906,15 +3956,7 @@
         }
 
         if (hotelSnapshotHint) {
-          if (connected) {
-            hotelSnapshotHint.textContent =
-              "Hotel Brain provides hotel context for this " + handoverTermLabel.toLowerCase() +
-              ". Enter today's metrics below, or leave blank to extract from notes when you generate.";
-          } else if (name) {
-            hotelSnapshotHint.textContent =
-              "Enter metrics manually, or leave blank to extract from notes when you generate the " +
-              handoverTermLabel.toLowerCase() + ".";
-          }
+          hotelSnapshotHint.textContent = HOTEL_SNAPSHOT_HINT_TEXT;
         }
       }
 
@@ -4391,9 +4433,7 @@
           detailsCardDesc.textContent = "Information included in this " + handoverTermLabel.toLowerCase() + " report.";
         }
         if (hotelSnapshotHint) {
-          hotelSnapshotHint.textContent =
-            "Enter metrics manually, or leave blank to extract from notes when you generate the " +
-            handoverTermLabel.toLowerCase() + ".";
+          hotelSnapshotHint.textContent = HOTEL_SNAPSHOT_HINT_TEXT;
         }
         if (notesCardSubtitle) {
           notesCardSubtitle.textContent =
@@ -4693,47 +4733,8 @@
       }
 
       function applyHotelBrainContextToSummary(text, classified) {
-        if (!hotelBrainContext || !text) return text;
-
-        var metrics = getHandoverMetrics(classified);
-        var hk = hotelBrainContext.hotelKnowledge || {};
-        var additions = [];
-
-        if (metrics.vip > 0 && trimText(hk.vipRules) && text.toLowerCase().indexOf("vip") === -1) {
-          additions.push("VIP activity noted — follow hotel VIP protocols.");
-        } else if (metrics.vip > 0 && trimText(hk.vipRules) && text.toLowerCase().indexOf("protocol") === -1 && aiPrefs.detail === "comprehensive") {
-          additions.push("Apply hotel VIP rules where relevant.");
-        }
-
-        if (metrics.display.payments > 0 && hotelBrainContext.policyLines.length &&
-            text.toLowerCase().indexOf("policy") === -1 && aiPrefs.detail !== "brief") {
-          additions.push("Check hotel payment policies for flagged items.");
-        }
-
-        if (metrics.display.payments > 0 && hotelBrainContext.otaChannels &&
-            hotelBrainContext.otaChannels.length && text.toLowerCase().indexOf("ota") === -1 &&
-            aiPrefs.detail !== "brief") {
-          additions.push("Apply hotel OTA and payment rules where relevant.");
-        }
-
-        if (metrics.display.guest > 0 && hotelBrainContext.guestServices &&
-            summarizeGuestServicesForContext(hotelBrainContext.guestServices).length &&
-            text.toLowerCase().indexOf("guest service") === -1 && aiPrefs.detail === "comprehensive") {
-          additions.push("Follow hotel guest service rules for guest-related items.");
-        }
-
-        if (trimText(hk.operationalNotes) && aiPrefs.detail === "comprehensive" &&
-            text.toLowerCase().indexOf("operational") === -1) {
-          additions.push("Review operational notes for the incoming shift.");
-        }
-
-        if (!additions.length) return text;
-
-        var limit = getDetailSentenceLimit();
-        var currentCount = text.split(/(?<=[.!?])\s+/).filter(Boolean).length;
-        if (currentCount >= limit) return text;
-
-        return text + " " + additions.slice(0, limit - currentCount).join(" ");
+        /* Hotel Brain may only refine decisions — never append generic policy filler. */
+        return text || "";
       }
 
       function applyAiPreferencesToSummary(text, classified) {
@@ -4780,7 +4781,10 @@
       var lastRecommendations = [];
       var activeRecommendationEditId = null;
 
-      var ACTIONABLE_SECTIONS = ["urgent", "guest", "maintenance", "payments", "events", "tasks"];
+      var ACTIONABLE_SECTIONS = [
+        "urgent", "vip", "guest", "maintenance", "payments", "events",
+        "tasks", "inventory", "deliveries", "lostproperty"
+      ];
       var ITEM_STATUSES = [
         { id: "pending", label: "Pending" },
         { id: "follow_up", label: "Follow-up" },
@@ -5424,10 +5428,98 @@
       }
 
       function parseNotes(text) {
-        return text
+        var rawLines = String(text || "")
           .split(/\n+/)
           .map(function (line) { return line.trim(); })
           .filter(function (line) { return line.length > 0; });
+
+        var expanded = [];
+        rawLines.forEach(function (line) {
+          splitOperationalTopics(line).forEach(function (part) {
+            if (part && expanded.indexOf(part) === -1) expanded.push(part);
+          });
+        });
+        return expanded;
+      }
+
+      function topicFingerprint(line) {
+        var lower = String(line || "").toLowerCase();
+        if (detectVip(lower) || /\bvip\b/.test(lower)) return "vip";
+        if (noteContains(lower, CRITICAL_MAINT_TERMS) || noteContains(lower, ["police", "ambulance", "evacuat", "unsafe", "hazard"])) {
+          return "safety";
+        }
+        if (isPaymentRelatedLine(lower)) return "finance";
+        if (isMaintenanceDominant(lower) || isMaintenanceNote(lower)) return "maintenance";
+        if (noteContains(lower, ["housekeeping", "linen", "turndown", "dnd", "dirty", "pillow", "towel"])) {
+          return "housekeeping";
+        }
+        if (noteContains(lower, ["adapter", "inventory", "restock", "stock", "loan item", "loan"])) {
+          return "inventory";
+        }
+        if (noteContains(lower, ["wifi", "wi-fi", "internet", "pms", "opera", "printer", "system", "it "])) {
+          return "systems";
+        }
+        if (isEventNote(lower) || noteContains(lower, ["room block", "group checking", "arrivals", "departures"])) {
+          return "arrivals";
+        }
+        if (isGuestRelatedNote(lower)) return "guest";
+        return "general";
+      }
+
+      function splitOperationalTopics(line) {
+        var text = String(line || "").trim();
+        if (!text) return [];
+
+        var parts = [];
+        if (/[;|]/.test(text) || /\s+[—–]\s+/.test(text)) {
+          parts = text.split(/\s*[;|]\s*|\s+[—–]\s+/).map(function (p) { return p.trim(); }).filter(Boolean);
+        }
+
+        if (parts.length < 2 && /\.\s+[A-Z0-9]/.test(text) && text.length > 110) {
+          parts = text.split(/\.\s+(?=[A-Z0-9])/).map(function (p, idx, arr) {
+            var piece = p.trim();
+            if (!piece) return "";
+            if (idx < arr.length - 1 && !/[.!?]$/.test(piece)) piece += ".";
+            return piece;
+          }).filter(Boolean);
+        }
+
+        if (parts.length < 2 && /\band also\b|\bplus\b|\bas well as\b/i.test(text) && text.length > 90) {
+          parts = text.split(/\s+(?:and also|plus|as well as)\s+/i).map(function (p) { return p.trim(); }).filter(Boolean);
+        }
+
+        if (parts.length < 2) {
+          var rooms = extractRoomNumbers(text);
+          if (rooms.length >= 2 && text.length > 80) {
+            var roomSplit = text.split(/(?=\b(?:room|rm\.?|suite)\s*[#.]?\s*\d)/i).map(function (p) {
+              return p.trim().replace(/^[,;:\-–—]\s*/, "");
+            }).filter(function (p) { return p.length > 8; });
+            if (roomSplit.length >= 2) parts = roomSplit;
+          }
+        }
+
+        if (parts.length < 2) return [text];
+
+        var usable = [];
+        parts.forEach(function (part) {
+          if (part.length < 8) {
+            if (usable.length) usable[usable.length - 1] += (usable[usable.length - 1].slice(-1) === "." ? " " : "; ") + part;
+            else usable.push(part);
+            return;
+          }
+          usable.push(part);
+        });
+
+        if (usable.length < 2) return [text];
+
+        var fingerprints = usable.map(topicFingerprint);
+        var distinct = {};
+        fingerprints.forEach(function (fp) { distinct[fp] = true; });
+        if (Object.keys(distinct).length === 1 && text.length < 160) {
+          return [text];
+        }
+
+        return usable;
       }
 
       function matchesKeyword(line, keyword) {
@@ -5504,22 +5596,72 @@
         ]);
       }
 
+      function isOtaPaymentTaskLine(line) {
+        return noteContains(line, [
+          "virtual card", "virtual credit card", "vcc", "ota",
+          "booking.com", "booking com", "expedia", "channel collect",
+          "channel payment", "ota payment", "vc card"
+        ]);
+      }
+
+      function hasExplicitOutstandingBalance(line) {
+        return noteContains(line, [
+          "outstanding balance", "open balance", "balance due", "unpaid", "owing",
+          "still to pay", "needs to pay", "payment outstanding", "balance outstanding",
+          "card declined", "declined at checkout", "declined at check-out",
+          "declined card", "failed payment", "payment failed"
+        ]);
+      }
+
+      function isMinibarOrDepositReviewLine(line) {
+        if (hasExplicitOutstandingBalance(line)) return false;
+        return noteContains(line, ["minibar"]) ||
+          (noteContains(line, ["deposit"]) && !isOtaPaymentTaskLine(line));
+      }
+
+      function isInventoryChargeContext(line) {
+        return noteContains(line, ["adapter", "loan item", "inventory", "restock"]) &&
+          !hasExplicitOutstandingBalance(line);
+      }
+
       function isPaymentIssueLine(line) {
         if (isCompletedActionNote(line)) return false;
+        if (isInventoryChargeContext(line)) return false;
         return isPaymentRelatedLine(line);
       }
 
       function isPaymentRelatedLine(line) {
-        return noteContains(line, [
-          "payment", "paid", "pdq", "pos", "invoice", "billing",
+        if (isInventoryChargeContext(line)) return false;
+        if (isOtaPaymentTaskLine(line)) return true;
+        if (hasExplicitOutstandingBalance(line)) return true;
+        if (noteContains(line, [
+          "payment", "pdq", "pos", "invoice", "billing",
           "pm account", "accounts", "folio", "pre-auth", "preauth",
-          "settlement", "transaction", "declined", "open balance",
-          "outstanding balance", "minibar charge", "no show charge"
-        ]) ||
-          matchesKeyword(line, "pay") ||
-          matchesKeyword(line, "charge") ||
-          matchesKeyword(line, "bill") ||
-          matchesKeyword(line, "card");
+          "settlement", "transaction", "refund", "no show charge"
+        ])) {
+          return true;
+        }
+        if (noteContains(line, ["minibar"]) &&
+            noteContains(line, ["charge", "dispute", "review", "consumed", "not consumed"])) {
+          return true;
+        }
+        if (noteContains(line, ["deposit"]) &&
+            noteContains(line, ["take", "collect", "hold", "release", "return", "keep"])) {
+          return true;
+        }
+        return false;
+      }
+
+      function lateCheckoutStatusPhrase(line) {
+        var until = String(line || "").match(/until\s+(\d{1,2}[:.]?\d{0,2}\s*(?:am|pm)?)/i);
+        var untilBit = until ? " until " + until[1] : "";
+        if (noteContains(line, ["approved", "confirmed", "agreed", "granted", "authorised", "authorized"])) {
+          return "Late check-out approved" + untilBit;
+        }
+        if (noteContains(line, ["request", "requested", "asking", "asked", "would like", "wants"])) {
+          return "Late check-out requested" + untilBit;
+        }
+        return "Late check-out noted" + untilBit;
       }
 
       function isGuestRelatedNote(line) {
@@ -5708,7 +5850,10 @@
 
       function classifyLine(line) {
         var scores = {};
-        var priority = ["urgent", "guest", "tasks", "maintenance", "payments", "events"];
+        var priority = [
+          "urgent", "vip", "guest", "maintenance", "payments", "events",
+          "tasks", "inventory", "deliveries", "lostproperty"
+        ];
 
         SECTIONS.forEach(function (section) {
           if (section.id === "general" || section.id === "completed") return;
@@ -5720,9 +5865,11 @@
           });
         });
 
-        if (detectVip(line)) scores.guest = (scores.guest || 0) + 3;
-        if (detectCarriedOver(line) && !isResolvedNote(line)) scores.urgent = (scores.urgent || 0) + 2;
-        if (detectFollowUp(line)) scores.tasks = (scores.tasks || 0) + 2;
+        if (detectVip(line)) scores.vip = (scores.vip || 0) + 4;
+        if (detectCarriedOver(line) && !isResolvedNote(line) &&
+            noteContains(line, ["leak", "flood", "no water", "unsafe"])) {
+          scores.urgent = (scores.urgent || 0) + 2;
+        }
 
         var bestId = null;
         var bestScore = 0;
@@ -5736,87 +5883,87 @@
         return bestId;
       }
 
+      function isNoiseOperationalLine(line) {
+        var lower = String(line || "").toLowerCase().trim();
+        if (!lower) return true;
+        return /^(overall\s+)?(a\s+)?quiet\s+(night|shift)\.?$/.test(lower) ||
+          /^(everything|all)\s+(else\s+)?(fine|quiet|ok|okay|good)\.?$/.test(lower) ||
+          /^nothing\s+to\s+report\.?$/.test(lower) ||
+          /^no\s+(outstanding\s+)?issues?\.?$/.test(lower) ||
+          /^uneventful\.?$/.test(lower) ||
+          /^all\s+quiet\.?$/.test(lower);
+      }
+
       function classifyAnalyzedNote(note) {
         var line = note.original;
 
+        if (isNoiseOperationalLine(line)) return "general";
+
         if (isCompletedActionNote(line)) return "completed";
 
-        if (noteContains(line, ["lost property", "lost item", "found in lobby", "found in the"])) {
-          return "general";
+        if (noteContains(line, ["lost property", "lost item", "found in lobby", "found in the", "left behind"])) {
+          return "lostproperty";
         }
 
-        if (/^\s*general\s*:/i.test(line)) {
-          return "general";
-        }
+        if (/^\s*general\s*:/i.test(line)) return "general";
 
-        if (noteContains(line, CRITICAL_MAINT_TERMS)) return "urgent";
-
-        if (note.isCarriedOver &&
-            (isMaintenanceNote(line) || isMaintenanceDominant(line) ||
-              noteContains(line, ["broken", "leak", "leaking", "not working", "still not", "still broken", "still leaking"]))) {
+        if (noteContains(line, CRITICAL_MAINT_TERMS) ||
+            noteContains(line, ["police", "ambulance", "evacuat", "unsafe", "hazard", "injury", "trapped"])) {
           return "urgent";
         }
 
-        if (isMaintenanceFollowUp(line)) return "maintenance";
+        /* Urgent only for true priority — carried-over guest-affecting faults or explicit emergency */
+        if (note.isCarriedOver &&
+            noteContains(line, ["leak", "leaking", "flood", "no hot water", "no water", "no heating", "no ac"]) &&
+            (noteContains(line, ["urgent", "asap", "guest", "occupied"]) || noteContains(line, ["still leaking", "still broken"]))) {
+          return "urgent";
+        }
+
+        if (note.isVip || detectVip(line)) return "vip";
+
+        if (noteContains(line, ["complaint", "complain", "angry", "unhappy", "dissatisfied", "escalat"]) &&
+            noteContains(line, ["guest", "room"])) {
+          return "guest";
+        }
 
         if (isPaymentRelatedLine(line)) {
           return isPaymentIssueLine(line) ? "payments" : "general";
         }
 
-        var guestRelated = isGuestRelatedNote(line);
-        var maintDominant = isMaintenanceDominant(line);
+        if (noteContains(line, ["package", "parcel", "delivery held", "held at reception", "courier"])) {
+          return "deliveries";
+        }
 
-        if (maintDominant && !guestRelated) {
-          if (noteContains(line, HIGH_MAINT_TERMS) ||
-              noteContains(line, ["urgent", "asap", "emergency"])) {
-            return "urgent";
-          }
+        if (noteContains(line, ["housekeeping", "dnd", "turndown", "linen", "dirty room", "vacant dirty", "pillow", "towel"])) {
+          return "tasks";
+        }
+
+        if (noteContains(line, ["adapter", "restock", "inventory", "loan", "iron", "ironing board"]) &&
+            !noteContains(line, ["minibar charge", "dispute"])) {
+          return "inventory";
+        }
+
+        if (isMaintenanceFollowUp(line) || isMaintenanceDominant(line) || isMaintenanceNote(line)) {
           return "maintenance";
         }
 
-        if (maintDominant && guestRelated) {
-          if (noteContains(line, ["complaint", "complain", "angry", "unhappy", "dissatisfied"]) ||
-              (noteContains(line, ["guest"]) &&
-                noteContains(line, ["request", "requested", "checkout", "check out", "noise", "unhappy"]))) {
-            return "guest";
-          }
-          return "maintenance";
-        }
-
-        if (note.isFollowUp && guestRelated) return "guest";
-        if (note.isFollowUp && (maintDominant || isMaintenanceFollowUp(line))) return "maintenance";
-
-        if (noteContains(line, ["package", "parcel", "delivery held", "held at reception"])) {
+        if (noteContains(line, ["late checkout", "late check-out", "wake-up", "wakeup", "taxi", "transfer", "request", "requested", "amenity"])) {
           return "guest";
         }
 
-        if (isOperationalTask(line) && !guestRelated && !maintDominant) return "tasks";
+        if ((noteContains(line, ["group checking", "room block", "rooms block", "arrival", "departure", "check-in", "check in", "no show", "walk-in"]) ||
+            isEventNote(line)) && !isPaymentIssueLine(line)) {
+          return "events";
+        }
 
-        if (isEventNote(line) && !maintDominant && !isPaymentIssueLine(line)) return "events";
+        if (noteContains(line, ["wifi", "wi-fi", "internet", "pms", "opera", "printer", "system down", "it issue", "fob"])) {
+          return "general";
+        }
 
         var base = classifyLine(line);
-
-        if (note.isFollowUp && base !== "guest" && base !== "maintenance") return "tasks";
-        if (note.isVip && base === "general") return "guest";
-
-        if (base === "payments") {
-          return isPaymentIssueLine(line) ? "payments" : "general";
-        }
-
-        if (base === "guest" && !guestRelated) {
-          if (maintDominant) return "maintenance";
-          if (isOperationalTask(line)) return "tasks";
-          return "general";
-        }
-
-        if (base === "maintenance" && !maintDominant && !isMaintenanceNote(line)) {
-          if (isOperationalTask(line)) return "tasks";
-          if (guestRelated) return "guest";
-          return "general";
-        }
-
+        if (note.isVip && base === "general") return "vip";
         if (base === "tasks" && isResolvedNote(line)) return "completed";
-
+        if (base === "guest" && detectVip(line)) return "vip";
         return base;
       }
 
@@ -5846,56 +5993,273 @@
       }
 
       function buildNoteTags(note) {
-        var tags = [];
-        if (note.needsManagementAttention) tags.push("MANAGEMENT ATTENTION");
-        if (note.isVip) tags.push("VIP");
-        if (note.isCarriedOver && !isResolvedNote(note.original)) tags.push("Carried over");
-        if (note.isFollowUp && !isResolvedNote(note.original)) tags.push("Follow-up");
-        if (note.maintenancePriority) tags.push(note.maintenancePriority);
-        return tags;
+        /* Duty Manager handovers avoid robotic status chips. */
+        return [];
+      }
+
+      function tidyHandoverPhrase(text) {
+        return String(text || "")
+          .replace(/\s+/g, " ")
+          .replace(/\s+([,.;:!?])/g, "$1")
+          .replace(/([,;:])\s*/g, "$1 ")
+          .replace(/\s{2,}/g, " ")
+          .trim()
+          .replace(/^[,;:\-–—]\s*/, "")
+          .replace(/\s*[,;:\-–—]$/, "");
+      }
+
+      function extractGuestNameHint(line) {
+        var match = String(line || "").match(/\b(?:mr|mrs|ms|miss|dr)\.?\s+([A-Z][a-zA-Z'-]+)/);
+        if (match) return match[0].replace(/\s+/g, " ").trim();
+        match = String(line || "").match(/\bfor\s+(Mrs?\.?\s+[A-Z][a-zA-Z'-]+)/);
+        if (match) return match[1].trim();
+        return "";
+      }
+
+      function summariseIssueCore(line, room) {
+        var detail = room ? stripRoomReference(line, room) : String(line || "");
+        detail = detail
+          .replace(/^\[[^\]]+\]\s*/, "")
+          .replace(/\bmaintenance (?:has been |was )?informed\b/gi, "")
+          .replace(/\bengineer eta\b/gi, "engineer due")
+          .replace(/\bstill leaking from previous shift,?\s*urgent\b/gi, "still open from previous shift")
+          .replace(/\bstill leaking from previous shift\b/gi, "still open from previous shift")
+          .replace(/\bnot cooling properly\b/gi, "not cooling")
+          .replace(/\bhas been informed but has not attended yet\b/gi, "informed but not yet attended")
+          .replace(/\bcard declined at checkout\b/gi, "card declined at check-out")
+          .replace(/\balready booked\b/gi, "booked")
+          .replace(/\s*[–—\-]\s*/g, " – ")
+          .replace(/\s{2,}/g, " ");
+        detail = tidyHandoverPhrase(detail);
+        if (detail.length > 100) {
+          var cut = detail.slice(0, 97);
+          var lastSpace = cut.lastIndexOf(" ");
+          detail = (lastSpace > 50 ? cut.slice(0, lastSpace) : cut).replace(/[,;:\-–—\s]+$/, "") + "…";
+        }
+        return detail;
+      }
+
+      function rewriteNoteForDisplay(note) {
+        var line = note.original || "";
+        var room = note.rooms && note.rooms.length === 1 ? note.rooms[0] : null;
+        var roomsLabel = note.rooms && note.rooms.length > 1 ? "Rooms " + note.rooms.join(", ") : "";
+        var guestName = extractGuestNameHint(line);
+        var lead = room ? "Room " + room : (roomsLabel || "");
+        var body = "";
+
+        if (note.section === "completed") {
+          body = summariseIssueCore(line, room);
+        } else if (note.section === "vip" || note.isVip) {
+          var suiteMatch = line.match(/\bsuite\s*(\d+)/i);
+          if (suiteMatch && !room) lead = "Suite " + suiteMatch[1];
+          var amenityBits = [];
+          if (noteContains(line, ["champagne"])) amenityBits.push("champagne");
+          if (noteContains(line, ["flowers"])) amenityBits.push("flowers");
+          if (noteContains(line, ["water"])) amenityBits.push("extra water");
+          if (noteContains(line, ["quiet"])) amenityBits.push("quiet room");
+          body = (guestName ? guestName + " " : "") +
+            (noteContains(line, ["arriv"]) ? "VIP arriving" : "VIP noted");
+          if (amenityBits.length) body += " – " + amenityBits.join(" and ") + " noted";
+          var timeMatch = line.match(/\b(\d{1,2}[:.]\d{2}|\d{1,2}\s*(?:am|pm))\b/i);
+          if (timeMatch) body += " for " + timeMatch[1].replace(".", ":");
+        } else if (note.section === "payments" || isPaymentIssueLine(line)) {
+          var amount = line.match(/£\s*[\d,.]+|\$\s*[\d,.]+|€\s*[\d,.]+/);
+          var amt = amount ? amount[0].replace(/\s+/g, "") : "";
+          if (isOtaPaymentTaskLine(line)) {
+            body = "OTA virtual card / channel payment to process" + (amt ? " (" + amt + ")" : "");
+          } else if (hasExplicitOutstandingBalance(line) || noteContains(line, ["declined"])) {
+            body = "Outstanding balance to be settled before departure" + (amt ? " (" + amt + ")" : "");
+          } else if (noteContains(line, ["minibar"])) {
+            body = "Minibar charge to review" +
+              (noteContains(line, ["dispute", "not consumed"]) ? " – guest dispute" : "") +
+              (amt ? " (" + amt + ")" : "");
+          } else if (noteContains(line, ["deposit"])) {
+            body = summariseIssueCore(line, room);
+          } else {
+            body = summariseIssueCore(line, room);
+          }
+        } else if (note.section === "maintenance" || note.section === "urgent") {
+          if (noteContains(line, ["leak", "leaking", "shower"])) {
+            body = "Shower leak still open" + (note.isCarriedOver ? " from previous shift" : "") +
+              " – requires inspection";
+          } else if (noteContains(line, ["ac", "a/c", "air con", "air conditioning", "not cooling"])) {
+            body = "Air conditioning requires inspection" +
+              (noteContains(line, ["guest", "follow"]) ? " before guest follow-up" : "");
+            if (noteContains(line, ["informed", "eta", "engineer", "not attended"])) {
+              body += " – engineer not yet completed";
+            }
+          } else if (noteContains(line, ["tv", "remote"])) {
+            body = "TV remote not working – replacement needed";
+          } else {
+            body = summariseIssueCore(line, room);
+          }
+        } else if (note.section === "guest") {
+          if (noteContains(line, ["late checkout", "late check-out"])) {
+            body = lateCheckoutStatusPhrase(line);
+          } else if (noteContains(line, ["complaint", "unhappy", "dissatisfied"])) {
+            body = "Guest complaint – recovery follow-up required";
+          } else {
+            body = summariseIssueCore(line, room);
+          }
+        } else if (note.section === "deliveries") {
+          body = "Package held at reception" + (guestName ? " for " + guestName : "");
+        } else if (note.section === "inventory") {
+          body = summariseIssueCore(line, room);
+          if (noteContains(line, ["outstanding", "still", "issued"])) {
+            body = body.replace(/\.$/, "") + " – still to be collected";
+          }
+        } else if (note.section === "lostproperty") {
+          body = summariseIssueCore(line, room).replace(/^lost property:\s*/i, "");
+          if (body.toLowerCase().indexOf("lost") === -1) body = "Lost property – " + body;
+        } else if (note.section === "tasks") {
+          if (noteContains(line, ["dnd"])) body = "Room on DND – hold cleaning until released";
+          else if (noteContains(line, ["pillow"])) body = "Extra pillows requested – still outstanding";
+          else body = summariseIssueCore(line, room);
+        } else if (note.section === "events") {
+          body = summariseIssueCore(line, room);
+        } else {
+          body = summariseIssueCore(line, room);
+        }
+
+        body = tidyHandoverPhrase(body);
+        if (!body) body = tidyHandoverPhrase(summariseIssueCore(line, room) || line);
+
+        if (lead) {
+          var rest = body.charAt(0).toLowerCase() + body.slice(1);
+          if (/^(vip|mr|mrs|ms|miss|dr)\b/i.test(body) && !room) {
+            return capitalize(body) + (lead ? " – " + lead : "");
+          }
+          return lead + " – " + rest;
+        }
+        return capitalize(body);
+      }
+
+      function noteDedupeKey(note) {
+        var rooms = (note.rooms || []).slice().sort().join(",");
+        if (rooms) return "room|" + rooms;
+        var fp = topicFingerprint(note.original || "");
+        var core = summariseIssueCore(note.original || "", null)
+          .toLowerCase()
+          .replace(/[^a-z0-9\s]/g, " ")
+          .replace(/\b(the|a|an|and|for|with|from|still|please|guest)\b/g, " ")
+          .replace(/\s+/g, " ")
+          .trim()
+          .slice(0, 40);
+        return fp + "||" + core;
       }
 
       function formatNoteDisplay(note) {
-        var tags = buildNoteTags(note);
-        var prefix = tags.length ? "[" + tags.join(" · ") + "] " : "";
-        if (note.rooms.length === 1) {
-          var room = note.rooms[0];
-          var detail = stripRoomReference(note.original, room);
-          return prefix + "Room " + room + ": " + detail;
-        }
-        return prefix + note.original;
+        return rewriteNoteForDisplay(note);
+      }
+
+      function composeMergedRoomNarrative(room, notes) {
+        var sorted = notes.slice().sort(compareNotesByDutyPriority);
+        var parts = [];
+        var seen = {};
+        sorted.forEach(function (note) {
+          var text = rewriteNoteForDisplay(Object.assign({}, note, {
+            rooms: [room],
+            original: note.original
+          }));
+          text = text.replace(new RegExp("^Room\\s+" + room + "\\s*[–—-]\\s*", "i"), "");
+          var key = text.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+          if (!key || seen[key]) return;
+          seen[key] = true;
+          parts.push(text);
+        });
+        if (!parts.length) return "Room " + room + " – update required";
+        if (parts.length === 1) return "Room " + room + " – " + parts[0];
+        return "Room " + room + " – " + parts.join("; ");
       }
 
       function formatMergedRoomNotes(room, notes) {
-        var tags = [];
-        var tagSet = {};
+        return composeMergedRoomNarrative(room, notes);
+      }
 
-        notes.forEach(function (note) {
-          buildNoteTags(note).forEach(function (tag) {
-            if (!tagSet[tag]) {
-              tagSet[tag] = true;
-              tags.push(tag);
-            }
-          });
+      function compareNotesByDutyPriority(a, b) {
+        var order = {
+          urgent: 0, vip: 1, guest: 2, maintenance: 3, payments: 4,
+          events: 5, tasks: 6, inventory: 7, deliveries: 8, lostproperty: 9,
+          general: 10, completed: 11
+        };
+        function rank(note) {
+          var score = (order[note.section] != null ? order[note.section] : 20) * 10;
+          if (note.needsManagementAttention) score -= 5;
+          if (note.maintenancePriority === "Critical") score -= 8;
+          if (note.isVip) score -= 4;
+          if (note.isCarriedOver) score -= 2;
+          if (isResolvedNote(note.original) || note.section === "completed") score += 80;
+          return score;
+        }
+        return rank(a) - rank(b);
+      }
+
+      function bestSectionForNotes(notes) {
+        var sorted = notes.slice().sort(compareNotesByDutyPriority);
+        return sorted[0] ? sorted[0].section : "general";
+      }
+
+      function consolidateAnalyzedNotes(analyzed) {
+        var byRoom = {};
+        var standalone = [];
+        analyzed.forEach(function (note) {
+          if (isNoiseOperationalLine(note.original) && note.section === "general" && !note.isVip) {
+            return;
+          }
+          if (note.rooms && note.rooms.length === 1) {
+            var room = note.rooms[0];
+            if (!byRoom[room]) byRoom[room] = [];
+            byRoom[room].push(note);
+          } else {
+            standalone.push(note);
+          }
         });
 
-        var prefix = tags.length ? "[" + tags.join(" · ") + "] " : "";
-        var details = notes.map(function (note) {
-          return stripRoomReference(note.original, room);
-        }).filter(function (text) { return text.length > 0; });
+        var consolidated = [];
+        Object.keys(byRoom).forEach(function (room) {
+          var group = byRoom[room];
+          if (group.length === 1) {
+            consolidated.push(group[0]);
+            return;
+          }
+          var primary = group.slice().sort(compareNotesByDutyPriority)[0];
+          var merged = Object.assign({}, primary, {
+            section: bestSectionForNotes(group),
+            original: group.map(function (n) { return n.original; }).join(" | "),
+            rooms: [room],
+            isVip: group.some(function (n) { return n.isVip; }),
+            isCarriedOver: group.some(function (n) { return n.isCarriedOver; }),
+            isFollowUp: group.some(function (n) { return n.isFollowUp; }),
+            needsManagementAttention: group.some(function (n) { return n.needsManagementAttention; }),
+            maintenancePriority: group.reduce(function (best, n) {
+              var rank = { Critical: 3, High: 2, Normal: 1 };
+              if (!n.maintenancePriority) return best;
+              if (!best) return n.maintenancePriority;
+              return (rank[n.maintenancePriority] || 0) > (rank[best] || 0) ? n.maintenancePriority : best;
+            }, null),
+            _mergedNotes: group
+          });
+          consolidated.push(merged);
+        });
 
-        if (details.length === 1) {
-          return prefix + "Room " + room + ": " + details[0];
-        }
+        standalone.forEach(function (note) {
+          if (note.section === "completed" && isNoiseOperationalLine(note.original)) return;
+          consolidated.push(note);
+        });
 
-        return prefix + "Room " + room + ": " + details.join("; ");
+        return consolidated.sort(compareNotesByDutyPriority);
       }
 
       function mergeNotesByRoom(notes) {
         var byRoom = {};
         var standalone = [];
+        var dedupe = {};
 
-        notes.forEach(function (note) {
+        notes.slice().sort(compareNotesByDutyPriority).forEach(function (note) {
+          var key = noteDedupeKey(note);
+          if (dedupe[key] && note.rooms && note.rooms.length === 1) return;
+          dedupe[key] = true;
+
           if (note.rooms.length === 1) {
             var room = note.rooms[0];
             if (!byRoom[room]) byRoom[room] = [];
@@ -5910,9 +6274,13 @@
           return parseInt(a, 10) - parseInt(b, 10);
         }).forEach(function (room) {
           var roomNotes = byRoom[room];
-          merged.push(roomNotes.length === 1
-            ? formatNoteDisplay(roomNotes[0])
-            : formatMergedRoomNotes(room, roomNotes));
+          if (roomNotes[0] && roomNotes[0]._mergedNotes) {
+            merged.push(composeMergedRoomNarrative(room, roomNotes[0]._mergedNotes));
+          } else {
+            merged.push(roomNotes.length === 1
+              ? formatNoteDisplay(roomNotes[0])
+              : formatMergedRoomNotes(room, roomNotes));
+          }
         });
 
         standalone.forEach(function (note) {
@@ -5939,10 +6307,27 @@
           finalizeNote(note);
         });
         ensureNoteCoverage(analyzed);
+        analyzed = consolidateAnalyzedNotes(analyzed);
 
         var classified = {};
         SECTIONS.forEach(function (section) {
           classified[section.id] = buildSectionDisplay(analyzed, section.id);
+        });
+
+        var seenDisplay = {};
+        SECTIONS.forEach(function (section) {
+          classified[section.id] = (classified[section.id] || []).filter(function (item) {
+            var text = typeof item === "string" ? item : (item && item.text) || "";
+            var sig = text.toLowerCase()
+              .replace(/[^a-z0-9\s]/g, " ")
+              .replace(/\s+/g, " ")
+              .trim()
+              .slice(0, 90);
+            if (!sig) return true;
+            if (seenDisplay[sig]) return false;
+            seenDisplay[sig] = true;
+            return true;
+          });
         });
 
         classified._analyzed = analyzed;
@@ -5962,10 +6347,10 @@
 
       function isVipArrivalNote(note) {
         if (!isActiveNote(note)) return false;
-        if (!note.isVip) return false;
+        if (!note.isVip && note.section !== "vip") return false;
         return noteContains(note.original, [
           "arriv", "arriving", "tomorrow", "tonight", "due in", "checking in", "check in today"
-        ]);
+        ]) || note.section === "vip";
       }
 
       function sectionDisplayCount(analyzed, sectionId) {
@@ -5973,23 +6358,30 @@
       }
 
       function computeHandoverMetrics(analyzed) {
-        var vipNotes = analyzed.filter(isVipArrivalNote);
+        var vipNotes = analyzed.filter(function (n) {
+          return isActiveNote(n) && (n.isVip || n.section === "vip");
+        });
+
+        var taskLike = sectionDisplayCount(analyzed, "tasks") +
+          sectionDisplayCount(analyzed, "inventory") +
+          sectionDisplayCount(analyzed, "deliveries");
 
         return {
-          urgent: buildSectionDisplay(analyzed, "urgent").length,
+          urgent: sectionDisplayCount(analyzed, "urgent"),
           vip: mergeNotesByRoom(vipNotes).length,
-          maintenance: buildSectionDisplay(analyzed, "maintenance").length,
-          payments: buildSectionDisplay(analyzed, "payments").length,
-          events: buildSectionDisplay(analyzed, "events").length,
-          tasks: buildSectionDisplay(analyzed, "tasks").length,
+          maintenance: sectionDisplayCount(analyzed, "maintenance"),
+          payments: sectionDisplayCount(analyzed, "payments"),
+          events: sectionDisplayCount(analyzed, "events"),
+          tasks: taskLike,
           display: {
-            urgent: buildSectionDisplay(analyzed, "urgent").length,
-            guest: buildSectionDisplay(analyzed, "guest").length,
-            maintenance: buildSectionDisplay(analyzed, "maintenance").length,
-            payments: buildSectionDisplay(analyzed, "payments").length,
-            events: buildSectionDisplay(analyzed, "events").length,
-            tasks: buildSectionDisplay(analyzed, "tasks").length,
-            general: buildSectionDisplay(analyzed, "general").length
+            urgent: sectionDisplayCount(analyzed, "urgent"),
+            guest: sectionDisplayCount(analyzed, "guest") + sectionDisplayCount(analyzed, "vip"),
+            maintenance: sectionDisplayCount(analyzed, "maintenance"),
+            payments: sectionDisplayCount(analyzed, "payments"),
+            events: sectionDisplayCount(analyzed, "events"),
+            tasks: taskLike,
+            general: sectionDisplayCount(analyzed, "general") +
+              sectionDisplayCount(analyzed, "lostproperty")
           }
         };
       }
@@ -6143,13 +6535,13 @@
 
       function buildRoomIssueSentence(note) {
         if (!note.rooms || !note.rooms.length) return "";
-        var detail = briefIssueDetail(note);
+        var detail = summariseIssueCore(note.original, note.rooms.length === 1 ? note.rooms[0] : null);
         if (!detail) return "";
         detail = detail.replace(/\.$/, "");
         if (note.rooms.length === 1) {
-          return "Room " + note.rooms[0] + "'s " + detail.charAt(0).toLowerCase() + detail.slice(1) + " remains unresolved.";
+          return "Room " + note.rooms[0] + " — " + detail.charAt(0).toLowerCase() + detail.slice(1) + ".";
         }
-        return "Rooms " + note.rooms.join(", ") + ": " + detail + " remains unresolved.";
+        return "Rooms " + note.rooms.join(", ") + " — " + detail + ".";
       }
 
       function buildUrgentDetailSentences(analyzed) {
@@ -6465,9 +6857,10 @@
 
         if (checkoutItems.length === 1) {
           var checkoutRoom = checkoutItems[0].rooms.length ? " (Room " + checkoutItems[0].rooms[0] + ")" : "";
-          parts.push("One guest requested a late checkout" + checkoutRoom);
+          var checkoutPhrase = lateCheckoutStatusPhrase(checkoutItems[0].original || getItemText(checkoutItems[0]));
+          parts.push(checkoutPhrase + checkoutRoom);
         } else if (checkoutItems.length > 1) {
-          parts.push(checkoutItems.length + " guests have checkout-related requests");
+          parts.push(checkoutItems.length + " guests have check-out-related notes");
         }
 
         if (breakfastItems.length && !parts.length) {
@@ -6505,11 +6898,23 @@
         if (issueCount === 1) {
           var paymentItem = activePaymentNotes[0] || items[0];
           var paymentText = paymentItem ? getItemText(paymentItem) : "";
-          var roomMatch = paymentText.match(/\b(?:room|rm\.?)\s*(\d+[a-z]?)\b/i);
-          if (roomMatch) {
-            return "Room " + roomMatch[1] + " has a payment issue requiring follow-up before departure.";
+          if (isOtaPaymentTaskLine(paymentText)) {
+            return "One OTA virtual card / channel payment requires processing.";
           }
-          return "One payment issue requires follow-up before the next shift.";
+          if (noteContains(paymentText, ["minibar"]) && !hasExplicitOutstandingBalance(paymentText)) {
+            return "One minibar charge requires review.";
+          }
+          var roomMatch = paymentText.match(/\b(?:room|rm\.?)\s*(\d+[a-z]?)\b/i);
+          if (hasExplicitOutstandingBalance(paymentText) || noteContains(paymentText, ["declined"])) {
+            if (roomMatch) {
+              return "Room " + roomMatch[1] + " has an outstanding balance requiring settlement before departure.";
+            }
+            return "One outstanding balance requires settlement before departure.";
+          }
+          if (roomMatch) {
+            return "Room " + roomMatch[1] + " has a payment note requiring follow-up.";
+          }
+          return "One payment note requires follow-up before the next shift.";
         }
 
         if (issueCount > 1) {
@@ -6559,56 +6964,75 @@
       function generateSummary(classified) {
         var analyzed = classified._analyzed || [];
         var metrics = getHandoverMetrics(classified);
-        var sentences = [];
-        var urgentDetails = buildUrgentDetailSentences(analyzed);
+        var active = analyzed.filter(isActiveNote);
+        var urgent = active.filter(function (n) { return n.section === "urgent"; });
+        var vipNotes = active.filter(function (n) { return n.section === "vip" || n.isVip; });
+        var payNotes = active.filter(function (n) { return n.section === "payments"; });
+        var maint = active.filter(function (n) { return n.section === "maintenance"; });
+        var guest = active.filter(function (n) { return n.section === "guest"; });
+        var focus = [];
 
-        sentences.push(buildOpeningSentence(metrics, analyzed));
+        var opening;
+        if (!urgent.length && !vipNotes.length && !payNotes.length && !maint.length && !guest.length) {
+          opening = "Overall a quiet " + getShiftLabel().replace(/ shift$/, "") +
+            " with no priority issues for the incoming team.";
+        } else if (urgent.length === 1) {
+          opening = "Overall a manageable " + getShiftLabel().replace(/ shift$/, "") +
+            " with one priority issue requiring attention.";
+        } else if (urgent.length > 1) {
+          opening = "Busy " + getShiftLabel().replace(/ shift$/, "") +
+            " with " + urgent.length + " priority issues to hand over.";
+        } else {
+          opening = "Overall a steady " + getShiftLabel().replace(/ shift$/, "") +
+            " with clear follow-ups for the next team.";
+        }
 
-        urgentDetails.forEach(function (sentence) {
-          if (sentences.indexOf(sentence) === -1) sentences.push(sentence);
-        });
+        if (urgent[0]) {
+          var uRoom = urgent[0].rooms[0] ? "Room " + urgent[0].rooms[0] : "One issue";
+          focus.push(uRoom + " " + summariseIssueCore(urgent[0].original, urgent[0].rooms[0]).toLowerCase());
+        } else if (maint[0] && vipNotes.length) {
+          focus.push("one maintenance item that may affect tomorrow's VIP preparation");
+        } else if (maint[0]) {
+          focus.push("open maintenance on " + (maint[0].rooms[0] ? "Room " + maint[0].rooms[0] : "the property"));
+        }
 
-        var carriedSentence = buildCarriedOverSentence(analyzed.filter(function (n) {
-          return n.isCarriedOver && isActiveNote(n);
-        }));
-        if (carriedSentence) sentences.push(carriedSentence);
+        if (vipNotes.length) {
+          focus.push("VIP preparation");
+        }
+        if (payNotes.length) {
+          var hasBalance = payNotes.some(function (n) {
+            return hasExplicitOutstandingBalance(n.original) || noteContains(n.original, ["declined"]);
+          });
+          var hasOta = payNotes.some(function (n) { return isOtaPaymentTaskLine(n.original); });
+          if (hasBalance) focus.push("outstanding payments");
+          else if (hasOta) focus.push("OTA payment processing");
+          else focus.push("payment follow-ups");
+        }
+        if (guest.length && focus.length < 3) {
+          focus.push("guest follow-up");
+        }
 
-        var maintSentence = buildMaintenanceSentence(metrics, analyzed);
-        if (maintSentence) {
-          var urgentDetailText = urgentDetails.join(" ").toLowerCase();
-          if (!urgentDetailText || maintSentence.toLowerCase().indexOf(urgentDetailText.slice(0, 24)) === -1) {
-            if (sentences.indexOf(maintSentence) === -1) sentences.push(maintSentence);
+        var sentences = [opening];
+        if (focus.length) {
+          var uniqueFocus = [];
+          focus.forEach(function (item) {
+            var key = item.toLowerCase();
+            if (uniqueFocus.indexOf(key) === -1) uniqueFocus.push(item);
+          });
+          if (urgent.length || maint.length) {
+            sentences.push(
+              "Main priority: " + uniqueFocus[0].replace(/\.$/, "") +
+              (uniqueFocus.length > 1 ? ", alongside " + uniqueFocus.slice(1, 3).join(" and ") : "") + "."
+            );
           }
+          sentences.push(
+            "Morning team should prioritise " +
+            uniqueFocus.slice(0, 3).join(", ").replace(/, ([^,]*)$/, " and $1") + "."
+          );
         }
 
-        var guestSentence = buildGuestSentence(metrics, analyzed);
-        if (guestSentence && aiPrefs.detail !== "brief" &&
-            !/guest-related note(s)? (was|were) recorded/i.test(guestSentence)) {
-          sentences.push(guestSentence);
-        }
-
-        var paySentence = buildPaymentsSentence(classified.payments || [], metrics);
-        if (paySentence && aiPrefs.detail !== "brief") sentences.push(paySentence);
-
-        var taskSentence = buildTasksSentence(classified.tasks || [], classified.general || [], analyzed, metrics);
-        if (taskSentence && sentences.indexOf(taskSentence) === -1 &&
-            !/operational tasks require follow-up|operational task requires follow-up|follow-up tasks remain outstanding for the incoming team/i.test(taskSentence)) {
-          sentences.push(taskSentence);
-        }
-
-        var handoffSentence = buildHandoverHandoffSentence(metrics);
-        if (handoffSentence) sentences.push(handoffSentence);
-
-        if (aiPrefs.detail === "comprehensive") {
-          var glanceSentence = buildGlanceSummarySentence(metrics);
-          if (glanceSentence && sentences.indexOf(glanceSentence) === -1) {
-            sentences.splice(1, 0, glanceSentence);
-          }
-        }
-
-        var limit = getDetailSentenceLimit();
-        var summary = sentences.slice(0, limit).join(" ");
-        return applyAiPreferencesToSummary(summary, classified);
+        var limit = aiPrefs.detail === "brief" ? 2 : 4;
+        return applyAiPreferencesToSummary(sentences.slice(0, limit).join(" "), classified);
       }
 
       function showSummaryCard() {
@@ -6690,6 +7114,8 @@
       ];
 
       var SNAPSHOT_EMPTY = "—";
+      var HOTEL_SNAPSHOT_HINT_TEXT =
+        "Enter today's hotel figures, or leave them blank and AI will extract them from your shift notes.";
 
       var SNAPSHOT_PDF_LABELS = {
         arrivals: "Arrivals",
@@ -6837,13 +7263,25 @@
         switch (statId) {
           case "occupancy": {
             var occNum = parseOccupancyNumber(trimmed);
-            if (occNum === null) return "";
+            if (occNum === null || occNum < 0) return "";
             return formatOccupancyPercent(occNum);
           }
           case "adr": {
-            var adrText = trimmed.replace(/^adr\s*[:\-]?\s*/i, "").replace(/^[£$€]\s*/, "").trim();
+            var adrText = trimmed.replace(/^adr\s*[:\-]?\s*/i, "").replace(/^[£$€]\s*/, "").replace(/,/g, "").trim();
             if (!adrText || !/\d/.test(adrText)) return "";
-            return currencySymbol + adrText;
+            var adrNum = parseFloat(adrText);
+            if (isNaN(adrNum) || adrNum < 0) return "";
+            return formatAdrDisplay(adrNum);
+          }
+          case "arrivals":
+          case "departures":
+          case "inHouse":
+          case "roomsSold": {
+            var intMatch = trimmed.replace(/,/g, "").match(/-?\d+/);
+            if (!intMatch) return "";
+            var intNum = parseInt(intMatch[0], 10);
+            if (isNaN(intNum) || intNum < 0) return "";
+            return String(intNum);
           }
           default:
             return trimmed;
@@ -6857,6 +7295,174 @@
           return;
         }
         lastHotelSnapshotOverrides[statId] = normalized;
+      }
+
+      function getPreSnapshotInputs() {
+        if (!preHotelSnapshotGrid) return [];
+        return Array.prototype.slice.call(
+          preHotelSnapshotGrid.querySelectorAll(".snapshot-field-input[data-snapshot-input]")
+        );
+      }
+
+      function getPreSnapshotInputIndex(input) {
+        var inputs = getPreSnapshotInputs();
+        for (var i = 0; i < inputs.length; i++) {
+          if (inputs[i] === input) return i;
+        }
+        return -1;
+      }
+
+      function focusPreSnapshotInputAt(index) {
+        var inputs = getPreSnapshotInputs();
+        if (!inputs.length) return;
+        var target = inputs[Math.max(0, Math.min(index, inputs.length - 1))];
+        if (!target) return;
+        target.focus();
+        if (typeof target.select === "function") target.select();
+      }
+
+      function focusNextSectionAfterSnapshot() {
+        if (notesInput) {
+          notesInput.focus();
+          return;
+        }
+        if (generateBtn && !generateBtn.disabled) generateBtn.focus();
+      }
+
+      function parseSnapshotNumericValue(statId, raw) {
+        var text = String(raw || "").trim();
+        if (!text || text === SNAPSHOT_EMPTY) return null;
+
+        if (statId === "occupancy") {
+          return parseOccupancyNumber(text);
+        }
+        if (statId === "adr") {
+          var adrNumeric = text.replace(/^adr\s*[:\-]?\s*/i, "").replace(/^[£$€]\s*/, "").replace(/,/g, "").trim();
+          if (!adrNumeric || !/\d/.test(adrNumeric)) return null;
+          var adrNum = parseFloat(adrNumeric);
+          return isNaN(adrNum) ? null : adrNum;
+        }
+        var intMatch = text.replace(/,/g, "").match(/-?\d+/);
+        if (!intMatch) return null;
+        var intNum = parseInt(intMatch[0], 10);
+        return isNaN(intNum) ? null : intNum;
+      }
+
+      function formatSnapshotInputDisplay(statId, value) {
+        if (value === null || value === undefined || value === "") return "";
+        if (statId === "occupancy") return formatOccupancyPercent(value);
+        if (statId === "adr") return formatAdrDisplay(value);
+        return String(Math.round(value));
+      }
+
+      function incrementSnapshotFieldValue(statId, raw, direction) {
+        var step = direction < 0 ? -1 : 1;
+        var current = parseSnapshotNumericValue(statId, raw);
+        var next;
+
+        if (current === null) {
+          if (step < 0) return "";
+          next = 0;
+        } else {
+          next = current + step;
+        }
+
+        if (next < 0) next = 0;
+        if (statId === "occupancy" && next > 100) next = 100;
+
+        return formatSnapshotInputDisplay(statId, next);
+      }
+
+      function confirmPreSnapshotField(input, statId) {
+        syncSnapshotOverrideFromInput(statId, input.value);
+        if (statId === "occupancy") {
+          var occ = parseOccupancyNumber(input.value);
+          if (occ !== null && occ > 100) showToast("Occupancy capped at 100%.");
+        }
+        if (hasSnapshotOverride(statId)) {
+          input.value = String(lastHotelSnapshotOverrides[statId]);
+        } else {
+          input.value = "";
+        }
+        input.setAttribute("data-snapshot-committed", input.value);
+        if (lastClassified) {
+          commitSnapshotState();
+          renderHotelSnapshotIntoGrid(shiftSnapshotGrid, lastNormalizedSnapshot || {});
+          lastHandoverText = formatHandoverText(lastClassified);
+        }
+        scheduleDraftSave();
+      }
+
+      function cancelPreSnapshotField(input, statId) {
+        var previous = input.getAttribute("data-snapshot-committed");
+        if (previous === null || previous === undefined) {
+          previous = hasSnapshotOverride(statId) ? String(lastHotelSnapshotOverrides[statId]) : "";
+        }
+        input.value = previous;
+        syncSnapshotOverrideFromInput(statId, previous);
+        if (lastClassified) {
+          commitSnapshotState();
+          renderHotelSnapshotIntoGrid(shiftSnapshotGrid, lastNormalizedSnapshot || {});
+          lastHandoverText = formatHandoverText(lastClassified);
+        }
+        scheduleDraftSave();
+      }
+
+      function bindPreSnapshotKeyboard(input, stat) {
+        input.addEventListener("focus", function () {
+          input.setAttribute("data-snapshot-committed", input.value);
+        });
+
+        input.addEventListener("keydown", function (event) {
+          var key = event.key;
+          var index = getPreSnapshotInputIndex(input);
+
+          if (key === "ArrowLeft" || key === "ArrowRight") {
+            event.preventDefault();
+            if (index < 0) return;
+            focusPreSnapshotInputAt(index + (key === "ArrowLeft" ? -1 : 1));
+            return;
+          }
+
+          if (key === "ArrowUp" || key === "ArrowDown") {
+            event.preventDefault();
+            input.value = incrementSnapshotFieldValue(
+              stat.id,
+              input.value,
+              key === "ArrowUp" ? 1 : -1
+            );
+            syncSnapshotOverrideFromInput(stat.id, input.value);
+            if (lastClassified) {
+              commitSnapshotState();
+              renderHotelSnapshotIntoGrid(shiftSnapshotGrid, lastNormalizedSnapshot || {});
+              lastHandoverText = formatHandoverText(lastClassified);
+            }
+            scheduleDraftSave();
+            return;
+          }
+
+          if (key === "Enter") {
+            event.preventDefault();
+            confirmPreSnapshotField(input, stat.id);
+            if (index >= getPreSnapshotInputs().length - 1) {
+              focusNextSectionAfterSnapshot();
+            } else {
+              focusPreSnapshotInputAt(index + 1);
+            }
+            return;
+          }
+
+          if (key === "Escape") {
+            event.preventDefault();
+            cancelPreSnapshotField(input, stat.id);
+            input.blur();
+            return;
+          }
+
+          if (key === "-" || key === "Minus" || key === "Subtract") {
+            event.preventDefault();
+          }
+        });
       }
 
       function captureHotelSnapshotInputs() {
@@ -6965,8 +7571,12 @@
         input.className = "snapshot-field-input";
         input.setAttribute("data-snapshot-input", stat.id);
         input.setAttribute("aria-label", stat.label);
+        input.setAttribute("name", "hotel-snapshot-" + stat.id);
+        input.setAttribute("autocomplete", "off");
+        input.setAttribute("inputmode", stat.id === "adr" || stat.id === "occupancy" ? "decimal" : "numeric");
         input.placeholder = SNAPSHOT_EMPTY;
         input.value = hasSnapshotOverride(stat.id) ? String(lastHotelSnapshotOverrides[stat.id]) : "";
+        input.setAttribute("data-snapshot-committed", input.value);
 
         function syncGeneratedSnapshotFromForm() {
           if (!lastClassified) return;
@@ -6982,21 +7592,16 @@
         });
 
         input.addEventListener("blur", function () {
-          var before = input.value;
-          syncSnapshotOverrideFromInput(stat.id, input.value);
-          if (stat.id === "occupancy" && parseOccupancyNumber(before) > 100) {
-            showToast("Occupancy capped at 100%.");
-          }
-          if (hasSnapshotOverride(stat.id)) {
-            input.value = String(lastHotelSnapshotOverrides[stat.id]);
-          }
-          syncGeneratedSnapshotFromForm();
-          scheduleDraftSave();
+          confirmPreSnapshotField(input, stat.id);
         });
+
+        bindPreSnapshotKeyboard(input, stat);
 
         var label = document.createElement("div");
         label.className = "glance-snapshot-label";
+        label.id = "snapshot-label-" + stat.id;
         label.textContent = stat.label;
+        input.setAttribute("aria-labelledby", label.id);
 
         body.appendChild(input);
         body.appendChild(label);
@@ -7142,17 +7747,21 @@
         card.setAttribute("tabindex", "0");
         card.setAttribute("aria-label", "Edit " + stat.label);
 
-        function openEditor() {
+        function openEditor(options) {
+          options = options || {};
           if (card.classList.contains("is-editing")) return;
           card.classList.add("is-editing");
 
           var body = card.querySelector(".glance-stat-body");
           var currentDisplay = valueEl.textContent;
+          var committedValue = currentDisplay === SNAPSHOT_EMPTY ? "" : currentDisplay;
           var input = document.createElement("input");
           input.type = "text";
           input.className = "snapshot-edit-input";
-          input.value = currentDisplay === SNAPSHOT_EMPTY ? "" : currentDisplay;
-          input.setAttribute("aria-label", "Enter " + stat.label);
+          input.value = committedValue;
+          input.setAttribute("aria-label", stat.label);
+          input.setAttribute("inputmode", stat.id === "adr" || stat.id === "occupancy" ? "decimal" : "numeric");
+          input.setAttribute("data-snapshot-committed", committedValue);
 
           var actions = document.createElement("div");
           actions.className = "snapshot-edit-actions";
@@ -7180,17 +7789,92 @@
             scheduleDraftSave();
           }
 
+          function applyCancel() {
+            input.value = input.getAttribute("data-snapshot-committed") || "";
+            closeEditor();
+          }
+
+          function focusAdjacentSnapshot(direction) {
+            if (!shiftSnapshotGrid) return;
+            var cards = Array.prototype.slice.call(
+              shiftSnapshotGrid.querySelectorAll(".glance-snapshot[data-snapshot]")
+            );
+            var index = cards.indexOf(card);
+            if (index < 0) return;
+            var nextIndex = index + direction;
+            if (nextIndex < 0 || nextIndex >= cards.length) return;
+            applySave();
+            var nextCard = cards[nextIndex];
+            if (!nextCard) return;
+            window.setTimeout(function () {
+              var refreshed = shiftSnapshotGrid.querySelector(
+                '.glance-snapshot[data-snapshot="' + nextCard.getAttribute("data-snapshot") + '"]'
+              );
+              if (refreshed) {
+                refreshed.click();
+              }
+            }, 0);
+          }
+
           saveBtn.addEventListener("click", function (event) {
             event.stopPropagation();
             applySave();
           });
           cancelBtn.addEventListener("click", function (event) {
             event.stopPropagation();
-            closeEditor();
+            applyCancel();
           });
           input.addEventListener("keydown", function (event) {
-            if (event.key === "Enter") applySave();
-            if (event.key === "Escape") closeEditor();
+            if (event.key === "ArrowLeft") {
+              event.preventDefault();
+              focusAdjacentSnapshot(-1);
+              return;
+            }
+            if (event.key === "ArrowRight") {
+              event.preventDefault();
+              focusAdjacentSnapshot(1);
+              return;
+            }
+            if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+              event.preventDefault();
+              input.value = incrementSnapshotFieldValue(
+                stat.id,
+                input.value,
+                event.key === "ArrowUp" ? 1 : -1
+              );
+              return;
+            }
+            if (event.key === "Enter") {
+              event.preventDefault();
+              var cards = shiftSnapshotGrid
+                ? Array.prototype.slice.call(
+                    shiftSnapshotGrid.querySelectorAll(".glance-snapshot[data-snapshot]")
+                  )
+                : [];
+              var index = cards.indexOf(card);
+              applySave();
+              if (index >= 0 && index < cards.length - 1) {
+                window.setTimeout(function () {
+                  var nextId = cards[index + 1].getAttribute("data-snapshot");
+                  var nextCard = shiftSnapshotGrid.querySelector(
+                    '.glance-snapshot[data-snapshot="' + nextId + '"]'
+                  );
+                  if (nextCard) nextCard.click();
+                }, 0);
+              } else if (sectionsGrid) {
+                var firstSection = sectionsGrid.querySelector(".section-card .section-toggle");
+                if (firstSection) firstSection.focus();
+              }
+              return;
+            }
+            if (event.key === "Escape") {
+              event.preventDefault();
+              applyCancel();
+              return;
+            }
+            if (event.key === "-" || event.key === "Minus" || event.key === "Subtract") {
+              event.preventDefault();
+            }
           });
           input.addEventListener("click", function (event) {
             event.stopPropagation();
@@ -7201,6 +7885,7 @@
           body.appendChild(input);
           body.appendChild(actions);
           input.focus();
+          if (options.select !== false && typeof input.select === "function") input.select();
         }
 
         card.addEventListener("click", function (event) {
@@ -7213,6 +7898,17 @@
           if (event.key === "Enter" || event.key === " ") {
             event.preventDefault();
             openEditor();
+          }
+          if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+            event.preventDefault();
+            if (!shiftSnapshotGrid) return;
+            var cards = Array.prototype.slice.call(
+              shiftSnapshotGrid.querySelectorAll(".glance-snapshot[data-snapshot]")
+            );
+            var index = cards.indexOf(card);
+            if (index < 0) return;
+            var next = cards[index + (event.key === "ArrowLeft" ? -1 : 1)];
+            if (next) next.focus();
           }
         });
       }
@@ -7438,11 +8134,11 @@
 
         var rows = [
           { id: "urgent", tone: "urgent", heading: "Immediate Attention", count: metrics.urgent, icon: GLANCE_STATS[0].icon },
-          { id: "guest", tone: "guest", heading: "VIP / Guest Focus", count: metrics.vip > 0 ? metrics.vip : metrics.display.guest, icon: GLANCE_STATS[1].icon },
-          { id: "maintenance", tone: "maintenance", heading: "Maintenance Tasks", count: metrics.maintenance, icon: GLANCE_STATS[2].icon },
-          { id: "payments", tone: "payments", heading: "Payments", count: metrics.payments, icon: GLANCE_STATS[3].icon },
-          { id: "events", tone: "events", heading: "Events", count: metrics.events, icon: GLANCE_STATS[4].icon },
-          { id: "tasks", tone: "tasks", heading: "Outstanding Tasks", count: metrics.tasks, icon: GLANCE_STATS[5].icon }
+          { id: "guest", tone: "guest", heading: "VIP & Guest Follow-up", count: metrics.vip > 0 ? metrics.vip : metrics.display.guest, icon: GLANCE_STATS[1].icon },
+          { id: "maintenance", tone: "maintenance", heading: "Maintenance", count: metrics.maintenance, icon: GLANCE_STATS[2].icon },
+          { id: "payments", tone: "payments", heading: "Finance", count: metrics.payments, icon: GLANCE_STATS[3].icon },
+          { id: "events", tone: "events", heading: "Reception", count: metrics.events, icon: GLANCE_STATS[4].icon },
+          { id: "tasks", tone: "tasks", heading: "Housekeeping & Inventory", count: metrics.tasks, icon: GLANCE_STATS[5].icon }
         ];
 
         rows.forEach(function (row) {
@@ -8290,11 +8986,11 @@
         var metrics = getHandoverMetrics(classified);
         var rowDefs = [
           { id: "urgent", heading: "Immediate Attention", count: metrics.urgent },
-          { id: "guest", heading: "VIP / Guest Focus", count: metrics.vip > 0 ? metrics.vip : metrics.display.guest },
+          { id: "guest", heading: "VIP & Guest Requests", count: metrics.vip > 0 ? metrics.vip : metrics.display.guest },
           { id: "maintenance", heading: "Maintenance", count: metrics.maintenance },
-          { id: "payments", heading: "Payments", count: metrics.payments },
-          { id: "events", heading: "Events", count: metrics.events },
-          { id: "tasks", heading: "Outstanding Tasks", count: metrics.tasks }
+          { id: "payments", heading: "Finance", count: metrics.payments },
+          { id: "events", heading: "Arrivals & Events", count: metrics.events },
+          { id: "tasks", heading: "Housekeeping & Inventory", count: metrics.tasks }
         ];
         var rows = [];
 

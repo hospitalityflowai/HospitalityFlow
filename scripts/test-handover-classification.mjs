@@ -37,13 +37,17 @@ export const SCATTERED_NOTES = [
 ].join("\n");
 
 const SECTION_TITLES = {
-  urgent: "Urgent Issues",
-  guest: "VIP / Guest Information",
-  tasks: "Outstanding Tasks",
+  urgent: "Safety & Urgent",
+  vip: "VIP",
+  guest: "Guest Follow-up",
   maintenance: "Maintenance",
-  payments: "Payment Issues",
-  events: "Events",
-  general: "General Updates",
+  payments: "Finance",
+  events: "Reception",
+  tasks: "Housekeeping",
+  inventory: "Inventory",
+  deliveries: "Deliveries",
+  lostproperty: "Lost Property",
+  general: "General Operations",
   completed: "Completed Actions"
 };
 
@@ -361,7 +365,7 @@ async function main() {
   });
 
   const lostPropertyMisplaced = result.trace.filter(function (row) {
-    return /lost property|lost item/i.test(row.source) && row.sectionId !== "general";
+    return /lost property|lost item/i.test(row.source) && row.sectionId !== "lostproperty";
   });
   if (paymentLost.length) {
     console.error("FAIL: payment notes not in payments:", paymentLost.map((r) => r.index).join(", "));
@@ -369,7 +373,7 @@ async function main() {
   }
 
   if (lostPropertyMisplaced.length) {
-    console.error("FAIL: lost property not in General Updates:", lostPropertyMisplaced.map((r) => r.index).join(", "));
+    console.error("FAIL: lost property not in Lost Property:", lostPropertyMisplaced.map((r) => r.index).join(", "));
     failed = true;
   }
 
