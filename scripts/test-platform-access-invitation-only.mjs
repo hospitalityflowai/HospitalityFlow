@@ -5,6 +5,7 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import vm from "vm";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -23,13 +24,37 @@ function pass(message) {
   return true;
 }
 
-function main() {
+function scriptOrder(html, earlier, later) {
+  const earlierIdx = html.indexOf(earlier);
+  const laterIdx = html.indexOf(later);
+  return earlierIdx !== -1 && laterIdx !== -1 && earlierIdx < laterIdx;
+}
+
+function loadPlatformAccessModule(globalOverrides) {
+  const sandbox = {
+    Promise,
+    console
+  };
+  Object.assign(sandbox, globalOverrides || {});
+  sandbox.window = sandbox;
+  vm.createContext(sandbox);
+  vm.runInContext(read("js/platform-access.js"), sandbox);
+  return sandbox.HFPlatformAccess;
+}
+
+async function run() {
   let ok = true;
   const authSrc = read("js/auth.js");
   const earlyAccessSrc = read("js/early-access.js");
   const edgeFnSrc = read("supabase/functions/send-early-access-emails/index.ts");
   const migrationSrc = read("supabase/migrations/phase10_platform_access.sql");
   const resetFnSrc = read("supabase/functions/request-password-reset/index.ts");
+  const platformAccessSrc = read("js/platform-access.js");
+  const hotelBrainStoreSrc = read("js/hotel-brain-store.js");
+  const handoverStoreSrc = read("js/handover-store.js");
+  const loginHtml = read("login.html");
+  const resetPasswordHtml = read("reset-password.html");
+  const sopHtml = read("sop.html");
 
   if (/auth\.admin\.createUser|inviteUserByEmail|signUp\(/i.test(earlyAccessSrc + edgeFnSrc)) {
     ok = fail("Pilot application flow must not create auth users") && ok;
@@ -69,6 +94,33 @@ function main() {
     ok = pass("Sign-in blocked for unapproved users") && ok;
   }
 
+  if (!scriptOrder(loginHtml, 'src="js/platform-access.js"', 'src="js/auth.js"') ||
+      !scriptOrder(loginHtml, 'src="js/platform-access.js"', 'src="js/workspace.js"')) {
+    ok = fail("login.html must load platform-access.js before auth.js and workspace.js") && ok;
+  } else {
+    ok = pass("login.html loads platform-access.js before auth.js and workspace.js") && ok;
+  }
+
+  if (!scriptOrder(resetPasswordHtml, 'src="js/platform-access.js"', 'src="js/auth.js"')) {
+    ok = fail("reset-password.html must load platform-access.js before auth.js") && ok;
+  } else {
+    ok = pass("reset-password.html loads platform-access.js before auth.js") && ok;
+  }
+
+  if (!/src="js\/platform-access\.js"/.test(sopHtml)) {
+    ok = fail("sop.html must load platform-access.js") && ok;
+  } else {
+    ok = pass("sop.html loads platform-access.js") && ok;
+  }
+
+  if (!/HFPlatformAccess\.checkPlatformAccess/.test(sopHtml) ||
+      !/HFAuth\.getSession/.test(sopHtml) ||
+      !/access\.allowed/.test(sopHtml)) {
+    ok = fail("sop.html must require session + approved access before Hotel Brain cloud load") && ok;
+  } else {
+    ok = pass("sop.html gates Hotel Brain cloud load on approved access") && ok;
+  }
+
   if (!/requireApprovedAccess/.test(read("handover.html"))) {
     ok = fail("handover.html must require approved access") && ok;
   } else {
@@ -93,6 +145,103 @@ function main() {
     ok = pass("Existing workspace members grandfathered as active") && ok;
   }
 
+  if (/allowed:\s*true[\s\S]{0,120}MIGRATION_PENDING|MIGRATION_PENDING[\s\S]{0,120}allowed:\s*true/.test(platformAccessSrc)) {
+    ok = fail("platform-access.js must fail closed on MIGRATION_PENDING") && ok;
+  } else if (!/MIGRATION_PENDING/.test(platformAccessSrc) || !/ACCESS_CHECK_FAILED/.test(platformAccessSrc)) {
+    ok = fail("platform-access.js must use MIGRATION_PENDING and ACCESS_CHECK_FAILED reasons") && ok;
+  } else {
+    ok = pass("platform-access.js fail-closed reasons present") && ok;
+  }
+
+  if (!/allowed:\s*false,\s*reason:\s*"MODULE_MISSING"/.test(hotelBrainStoreSrc)) {
+    ok = fail("hotel-brain-store.js must deny when HFPlatformAccess is missing") && ok;
+  } else {
+    ok = pass("hotel-brain-store.js fails closed when HFPlatformAccess missing") && ok;
+  }
+
+  if (!/allowed:\s*false,\s*reason:\s*"MODULE_MISSING"/.test(handoverStoreSrc)) {
+    ok = fail("handover-store.js must deny when HFPlatformAccess is missing") && ok;
+  } else {
+    ok = pass("handover-store.js fails closed when HFPlatformAccess missing") && ok;
+  }
+
+  if (/allowed:\s*true/.test(hotelBrainStoreSrc) || /allowed:\s*true/.test(handoverStoreSrc)) {
+    ok = fail("cloud stores must not fail open with allowed: true") && ok;
+  } else {
+    ok = pass("cloud stores have no allowed: true fail-open") && ok;
+  }
+
+  try {
+    const access = loadPlatformAccessModule({});
+    const result = await access.checkPlatformAccess();
+    if (!result || result.allowed !== false || result.reason !== "MODULE_MISSING") {
+      ok = fail("checkPlatformAccess must deny with MODULE_MISSING when HFAuth is absent") && ok;
+    } else {
+      ok = pass("checkPlatformAccess denies with MODULE_MISSING when HFAuth is absent") && ok;
+    }
+  } catch (err) {
+    ok = fail("checkPlatformAccess MODULE_MISSING runtime check threw: " + err.message) && ok;
+  }
+
+  try {
+    const access = loadPlatformAccessModule({
+      HospitalityFlowSupabase: {
+        isConfigured: function () { return true; }
+      },
+      HFAuth: {
+        ensureClient: function () {
+          return Promise.resolve({
+            rpc: function () {
+              return Promise.resolve({
+                data: null,
+                error: {
+                  message: "Could not find the function public.get_my_platform_access in the schema cache",
+                  code: "PGRST202"
+                }
+              });
+            }
+          });
+        }
+      }
+    });
+    const result = await access.checkPlatformAccess();
+    if (!result || result.allowed !== false || result.reason !== "MIGRATION_PENDING") {
+      ok = fail("checkPlatformAccess must deny with MIGRATION_PENDING when RPC is missing") && ok;
+    } else {
+      ok = pass("checkPlatformAccess denies with MIGRATION_PENDING when RPC is missing") && ok;
+    }
+  } catch (err) {
+    ok = fail("checkPlatformAccess MIGRATION_PENDING runtime check threw: " + err.message) && ok;
+  }
+
+  try {
+    const access = loadPlatformAccessModule({
+      HospitalityFlowSupabase: {
+        isConfigured: function () { return true; }
+      },
+      HFAuth: {
+        ensureClient: function () {
+          return Promise.resolve({
+            rpc: function () {
+              return Promise.resolve({
+                data: null,
+                error: { message: "network error" }
+              });
+            }
+          });
+        }
+      }
+    });
+    const result = await access.checkPlatformAccess();
+    if (!result || result.allowed !== false || result.reason !== "ACCESS_CHECK_FAILED") {
+      ok = fail("checkPlatformAccess must deny with ACCESS_CHECK_FAILED on RPC errors") && ok;
+    } else {
+      ok = pass("checkPlatformAccess denies with ACCESS_CHECK_FAILED on RPC errors") && ok;
+    }
+  } catch (err) {
+    ok = fail("checkPlatformAccess ACCESS_CHECK_FAILED runtime check threw: " + err.message) && ok;
+  }
+
   if (ok) {
     console.log("\nAll invitation-only access checks passed.");
     process.exit(0);
@@ -102,4 +251,4 @@ function main() {
   process.exit(1);
 }
 
-main();
+run();

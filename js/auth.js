@@ -263,7 +263,8 @@
     if (hash) {
       try {
         var hashParams = new URLSearchParams(hash);
-        if (hashParams.get("type") === "recovery") return true;
+        var hashType = hashParams.get("type");
+        if (hashType === "recovery" || hashType === "invite") return true;
       } catch (e) {
         /* ignore malformed hash */
       }
@@ -273,7 +274,8 @@
     if (search) {
       try {
         var queryParams = new URLSearchParams(search);
-        if (queryParams.get("type") === "recovery") return true;
+        var queryType = queryParams.get("type");
+        if (queryType === "recovery" || queryType === "invite") return true;
       } catch (e) {
         /* ignore malformed query */
       }
@@ -366,7 +368,7 @@
         timer = setTimeout(function () {
           client.auth.getSession().then(function (result) {
             var session = result.data.session;
-            finish(isRecoveryActive() && !!session, session);
+            finish((isRecoveryActive() || urlHint) && !!session, session);
           });
         }, timeout || 4000);
       }
@@ -766,7 +768,7 @@
 
         var accessPromise = global.HFPlatformAccess && global.HFPlatformAccess.checkPlatformAccess
           ? global.HFPlatformAccess.checkPlatformAccess()
-          : Promise.resolve({ allowed: true });
+          : Promise.resolve({ allowed: false, reason: "MODULE_MISSING" });
 
         return accessPromise.then(function (access) {
           if (!access.allowed) {

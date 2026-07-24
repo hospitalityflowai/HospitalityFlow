@@ -193,6 +193,15 @@
         ? global.HFPlatformAccess.NOT_APPROVED_MESSAGE
         : "Your Hospitality Flow access has not been approved yet.";
     }
+    if (error === "MODULE_MISSING") {
+      return "Platform access checks are unavailable. Reload the page or contact support.";
+    }
+    if (error === "MIGRATION_PENDING") {
+      return "Platform access setup is incomplete. Run the latest Supabase migrations.";
+    }
+    if (error === "ACCESS_CHECK_FAILED") {
+      return "Could not verify platform access. Please try again.";
+    }
     if (error === "NO_WORKSPACE") {
       return "Create your hotel workspace on the Account page before using Hotel Brain.";
     }
@@ -267,11 +276,11 @@
 
       var accessPromise = global.HFPlatformAccess && global.HFPlatformAccess.checkPlatformAccess
         ? global.HFPlatformAccess.checkPlatformAccess()
-        : Promise.resolve({ allowed: true });
+        : Promise.resolve({ allowed: false, reason: "MODULE_MISSING" });
 
       return accessPromise.then(function (access) {
         if (!access.allowed) {
-          return Promise.reject("NOT_APPROVED");
+          return Promise.reject(access.reason || "NOT_APPROVED");
         }
 
       if (tenantStorage() && session.user && session.user.id) {

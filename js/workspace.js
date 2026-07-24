@@ -436,8 +436,14 @@
           });
         }
 
-        global.HFAuth.initAccountRecoverySection(recoveryResult.session);
-        return;
+        return global.HFAuth.signOut().then(function () {
+          global.HFAuth.initAccountRecoveryInvalid();
+          showAlert(
+            document.getElementById("auth-alert"),
+            "error",
+            "Platform access checks are unavailable. Reload the page or contact support."
+          );
+        });
       }
 
       if (recoveryResult.recoveryAttempt && !recoveryResult.session) {
@@ -504,19 +510,14 @@
         });
       }
 
-      global.HFAuth.initChangePasswordSection(activeSession);
-
-      if (global.HFHotelBrainStore) {
-        global.HFHotelBrainStore.preload();
-      }
-
-      return loadSignedInWorkspace(
+      if (loadingEl) loadingEl.classList.add("hidden");
+      if (contentEl) contentEl.classList.remove("hidden");
+      renderAccessPendingPanel(alertEl);
+      bindLogoutButton(logoutBtn, alertEl);
+      showAlert(
         alertEl,
-        logoutBtn,
-        loadingEl,
-        contentEl,
-        form,
-        submitBtn
+        "error",
+        "Platform access checks are unavailable. Reload the page or contact support."
       );
     });
   }
