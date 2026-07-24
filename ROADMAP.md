@@ -19,7 +19,7 @@
 
 | Version | Feature |
 |---------|---------|
-| **1.1** | OpenAI integration, email export, hotel settings |
+| **1.1** | Shared AI Writing Engine (shipped), OpenAI backend, email export, hotel settings |
 | **1.2** | Search handover history, logo upload |
 | **1.3** | Multi-property support |
 | **2.0** | PMS integration (Opera, Mews, Cloudbeds) |

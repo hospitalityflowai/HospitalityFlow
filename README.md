@@ -2,6 +2,8 @@
 
 Static HTML tools for independent and boutique hotels — AI Shift Handover, Hotel Brain, SOP generator, and more.
 
+Shared text quality is provided by the **AI Writing Engine** (`ai-writing-engine.js`): one layer for rewriting rough notes, polishing Hotel Brain policies/knowledge, SOP wording, and intelligent shift summaries. Future AI modules should call this engine rather than duplicating prompts.
+
 ## Local development
 
 Hospitality Flow must be served over HTTP (not opened as `file://`) so Supabase config and auth work correctly. The local dev server uses **port 5500**, matching the redirect URLs in [SUPABASE_SETUP.md](SUPABASE_SETUP.md).
