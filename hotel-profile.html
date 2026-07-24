@@ -978,7 +978,7 @@
                   </div>
                   <div class="card-header-text">
                     <h2>Policies</h2>
-                    <p id="policiesSectionSummary">Cancellation, no-show and guest policies your team follows.</p>
+                    <p id="policiesSectionSummary">Approval rules and limits — cancellation, no-show, charges and escalation.</p>
                   </div>
                 </div>
                 <button type="button" class="collapse-toggle" aria-label="Collapse section" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
@@ -1046,7 +1046,7 @@
                   </div>
                   <div class="card-header-text">
                     <h2>Guest Services</h2>
-                    <p id="guestServicesSectionSummary">Transfers, loans, recommendations and special requests.</p>
+                    <p id="guestServicesSectionSummary">How services are delivered — transfers, loans, wake-ups and occasions.</p>
                   </div>
                 </div>
                 <button type="button" class="collapse-toggle" aria-label="Expand section" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
@@ -1122,7 +1122,7 @@
                   </div>
                   <div class="card-header-text">
                     <h2>Inventory</h2>
-                    <p id="inventorySectionSummary">Adapters, welcome cards, stationery and replacement charges.</p>
+                    <p id="inventorySectionSummary">Guest-impacting items only — adapters, welcome cards, loanables and replacement charges.</p>
                   </div>
                 </div>
                 <button type="button" class="collapse-toggle" aria-label="Expand section" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
@@ -1131,14 +1131,12 @@
                 <datalist id="supplyCategoryHints">
                   <option value="Guest loan items"></option>
                   <option value="Welcome materials"></option>
-                  <option value="Printing supplies"></option>
-                  <option value="Stationery"></option>
                   <option value="Keys and access"></option>
                   <option value="Amenities"></option>
                 </datalist>
                 <div class="supplies-list" id="suppliesList"></div>
                 <div class="empty-state" id="suppliesEmpty">
-                  <p>No inventory items yet. Add stock your front office and operations teams track.</p>
+                  <p>No inventory items yet. Add only stock that affects guest service or handover (loan items, welcome materials, keys).</p>
                 </div>
                 <button type="button" class="add-row-btn" id="addSupply">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -1194,12 +1192,13 @@
                   </div>
                   <div class="card-header-text">
                     <h2>Operational Knowledge</h2>
-                    <p id="operationalKnowledgeSectionSummary">Shift workflows, procedures and handover rules for Shift Intelligence.</p>
+                    <p id="operationalKnowledgeSectionSummary">Primary decision layer for Hospitality Flow — triggered procedures, recommended actions and shift workflows.</p>
                   </div>
                 </div>
                 <button type="button" class="collapse-toggle" aria-label="Expand section" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
               </div>
               <div class="profile-card-body">
+                <p class="form-helper" style="margin-top:0;margin-bottom:14px;">Use Operational Knowledge for when/then actions. Keep Policies for approval limits, Guest Services for how services are delivered, and Hotel Knowledge for standards and house rules.</p>
                 <h3 class="subsection-heading">Staffing context</h3>
                 <div class="textarea-wrap">
                   <textarea class="notes-textarea" id="okStaffingContext" placeholder="Duty Managers cover AM, PM and Middle shifts. Night Managers cover five nights per week…"></textarea>
@@ -1315,7 +1314,7 @@
                   </div>
                   <div class="card-header-text">
                     <h2>Hotel Knowledge</h2>
-                    <p id="hotelKnowledgeSectionSummary">Teach Hospitality Flow about your property — standards, terminology and AI guidance.</p>
+                    <p id="hotelKnowledgeSectionSummary">Hotel standards, VIP house rules and terminology — not day-to-day action procedures.</p>
                   </div>
                 </div>
                 <button type="button" class="collapse-toggle" aria-label="Collapse section" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
@@ -2087,7 +2086,7 @@
         var filled = root.querySelectorAll('.policy-card.disclosure-card--filled').length;
         el.textContent = filled
           ? filled + ' polic' + (filled === 1 ? 'y' : 'ies') + ' configured'
-          : 'Cancellation, no-show and guest policies your team follows.';
+          : 'Approval rules and limits — cancellation, no-show, charges and escalation.';
       }
 
       function updateHotelKnowledgeSectionSummary() {
@@ -2110,7 +2109,7 @@
         }
         el.textContent = parts.length
           ? parts.join(' \u00b7 ')
-          : 'Teach Hospitality Flow about your property — standards, terminology and AI guidance.';
+          : 'Hotel standards, VIP house rules and terminology — not day-to-day action procedures.';
       }
 
       function hkPanelHasContent(panel) {
@@ -2161,7 +2160,7 @@
           var supplyCount = suppliesList.querySelectorAll('[data-supply]').length;
           inventorySummary.textContent = supplyCount
             ? supplyCount + ' tracked item' + (supplyCount === 1 ? '' : 's')
-            : 'Adapters, welcome cards, stationery and replacement charges.';
+            : 'Guest-impacting items only — adapters, welcome cards, loanables and replacement charges.';
         }
         var gsSummary = document.getElementById('guestServicesSectionSummary');
         if (gsSummary) {
@@ -2171,7 +2170,7 @@
           });
           gsSummary.textContent = configured
             ? configured + ' area' + (configured === 1 ? '' : 's') + ' configured'
-            : 'Transfers, loans, recommendations and special requests.';
+            : 'How services are delivered — transfers, loans, wake-ups and occasions.';
         }
         var okSummary = document.getElementById('operationalKnowledgeSectionSummary');
         if (okSummary) {
@@ -2184,7 +2183,7 @@
           if (stepCount && !entryCount) parts.push(stepCount + ' workflow step' + (stepCount === 1 ? '' : 's'));
           okSummary.textContent = parts.length
             ? parts.join(' \u00b7 ')
-            : 'Shift workflows, procedures and handover rules for Shift Intelligence.';
+            : 'Primary decision layer — triggered procedures, recommended actions and shift workflows.';
         }
       }
 
@@ -2848,6 +2847,7 @@
             connectingRoom: dVal('connectingRoom'),
             darkRoom: dCheck('darkRoom'),
             lowerGround: dCheck('lowerGround'),
+            awayFromLift: dCheck('awayFromLift'),
             maxOccupancy: fieldVal(tr, 'maxOccupancy'),
             notes: fieldVal(tr, 'notes'),
             customFeatures: dVal('customFeatures')
@@ -3090,6 +3090,7 @@
           '<label class="inventory-toggle"><input type="checkbox" data-f="sofaBed"' + (data.sofaBed ? ' checked' : '') + '> Sofa bed</label>' +
           '<input data-f="connectingRoom" placeholder="Connecting room" value="' + escAttr(data.connectingRoom) + '">' +
           '<label class="inventory-toggle"><input type="checkbox" data-f="lowerGround"' + (data.lowerGround ? ' checked' : '') + '> Lower ground</label>' +
+          '<label class="inventory-toggle"><input type="checkbox" data-f="awayFromLift"' + (data.awayFromLift ? ' checked' : '') + '> Away from lift</label>' +
           '<label class="inventory-toggle"><input type="checkbox" data-f="darkRoom"' + (data.darkRoom ? ' checked' : '') + '> Dark room</label>' +
           '<input data-f="customFeatures" placeholder="Other features" value="' + escAttr(data.customFeatures) + '">' +
           '</div></td>';
@@ -3159,7 +3160,7 @@
           ['roomNo', 'roomType', 'floor', 'bedType', 'connectingRoom', 'maxOccupancy', 'notes'].forEach(function (f) {
             setDataFieldValue(item, f, data[f]);
           });
-          ['twinCapable', 'extraBedCapable', 'sofaBed', 'bathtub', 'shower', 'accessible', 'streetFacing', 'quietFacing', 'darkRoom', 'lowerGround'].forEach(function (f) {
+          ['twinCapable', 'extraBedCapable', 'sofaBed', 'bathtub', 'shower', 'accessible', 'streetFacing', 'quietFacing', 'darkRoom', 'lowerGround', 'awayFromLift'].forEach(function (f) {
             setDataFieldValue(item, f, data[f]);
           });
         }

@@ -62,7 +62,7 @@
       timing: "",
       checklistEnabled: true,
       triggerKeywords: [],
-      triggersRequired: false,
+      triggersRequired: true,
       followUpInstruction: "",
       active: true,
       notes: "",
@@ -234,7 +234,8 @@
   }
 
   var SAMPLE_ROOM_BOOL_FIELDS = [
-    "twinCapable", "extraBedCapable", "sofaBed", "streetFacing", "bathtub", "darkRoom"
+    "twinCapable", "extraBedCapable", "sofaBed", "streetFacing", "bathtub", "darkRoom",
+    "quietFacing", "awayFromLift"
   ];
 
   function normalizeRoomNoKey(roomNo) {
@@ -271,6 +272,8 @@
 
     out.floor = mergeText(out.floor, incoming.floor);
     if (incoming.lowerGround) out.lowerGround = true;
+    if (incoming.awayFromLift) out.awayFromLift = true;
+    if (incoming.quietFacing) out.quietFacing = true;
     out.maxOccupancy = mergeText(out.maxOccupancy, incoming.maxOccupancy) || out.maxOccupancy || "2";
     out.notes = mergeText(out.notes, incoming.notes);
     out.roomType = mergeText(out.roomType, incoming.roomType);
@@ -649,7 +652,8 @@
         '<label class="ok-toggle"><input type="checkbox" data-f="optional"' + (entry.optional ? ' checked' : '') + '> Optional</label>' +
         '<label class="ok-toggle"><input type="checkbox" data-f="triggersRequired"' + (entry.triggersRequired ? ' checked' : '') + '> Triggers required</label>' +
       '</div>' +
-      '<textarea class="notes-textarea ok-notes" data-f="notes" placeholder="Notes">' + escAttr(entry.notes) + '</textarea>' +
+      '<textarea class="notes-textarea" data-f="followUpInstruction" placeholder="Recommended action (used by Shift Intelligence when this knowledge is retrieved)">' + escAttr(entry.followUpInstruction) + '</textarea>' +
+      '<textarea class="notes-textarea ok-notes" data-f="notes" placeholder="Internal notes (not used as the recommended action)">' + escAttr(entry.notes) + '</textarea>' +
       '<button type="button" class="btn-text ok-remove-entry">Remove entry</button>';
 
     return card;
@@ -842,19 +846,36 @@
     return { ok: true, profile: merged, label: patch.sampleLabel };
   }
 
+  function keywordTriggered(notesLower, keywords) {
+    if (!keywords || !keywords.length) return false;
+    return keywords.some(function (kw) {
+      var needle = String(kw || "").toLowerCase().trim();
+      return needle && notesLower.indexOf(needle) !== -1;
+    });
+  }
+
+  function buildKnowledgeActionText(entry) {
+    var title = trimText(entry && entry.title) || "Operational knowledge";
+    var follow = trimText(entry && entry.followUpInstruction);
+    if (follow) return title + " — " + follow;
+    var content = trimText(entry && entry.content);
+    if (content) return title + " — " + content;
+    return title;
+  }
+
   function getShiftIntelligenceKnowledge(brainContext, shiftType, rawNotesText) {
     var ok = brainContext && brainContext.operationalKnowledge;
-    if (!ok) return { checklistItems: [], workflowSteps: [], entries: [] };
+    if (!ok) return { checklistItems: [], workflowSteps: [], entries: [], matchedActions: [] };
     var notesLower = String(rawNotesText || "").toLowerCase();
     var checklistItems = [];
+    var matchedActions = [];
     var seen = {};
 
-    function triggersMatch(entry) {
-      if (!entry.triggerKeywords || !entry.triggerKeywords.length) return true;
-      if (!entry.triggersRequired) return true;
-      return entry.triggerKeywords.some(function (kw) {
-        return notesLower.indexOf(String(kw || "").toLowerCase()) !== -1;
-      });
+    /* Decision knowledge: only retrieve when trigger keywords match the shift notes.
+       Do not inject knowledge entries by shift alone — that creates operational noise. */
+    function knowledgeTriggersMatch(entry) {
+      if (!entry.triggerKeywords || !entry.triggerKeywords.length) return false;
+      return keywordTriggered(notesLower, entry.triggerKeywords);
     }
 
     function shiftMatch(entry) {
@@ -870,13 +891,31 @@
     }
 
     (ok.knowledgeEntries || []).forEach(function (entry) {
-      if (!entry.active || !entry.checklistEnabled) return;
+      if (!entry.active) return;
       if (!shiftMatch(entry)) return;
-      if (!triggersMatch(entry)) return;
+      if (!knowledgeTriggersMatch(entry)) return;
+
+      var actionText = buildKnowledgeActionText(entry);
+      var follow = trimText(entry.followUpInstruction);
+      matchedActions.push({
+        sourceId: entry.id,
+        sourceType: "knowledge",
+        title: entry.title || "",
+        followUpInstruction: follow,
+        actionText: actionText,
+        category: entry.category || "Operations",
+        department: entry.department || "Reception",
+        priority: entry.priority || "normal",
+        sampleDataId: entry.sampleDataId || ""
+      });
+
+      if (!entry.checklistEnabled) return;
       addChecklist({
         sourceId: entry.id,
         sourceType: "knowledge",
-        text: entry.title + (entry.content ? " — " + entry.content : ""),
+        text: actionText,
+        followUpInstruction: follow,
+        actionText: actionText,
         category: entry.category || "Operations",
         department: entry.department || "Reception",
         priority: entry.priority || "normal",
@@ -884,18 +923,11 @@
       });
     });
 
+    /* Shift workflows remain the always-on shift checklist (not situational knowledge). */
     var workflow = ok.shiftWorkflows && ok.shiftWorkflows[shiftType];
     if (workflow && Array.isArray(workflow.steps)) {
       workflow.steps.forEach(function (step) {
         if (!step.active || !step.checklistEnabled) return;
-        if (step.triggerKeywords && step.triggerKeywords.length) {
-          var matched = step.triggerKeywords.some(function (kw) {
-            return notesLower.indexOf(String(kw || "").toLowerCase()) !== -1;
-          });
-          if (!matched && step.triggerKeywords.length && notesLower.length > 0) {
-            /* keep workflow steps visible for shift even without keyword match unless triggers-only shift */
-          }
-        }
         addChecklist({
           sourceId: step.id,
           sourceType: "workflow",
@@ -911,7 +943,8 @@
     return {
       checklistItems: checklistItems,
       workflowSteps: workflow ? workflow.steps : [],
-      entries: ok.knowledgeEntries || []
+      entries: ok.knowledgeEntries || [],
+      matchedActions: matchedActions
     };
   }
 
@@ -920,7 +953,7 @@
       return room && trimText(room.roomNo);
     });
     if (!rows.length) return "";
-    return "Room inventory includes " + rows.length + " rooms with configured bed size, twin capability, sofa bed, extra bed, street facing, bathtub, dark room, accessible and interconnecting attributes. Shower configuration is recorded only when separately confirmed. Use these records as factual reference — room allocation remains a staff decision.";
+    return "Room inventory includes " + rows.length + " rooms with operational attributes (twin, extra bed, accessible, quiet/street facing, lower ground, away from lift, dark room, bathtub, interconnecting). Shower configuration is recorded only when separately confirmed. Use these records as factual reference — room allocation remains a staff decision.";
   }
 
   function findRoomRecord(facilities, roomNo) {
@@ -952,11 +985,22 @@
     if (room.extraBedCapable) parts.push("extra bed capable");
     if (room.sofaBed) parts.push("sofa bed");
     if (room.streetFacing) parts.push("street facing");
+    if (room.quietFacing) parts.push("quiet facing");
+    if (room.lowerGround) parts.push("lower ground");
+    if (room.awayFromLift) parts.push("away from lift");
     if (room.bathtub) parts.push("bathtub");
     if (room.darkRoom) parts.push("dark room");
     if (room.accessible) parts.push("accessible");
     if (trimText(room.connectingRoom)) parts.push("interconnects with room " + room.connectingRoom);
     return parts.join("; ");
+  }
+
+  function roomHasAwayFromLift(room) {
+    if (!room) return false;
+    if (room.awayFromLift) return true;
+    var notes = String(room.notes || "").toLowerCase();
+    var custom = String(room.customFeatures || "").toLowerCase();
+    return /away from lift|away from elevator|quiet of lift|not near lift|far from lift/.test(notes + " " + custom);
   }
 
   function getRoomAttributeReminders(brainContext, rawNotesText) {
@@ -966,7 +1010,6 @@
     if (!trimText(notes)) return [];
 
     var reminders = [];
-    var staffNote = "Confirm allocation against Hotel Brain room records before assigning.";
 
     /* Only surface room attributes when the notes ask for a capability decision —
        never because a room number was merely mentioned. */
@@ -986,7 +1029,8 @@
       { pattern: /bathtub|bath tub|room with bath/, key: "bathtub", label: "bathtub", action: "Allocate a room with bathtub" },
       { pattern: /street facing|street view|front facing|road facing/, key: "streetFacing", label: "street facing", action: "Note street-facing inventory if relevant" },
       { pattern: /dark room|blackout room|light sensitive|low light/, key: "darkRoom", label: "dark room", action: "Prefer a dark/blackout room" },
-      { pattern: /quiet room|quiet side|courtyard|away from street/, key: "quietFacing", label: "quiet facing", action: "Prefer a quiet-facing room" }
+      { pattern: /quiet room|quiet side|courtyard|away from street/, key: "quietFacing", label: "quiet facing", action: "Prefer a quiet-facing room" },
+      { pattern: /lower ground|lower-ground|\blg\b|basement room|below ground/, key: "lowerGround", label: "lower ground", action: "Note lower-ground room options" }
     ];
 
     checks.forEach(function (check) {
@@ -1000,6 +1044,18 @@
         priority: "normal"
       });
     });
+
+    if (/away from lift|away from elevator|not near (the )?lift|far from (the )?lift|noisy lift|lift noise/.test(notes)) {
+      var awayRooms = facilities.filter(roomHasAwayFromLift);
+      if (awayRooms.length) {
+        reminders.push({
+          text: "Prefer a room away from the lift — Hotel Brain options: " + roomNumbers(awayRooms) + ".",
+          category: "Rooms",
+          department: "Reception",
+          priority: "normal"
+        });
+      }
+    }
 
     if (/interconnect|connecting room|adjoining room|adjacent room/.test(notes)) {
       var pairs = facilities.filter(function (room) { return trimText(room.connectingRoom); });
@@ -1015,7 +1071,52 @@
       }
     }
 
-    return reminders.slice(0, 3);
+    return reminders.slice(0, 4);
+  }
+
+  function summarizeOperationalActionsForContext(operationalKnowledge) {
+    var entries = (operationalKnowledge && operationalKnowledge.knowledgeEntries) || [];
+    var lines = [];
+    entries.forEach(function (entry) {
+      if (!entry || entry.active === false) return;
+      var title = trimText(entry.title);
+      if (!title) return;
+      var follow = trimText(entry.followUpInstruction);
+      var triggers = Array.isArray(entry.triggerKeywords) ? entry.triggerKeywords.filter(Boolean).join(", ") : "";
+      var line = title;
+      if (follow) line += " → " + follow;
+      if (triggers) line += " (triggers: " + triggers + ")";
+      lines.push(line);
+    });
+    return lines;
+  }
+
+  function isGuestImpactingSupply(item) {
+    if (!item) return false;
+    var name = String(item.name || "").toLowerCase();
+    var category = String(item.category || "").toLowerCase();
+    if (!name) return false;
+    if (item.loanItem === "yes" || item.loanItem === true || item.loanItem === "true") return true;
+    if (trimText(item.guestCharge) || trimText(item.replacementCharge)) return true;
+    if (/loan|welcome|amenit|adapter|key|card|charger|umbrella|hairdryer|iron/.test(category)) return true;
+    if (/adapter|welcome card|key|charger|umbrella|hairdryer|iron|amenit/.test(name)) return true;
+    if (/stationer|pen|pencil|sticky|cartridge|printer|paper/.test(category + " " + name)) return false;
+    return false;
+  }
+
+  function summarizeGuestImpactingSupplies(supplies) {
+    return (supplies || [])
+      .filter(isGuestImpactingSupply)
+      .map(function (item) {
+        var name = trimText(item.name);
+        if (!name) return "";
+        var parts = [name];
+        if (trimText(item.category)) parts.push(trimText(item.category));
+        if (trimText(item.quantity)) parts.push("qty " + trimText(item.quantity));
+        if (trimText(item.reorderNotes)) parts.push(trimText(item.reorderNotes));
+        return parts.join(" · ");
+      })
+      .filter(Boolean);
   }
 
   global.HotelProfileOperational = {
@@ -1032,6 +1133,10 @@
     getShiftIntelligenceKnowledge: getShiftIntelligenceKnowledge,
     summarizeRoomFacilitiesForContext: summarizeRoomFacilitiesForContext,
     getRoomAttributeReminders: getRoomAttributeReminders,
+    summarizeOperationalActionsForContext: summarizeOperationalActionsForContext,
+    summarizeGuestImpactingSupplies: summarizeGuestImpactingSupplies,
+    isGuestImpactingSupply: isGuestImpactingSupply,
+    buildKnowledgeActionText: buildKnowledgeActionText,
     normalizeKnowledgeEntry: normalizeKnowledgeEntry
   };
 })(typeof window !== "undefined" ? window : globalThis);

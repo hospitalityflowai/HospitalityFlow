@@ -161,6 +161,9 @@
       if (r.shower) attrs.push('Shower');
       if (r.accessible) attrs.push('Accessible');
       if (r.quietFacing) attrs.push('Quiet/rear');
+      if (r.lowerGround) attrs.push('Lower ground');
+      if (r.awayFromLift) attrs.push('Away from lift');
+      if (r.connectingRoom) attrs.push('Connects ' + r.connectingRoom);
       return [r.roomNo || '', r.roomType || '', r.floor || '', r.bedType || '', r.maxOccupancy || '', attrs.join(', '), r.notes || ''];
     });
 

@@ -13,11 +13,11 @@
     { id: 'departments-shifts', label: 'Departments & Shifts', shortLabel: 'Departments', icon: 'users', layer: 'essential' },
     { id: 'policies', label: 'Policies', shortLabel: 'Policies', icon: 'document', layer: 'essential' },
     { id: 'hotel-knowledge', label: 'Hotel Knowledge', shortLabel: 'Hotel Knowledge', icon: 'knowledge', layer: 'essential' },
+    { id: 'operational-knowledge', label: 'Operational Knowledge', shortLabel: 'Operational Knowledge', icon: 'activity', layer: 'essential' },
     { id: 'reservations-payments', label: 'Reservations & Payments', shortLabel: 'Reservations & Payments', icon: 'card', layer: 'optional' },
     { id: 'guest-services', label: 'Guest Services', shortLabel: 'Guest Services', icon: 'concierge', layer: 'optional' },
     { id: 'inventory', label: 'Inventory', shortLabel: 'Inventory', icon: 'box', layer: 'optional' },
     { id: 'operations', label: 'Operations', shortLabel: 'Operations', icon: 'activity', layer: 'optional' },
-    { id: 'operational-knowledge', label: 'Operational Knowledge', shortLabel: 'Operational Knowledge', icon: 'activity', layer: 'optional' },
     { id: 'advanced-settings', label: 'Advanced Settings', shortLabel: 'Advanced', icon: 'settings', layer: 'advanced' }
   ];
 
@@ -28,11 +28,11 @@
   ];
 
   var ESSENTIAL_PROGRESS_SECTIONS = [
-    'general', 'rooms-facilities', 'departments-shifts', 'policies', 'hotel-knowledge'
+    'general', 'rooms-facilities', 'departments-shifts', 'policies', 'hotel-knowledge', 'operational-knowledge'
   ];
 
   var PROGRESS_SECTIONS = [
-    'general', 'rooms-facilities', 'departments-shifts', 'policies',
+    'general', 'rooms-facilities', 'departments-shifts', 'policies', 'operational-knowledge',
     'reservations-payments', 'guest-services', 'inventory', 'operations'
   ];
 
