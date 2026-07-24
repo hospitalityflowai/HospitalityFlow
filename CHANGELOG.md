@@ -26,6 +26,17 @@
 
 ---
 
+## Version 1.1 (in progress)
+
+### Shipped
+
+- **Shared AI Writing Engine** (`ai-writing-engine.js`) — single text-processing layer for Shift Handover, Hotel Brain policies/knowledge, SOP polish, and future AI modules
+- Professional rewrite of rough notes (abbreviations, spelling, hotel terminology, follow-ups)
+- Policy/knowledge polish in Hotel Brain (“Polish with AI”)
+- Intelligent operational AI Summary (describes the shift picture, not just counts)
+
+---
+
 ## Earlier development
 
 ### Version 0.9 (pre-release)
@@ -38,7 +49,7 @@
 ## Roadmap
 
 ### Version 1.1
-- OpenAI integration for richer summaries
+- OpenAI integration for richer summaries (via AI Writing Engine)
 - Email handover export
 - Hotel settings and logo upload
 

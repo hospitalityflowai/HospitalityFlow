@@ -128,10 +128,13 @@ Uploaded files must never be served from a public bucket without access checks u
 
 ## 8. AI Security
 
+Hospitality Flow’s shared **AI Writing Engine** (`ai-writing-engine.js`) is the single text-processing layer for Shift Handover, Hotel Brain, SOP, and future AI modules. v1 is rule-based and runs in the browser; a future LLM backend should call the same engine surface via a server-side proxy (never expose API keys in static pages).
+
 AI features (shift handover generation, recommendations, checklist intelligence) introduce additional risks. Future and existing AI work must consider:
 
 - **Prompt injection** — user notes and Hotel Brain content may attempt to override system instructions; prompts should be structured to reduce instruction hijacking and outputs should not blindly execute user-supplied directives.
 - **Accidental disclosure of Hotel Brain content** — model prompts and logs must not leak one hotel’s profile or notes to another context.
+- **Fact integrity** — the Writing Engine must not invent guest details, room events, or policy outcomes, and must preserve room numbers, names, dates, times, and financial amounts.
 - **Workspace isolation** — AI-related saved outputs (handovers, drafts) must remain scoped to the authenticated workspace, consistent with RLS.
 - **Request limits** — rate limiting and abuse controls should be applied before high-volume or paid model usage in production.
 - **Safe handling of model output** — treat AI responses as untrusted text; escape before HTML rendering; do not execute model output as code.

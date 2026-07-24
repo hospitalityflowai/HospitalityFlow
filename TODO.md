@@ -10,8 +10,9 @@
 - [x] Events section and Shift Alerts dashboard
 
 ## Version 1.1
-- [ ] Connect OpenAI API
-- [ ] Add AI prompt templates
+- [x] Shared AI Writing Engine (rule-based text layer for all AI features)
+- [ ] Connect OpenAI API (plug into AI Writing Engine)
+- [ ] Add AI prompt templates for LLM backend
 - [ ] Improve hotel-specific responses
 - [ ] Email handover export
 - [ ] Add input validation

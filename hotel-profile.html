@@ -617,6 +617,7 @@
     .room-details-panel { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
     .btn-text { font-size: .76rem; font-weight: 600; color: var(--blue-600); padding: 4px 8px; border-radius: 6px; transition: background var(--transition), color var(--transition); }
     .btn-text:hover { background: var(--blue-50); }
+    .ai-polish-btn { margin-top: 6px; display: inline-flex; }
     .profile-hero--calm { margin-bottom: 18px; }
     .profile-hero--calm .page-subtitle { max-width: 46ch; }
     .add-row-btn { transition: background var(--transition), border-color var(--transition), transform var(--transition); }
@@ -1333,6 +1334,7 @@
                         <div class="textarea-wrap">
                           <textarea class="notes-textarea" id="hkGeneralNotes" placeholder="The hotel provides personalised boutique service and clear shift communication."></textarea>
                           <span class="char-counter" data-for="hkGeneralNotes">0 characters</span>
+                          <button type="button" class="btn-text ai-polish-btn" data-ai-polish-target="hkGeneralNotes">Polish with AI</button>
                         </div>
                       </div>
                     </div>
@@ -1349,6 +1351,7 @@
                         <div class="textarea-wrap">
                           <textarea class="notes-textarea" id="hkHotelStandards" placeholder="Service standards, presentation rules and expectations for every guest interaction."></textarea>
                           <span class="char-counter" data-for="hkHotelStandards">0 characters</span>
+                          <button type="button" class="btn-text ai-polish-btn" data-ai-polish-target="hkHotelStandards">Polish with AI</button>
                         </div>
                         <p class="form-helper">How your team should represent the hotel day to day.</p>
                       </div>
@@ -1366,6 +1369,7 @@
                         <div class="textarea-wrap">
                           <textarea class="notes-textarea" id="hkVipRules" placeholder="VIP arrivals should be reviewed before check-in and relevant amenities prepared."></textarea>
                           <span class="char-counter" data-for="hkVipRules">0 characters</span>
+                          <button type="button" class="btn-text ai-polish-btn" data-ai-polish-target="hkVipRules">Polish with AI</button>
                         </div>
                       </div>
                     </div>
@@ -1399,6 +1403,7 @@
                         <div class="textarea-wrap">
                           <textarea class="notes-textarea" id="hkOperationalNotes" placeholder="Daily operational priorities, handover focus areas and things the team must never miss."></textarea>
                           <span class="char-counter" data-for="hkOperationalNotes">0 characters</span>
+                          <button type="button" class="btn-text ai-polish-btn" data-ai-polish-target="hkOperationalNotes">Polish with AI</button>
                         </div>
                       </div>
                     </div>
@@ -1415,6 +1420,7 @@
                         <div class="textarea-wrap">
                           <textarea class="notes-textarea" id="hkLocalRecommendations" placeholder="Restaurants, walks, transport tips and trusted local partners your team recommends."></textarea>
                           <span class="char-counter" data-for="hkLocalRecommendations">0 characters</span>
+                          <button type="button" class="btn-text ai-polish-btn" data-ai-polish-target="hkLocalRecommendations">Polish with AI</button>
                         </div>
                       </div>
                     </div>
@@ -1615,6 +1621,7 @@
   <script src="js/platform-access.js"></script>
   <script src="js/workspace.js"></script>
   <script src="js/hotel-brain-store.js"></script>
+  <script src="ai-writing-engine.js"></script>
   <script src="hotel-profile-knowledge.js"></script>
   <script src="hotel-profile-operational.js"></script>
   <script src="hotel-profile-zetter-sample.js"></script>
@@ -2756,6 +2763,31 @@
         });
       }
 
+      function initKnowledgeAiPolish() {
+        document.querySelectorAll('[data-ai-polish-target]').forEach(function (btn) {
+          if (btn.getAttribute('data-polish-bound')) return;
+          btn.setAttribute('data-polish-bound', '1');
+          btn.addEventListener('click', function () {
+            var targetId = btn.getAttribute('data-ai-polish-target');
+            var field = document.getElementById(targetId);
+            if (!field) return;
+            var raw = String(field.value || '').trim();
+            if (!raw) return;
+            var polished = (window.HotelProfileKnowledge && window.HotelProfileKnowledge.polishKnowledgeText)
+              ? window.HotelProfileKnowledge.polishKnowledgeText(raw)
+              : (window.AiWritingEngine
+                ? window.AiWritingEngine.rewriteKnowledge(raw)
+                : raw);
+            if (polished && polished !== raw) {
+              field.value = polished;
+              updateCharCounter(targetId);
+              field.dispatchEvent(new Event('input', { bubbles: true }));
+              markUnsaved();
+            }
+          });
+        });
+      }
+
       function getRoomNotesInput(row) {
         return row ? row.querySelector('input[data-f="notes"]') : null;
       }
@@ -3581,6 +3613,7 @@
       initGeneralFieldGroups();
       initPageDisclosures();
       initKnowledgeCharCounters();
+      initKnowledgeAiPolish();
 
       if (HPO && HPO.bindOperationalKnowledgeEvents) HPO.bindOperationalKnowledgeEvents();
       document.addEventListener('profile-change', function () {

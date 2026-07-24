@@ -447,8 +447,8 @@
       '</div>' +
       '<div class="disclosure-card-body"' + (hasContent ? '' : ' hidden') + '>' +
       '<input type="hidden" data-f="title" value="' + esc(entry.title || label) + '">' +
-      '<div class="form-group"><label class="form-label">Short summary</label><input class="form-input" data-f="summary" value="' + esc(entry.summary) + '" placeholder="One-line summary for staff"></div>' +
-      '<div class="form-group"><label class="form-label">Detailed instructions</label><textarea class="notes-textarea" data-f="instructions" style="min-height:72px" placeholder="What should staff do?">' + esc(entry.instructions) + '</textarea></div>' +
+      '<div class="form-group"><label class="form-label">Short summary</label><input class="form-input" data-f="summary" value="' + esc(entry.summary) + '" placeholder="One-line summary for staff"><button type="button" class="btn-text ai-polish-btn" data-ai-polish="summary">Polish with AI</button></div>' +
+      '<div class="form-group"><label class="form-label">Detailed instructions</label><textarea class="notes-textarea" data-f="instructions" style="min-height:72px" placeholder="What should staff do?">' + esc(entry.instructions) + '</textarea><button type="button" class="btn-text ai-polish-btn" data-ai-polish="instructions">Polish with AI</button></div>' +
       '<div class="form-group"><label class="form-label">Fee or charge (if applicable)</label><input class="form-input" data-f="charge" value="' + esc(entry.charge) + '" placeholder="e.g. £25 before 2pm"></div>' +
       (isCustom ? '<div class="form-group"><label class="form-label">Policy name</label><input class="form-input" data-f="title-edit" value="' + esc(entry.title || label) + '" placeholder="e.g. Day-use rooms"></div>' : '') +
       '<input type="hidden" data-f="approvalLevel" value="' + esc(entry.approvalLevel) + '">' +
@@ -735,6 +735,37 @@
     card.setAttribute('data-policy-input-bound', '1');
     card.querySelectorAll('[data-f="summary"], [data-f="instructions"], [data-f="charge"]').forEach(function (el) {
       el.addEventListener('input', function () { updatePolicyCardMeta(card); });
+    });
+    card.querySelectorAll('[data-ai-polish]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        polishPolicyField(card, btn.getAttribute('data-ai-polish'));
+      });
+    });
+  }
+
+  function polishPolicyField(card, fieldName) {
+    if (!card || !fieldName) return;
+    var field = card.querySelector('[data-f="' + fieldName + '"]');
+    if (!field) return;
+    var raw = String(field.value || '').trim();
+    if (!raw) return;
+    if (!global.AiWritingEngine) return;
+    var polished = global.AiWritingEngine.rewritePolicy(raw, {
+      module: global.AiWritingEngine.MODULES.policy,
+      prefs: { language: 'British English', tone: 'professional' }
+    });
+    if (polished && polished !== raw) {
+      field.value = polished;
+      updatePolicyCardMeta(card);
+      field.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  }
+
+  function polishKnowledgeText(raw, options) {
+    if (!global.AiWritingEngine) return String(raw || '');
+    return global.AiWritingEngine.rewriteKnowledge(raw, options || {
+      module: global.AiWritingEngine.MODULES.knowledge,
+      prefs: { language: 'British English', tone: 'professional' }
     });
   }
 
@@ -1099,6 +1130,8 @@
     collectPoliciesStructured: collectPoliciesStructured,
     renderPolicyUI: renderPolicyUI,
     renderPaymentPoliciesUI: renderPaymentPoliciesUI,
+    polishPolicyField: polishPolicyField,
+    polishKnowledgeText: polishKnowledgeText,
     renderReservationsUI: renderReservationsUI,
     renderOtaChannels: renderOtaChannels,
     collectOtaChannels: collectOtaChannels,

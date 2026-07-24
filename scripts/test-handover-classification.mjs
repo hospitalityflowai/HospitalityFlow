@@ -118,7 +118,9 @@ function loadHandoverClassificationApi() {
   context.window = context;
   context.globalThis = context;
 
+  const engineSrc = fs.readFileSync(path.join(ROOT, "ai-writing-engine.js"), "utf8");
   vm.createContext(context);
+  vm.runInContext(engineSrc, context);
   vm.runInContext(script, context);
 
   const api = context.__handoverClassificationApi;

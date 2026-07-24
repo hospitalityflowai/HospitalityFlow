@@ -3328,6 +3328,7 @@
   <script src="js/hotel-brain-store.js"></script>
   <script src="js/handover-store.js"></script>
   <script src="hotel-profile-operational.js"></script>
+  <script src="ai-writing-engine.js"></script>
   <script src="shift-intelligence-engine.js"></script>
   <script src="handover-saved.js"></script>
   <script>
@@ -4694,98 +4695,65 @@
         return 6;
       }
 
-      function applyToneToText(text) {
-        if (aiPrefs.tone === "friendly") {
-          return text
-            .replace(/\brequire immediate attention\b/gi, "need a quick look from the team")
-            .replace(/\brequires immediate management attention\b/gi, "needs management to take a look")
-            .replace(/\bshould be prioritised\b/gi, "should be top of the list")
-            .replace(/\bOverall the\b/g, "All in all, the");
+      function getAiWritingOptions(extra) {
+        var options = {
+          module: (window.AiWritingEngine && window.AiWritingEngine.MODULES.handover) || "handover",
+          prefs: {
+            tone: aiPrefs.tone,
+            detail: aiPrefs.detail,
+            language: aiPrefs.language,
+            instructions: aiPrefs.instructions
+          },
+          terminologyMap: terminologyMap,
+          platformLabels: PLATFORM_LABELS,
+          uiLabels: uiLabels,
+          currency: currencySymbol || "£"
+        };
+        if (extra) {
+          Object.keys(extra).forEach(function (key) {
+            options[key] = extra[key];
+          });
         }
-        if (aiPrefs.tone === "concise") {
-          return text
-            .replace(/\bOverall the\b/gi, "The")
-            .replace(/\bthat should be prioritised\b/gi, "to prioritise")
-            .replace(/\brequiring immediate attention\b/gi, "needing attention")
-            .replace(/\bfor the incoming team\b/gi, "next shift")
-            .replace(/\s+/g, " ")
-            .trim();
+        return options;
+      }
+
+      function applyToneToText(text) {
+        if (window.AiWritingEngine) {
+          return window.AiWritingEngine.applyPreferences(text, {
+            prefs: { tone: aiPrefs.tone, language: null, instructions: "" }
+          });
         }
         return text;
       }
 
       function applyLanguageVariant(text) {
-        var lang = aiPrefs.language || "British English";
-        if (lang === "American English") {
-          return text
-            .replace(/\bprioritised\b/gi, "prioritized")
-            .replace(/\borganised\b/gi, "organized")
-            .replace(/\brecognised\b/gi, "recognized")
-            .replace(/\bcentre\b/gi, "center");
-        }
-        if (lang === "British English") {
-          return text
-            .replace(/\bprioritized\b/gi, "prioritised")
-            .replace(/\borganized\b/gi, "organised")
-            .replace(/\brecognized\b/gi, "recognised")
-            .replace(/\bcenter\b/gi, "centre");
+        if (window.AiWritingEngine) {
+          return window.AiWritingEngine.applyPreferences(text, {
+            prefs: { tone: "professional", language: aiPrefs.language, instructions: "" }
+          });
         }
         return text;
       }
 
       function applyCustomInstructions(text) {
-        var instructions = (aiPrefs.instructions || "").trim();
-        if (!instructions) return text;
-
-        instructions.split(/\n+/).forEach(function (line) {
-          var trimmed = line.trim();
-          if (!trimmed) return;
-
-          var useNotMatch = trimmed.match(/use\s+['"]?([^'"]+?)['"]?\s+not\s+['"]?([^'".]+?)['"]?/i);
-          if (useNotMatch) {
-            var preferred = useNotMatch[1].trim();
-            var avoid = useNotMatch[2].trim();
-            if (preferred && avoid) {
-              var re = new RegExp("\\b" + avoid.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\b", "gi");
-              text = text.replace(re, preferred);
-            }
-          }
-
-          var alwaysUseMatch = trimmed.match(/always\s+(?:refer to|use|call)\s+['"]?([^'"]+?)['"]?/i);
-          if (alwaysUseMatch && alwaysUseMatch[1]) {
-            var phrase = alwaysUseMatch[1].trim();
-            if (/guest/i.test(phrase) && /customer/i.test(trimmed)) {
-              text = text.replace(/\bcustomers?\b/gi, phrase.match(/guest/i) ? "guest" : phrase);
-            }
-          }
-        });
-
+        if (window.AiWritingEngine) {
+          return window.AiWritingEngine.applyPreferences(text, {
+            prefs: { tone: "professional", language: null, instructions: aiPrefs.instructions }
+          });
+        }
         return text;
       }
 
       function applyTerminologyToText(text) {
-        if (!text) return text;
-        var result = text;
-
-        Object.keys(PLATFORM_LABELS).forEach(function (key) {
-          var platform = PLATFORM_LABELS[key];
-          var hotel = uiLabels[key];
-          if (platform && hotel && platform !== hotel) {
-            var re = new RegExp(platform.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
-            result = result.replace(re, hotel);
-          }
-        });
-
-        Object.keys(terminologyMap).forEach(function (key) {
-          var entry = terminologyMap[key];
-          if (!entry.term) return;
-          var re = new RegExp("\\b" + entry.term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\b", "gi");
-          if (re.test(result)) {
-            result = result.replace(re, entry.term);
-          }
-        });
-
-        return result;
+        if (window.AiWritingEngine) {
+          return window.AiWritingEngine.applyPreferences(text, {
+            prefs: { tone: "professional", language: null, instructions: "" },
+            terminologyMap: terminologyMap,
+            platformLabels: PLATFORM_LABELS,
+            uiLabels: uiLabels
+          });
+        }
+        return text || "";
       }
 
       function applyHotelBrainContextToSummary(text, classified) {
@@ -4794,10 +4762,9 @@
       }
 
       function applyAiPreferencesToSummary(text, classified) {
-        var processed = applyToneToText(text);
-        processed = applyLanguageVariant(processed);
-        processed = applyCustomInstructions(processed);
-        processed = applyTerminologyToText(processed);
+        var processed = window.AiWritingEngine
+          ? window.AiWritingEngine.applyPreferences(text, getAiWritingOptions())
+          : text;
         if (classified) processed = applyHotelBrainContextToSummary(processed, classified);
         return processed;
       }
@@ -5059,6 +5026,9 @@
       }
 
       function applyRecommendationPreferences(text) {
+        if (window.AiWritingEngine) {
+          return window.AiWritingEngine.applyPreferences(text, getAiWritingOptions());
+        }
         var processed = applyToneToText(text);
         processed = applyLanguageVariant(processed);
         processed = applyCustomInstructions(processed);
@@ -5806,6 +5776,10 @@
       }
 
       function extractRoomNumbers(line) {
+        if (window.AiWritingEngine && window.AiWritingEngine.extractRoomNumbers) {
+          return window.AiWritingEngine.extractRoomNumbers(line);
+        }
+
         var rooms = [];
         var seen = {};
 
@@ -5832,6 +5806,9 @@
             addRoom(match[1]);
           }
         });
+
+        var bareLead = String(line || "").match(/^\s*(\d{1,4}[a-z]?)\b(?=\s+(?!am\b|pm\b))/i);
+        if (bareLead) addRoom(bareLead[1]);
 
         return rooms;
       }
@@ -6096,97 +6073,19 @@
       }
 
       function rewriteNoteForDisplay(note) {
-        var line = note.original || "";
-        var room = note.rooms && note.rooms.length === 1 ? note.rooms[0] : null;
-        var roomsLabel = note.rooms && note.rooms.length > 1 ? "Rooms " + note.rooms.join(", ") : "";
-        var guestName = extractGuestNameHint(line);
-        var lead = room ? "Room " + room : (roomsLabel || "");
-        var body = "";
-
-        if (note.section === "completed") {
-          body = summariseIssueCore(line, room);
-        } else if (note.section === "vip" || note.isVip) {
-          var suiteMatch = line.match(/\bsuite\s*(\d+)/i);
-          if (suiteMatch && !room) lead = "Suite " + suiteMatch[1];
-          var amenityBits = [];
-          if (noteContains(line, ["champagne"])) amenityBits.push("champagne");
-          if (noteContains(line, ["flowers"])) amenityBits.push("flowers");
-          if (noteContains(line, ["water"])) amenityBits.push("extra water");
-          if (noteContains(line, ["quiet"])) amenityBits.push("quiet room");
-          body = (guestName ? guestName + " " : "") +
-            (noteContains(line, ["arriv"]) ? "VIP arriving" : "VIP noted");
-          if (amenityBits.length) body += " – " + amenityBits.join(" and ") + " noted";
-          var timeMatch = line.match(/\b(\d{1,2}[:.]\d{2}|\d{1,2}\s*(?:am|pm))\b/i);
-          if (timeMatch) body += " for " + timeMatch[1].replace(".", ":");
-        } else if (note.section === "payments" || isPaymentIssueLine(line)) {
-          var amount = line.match(/£\s*[\d,.]+|\$\s*[\d,.]+|€\s*[\d,.]+/);
-          var amt = amount ? amount[0].replace(/\s+/g, "") : "";
-          if (isOtaPaymentTaskLine(line)) {
-            body = "OTA virtual card / channel payment to process" + (amt ? " (" + amt + ")" : "");
-          } else if (hasExplicitOutstandingBalance(line) || noteContains(line, ["declined"])) {
-            body = "Outstanding balance to be settled before departure" + (amt ? " (" + amt + ")" : "");
-          } else if (noteContains(line, ["minibar"])) {
-            body = "Minibar charge to review" +
-              (noteContains(line, ["dispute", "not consumed"]) ? " – guest dispute" : "") +
-              (amt ? " (" + amt + ")" : "");
-          } else if (noteContains(line, ["deposit"])) {
-            body = summariseIssueCore(line, room);
-          } else {
-            body = summariseIssueCore(line, room);
-          }
-        } else if (note.section === "maintenance" || note.section === "urgent") {
-          if (noteContains(line, ["leak", "leaking", "shower"])) {
-            body = "Shower leak still open" + (note.isCarriedOver ? " from previous shift" : "") +
-              " – requires inspection";
-          } else if (noteContains(line, ["ac", "a/c", "air con", "air conditioning", "not cooling"])) {
-            body = "Air conditioning requires inspection" +
-              (noteContains(line, ["guest", "follow"]) ? " before guest follow-up" : "");
-            if (noteContains(line, ["informed", "eta", "engineer", "not attended"])) {
-              body += " – engineer not yet completed";
-            }
-          } else if (noteContains(line, ["tv", "remote"])) {
-            body = "TV remote not working – replacement needed";
-          } else {
-            body = summariseIssueCore(line, room);
-          }
-        } else if (note.section === "guest") {
-          if (noteContains(line, ["late checkout", "late check-out"])) {
-            body = lateCheckoutStatusPhrase(line);
-          } else if (noteContains(line, ["complaint", "unhappy", "dissatisfied"])) {
-            body = "Guest complaint – recovery follow-up required";
-          } else {
-            body = summariseIssueCore(line, room);
-          }
-        } else if (note.section === "deliveries") {
-          body = "Package held at reception" + (guestName ? " for " + guestName : "");
-        } else if (note.section === "inventory") {
-          body = summariseIssueCore(line, room);
-          if (noteContains(line, ["outstanding", "still", "issued"])) {
-            body = body.replace(/\.$/, "") + " – still to be collected";
-          }
-        } else if (note.section === "lostproperty") {
-          body = summariseIssueCore(line, room).replace(/^lost property:\s*/i, "");
-          if (body.toLowerCase().indexOf("lost") === -1) body = "Lost property – " + body;
-        } else if (note.section === "tasks") {
-          if (noteContains(line, ["dnd"])) body = "Room on DND – hold cleaning until released";
-          else if (noteContains(line, ["pillow"])) body = "Extra pillows requested – still outstanding";
-          else body = summariseIssueCore(line, room);
-        } else if (note.section === "events") {
-          body = summariseIssueCore(line, room);
-        } else {
-          body = summariseIssueCore(line, room);
+        if (window.AiWritingEngine && note) {
+          return window.AiWritingEngine.rewriteNote(note, getAiWritingOptions({
+            section: note.section,
+            rooms: note.rooms,
+            isVip: note.isVip
+          }));
         }
 
-        body = tidyHandoverPhrase(body);
-        if (!body) body = tidyHandoverPhrase(summariseIssueCore(line, room) || line);
-
-        if (lead) {
-          var rest = body.charAt(0).toLowerCase() + body.slice(1);
-          if (/^(vip|mr|mrs|ms|miss|dr)\b/i.test(body) && !room) {
-            return capitalize(body) + (lead ? " – " + lead : "");
-          }
-          return lead + " – " + rest;
-        }
+        var line = (note && note.original) || "";
+        var room = note && note.rooms && note.rooms.length === 1 ? note.rooms[0] : null;
+        var lead = room ? "Room " + room : "";
+        var body = tidyHandoverPhrase(summariseIssueCore(line, room) || line);
+        if (lead) return lead + " – " + body;
         return capitalize(body);
       }
 
@@ -7018,77 +6917,18 @@
       }
 
       function generateSummary(classified) {
+        if (window.AiWritingEngine) {
+          return window.AiWritingEngine.summarizeHandover({
+            analyzed: classified._analyzed || [],
+            classified: classified,
+            prefs: aiPrefs
+          }, getAiWritingOptions());
+        }
+
         var analyzed = classified._analyzed || [];
         var metrics = getHandoverMetrics(classified);
-        var active = analyzed.filter(isActiveNote);
-        var urgent = active.filter(function (n) { return n.section === "urgent"; });
-        var vipNotes = active.filter(function (n) { return n.section === "vip" || n.isVip; });
-        var payNotes = active.filter(function (n) { return n.section === "payments"; });
-        var maint = active.filter(function (n) { return n.section === "maintenance"; });
-        var guest = active.filter(function (n) { return n.section === "guest"; });
-        var focus = [];
-
-        var opening;
-        if (!urgent.length && !vipNotes.length && !payNotes.length && !maint.length && !guest.length) {
-          opening = "Overall a quiet " + getShiftLabel().replace(/ shift$/, "") +
-            " with no priority issues for the incoming team.";
-        } else if (urgent.length === 1) {
-          opening = "Overall a manageable " + getShiftLabel().replace(/ shift$/, "") +
-            " with one priority issue requiring attention.";
-        } else if (urgent.length > 1) {
-          opening = "Busy " + getShiftLabel().replace(/ shift$/, "") +
-            " with " + urgent.length + " priority issues to hand over.";
-        } else {
-          opening = "Overall a steady " + getShiftLabel().replace(/ shift$/, "") +
-            " with clear follow-ups for the next team.";
-        }
-
-        if (urgent[0]) {
-          var uRoom = urgent[0].rooms[0] ? "Room " + urgent[0].rooms[0] : "One issue";
-          focus.push(uRoom + " " + summariseIssueCore(urgent[0].original, urgent[0].rooms[0]).toLowerCase());
-        } else if (maint[0] && vipNotes.length) {
-          focus.push("one maintenance item that may affect tomorrow's VIP preparation");
-        } else if (maint[0]) {
-          focus.push("open maintenance on " + (maint[0].rooms[0] ? "Room " + maint[0].rooms[0] : "the property"));
-        }
-
-        if (vipNotes.length) {
-          focus.push("VIP preparation");
-        }
-        if (payNotes.length) {
-          var hasBalance = payNotes.some(function (n) {
-            return hasExplicitOutstandingBalance(n.original) || noteContains(n.original, ["declined"]);
-          });
-          var hasOta = payNotes.some(function (n) { return isOtaPaymentTaskLine(n.original); });
-          if (hasBalance) focus.push("outstanding payments");
-          else if (hasOta) focus.push("OTA payment processing");
-          else focus.push("payment follow-ups");
-        }
-        if (guest.length && focus.length < 3) {
-          focus.push("guest follow-up");
-        }
-
-        var sentences = [opening];
-        if (focus.length) {
-          var uniqueFocus = [];
-          focus.forEach(function (item) {
-            var key = item.toLowerCase();
-            if (uniqueFocus.indexOf(key) === -1) uniqueFocus.push(item);
-          });
-          if (urgent.length || maint.length) {
-            sentences.push(
-              "Main priority: " + uniqueFocus[0].replace(/\.$/, "") +
-              (uniqueFocus.length > 1 ? ", alongside " + uniqueFocus.slice(1, 3).join(" and ") : "") + "."
-            );
-          }
-          sentences.push(
-            "Morning team should prioritise " +
-            uniqueFocus.slice(0, 3).join(", ").replace(/, ([^,]*)$/, " and $1") + "."
-          );
-        }
-
-        var limit = aiPrefs.detail === "brief" ? 2 : 4;
-        return applyAiPreferencesToSummary(sentences.slice(0, limit).join(" "), classified);
+        var opening = buildOpeningSentence(metrics, analyzed);
+        return applyAiPreferencesToSummary(opening, classified);
       }
 
       function showSummaryCard() {
@@ -8113,6 +7953,13 @@
       }
 
       function buildSummaryOverview(classified) {
+        if (window.AiWritingEngine) {
+          return window.AiWritingEngine.summarizeHandover({
+            analyzed: classified._analyzed || [],
+            classified: classified,
+            prefs: aiPrefs
+          }, getAiWritingOptions());
+        }
         var metrics = getHandoverMetrics(classified);
         var analyzed = classified._analyzed || [];
         return applyAiPreferencesToSummary(buildOpeningSentence(metrics, analyzed), classified);

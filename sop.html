@@ -335,6 +335,7 @@
   <script src="js/auth.js"></script>
   <script src="js/workspace.js"></script>
   <script src="js/hotel-brain-store.js"></script>
+  <script src="ai-writing-engine.js"></script>
   <script>
 (function () {
   "use strict";
@@ -618,6 +619,18 @@
   }
 
   function polishSopText(text) {
+    if (window.AiWritingEngine) {
+      return window.AiWritingEngine.polish(String(text || ""), {
+        module: window.AiWritingEngine.MODULES.sop,
+        prefs: {
+          tone: aiPrefs.tone,
+          detail: aiPrefs.detail,
+          language: aiPrefs.language,
+          instructions: aiPrefs.instructions
+        },
+        terminologyMap: terminologyMap
+      });
+    }
     return applyTerminologyToText(
       applyCustomInstructions(
         applyToneToText(
