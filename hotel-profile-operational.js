@@ -966,20 +966,10 @@
     if (!trimText(notes)) return [];
 
     var reminders = [];
-    var staffNote = "Room allocation remains a staff decision — use Hotel Brain room records as factual reference only.";
+    var staffNote = "Confirm allocation against Hotel Brain room records before assigning.";
 
-    extractMentionedRooms(notes).forEach(function (roomNo) {
-      var room = findRoomRecord(facilities, roomNo);
-      var facts = describeRoomFacts(room);
-      if (!facts) return;
-      reminders.push({
-        text: "Room " + room.roomNo + " — confirmed attributes: " + facts + ". " + staffNote,
-        category: "Rooms",
-        department: "Reception",
-        priority: "normal"
-      });
-    });
-
+    /* Only surface room attributes when the notes ask for a capability decision —
+       never because a room number was merely mentioned. */
     function roomsWith(key) {
       return facilities.filter(function (room) { return room && room[key]; });
     }
@@ -989,13 +979,14 @@
     }
 
     var checks = [
-      { pattern: /twin|two beds|twin room|twin beds/, key: "twinCapable", label: "twin capable" },
-      { pattern: /extra bed|rollaway|third guest|additional bed/, key: "extraBedCapable", label: "extra bed capable" },
-      { pattern: /sofa bed|sofabed|sofa-bed/, key: "sofaBed", label: "sofa bed" },
-      { pattern: /accessible|wheelchair|mobility|step-free|disabled access/, key: "accessible", label: "accessible" },
-      { pattern: /bathtub|bath tub|room with bath/, key: "bathtub", label: "bathtub" },
-      { pattern: /street facing|street view|front facing|road facing/, key: "streetFacing", label: "street facing" },
-      { pattern: /dark room|blackout room|light sensitive|low light/, key: "darkRoom", label: "dark room" }
+      { pattern: /twin|two beds|twin room|twin beds/, key: "twinCapable", label: "twin capable", action: "Use a twin-capable room" },
+      { pattern: /extra bed|rollaway|third guest|additional bed/, key: "extraBedCapable", label: "extra bed capable", action: "Allocate an extra-bed capable room" },
+      { pattern: /sofa bed|sofabed|sofa-bed/, key: "sofaBed", label: "sofa bed", action: "Prefer a sofa-bed room if required" },
+      { pattern: /accessible|wheelchair|mobility|step-free|disabled access/, key: "accessible", label: "accessible", action: "Allocate an accessible room" },
+      { pattern: /bathtub|bath tub|room with bath/, key: "bathtub", label: "bathtub", action: "Allocate a room with bathtub" },
+      { pattern: /street facing|street view|front facing|road facing/, key: "streetFacing", label: "street facing", action: "Note street-facing inventory if relevant" },
+      { pattern: /dark room|blackout room|light sensitive|low light/, key: "darkRoom", label: "dark room", action: "Prefer a dark/blackout room" },
+      { pattern: /quiet room|quiet side|courtyard|away from street/, key: "quietFacing", label: "quiet facing", action: "Prefer a quiet-facing room" }
     ];
 
     checks.forEach(function (check) {
@@ -1003,7 +994,7 @@
       var matching = roomsWith(check.key);
       if (!matching.length) return;
       reminders.push({
-        text: "Rooms recorded as " + check.label + ": " + roomNumbers(matching) + ". " + staffNote,
+        text: check.action + " — Hotel Brain options: " + roomNumbers(matching) + ".",
         category: "Rooms",
         department: "Reception",
         priority: "normal"
@@ -1014,17 +1005,17 @@
       var pairs = facilities.filter(function (room) { return trimText(room.connectingRoom); });
       if (pairs.length) {
         reminders.push({
-          text: "Hotel Brain interconnecting room pairs: " + pairs.map(function (room) {
-            return room.roomNo + " and " + room.connectingRoom;
-          }).join("; ") + ". " + staffNote,
+          text: "Allocate interconnecting rooms if required — pairs on file: " + pairs.map(function (room) {
+            return room.roomNo + "/" + room.connectingRoom;
+          }).join(", ") + ".",
           category: "Rooms",
           department: "Reception",
-          priority: "normal"
+          priority: "high"
         });
       }
     }
 
-    return reminders;
+    return reminders.slice(0, 3);
   }
 
   global.HotelProfileOperational = {
