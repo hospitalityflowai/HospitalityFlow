@@ -506,6 +506,19 @@ Function config: [`supabase/config.toml`](supabase/config.toml) sets `verify_jwt
 
 Verify: `node scripts/test-early-access-email-security.mjs` and `node scripts/verify-early-access-setup.mjs`.
 
+### Operator approve & invite (Phase 14)
+
+After reviewing a pending application, authorised operators invite hotels with the **`invite-pilot-applicant`** Edge Function (Supabase Auth Admin invite email). Do **not** mark `platform_access` as `invited` manually before the invite succeeds.
+
+Full runbook: [`docs/OPERATOR_INVITE.md`](docs/OPERATOR_INVITE.md)
+
+```powershell
+# Apply supabase/migrations/phase14_pilot_invite_operators.sql in SQL Editor first,
+# insert your user into public.platform_operators, then:
+npx supabase functions deploy invite-pilot-applicant
+node scripts/test-pilot-invite-pipeline.mjs
+```
+
 ### Set Supabase secrets
 
 In the Supabase dashboard → **Edge Functions** → **Secrets**, or via CLI:

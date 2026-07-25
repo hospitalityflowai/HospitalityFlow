@@ -23,9 +23,16 @@ verify_jwt = false
 [functions.submit-early-access-application]
 verify_jwt = false
 
+# Operator invite: JWT required + platform_operators row check inside the function.
+[functions.invite-pilot-applicant]
+verify_jwt = true
+
 # Internal-only email dispatch secret (never expose to browser):
 #   supabase secrets set EARLY_ACCESS_EMAILS_INTERNAL_SECRET=<long-random-string>
 # Required by send-early-access-emails and submit-early-access-application.
+
+# Optional invite redirect override (defaults to https://hospitalityflow.co.uk/account.html):
+#   supabase secrets set PILOT_INVITE_REDIRECT_TO=https://hospitalityflow.co.uk/account.html
 
 # TEMPORARY DEVELOPMENT / QA ONLY — request-password-reset secrets (set via CLI, not committed):
 #   supabase secrets set PASSWORD_RESET_DEV_RELAXED=true

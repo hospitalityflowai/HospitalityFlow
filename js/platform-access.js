@@ -1,11 +1,21 @@
 /**
  * Hospitality Flow — invitation-only platform access checks (Phase 10)
+ * Fail-closed: missing RPC, check errors, or denied status never grant access.
  */
 (function (global) {
   "use strict";
 
   var NOT_APPROVED_MESSAGE =
     "Your Hospitality Flow access has not been approved yet.";
+
+  function deniedAccess(reason) {
+    return {
+      allowed: false,
+      accessStatus: null,
+      hasMembership: false,
+      reason: reason || "ACCESS_CHECK_FAILED"
+    };
+  }
 
   function ensureClient() {
     return global.HFAuth.ensureClient();
@@ -22,30 +32,32 @@
   }
 
   function checkPlatformAccess() {
+    if (!global.HFAuth || !global.HFAuth.ensureClient) {
+      return Promise.resolve(deniedAccess("MODULE_MISSING"));
+    }
+
     if (!global.HospitalityFlowSupabase || !global.HospitalityFlowSupabase.isConfigured()) {
-      return Promise.resolve({
-        allowed: false,
-        accessStatus: null,
-        hasMembership: false,
-        reason: "SUPABASE_NOT_CONFIGURED"
-      });
+      return Promise.resolve(deniedAccess("SUPABASE_NOT_CONFIGURED"));
     }
 
     return ensureClient().then(function (client) {
       return client.rpc("get_my_platform_access").then(function (result) {
         if (result.error) {
-          if (/function.*does not exist|PGRST202|42883/i.test(result.error.message || "")) {
-            return {
-              allowed: true,
-              accessStatus: "legacy",
-              hasMembership: false,
-              reason: "MIGRATION_PENDING"
-            };
+          var errMsg = result.error.message || "";
+          var errCode = String(result.error.code || "");
+          if (
+            errCode === "PGRST202" ||
+            errCode === "42883" ||
+            /function.*does not exist|PGRST202|42883|schema cache|could not find the function/i.test(errMsg)
+          ) {
+            return deniedAccess("MIGRATION_PENDING");
           }
-          return Promise.reject(result.error);
+          return deniedAccess("ACCESS_CHECK_FAILED");
         }
         return parseAccessResult(result.data);
       });
+    }).catch(function () {
+      return deniedAccess("ACCESS_CHECK_FAILED");
     });
   }
 

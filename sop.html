@@ -333,6 +333,7 @@
   <script src="js/supabase-client.js"></script>
   <script src="js/tenant-storage.js"></script>
   <script src="js/auth.js"></script>
+  <script src="js/platform-access.js"></script>
   <script src="js/workspace.js"></script>
   <script src="js/hotel-brain-store.js"></script>
   <script src="ai-writing-engine.js"></script>
@@ -1406,10 +1407,6 @@
   });
 
   function initHotelProfileFromCloud() {
-    var workspacePromise = window.HFWorkspace
-      ? window.HFWorkspace.getUserWorkspace().catch(function () { return null; })
-      : Promise.resolve(null);
-
     function finishInit(profile) {
       hotelProfile = profile || null;
       applyHotelProfileConfig(hotelProfile);
@@ -1418,22 +1415,59 @@
       restoreDraft();
     }
 
-    if (!window.HFHotelBrainStore) {
-      workspacePromise.then(function () { finishInit(null); });
+    function loadLocalOnly() {
+      finishInit(null);
+    }
+
+    function loadCloudProfile() {
+      var workspacePromise = window.HFWorkspace
+        ? window.HFWorkspace.getUserWorkspace().catch(function () { return null; })
+        : Promise.resolve(null);
+
+      if (!window.HFHotelBrainStore) {
+        workspacePromise.then(function () { finishInit(null); });
+        return;
+      }
+
+      Promise.all([
+        window.HFHotelBrainStore.load(),
+        workspacePromise
+      ]).then(function (results) {
+        var workspace = results[1];
+        if (workspace && workspace.hotel && workspace.hotel.id) {
+          sopWorkspaceId = workspace.hotel.id;
+        }
+        finishInit(results[0] && results[0].profile ? results[0].profile : null);
+      }).catch(function () {
+        loadLocalOnly();
+      });
+    }
+
+    if (!window.HFPlatformAccess || !window.HFPlatformAccess.checkPlatformAccess) {
+      loadLocalOnly();
       return;
     }
 
-    Promise.all([
-      window.HFHotelBrainStore.load(),
-      workspacePromise
-    ]).then(function (results) {
-      var workspace = results[1];
-      if (workspace && workspace.hotel && workspace.hotel.id) {
-        sopWorkspaceId = workspace.hotel.id;
+    if (!window.HFAuth || !window.HFAuth.getSession) {
+      loadLocalOnly();
+      return;
+    }
+
+    window.HFAuth.getSession().then(function (session) {
+      if (!session) {
+        loadLocalOnly();
+        return;
       }
-      finishInit(results[0] && results[0].profile ? results[0].profile : null);
+
+      return window.HFPlatformAccess.checkPlatformAccess().then(function (access) {
+        if (!access.allowed) {
+          loadLocalOnly();
+          return;
+        }
+        loadCloudProfile();
+      });
     }).catch(function () {
-      finishInit(null);
+      loadLocalOnly();
     });
   }
 
