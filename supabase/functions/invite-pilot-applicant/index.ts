@@ -35,7 +35,7 @@ function isAlreadyRegisteredError(error: unknown): boolean {
   return (
     code === "email_exists" ||
     code === "user_already_exists" ||
-    /already(?:\s+been)?\s+registered|already exists|email.*exists/i.test(message)
+    /already\s+(?:been\s+)?registered|already exists|email.*exists/i.test(message)
   );
 }
 
