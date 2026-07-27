@@ -300,10 +300,22 @@
     [/\bwedsday\b/gi, "Wednesday"],
     [/\bthrusday\b/gi, "Thursday"],
     [/\bteh\b/gi, "the"],
+    [/\bnigh\b(?=\s|$|[.,!?])/gi, "night"],
     [/\badpater\b/gi, "adapter"],
     [/\badpaters\b/gi, "adapters"],
     [/\badaptor\b/gi, "adapter"],
     [/\badaptors\b/gi, "adapters"]
+  ];
+
+  var HANDOVER_ACTION_PATTERNS = [
+    /\bPlease\s+arrange\s+for\s+Maintenance\s+to\s+attend\b/i,
+    /\bMaintenance\s+to\s+attend\b/i,
+    /\bReception\s+to\s+collect\b/i,
+    /\bChase\s+(?:Maintenance\s+)?for\s+an\s+update\b/i,
+    /\bIncoming\s+team\s+to\s+action\b/i,
+    /\bPlease\s+follow\s+up\s+during\s+this\s+shift\b/i,
+    /\bPlease\s+advise\s+Housekeeping\b/i,
+    /\bupdate\s+the\s+incoming\s+team\b/i
   ];
 
   var ABBREVIATIONS = [
@@ -1119,27 +1131,595 @@
     return applyPreferences(result, options);
   }
 
-  function rewriteKnowledgeText(rawText, options) {
+  function extractPercentages(text) {
+    var matches = [];
+    var re = /\b\d+(?:\.\d+)?\s*%/g;
+    var m;
+    while ((m = re.exec(String(text || ""))) !== null) {
+      matches.push(m[0].replace(/\s+/g, ""));
+    }
+    return matches;
+  }
+
+  function extractDates(text) {
+    var matches = [];
+    var re = /\b(?:\d{1,2}[\/\-]\d{1,2}(?:[\/\-]\d{2,4})?|\d{1,2}\s+(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{2,4})\b/gi;
+    var m;
+    while ((m = re.exec(String(text || ""))) !== null) {
+      matches.push(m[0]);
+    }
+    return matches;
+  }
+
+  function containsHandoverActionTemplate(text) {
+    return HANDOVER_ACTION_PATTERNS.some(function (re) {
+      return re.test(String(text || ""));
+    });
+  }
+
+  function stripHandoverActionTemplates(text) {
+    var result = String(text || "");
+    result = result
+      .replace(/\s*Please\s+arrange\s+for\s+Maintenance\s+to\s+attend[^.?!]*[.?!]?/gi, "")
+      .replace(/\s*Maintenance\s+to\s+attend[^.?!]*[.?!]?/gi, "")
+      .replace(/\s*Reception\s+to\s+collect[^.?!]*[.?!]?/gi, "")
+      .replace(/\s*Chase\s+(?:Maintenance\s+)?for\s+an\s+update[^.?!]*[.?!]?/gi, "")
+      .replace(/\s*Incoming\s+team\s+to\s+action[^.?!]*[.?!]?/gi, "")
+      .replace(/\s*Please\s+follow\s+up\s+during\s+this\s+shift[^.?!]*[.?!]?/gi, "")
+      .replace(/\s*Please\s+advise\s+Housekeeping[^.?!]*[.?!]?/gi, "")
+      .replace(/\s*and\s+update\s+the\s+incoming\s+team[^.?!]*/gi, "")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+    return result;
+  }
+
+  function inventsCompletionStatus(original, improved) {
+    var src = String(original || "").toLowerCase();
+    var out = String(improved || "").toLowerCase();
+    var completionWords = ["completed", "resolved", "done", "closed", "finished", "sorted"];
+    return completionWords.some(function (word) {
+      var re = new RegExp("\\b" + word + "\\b", "i");
+      return re.test(out) && !re.test(src);
+    });
+  }
+
+  function removeInventedCompletion(original, improved) {
+    if (!inventsCompletionStatus(original, improved)) return improved;
+    var src = String(original || "").toLowerCase();
+    var result = String(improved || "");
+    ["completed", "resolved", "done", "closed", "finished", "sorted"].forEach(function (word) {
+      var re = new RegExp("\\b" + word + "\\b", "i");
+      if (!re.test(src)) {
+        result = result.replace(new RegExp("\\b" + word + "\\b", "gi"), "").replace(/\s{2,}/g, " ").trim();
+      }
+    });
+    return tidyPhrase(result);
+  }
+
+  function dayCountPhrase(n) {
+    var num = parseInt(n, 10);
+    if (isNaN(num)) return String(n) + " days";
+    return numberWord(num) + (num === 1 ? " day" : " days");
+  }
+
+  function moneyPresentInText(text, amount) {
+    var source = String(text || "");
+    var raw = String(amount || "").replace(/\s+/g, "");
+    if (!raw) return true;
+    if (source.indexOf(raw) !== -1) return true;
+    var digits = raw.match(/[\d,.]+/);
+    if (!digits) return source.toLowerCase().indexOf(raw.toLowerCase()) !== -1;
+    var num = digits[0].replace(/,/g, "");
+    return new RegExp("(?:£|\\$|€)?\\s*" + escapeRegExp(num) + "\\b", "i").test(source);
+  }
+
+  function extractMoneyAmounts(text) {
+    var amounts = [];
+    var re = /(?:£|\$|€)\s*(\d+(?:\.\d{1,2})?)|(\d+(?:\.\d{1,2})?)\s*(?:gbp|pounds?|usd|dollars?|eur|euros?)\b/gi;
+    var m;
+    while ((m = re.exec(String(text || ""))) !== null) {
+      var n = Number(m[1] || m[2]);
+      if (Number.isFinite(n)) amounts.push(n);
+    }
+    var bare = /(\d+(?:\.\d{1,2})?)\s*(?:charge|fee|penalty|fine)\b|(?:charge|fee|penalty|fine)\s*(?:of\s*)?(?:£|\$|€)?\s*(\d+(?:\.\d{1,2})?)/gi;
+    while ((m = bare.exec(String(text || ""))) !== null) {
+      n = Number(m[1] || m[2]);
+      if (Number.isFinite(n)) amounts.push(n);
+    }
+    return amounts;
+  }
+
+  function formatMoneySimple(amount) {
+    var n = Number(amount);
+    if (!Number.isFinite(n)) return "";
+    return Number.isInteger(n) ? ("£" + n) : ("£" + n.toFixed(2));
+  }
+
+  function firstMoneyPhrase(text, currency) {
+    var primary = extractPrimaryAmount(text, currency);
+    if (primary) return primary;
+    var amounts = extractMoneyAmounts(text);
+    return amounts.length ? formatMoneySimple(amounts[0]) : "";
+  }
+
+  /**
+   * True only when text already reads as professional hotel operational prose.
+   * Grammar alone is not enough — telegraphic / informal ops notes return false.
+   */
+  function looksLikeHotelBrainProfessional(text) {
+    var t = String(text || "").trim();
+    if (!t) return false;
+    if (t.length < 28) return false;
+    if (/[!?]{2,}/.test(t)) return false;
+    if (/\b(pls|plz|asap|kinda|sorta|gonna|wanna|teh|dont|cant|wont)\b/i.test(t)) return false;
+    if (/\b(guest takes|if guest|we do not offer|we request|penalty charge|call guest|make sure guest|5days|nigh shifts|morning am)\b/i.test(t)) return false;
+    if (/\b(smokes inside|key home|charge \d+|with any fee)\b/i.test(t)) return false;
+    if (/^[a-z]/.test(t)) return false;
+    if (!/[.!?]"?$/.test(t) && t.split(/\s+/).length < 14) return false;
+    var sentences = t.split(/(?<=[.!?])\s+/).filter(Boolean);
+    if (!sentences.length) return false;
+    if (!/^[A-Z]/.test(sentences[0])) return false;
+    if (/\b(and we request|as we cannot|with any fee)\b/i.test(t)) return false;
+    return sentences.every(function (s) { return s.trim().length >= 12; }) && !/\b(etc\.?|blah)\b/i.test(t);
+  }
+
+  function applyHotelBrainOperationalVoice(text) {
+    var result = String(text || "");
+    result = result
+      .replace(/\bwe do not\b/gi, "the hotel does not")
+      .replace(/\bwe cannot\b/gi, "the hotel cannot")
+      .replace(/\bwe request\b/gi, "guests are requested")
+      .replace(/\bwe ask\b/gi, "guests are asked")
+      .replace(/\bto make sure\b/gi, "to ensure")
+      .replace(/\bmake sure\b/gi, "ensure")
+      .replace(/\bguest can\b/gi, "the guest can")
+      .replace(/\bguests can\b/gi, "guests can")
+      .replace(/\bas we cannot\b/gi, "as this cannot")
+      .replace(/\bwith any fee\b/gi, "as a paid service")
+      .replace(/\bfor a fee\b/gi, "as a paid service")
+      .replace(/\bnigh(?:t)?\s+before\b/gi, "the previous night")
+      .replace(/\bnight before\b/gi, "the previous night")
+      .replace(/\bbook it (?:the )?previous night\b/gi, "book the room from the previous night")
+      .replace(/\bbook (?:the )?room (?:the )?previous night\b/gi, "book the room from the previous night")
+      .replace(/\bcheck-?in early\b/gi, "check in early")
+      .replace(/\bearly check-?ins\b/gi, "early check-in")
+      .replace(/\blate check-?outs\b/gi, "late check-out")
+      .replace(/\bsay yes\b/gi, "approve")
+      .replace(/\bonly if\b/gi, "only when")
+      .replace(/\bif not return\b/gi, "if not returned")
+      .replace(/\bif guest\b/gi, "if a guest")
+      .replace(/\bwhen guest\b/gi, "when a guest")
+      .replace(/\bguest takes\b/gi, "a guest takes")
+      .replace(/\bcall guest\b/gi, "contact the guest")
+      .replace(/\bcontact guest\b/gi, "contact the guest")
+      .replace(/\binform guest\b/gi, "inform the guest")
+      .replace(/\bpenalty charge\b/gi, "penalty charge")
+      .replace(/\bnot allowed\b/gi, "not permitted")
+      .replace(/\sis not allowed\b/gi, " is not permitted")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+    return result;
+  }
+
+  /**
+   * Pattern-led operations-manual rewrite for common Hotel Brain knowledge.
+   * Only restructures meaning already present — never invents fees or policy.
+   */
+  function rewriteHotelBrainOperationalParagraph(rawText, options) {
     options = options || {};
     var original = trimText(rawText);
     if (!original) return "";
 
-    /* Multi-line knowledge: rewrite each non-empty line, preserve structure */
-    var lines = original.split(/\n+/);
-    if (lines.length > 1) {
-      return lines.map(function (line) {
-        var t = trimText(line);
-        if (!t) return "";
-        return rewritePolicyText(t, options);
-      }).filter(Boolean).join("\n");
+    var lower = original.toLowerCase();
+    var amount = firstMoneyPhrase(original, options.currency);
+    var result = "";
+
+    /* Early check-in — not guaranteed / not offered as paid / book night before */
+    if (/\bearly\s+check-?ins?\b/.test(lower) || /\bcheck-?in early\b/.test(lower)) {
+      var cannotGuarantee = /cannot\s+guarantee|can't\s+guarantee|not\s+guaranteed|no\s+guarantee/.test(lower);
+      var notOfferedPaid = /do not offer|don't offer|not offer|no fee|any fee|with any fee|not available|cannot sell|can't sell/.test(lower);
+      var bookNightBefore = /night before|previous night|book.*night|arrive.*night before/.test(lower);
+
+      if (cannotGuarantee || notOfferedPaid || bookNightBefore) {
+        var sentences = [];
+        if (cannotGuarantee && notOfferedPaid) {
+          sentences.push("Early check-in cannot be guaranteed and is therefore not available as a paid service");
+        } else if (cannotGuarantee) {
+          sentences.push("Early check-in cannot be guaranteed");
+        } else if (notOfferedPaid) {
+          sentences.push("Early check-in is not available as a paid service");
+        }
+        if (bookNightBefore) {
+          sentences.push("Guests who require an early check-in should book the room from the previous night to ensure the room is available upon arrival");
+        }
+        if (sentences.length) {
+          result = sentences.map(function (s) { return ensureSentence(s); }).join(" ");
+          return result;
+        }
+      }
     }
 
-    return rewritePolicyText(original, options);
+    /* Late check-out approval */
+    if (/\blate\s+check-?outs?\b/.test(lower) || /\blate\s+c\/?o\b/.test(lower) || /\blate\s+co\b/.test(lower)) {
+      if (amount && /fee|charge|cost|paid|pay/.test(lower)) {
+        var untilMatch = original.match(/\buntil\s+(\d{1,2}(?::\d{2})?\s*(?:am|pm)?|\d{1,2}\s*(?:am|pm))/i);
+        if (untilMatch) {
+          result = "Late check-out is available until " + untilMatch[1].replace(/\s+/g, "") +
+            " for a " + amount + " fee, subject to availability";
+          return ensureSentence(result);
+        }
+        result = "Late check-out is available for a " + amount + " fee, subject to availability";
+        return ensureSentence(result);
+      }
+      if ((/manager|dm|duty/.test(lower)) && /vip/.test(lower)) {
+        result = "Late check-out requires Duty Manager approval, unless arranged for a VIP guest";
+        return ensureSentence(result);
+      }
+      if (/manager|dm|duty/.test(lower) && /only|approve|yes|authoris|authoriz/.test(lower)) {
+        result = "Late check-out requires Duty Manager approval";
+        return ensureSentence(result);
+      }
+      if (/vip/.test(lower)) {
+        result = "Late check-out may be arranged for VIP guests when authorised";
+        return ensureSentence(result);
+      }
+    }
+
+    /* Smoking in rooms — never invent a fee amount */
+    if (/\bsmok(?:e|es|ing)\b/.test(lower) && /\b(room|rooms|inside|indoors?)\b/.test(lower)) {
+      if (amount) {
+        result = "Smoking is strictly prohibited throughout the hotel. " +
+          "If a guest smokes inside a room, a " + amount + " smoking charge will be applied in accordance with hotel policy";
+        return ensureSentence(result);
+      }
+      if (/penalty|charge|fine|fee/.test(lower)) {
+        result = "Smoking is strictly prohibited throughout the hotel. " +
+          "If a guest smokes inside a room, a smoking penalty charge will be applied in accordance with hotel policy";
+        return ensureSentence(result);
+      }
+      result = "Smoking is strictly prohibited throughout the hotel, including inside guest rooms";
+      return ensureSentence(result);
+    }
+    if (/smoking/.test(lower) && amount) {
+      result = "A " + amount + " smoking cleaning charge applies where smoking is detected in a non-smoking room";
+      return ensureSentence(result);
+    }
+
+    /* Key taken home / lost — preserve fee only when present */
+    if (/\b(key|keys|keycard|key\s*card)\b/.test(lower) && /\b(home|lost|lose|taken|takes|missing|replacement)\b/.test(lower)) {
+      var contact = /\b(call|contact|phone|ring)\b/.test(lower);
+      if (amount && contact) {
+        result = "If a guest takes a room key home or loses it, a " + amount + " replacement charge applies. " +
+          "Contact the guest to arrange the return of the key before applying the charge where appropriate";
+        return ensureSentence(result);
+      }
+      if (amount) {
+        result = "If a guest takes a room key home or loses it, a " + amount + " replacement charge applies";
+        return ensureSentence(result);
+      }
+      if (contact) {
+        result = "If a guest takes a room key home or loses it, contact the guest to arrange return of the key before applying any replacement charge where appropriate";
+        return ensureSentence(result);
+      }
+      result = "If a guest takes a room key home or loses it, a replacement charge may apply in accordance with hotel policy";
+      return ensureSentence(result);
+    }
+
+    /* Loan item / adapter replacement charges */
+    if ((/adapter|adaptor|iron|loan/.test(lower)) && (/not return|if not|charge|fee|pound|£|\d/.test(lower) || amount)) {
+      var item = /iron/.test(lower) ? "loan iron or ironing board" : "loan adapter";
+      if (/iron/.test(lower) && /adapter|adaptor/.test(lower)) item = "loan iron, ironing board or adapter";
+      result = (amount ? "A " + amount + " replacement charge applies" : "A replacement charge applies") +
+        " if a " + item + " is not returned";
+      return ensureSentence(result);
+    }
+
+    /* Deposit */
+    if (/deposit/.test(lower) && amount) {
+      result = "A deposit of " + amount + " is required" +
+        (/refund|return/.test(lower) ? " and is refundable subject to inspection" : "");
+      return ensureSentence(result);
+    }
+
+    /* Damage / breakage */
+    if (/\b(damage|breakage|broken|damaged)\b/.test(lower) && (amount || /charge|fee|penalty/.test(lower))) {
+      result = amount
+        ? "If a guest damages hotel property, a " + amount + " charge may be applied in accordance with hotel policy"
+        : "If a guest damages hotel property, a charge may be applied in accordance with hotel policy";
+      return ensureSentence(result);
+    }
+
+    /* No-show */
+    if (/no[\s-]?show/.test(lower)) {
+      result = amount
+        ? "No-show reservations are charged " + amount + " in accordance with hotel policy"
+        : "No-show reservations are charged in accordance with hotel policy";
+      return ensureSentence(result);
+    }
+
+    /* Pets */
+    if (/\b(pets?|dogs?|animals?)\b/.test(lower) && /\b(not\s+allow|not\s+permit|prohibited|no\s+pets)\b/.test(lower)) {
+      result = "Pets are not permitted on the property, except where assistance animals are required";
+      return ensureSentence(result);
+    }
+
+    /* Quiet hours */
+    if (/\b(quiet\s+hours?|noise)\b/.test(lower)) {
+      var times = original.match(/\d{1,2}(?::\d{2})?\s*(?:am|pm)/gi) || [];
+      if (times.length >= 2) {
+        result = "Quiet hours are observed from " + times[0].replace(/\s+/g, "") +
+          " to " + times[1].replace(/\s+/g, "") + ". Guests should keep noise to a minimum during this period";
+        return ensureSentence(result);
+      }
+    }
+
+    return "";
   }
 
-  /* ------------------------------------------------------------------ */
-  /*  General polish (SOP / operations / any module)                    */
-  /* ------------------------------------------------------------------ */
+  function applyHotelBrainNormalisations(text) {
+    var result = String(text || "");
+    result = correctSpelling(result);
+    result = standardiseTerminology(result);
+    result = applyHotelBrainOperationalVoice(result);
+
+    result = result
+      .replace(/\b(\d+)\s*days\b/gi, function (_, n) { return dayCountPhrase(n); })
+      .replace(/\b(\d)days\b/gi, function (_, n) { return dayCountPhrase(n); })
+      .replace(/\bfive\s+days\s+working\s+week\b/gi, "five days per week")
+      .replace(/\b(\w+)\s+days\s+working\s+week\b/gi, "$1 days per week")
+      .replace(/\bworking\s+week\b/gi, "per week")
+      .replace(/\bmorning\s+am\b/gi, "AM")
+      .replace(/\bafternoon\s+pm\b/gi, "PM")
+      .replace(/\b\bam\s+and\s+(?:afternoon\s+)?pm\b/gi, "AM and PM")
+      .replace(/\b\bam\s+shifts?\b/gi, "AM shifts")
+      .replace(/\b\bpm\s+shifts?\b/gi, "PM shifts")
+      .replace(/\bcovers?\s+the\s+nigh(?:t)?\s+shifts?\b/gi, "covers the night shift")
+      .replace(/\bcovers?\s+nigh(?:t)?\s+shifts?\b/gi, "covers the night shift")
+      .replace(/\bduty\s+managers\b/gi, "Duty Managers")
+      .replace(/\bduty\s+manager\b/gi, "Duty Manager")
+      .replace(/\bnight\s+managers\b/gi, "Night Managers")
+      .replace(/\bnight\s+manager\b/gi, "Night Manager")
+      .replace(/\bgeneral\s+managers\b/gi, "General Managers")
+      .replace(/\bgeneral\s+manager\b/gi, "General Manager")
+      .replace(/\bon\s+the\s+(Duty|Night|General)\s+Manager\s+days\s+off\b/gi, "During the $1 Manager's days off")
+      .replace(/\bcovers?\s+(?:the\s+)?AM\s+and\s+PM\s+shifts?\b/gi, "cover the AM and PM shifts")
+      .replace(/\bshifts,\s+(five|six|seven|\d+)\s+days\s+per\s+week\s+(Night|Duty|General)\s+Manager/gi,
+        "shifts $1 days per week. The $2 Manager")
+      .replace(/\bThe\s+(Night|Duty|General)\s+Manager\s+(five|six|seven|\d+)\s+days\s+per\s+week\b/gi,
+        "The $1 Manager covers $2 days per week")
+      .replace(/\b(per\s+week)\s+(Night|Duty|General)\s+Manager\s+(five|six|seven|\d+)\s+days\s+per\s+week\b/gi,
+        "$1. The $2 Manager covers $3 days per week")
+      .replace(/\bThe\s+Night\s+Manager\s+covers\s+(five|six|seven|\d+)\s+days\s+per\s+week\b/gi,
+        "The Night Manager covers $1 night shifts per week")
+      .replace(/\bDuring\s+the\s+(Night|Duty|General)\s+Manager's\s+days\s+off\s+or\s+annual\s+leave,\s+(Duty|Night|General)\s+Manager\b/gi,
+        "During the $1 Manager's days off or annual leave, a $2 Manager")
+      .replace(/\b,\s*During\b/g, ". During")
+      .replace(/\b,\s*on\s+the\b/gi, ". During the")
+      .replace(/\bdm\b(?=\s|$|[.,!?])/gi, "Duty Manager")
+      .replace(/\bgm\b(?=\s|$|[.,!?])/gi, "General Manager")
+      .replace(/\blate\s+c\/?o\b/gi, "late check-out")
+      .replace(/\bearly\s+c\/?i\b/gi, "early check-in")
+      .replace(/\blate\s+co\b/gi, "late check-out")
+      .replace(/\bcharge\s+(\d+(?:\.\d{1,2})?)\b/gi, "a £$1 charge")
+      .replace(/\b(\d+(?:\.\d{1,2})?)\s*(?:pound|pounds|gbp)\b/gi, "£$1")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+
+    return result;
+  }
+
+  function finaliseHotelBrainSentences(text) {
+    var result = tidyPhrase(text);
+    if (!result) return "";
+
+    /* Split run-on clauses joined only by commas before a new subject */
+    result = result
+      .replace(/,\s+(we\s+|guests?\s+are\s+|the\s+hotel\s+)/gi, ". $1")
+      .replace(/,\s+(guests?\s+who\b)/gi, ". $1");
+
+    /* Split glued sentences before role titles mid-string */
+    result = result.replace(
+      /([a-z0-9])\s+(The\s+(?:Duty|Night|General)\s+Managers?\b)/g,
+      "$1. $2"
+    );
+    result = result.replace(
+      /([.!?])\s*(during\b)/gi,
+      function (_, punct, during) {
+        return punct + " " + during.charAt(0).toUpperCase() + during.slice(1);
+      }
+    );
+
+    var parts = result.replace(/([.!?])\s+/g, "$1\n").split("\n");
+    var sentences = parts.map(function (part) {
+      var s = tidyPhrase(part);
+      if (!s) return "";
+      s = capitalize(s);
+      if (!/[.!?]$/.test(s)) s += ".";
+      return s;
+    }).filter(Boolean);
+
+    return sentences.join(" ");
+  }
+
+  function ensureProtectedFactsPresent(original, improved) {
+    var result = String(improved || "");
+    var checks = []
+      .concat(extractRoomNumbers(original).map(function (r) {
+        return { label: "room", value: r, re: new RegExp("\\b" + escapeRegExp(r) + "\\b", "i") };
+      }))
+      .concat(extractTimes(original).map(function (t) {
+        return { label: "time", value: t, re: new RegExp(escapeRegExp(t), "i") };
+      }))
+      .concat(extractPercentages(original).map(function (p) {
+        return { label: "pct", value: p, re: new RegExp(escapeRegExp(p), "i") };
+      }))
+      .concat(extractDates(original).map(function (d) {
+        return { label: "date", value: d, re: new RegExp(escapeRegExp(d), "i") };
+      }))
+      .concat(extractGuestNames(original).map(function (n) {
+        return { label: "name", value: n, re: new RegExp(escapeRegExp(n), "i") };
+      }));
+
+    checks.forEach(function (item) {
+      if (!item.value) return;
+      if (!item.re.test(result)) {
+        result = tidyPhrase(result + (result ? " " : "") + item.value);
+      }
+    });
+
+    extractMoney(original).forEach(function (amount) {
+      if (!moneyPresentInText(result, amount)) {
+        var formatted = formatMoneyAmount(amount) || amount;
+        if (!moneyPresentInText(result, formatted)) {
+          result = tidyPhrase(result + (result ? " " : "") + formatted);
+        }
+      }
+    });
+
+    return result;
+  }
+
+  /**
+   * Hotel Brain Writing V3 — global Hotel Operations Editor.
+   * Rewrites free-text knowledge as professional British English ops prose.
+   * Preserves meaning and facts; never invents policies, fees, tasks or completion.
+   */
+  function improveHotelBrainWriting(rawText, options) {
+    options = options || {};
+    var original = trimText(rawText);
+    if (!original) return "";
+
+    var paragraphs = original.split(/\n/);
+    var improvedParagraphs = paragraphs.map(function (para) {
+      var line = trimText(para);
+      if (!line) return "";
+
+      var patterned = rewriteHotelBrainOperationalParagraph(line, options);
+      if (patterned) {
+        patterned = stripHandoverActionTemplates(patterned);
+        patterned = removeInventedCompletion(line, patterned);
+        patterned = ensureProtectedFactsPresent(line, patterned);
+        return patterned;
+      }
+
+      var normalised = applyHotelBrainNormalisations(line);
+      normalised = normalised
+        .replace(/\bc\/o\b/gi, "check-out")
+        .replace(/\bc\/i\b/gi, "check-in")
+        .replace(/\bpls\b/gi, "please")
+        .replace(/\bplz\b/gi, "please")
+        .replace(/\btmrw\b/gi, "tomorrow")
+        .replace(/\bw\/\b/gi, "with")
+        .replace(/\basap\b/gi, "as soon as possible")
+        .replace(/\binfo\b/gi, "information")
+        .replace(/\bthru\b/gi, "through")
+        .replace(/\bcan't\b/gi, "cannot")
+        .replace(/\bdon't\b/gi, "do not")
+        .replace(/\bwon't\b/gi, "will not");
+
+      /* Second-pass pattern match after light normalisation */
+      patterned = rewriteHotelBrainOperationalParagraph(normalised, options);
+      if (patterned) {
+        patterned = stripHandoverActionTemplates(patterned);
+        patterned = removeInventedCompletion(line, patterned);
+        patterned = ensureProtectedFactsPresent(line, patterned);
+        return patterned;
+      }
+
+      normalised = finaliseHotelBrainSentences(normalised);
+      normalised = stripHandoverActionTemplates(normalised);
+      normalised = removeInventedCompletion(line, normalised);
+      normalised = ensureProtectedFactsPresent(line, normalised);
+      return normalised;
+    });
+
+    var improved = improvedParagraphs.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+    improved = stripHandoverActionTemplates(improved);
+    improved = removeInventedCompletion(original, improved);
+    improved = ensureProtectedFactsPresent(original, improved);
+
+    if (containsHandoverActionTemplate(improved) && !containsHandoverActionTemplate(original)) {
+      improved = stripHandoverActionTemplates(improved);
+    }
+
+    var prefs = Object.assign(
+      { language: "British English", tone: "concise" },
+      (options && options.prefs) || {}
+    );
+    improved = applyPreferences(improved, {
+      prefs: prefs,
+      terminologyMap: options.terminologyMap,
+      platformLabels: options.platformLabels,
+      uiLabels: options.uiLabels
+    });
+
+    /* Safety: never invent money amounts not present in source */
+    var outAmounts = extractMoneyAmounts(improved);
+    var i;
+    for (i = 0; i < outAmounts.length; i++) {
+      if (!moneyPresentInText(original, outAmounts[i]) &&
+          !moneyPresentInText(original, formatMoneySimple(outAmounts[i]))) {
+        return original;
+      }
+    }
+
+    return improved;
+  }
+
+  /**
+   * Explain Briefly — one or two simple sentences for new staff.
+   */
+  function explainHotelBrainBriefly(rawText, options) {
+    options = options || {};
+    var original = trimText(rawText);
+    if (!original) return "";
+
+    var improved = improveHotelBrainWriting(original, options) || original;
+    var source = trimText(improved) || original;
+    var amount = firstMoneyPhrase(source, options.currency) || firstMoneyPhrase(original, options.currency);
+    var brief = "";
+
+    if (/\bearly check-in\b/i.test(source) && /\b(not available as a paid service|cannot be guaranteed)\b/i.test(source)) {
+      brief = "Early check-in is not guaranteed. Guests who need it should book from the night before.";
+    } else if (/\bsmok(?:e|ing)\b/i.test(source)) {
+      brief = amount
+        ? ("Smoking indoors is not allowed. A " + amount + " charge applies if a guest smokes in a room.")
+        : "Smoking indoors is not allowed. A smoking charge may apply if a guest smokes in a room.";
+    } else if (/\b(key|keys|keycard)\b/i.test(source) && /\b(home|lost|replacement)\b/i.test(source)) {
+      brief = amount
+        ? ("If a guest loses a key or takes it home, a " + amount + " replacement charge may apply. Contact the guest first where appropriate.")
+        : "If a guest loses a key or takes it home, contact them and apply the replacement charge where appropriate.";
+    } else if (/\blate check-out\b/i.test(source)) {
+      brief = amount
+        ? ("Late check-out may be available for a " + amount + " fee, subject to availability.")
+        : "Late check-out may be available subject to availability and any stated fee.";
+    } else {
+      var sentences = source.split(/(?<=[.!?])\s+/).map(function (s) { return s.trim(); }).filter(Boolean);
+      brief = sentences.slice(0, 2).join(" ")
+        .replace(/\bin accordance with hotel policy\b/gi, "")
+        .replace(/\bis therefore not available\b/gi, "is not available")
+        .replace(/\bwill be applied\b/gi, "applies")
+        .replace(/\s{2,}/g, " ")
+        .trim();
+      if (brief && !/[.!?]$/.test(brief)) brief += ".";
+    }
+
+    /* Safety: strip invented money */
+    var briefAmounts = extractMoneyAmounts(brief);
+    for (var j = 0; j < briefAmounts.length; j++) {
+      if (!moneyPresentInText(original, briefAmounts[j]) &&
+          !moneyPresentInText(original, formatMoneySimple(briefAmounts[j]))) {
+        brief = brief.replace(/(?:a\s+)?£\d+(?:\.\d{1,2})?\s+/gi, "a ").replace(/\s{2,}/g, " ").trim();
+      }
+    }
+
+    return brief;
+  }
+
+  /** @deprecated Use improveHotelBrainWriting — kept for callers */
+  function rewriteKnowledgeText(rawText, options) {
+    return improveHotelBrainWriting(rawText, options);
+  }
 
   function polishText(rawText, options) {
     options = options || {};
@@ -1331,6 +1911,9 @@
     rewriteNote: rewriteNote,
     rewritePolicy: rewritePolicyText,
     rewriteKnowledge: rewriteKnowledgeText,
+    improveHotelBrainWriting: improveHotelBrainWriting,
+    explainHotelBrainBriefly: explainHotelBrainBriefly,
+    looksLikeHotelBrainProfessional: looksLikeHotelBrainProfessional,
     polish: polishText,
 
     summarizeHandover: summarizeHandover,
@@ -1346,6 +1929,10 @@
     extractMoney: extractMoney,
     extractTimes: extractTimes,
     extractGuestNames: extractGuestNames,
+    extractPercentages: extractPercentages,
+    extractDates: extractDates,
+    containsHandoverActionTemplate: containsHandoverActionTemplate,
+    inventsCompletionStatus: inventsCompletionStatus,
     formatTime: formatTime,
     formatMoneyAmount: formatMoneyAmount
   };

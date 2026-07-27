@@ -40,6 +40,8 @@
     .logo-text span { color: var(--blue-500); }
     .logo-sub { display: block; font-size: .7rem; font-weight: 500; color: var(--gray-400); }
     .nav-actions { display: flex; align-items: center; gap: 10px; }
+    .nav-back-handover { text-decoration: none; }
+    .nav-back-handover-short { display: none; }
     .nav-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: var(--purple-50); border: 1px solid rgba(124,92,191,.2); border-radius: 100px; font-size: .75rem; font-weight: 600; color: var(--purple-600); white-space: nowrap; }
     .nav-badge-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--purple-600); animation: pulse 2s ease infinite; }
     .btn-save { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 16px; font-size: .82rem; font-weight: 600; color: var(--white); background: linear-gradient(135deg, var(--blue-500), var(--blue-600)); border-radius: var(--radius); box-shadow: 0 2px 8px rgba(74,143,196,.28); transition: transform var(--transition), box-shadow var(--transition), opacity var(--transition); position: relative; }
@@ -68,13 +70,13 @@
     .nav-more-item--danger svg { color: var(--red-500); }
     .save-status-wrap { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; min-width: 0; }
     .profile-save-bar { display: none; }
-    .profile-progress-panel { padding: 16px 20px; margin-bottom: 20px; background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); animation: fadeDown .45s ease both; }
-    .profile-progress-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+    .profile-progress-panel { padding: 12px 16px; margin-bottom: 12px; background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); animation: fadeDown .45s ease both; }
+    .profile-progress-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
     .profile-progress-title { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--gray-400); }
     .save-confirm-badge { display: inline-flex; align-items: center; gap: 5px; font-size: .72rem; font-weight: 700; color: var(--green-600); padding: 4px 10px; background: var(--green-50); border-radius: 100px; border: 1px solid rgba(45,138,94,.22); opacity: 0; transform: scale(.94); transition: opacity .22s ease, transform .22s ease; }
     .save-confirm-badge.is-visible { opacity: 1; transform: scale(1); }
     .save-confirm-badge[hidden] { display: none !important; }
-    .profile-progress-bar { height: 6px; background: var(--gray-100); border-radius: 100px; overflow: hidden; margin-bottom: 12px; }
+    .profile-progress-bar { height: 6px; background: var(--gray-100); border-radius: 100px; overflow: hidden; margin-bottom: 8px; }
     .profile-progress-fill { height: 100%; background: linear-gradient(90deg, var(--blue-500), var(--green-600)); border-radius: 100px; transition: width .45s cubic-bezier(.4,0,.2,1); width: 0; }
     .progress-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 16px; }
     .progress-stat-label { display: block; font-size: .62rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--gray-400); margin-bottom: 3px; line-height: 1.2; }
@@ -126,11 +128,11 @@
     .save-changes-status--unsaved span { animation: saveDotPulse 1.6s ease infinite; }
     .page { min-height: 100vh; display: flex; flex-direction: column; }
     .container { width: 100%; max-width: var(--max-width); margin: 0 auto; padding: 0 24px; }
-    .main { flex: 1; padding: 24px 0 64px; }
-    .profile-hero { margin-bottom: 20px; animation: fadeDown .45s ease both; }
-    .profile-hero-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
-    .page-title { font-size: clamp(1.35rem, 3.2vw, 1.72rem); font-weight: 700; letter-spacing: -.035em; color: var(--navy-900); line-height: 1.2; margin-bottom: 4px; }
-    .page-subtitle { font-size: .88rem; color: var(--gray-500); max-width: 48ch; line-height: 1.5; }
+    .main { flex: 1; padding: 14px 0 48px; }
+    .profile-hero { margin-bottom: 12px; animation: fadeDown .45s ease both; }
+    .profile-hero-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+    .page-title { font-size: clamp(1.35rem, 3.2vw, 1.72rem); font-weight: 700; letter-spacing: -.035em; color: var(--navy-900); line-height: 1.2; margin-bottom: 2px; }
+    .page-subtitle { font-size: .88rem; color: var(--gray-500); max-width: 48ch; line-height: 1.45; }
     .page-tagline { font-size: .78rem; font-weight: 500; color: var(--gray-400); margin-top: 6px; }
     .knowledge-banner { position: relative; overflow: hidden; padding: 22px 26px; border-radius: var(--radius-xl); border: 1px solid rgba(74,143,196,.28); background: linear-gradient(135deg, #d4e8f7, #eaf4fc 30%, #f5faff 60%, var(--white)); box-shadow: var(--shadow-sm); }
     .knowledge-banner::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--navy-700), var(--blue-500) 45%, var(--blue-400)); }
@@ -315,22 +317,22 @@
     .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
     .footer { padding: 20px 0; text-align: center; font-size: .78rem; color: var(--gray-400); border-top: 1px solid var(--gray-200); background: var(--white); }
     .footer a { color: var(--blue-500); text-decoration: none; font-weight: 500; }
-    .mobile-nav { display: none; overflow-x: auto; gap: 6px; padding-bottom: 4px; margin-bottom: 20px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    .mobile-nav { display: none; overflow-x: auto; gap: 6px; padding-bottom: 4px; margin-bottom: 12px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
     .mobile-nav::-webkit-scrollbar { display: none; }
     .mobile-nav-link { flex-shrink: 0; padding: 7px 14px; font-size: .78rem; font-weight: 600; color: var(--gray-500); background: var(--white); border: 1px solid var(--gray-200); border-radius: 100px; text-decoration: none; white-space: nowrap; transition: all var(--transition); }
     .mobile-nav-link.active { background: var(--navy-800); border-color: var(--navy-800); color: var(--white); }
     .mobile-nav-layer-chip { flex-shrink: 0; padding: 7px 10px; font-size: .66rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--gray-400); background: transparent; border: none; white-space: nowrap; pointer-events: none; }
-    .setup-intro { padding: 18px 22px; margin-bottom: 16px; background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); animation: fadeDown .45s ease both; }
-    .setup-intro-title { font-size: 1rem; font-weight: 700; color: var(--navy-900); letter-spacing: -.02em; margin-bottom: 6px; }
-    .setup-intro-text { font-size: .86rem; color: var(--gray-500); line-height: 1.6; max-width: 62ch; margin: 0; }
-    .essential-progress-panel { padding: 16px 20px; margin-bottom: 12px; background: linear-gradient(135deg, var(--blue-50), var(--white)); border: 1px solid rgba(74,143,196,.22); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); animation: fadeDown .45s ease .05s both; }
+    .setup-intro { padding: 12px 16px; margin-bottom: 10px; background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); animation: fadeDown .45s ease both; }
+    .setup-intro-title { font-size: 1rem; font-weight: 700; color: var(--navy-900); letter-spacing: -.02em; margin-bottom: 4px; }
+    .setup-intro-text { font-size: .86rem; color: var(--gray-500); line-height: 1.5; max-width: 62ch; margin: 0; }
+    .essential-progress-panel { padding: 12px 16px; margin-bottom: 8px; background: linear-gradient(135deg, var(--blue-50), var(--white)); border: 1px solid rgba(74,143,196,.22); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); animation: fadeDown .45s ease .05s both; }
     .essential-progress-panel.is-complete { background: linear-gradient(135deg, var(--green-50), var(--white)); border-color: rgba(45,138,94,.28); }
-    .essential-progress-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
+    .essential-progress-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; flex-wrap: wrap; }
     .essential-progress-title { font-size: .82rem; font-weight: 700; color: var(--navy-900); letter-spacing: -.01em; }
     .essential-progress-panel.is-complete .essential-progress-title { color: var(--green-600); }
     .essential-progress-pct { font-size: .92rem; font-weight: 700; color: var(--blue-600); letter-spacing: -.02em; }
     .essential-progress-panel.is-complete .essential-progress-pct { color: var(--green-600); }
-    .essential-progress-bar { height: 6px; background: rgba(255,255,255,.8); border-radius: 100px; overflow: hidden; margin-bottom: 10px; border: 1px solid rgba(74,143,196,.12); }
+    .essential-progress-bar { height: 6px; background: rgba(255,255,255,.8); border-radius: 100px; overflow: hidden; margin-bottom: 8px; border: 1px solid rgba(74,143,196,.12); }
     .essential-progress-fill { height: 100%; background: linear-gradient(90deg, var(--blue-500), var(--blue-400)); border-radius: 100px; transition: width .45s cubic-bezier(.4,0,.2,1); width: 0; }
     .essential-progress-panel.is-complete .essential-progress-fill { background: linear-gradient(90deg, var(--green-600), #3cb371); }
     .essential-progress-meta { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
@@ -358,6 +360,8 @@
       .nav-badge span.label { display: none; }
       .btn-nav-secondary .btn-label, .btn-save .btn-label, .nav-more-trigger .btn-label { display: none; }
       .btn-nav-secondary, .btn-save, .nav-more-trigger { padding: 0 12px; }
+      .nav-back-handover-full { display: none; }
+      .nav-back-handover-short { display: inline; }
       .nav-actions { gap: 6px; }
       .profile-card-body, .profile-card-header { padding: 18px 20px; }
       .dept-grid { grid-template-columns: 1fr; }
@@ -618,7 +622,182 @@
     .btn-text { font-size: .76rem; font-weight: 600; color: var(--blue-600); padding: 4px 8px; border-radius: 6px; transition: background var(--transition), color var(--transition); }
     .btn-text:hover { background: var(--blue-50); }
     .ai-polish-btn { margin-top: 6px; display: inline-flex; }
-    .profile-hero--calm { margin-bottom: 18px; }
+    .field-label-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 7px;
+      position: relative;
+    }
+    .field-label-row .form-label,
+    .field-label-row .subsection-heading {
+      margin-bottom: 0;
+      flex: 1;
+      min-width: 0;
+    }
+    .field-label-row--section { margin-bottom: 10px; }
+    .field-label-row--section .subsection-heading { margin-bottom: 0; }
+    .writing-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex: 0 0 auto;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .improve-writing-btn,
+    .explain-writing-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      flex: 0 0 auto;
+      width: auto;
+      max-width: 100%;
+      min-height: 30px;
+      margin: 0;
+      padding: 0 11px;
+      font-size: .74rem;
+      font-weight: 600;
+      line-height: 1;
+      color: var(--navy-800);
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      white-space: nowrap;
+      cursor: pointer;
+      transition: background var(--transition), border-color var(--transition), color var(--transition), box-shadow var(--transition), opacity var(--transition);
+    }
+    .improve-writing-btn:hover:not(:disabled):not(.is-loading),
+    .explain-writing-btn:hover:not(:disabled):not(.is-loading) {
+      color: var(--blue-600);
+      border-color: rgba(74,143,196,.45);
+      background: var(--blue-50);
+      box-shadow: 0 1px 3px rgba(74,143,196,.12);
+    }
+    .improve-writing-btn:focus-visible,
+    .explain-writing-btn:focus-visible {
+      outline: 2px solid var(--blue-500);
+      outline-offset: 2px;
+    }
+    .improve-writing-btn:disabled,
+    .improve-writing-btn.is-disabled-soft,
+    .explain-writing-btn:disabled,
+    .explain-writing-btn.is-disabled-soft {
+      color: var(--gray-400);
+      background: var(--gray-50);
+      border-color: var(--gray-200);
+      box-shadow: none;
+      cursor: not-allowed;
+      opacity: 1;
+    }
+    .improve-writing-btn.is-loading,
+    .explain-writing-btn.is-loading {
+      color: var(--blue-600);
+      background: var(--blue-50);
+      border-color: rgba(74,143,196,.35);
+      cursor: wait;
+      opacity: 1;
+      pointer-events: none;
+    }
+    .improve-writing-btn svg,
+    .explain-writing-btn svg {
+      width: 13px;
+      height: 13px;
+      flex-shrink: 0;
+      color: currentColor;
+    }
+    .improve-writing-label,
+    .explain-writing-label { display: inline; }
+    .improve-writing-tip {
+      display: none !important;
+    }
+    .improve-writing-field-status {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 2px);
+      z-index: 2;
+      max-width: min(300px, 75%);
+      margin: 0;
+      padding: 0;
+      font-size: .71rem;
+      font-weight: 500;
+      color: var(--gray-500);
+      text-align: right;
+      line-height: 1.35;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity .18s ease;
+      white-space: normal;
+    }
+    .improve-writing-field-status.is-visible {
+      opacity: 1;
+      visibility: visible;
+    }
+    .improve-writing-field-status.is-error {
+      color: var(--red-500);
+    }
+    .improve-writing-field-status.is-info {
+      color: var(--gray-500);
+    }
+    .writing-rules-list { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 0; padding: 0; list-style: none; }
+    .writing-rule-chip { display: inline-flex; align-items: center; padding: 5px 10px; font-size: .72rem; font-weight: 600; color: var(--navy-700); background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 100px; }
+    .writing-rule-note { font-size: .74rem; color: var(--gray-400); margin-top: 10px; line-height: 1.45; }
+    .dev-only-panel[hidden] { display: none !important; }
+    .dev-heading-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+    .dev-heading-row .subsection-heading { margin-bottom: 0; }
+    .dev-local-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 8px;
+      font-size: .64rem;
+      font-weight: 700;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      color: var(--gray-500);
+      background: var(--gray-100);
+      border: 1px solid var(--gray-200);
+      border-radius: 100px;
+      white-space: nowrap;
+    }
+    .improve-writing-preview-label {
+      display: block;
+      font-size: .68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--gray-500);
+      margin-bottom: 6px;
+    }
+    .improve-writing-preview-label--improved { color: var(--blue-600); }
+    .improve-writing-preview-text {
+      font-size: .88rem;
+      color: var(--navy-900);
+      line-height: 1.55;
+      white-space: pre-wrap;
+      margin: 0 0 14px;
+      padding: 12px 14px;
+      border-radius: var(--radius);
+      border: 1px solid var(--gray-200);
+      background: var(--gray-50);
+    }
+    .improve-writing-preview-text--improved {
+      background: var(--blue-50);
+      border-color: rgba(74,143,196,.22);
+    }
+    .improve-writing-status { font-size: .74rem; font-weight: 500; margin-top: 6px; min-height: 1.1em; color: var(--gray-500); }
+    .improve-writing-status.is-error { color: var(--red-500); }
+    .improve-writing-status.is-success { color: var(--gray-500); }
+    .improve-writing-status.is-loading { color: var(--blue-600); }
+    @media (max-width: 600px) {
+      .improve-writing-btn,
+      .explain-writing-btn { padding: 0 10px; font-size: .72rem; }
+    }
+    .profile-hero--calm { margin-bottom: 10px; }
     .profile-hero--calm .page-subtitle { max-width: 46ch; }
     .add-row-btn { transition: background var(--transition), border-color var(--transition), transform var(--transition); }
     .add-row-btn:hover { transform: translateY(-1px); }
@@ -647,6 +826,10 @@
           </div>
         </a>
         <div class="nav-actions">
+          <a href="handover.html" class="btn-nav-secondary nav-back-handover" aria-label="Back to AI Shift Handover">
+            <span class="nav-back-handover-full">← Back to AI Shift Handover</span>
+            <span class="nav-back-handover-short">← Handover</span>
+          </a>
           <div class="nav-badge"><span class="nav-badge-dot" aria-hidden="true"></span><span class="label">Hotel Brain</span></div>
           <button type="button" class="btn-save" id="saveBtn" aria-label="Save Hotel Brain">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
@@ -667,7 +850,7 @@
           </div>
           <div class="setup-intro">
             <h2 class="setup-intro-title">Hotel Brain Setup</h2>
-            <p class="setup-intro-text">Start with the essentials. Complete the core information first — everything else can be added over time as your Hotel Brain grows. The more knowledge you add, the smarter Hospitality Flow becomes.</p>
+            <p class="setup-intro-text">Complete the essential information first. Expand your Hotel Brain over time by adding operational knowledge, policies and guest preferences.</p>
           </div>
           <div class="essential-progress-panel" id="essentialProgressPanel" aria-live="polite">
             <div class="essential-progress-top">
@@ -684,7 +867,7 @@
           </div>
           <div class="profile-progress-panel" id="profileProgressPanel" aria-live="polite">
             <div class="profile-progress-top">
-              <span class="profile-progress-title">Full Profile Coverage</span>
+              <span class="profile-progress-title">Knowledge Coverage</span>
               <span class="save-confirm-badge" id="saveConfirmBadge" hidden aria-live="polite"><span aria-hidden="true">✓</span> Saved</span>
             </div>
             <div class="profile-progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="profileProgressBar">
@@ -820,6 +1003,7 @@
                   <div class="form-group">
                     <label class="form-label" for="operatingNotes">General hotel notes</label>
                     <textarea class="notes-textarea" id="operatingNotes" placeholder="Anything your team should know — guest profile, style, quirks, or priorities." style="min-height: 88px;"></textarea>
+                    <button type="button" class="improve-writing-btn" data-improve-writing="operatingNotes">Improve Writing</button>
                   </div>
                   </div>
                 </div>
@@ -1001,7 +1185,7 @@
                   <div class="form-group"><label class="form-label" for="policySmoking">Smoking</label><textarea class="notes-textarea" id="policySmoking" style="min-height: 72px;"></textarea></div>
                   <div class="form-group"><label class="form-label" for="policyVisitors">Visitors</label><textarea class="notes-textarea" id="policyVisitors" style="min-height: 72px;"></textarea></div>
                   <div class="form-group"><label class="form-label" for="policyPets">Pets</label><textarea class="notes-textarea" id="policyPets" style="min-height: 72px;"></textarea></div>
-                  <div class="form-group full"><label class="form-label" for="policyCustomNotes">Custom Policy Notes</label><textarea class="notes-textarea" id="policyCustomNotes" style="min-height: 80px;"></textarea></div>
+                  <div class="form-group full"><label class="form-label" for="policyCustomNotes">Custom Policy Notes</label><textarea class="notes-textarea" id="policyCustomNotes" style="min-height: 80px;"></textarea><button type="button" class="improve-writing-btn" data-improve-writing="policyCustomNotes">Improve Writing</button></div>
                 </div>
                 </div>
               </div>
@@ -1062,7 +1246,7 @@
                     </button>
                     <div class="disclosure-card-body" hidden>
                       <div class="form-grid">
-                        <div class="form-group"><label class="form-label" for="gsAirportTransfers">Airport transfers</label><textarea class="notes-textarea" id="gsAirportTransfers" placeholder="How guests book transfers and what you offer." style="min-height: 72px;"></textarea></div>
+                        <div class="form-group"><label class="form-label" for="gsAirportTransfers">Airport transfers</label><textarea class="notes-textarea" id="gsAirportTransfers" placeholder="How guests book transfers and what you offer." style="min-height: 72px;"></textarea><button type="button" class="improve-writing-btn" data-improve-writing="gsAirportTransfers">Improve Writing</button></div>
                         <div class="form-group"><label class="form-label" for="gsPreferredTaxi">Taxi providers</label><input class="form-input" type="text" id="gsPreferredTaxi" placeholder="Preferred companies and account numbers"></div>
                       </div>
                     </div>
@@ -1075,9 +1259,9 @@
                     </button>
                     <div class="disclosure-card-body" hidden>
                       <div class="form-grid">
-                        <div class="form-group"><label class="form-label" for="gsWakeUpCalls">Wake-up calls</label><textarea class="notes-textarea" id="gsWakeUpCalls" placeholder="How wake-up calls are taken and confirmed." style="min-height: 72px;"></textarea></div>
-                        <div class="form-group"><label class="form-label" for="gsLuggageStorage">Luggage storage</label><textarea class="notes-textarea" id="gsLuggageStorage" placeholder="Before check-in and after check-out." style="min-height: 72px;"></textarea></div>
-                        <div class="form-group full"><label class="form-label" for="gsGuestItemLoans">Guest loan items</label><textarea class="notes-textarea" id="gsGuestItemLoans" placeholder="Items guests can borrow — chargers, umbrellas, adapters, etc." style="min-height: 72px;"></textarea></div>
+                        <div class="form-group"><label class="form-label" for="gsWakeUpCalls">Wake-up calls</label><textarea class="notes-textarea" id="gsWakeUpCalls" placeholder="How wake-up calls are taken and confirmed." style="min-height: 72px;"></textarea><button type="button" class="improve-writing-btn" data-improve-writing="gsWakeUpCalls">Improve Writing</button></div>
+                        <div class="form-group"><label class="form-label" for="gsLuggageStorage">Luggage storage</label><textarea class="notes-textarea" id="gsLuggageStorage" placeholder="Before check-in and after check-out." style="min-height: 72px;"></textarea><button type="button" class="improve-writing-btn" data-improve-writing="gsLuggageStorage">Improve Writing</button></div>
+                        <div class="form-group full"><label class="form-label" for="gsGuestItemLoans">Guest loan items</label><textarea class="notes-textarea" id="gsGuestItemLoans" placeholder="Items guests can borrow — chargers, umbrellas, adapters, etc." style="min-height: 72px;"></textarea><button type="button" class="improve-writing-btn" data-improve-writing="gsGuestItemLoans">Improve Writing</button></div>
                       </div>
                     </div>
                   </div>
@@ -1089,8 +1273,8 @@
                     </button>
                     <div class="disclosure-card-body" hidden>
                       <div class="form-grid">
-                        <div class="form-group"><label class="form-label" for="gsSpecialOccasions">Special occasions</label><textarea class="notes-textarea" id="gsSpecialOccasions" placeholder="Birthdays, anniversaries, celebrations." style="min-height: 72px;"></textarea></div>
-                        <div class="form-group"><label class="form-label" for="gsWelcomeAmenities">Welcome amenities</label><textarea class="notes-textarea" id="gsWelcomeAmenities" placeholder="Standard and VIP welcome options." style="min-height: 72px;"></textarea></div>
+                        <div class="form-group"><label class="form-label" for="gsSpecialOccasions">Special occasions</label><textarea class="notes-textarea" id="gsSpecialOccasions" placeholder="Birthdays, anniversaries, celebrations." style="min-height: 72px;"></textarea><button type="button" class="improve-writing-btn" data-improve-writing="gsSpecialOccasions">Improve Writing</button></div>
+                        <div class="form-group"><label class="form-label" for="gsWelcomeAmenities">Welcome amenities</label><textarea class="notes-textarea" id="gsWelcomeAmenities" placeholder="Standard and VIP welcome options." style="min-height: 72px;"></textarea><button type="button" class="improve-writing-btn" data-improve-writing="gsWelcomeAmenities">Improve Writing</button></div>
                       </div>
                     </div>
                   </div>
@@ -1102,8 +1286,8 @@
                     </button>
                     <div class="disclosure-card-body" hidden>
                       <div class="form-grid">
-                        <div class="form-group"><label class="form-label" for="gsLocalRecommendations">Local recommendations</label><textarea class="notes-textarea" id="gsLocalRecommendations" placeholder="Restaurants, walks, transport tips your team shares." style="min-height: 72px;"></textarea></div>
-                        <div class="form-group full"><label class="form-label" for="gsCustomInstructions">Custom guest-service notes</label><textarea class="notes-textarea" id="gsCustomInstructions" placeholder="Anything else your front office or concierge team should know." style="min-height: 80px;"></textarea></div>
+                        <div class="form-group"><label class="form-label" for="gsLocalRecommendations">Local recommendations</label><textarea class="notes-textarea" id="gsLocalRecommendations" placeholder="Restaurants, walks, transport tips your team shares." style="min-height: 72px;"></textarea><button type="button" class="improve-writing-btn" data-improve-writing="gsLocalRecommendations">Improve Writing</button></div>
+                        <div class="form-group full"><label class="form-label" for="gsCustomInstructions">Custom guest-service notes</label><textarea class="notes-textarea" id="gsCustomInstructions" placeholder="Anything else your front office or concierge team should know." style="min-height: 80px;"></textarea><button type="button" class="improve-writing-btn" data-improve-writing="gsCustomInstructions">Improve Writing</button></div>
                       </div>
                     </div>
                   </div>
@@ -1203,6 +1387,7 @@
                 <h3 class="subsection-heading">Staffing context</h3>
                 <div class="textarea-wrap">
                   <textarea class="notes-textarea" id="okStaffingContext" placeholder="Duty Managers cover AM, PM and Middle shifts. Night Managers cover five nights per week…"></textarea>
+                  <button type="button" class="improve-writing-btn" data-improve-writing="okStaffingContext">Improve Writing</button>
                 </div>
 
                 <div class="disclosure-card disclosure-card--collapsed ok-subsection" id="okSourcesDisclosure">
@@ -1334,7 +1519,7 @@
                         <div class="textarea-wrap">
                           <textarea class="notes-textarea" id="hkGeneralNotes" placeholder="The hotel provides personalised boutique service and clear shift communication."></textarea>
                           <span class="char-counter" data-for="hkGeneralNotes">0 characters</span>
-                          <button type="button" class="btn-text ai-polish-btn" data-ai-polish-target="hkGeneralNotes">Polish with AI</button>
+                          <button type="button" class="improve-writing-btn" data-improve-writing="hkGeneralNotes">Improve Writing</button>
                         </div>
                       </div>
                     </div>
@@ -1351,7 +1536,7 @@
                         <div class="textarea-wrap">
                           <textarea class="notes-textarea" id="hkHotelStandards" placeholder="Service standards, presentation rules and expectations for every guest interaction."></textarea>
                           <span class="char-counter" data-for="hkHotelStandards">0 characters</span>
-                          <button type="button" class="btn-text ai-polish-btn" data-ai-polish-target="hkHotelStandards">Polish with AI</button>
+                          <button type="button" class="improve-writing-btn" data-improve-writing="hkHotelStandards">Improve Writing</button>
                         </div>
                         <p class="form-helper">How your team should represent the hotel day to day.</p>
                       </div>
@@ -1369,7 +1554,7 @@
                         <div class="textarea-wrap">
                           <textarea class="notes-textarea" id="hkVipRules" placeholder="VIP arrivals should be reviewed before check-in and relevant amenities prepared."></textarea>
                           <span class="char-counter" data-for="hkVipRules">0 characters</span>
-                          <button type="button" class="btn-text ai-polish-btn" data-ai-polish-target="hkVipRules">Polish with AI</button>
+                          <button type="button" class="improve-writing-btn" data-improve-writing="hkVipRules">Improve Writing</button>
                         </div>
                       </div>
                     </div>
@@ -1386,6 +1571,7 @@
                         <div class="textarea-wrap">
                           <textarea class="notes-textarea notes-textarea--large" id="hkCommonTerms" placeholder="e.g. DND = Do Not Disturb&#10;VIP = Very Important Guest&#10;One term per line — use your hotel's own codes and phrases"></textarea>
                           <span class="char-counter" data-for="hkCommonTerms">0 characters</span>
+                          <button type="button" class="improve-writing-btn" data-improve-writing="hkCommonTerms">Improve Writing</button>
                         </div>
                         <p class="form-helper">Room codes, internal shorthand and phrases your team uses.</p>
                       </div>
@@ -1403,7 +1589,7 @@
                         <div class="textarea-wrap">
                           <textarea class="notes-textarea" id="hkOperationalNotes" placeholder="Daily operational priorities, handover focus areas and things the team must never miss."></textarea>
                           <span class="char-counter" data-for="hkOperationalNotes">0 characters</span>
-                          <button type="button" class="btn-text ai-polish-btn" data-ai-polish-target="hkOperationalNotes">Polish with AI</button>
+                          <button type="button" class="improve-writing-btn" data-improve-writing="hkOperationalNotes">Improve Writing</button>
                         </div>
                       </div>
                     </div>
@@ -1420,7 +1606,7 @@
                         <div class="textarea-wrap">
                           <textarea class="notes-textarea" id="hkLocalRecommendations" placeholder="Restaurants, walks, transport tips and trusted local partners your team recommends."></textarea>
                           <span class="char-counter" data-for="hkLocalRecommendations">0 characters</span>
-                          <button type="button" class="btn-text ai-polish-btn" data-ai-polish-target="hkLocalRecommendations">Polish with AI</button>
+                          <button type="button" class="improve-writing-btn" data-improve-writing="hkLocalRecommendations">Improve Writing</button>
                         </div>
                       </div>
                     </div>
@@ -1437,6 +1623,7 @@
                         <p class="hk-ai-helper">Controls how Hospitality Flow interprets your hotel — tone, priorities and emphasis across all AI tools.</p>
                         <div class="textarea-wrap">
                           <textarea class="notes-textarea notes-textarea--large" id="hkAiInstructions" placeholder="Always use British English.&#10;Never invent guest information.&#10;Keep handovers concise.&#10;Prioritise urgent maintenance, payment and guest issues."></textarea>
+                          <button type="button" class="improve-writing-btn" data-improve-writing="hkAiInstructions">Improve Writing</button>
                           <span class="char-counter" data-for="hkAiInstructions">0 characters</span>
                         </div>
                         <p class="form-helper">Default instructions applied across Hospitality Flow AI tools.</p>
@@ -1472,7 +1659,7 @@
                   </div>
                   <div class="card-header-text">
                     <h2>Advanced Settings</h2>
-                    <p id="advancedSettingsSectionSummary">Technical configuration and advanced controls.</p>
+                    <p id="advancedSettingsSectionSummary">AI preferences, backups and optional hotel configuration.</p>
                   </div>
                 </div>
                 <button type="button" class="collapse-toggle" aria-label="Expand section" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
@@ -1514,8 +1701,8 @@
                     <div class="form-group"><label class="form-label" for="totalFloors">Floors</label><input class="form-input" type="number" id="totalFloors" min="1"></div>
                     <div class="form-group"><label class="form-label" for="city">City</label><input class="form-input" type="text" id="city"></div>
                     <div class="form-group"><label class="form-label" for="country">Country</label><input class="form-input" type="text" id="country"></div>
-                    <div class="form-group full"><label class="form-label" for="description">Property description</label><textarea class="notes-textarea" id="description" style="min-height:72px"></textarea></div>
-                    <div class="form-group full"><label class="form-label" for="brandVoice">Brand voice</label><textarea class="notes-textarea" id="brandVoice" style="min-height:64px" placeholder="How should AI-written content sound for your hotel?"></textarea></div>
+                    <div class="form-group full"><label class="form-label" for="description">Property description</label><textarea class="notes-textarea" id="description" style="min-height:72px"></textarea><button type="button" class="improve-writing-btn" data-improve-writing="description">Improve Writing</button></div>
+                    <div class="form-group full"><label class="form-label" for="brandVoice">Brand voice</label><textarea class="notes-textarea" id="brandVoice" style="min-height:64px" placeholder="How should AI-written content sound for your hotel?"></textarea><button type="button" class="improve-writing-btn" data-improve-writing="brandVoice">Improve Writing</button></div>
                   </div>
                   <div class="brand-identity-row" style="margin-top:18px">
                     <div class="form-group">
@@ -1559,19 +1746,38 @@
                     </div></div>
                     <div class="pref-card"><label class="form-label" for="aiLanguage">Language</label><select class="form-input" id="aiLanguage"><option selected>British English</option><option>American English</option><option>French</option><option>German</option><option>Spanish</option></select></div>
                   </div>
-                  <div class="form-group full" style="margin-top:14px"><label class="form-label" for="aiInstructions">Additional AI instructions</label><textarea class="notes-textarea" id="aiInstructions" placeholder="Optional guidance applied across all AI tools."></textarea></div>
+                  <div class="form-group full" style="margin-top:14px">
+                    <label class="form-label" for="aiInstructions">Additional AI instructions</label>
+                    <p class="form-helper" id="aiInstructionsHelper">Set how Hospitality Flow should write, prioritise and interpret your hotel's operational information.</p>
+                    <textarea class="notes-textarea" id="aiInstructions" placeholder="Optional guidance applied across all AI tools."></textarea>
+                    <button type="button" class="improve-writing-btn" data-improve-writing="aiInstructions">Improve Writing</button>
+                    <ul class="writing-rules-list" aria-label="Writing rules always applied">
+                      <li class="writing-rule-chip">British English</li>
+                      <li class="writing-rule-chip">Concise operational writing</li>
+                      <li class="writing-rule-chip">Preserve hotel terminology</li>
+                      <li class="writing-rule-chip">Never invent facts</li>
+                      <li class="writing-rule-chip">Never mark tasks complete unless stated</li>
+                    </ul>
+                    <p class="writing-rule-note">Language and tone above control AI tools. Improve Writing always applies the safety rules shown here without creating duplicate settings.</p>
+                  </div>
                 </div>
 
-                <hr class="subsection-divider">
+                <hr class="subsection-divider dev-only-panel" id="devToolsDivider" hidden>
 
-                <div class="settings-panel settings-panel--muted">
-                  <h3 class="subsection-heading">Developer</h3>
+                <div class="settings-panel settings-panel--muted dev-only-panel" id="devSchemaPanel" hidden>
+                  <div class="dev-heading-row">
+                    <h3 class="subsection-heading">Developer</h3>
+                    <span class="dev-local-badge">Local development only</span>
+                  </div>
                   <p class="section-intro">Schema version 4 · Cloud-backed Hotel Brain with workspace-scoped local cache. All tools read from this single profile — no duplicate fields.</p>
                 </div>
 
-                <div class="settings-panel settings-panel--muted dev-sample-panel">
-                  <h3 class="subsection-heading">Sample data (development)</h3>
-                  <p class="section-intro">Load editable Zetter Marylebone test knowledge. Merges missing entries only — never overwrites your existing Hotel Brain data.</p>
+                <div class="settings-panel settings-panel--muted dev-sample-panel dev-only-panel" id="devSamplePanel" hidden>
+                  <div class="dev-heading-row">
+                    <h3 class="subsection-heading">Sample data (development)</h3>
+                    <span class="dev-local-badge">Local development only</span>
+                  </div>
+                  <p class="section-intro">Load editable Zetter Marylebone test knowledge. Merges missing entries only — never overwrites your existing Hotel Brain data. Local development or authorised operator mode only.</p>
                   <div class="settings-actions">
                     <button type="button" class="btn-nav-secondary" id="loadZetterSampleBtn">Load Zetter Marylebone Test Knowledge</button>
                   </div>
@@ -1600,12 +1806,29 @@
 
   <div class="save-toast-host" id="saveToastHost" aria-live="polite" aria-atomic="true"></div>
 
+  <div class="modal-overlay" id="improveWritingModal" hidden role="dialog" aria-modal="true" aria-labelledby="improveWritingModalTitle">
+    <div class="modal-panel">
+      <h3 id="improveWritingModalTitle">Improve Writing</h3>
+      <p class="form-helper" id="improveWritingModalHelper" style="margin-bottom:14px">Review the improved text, then apply it to this field only. Save Hotel Brain to persist changes.</p>
+      <p class="improve-writing-preview-label">Original</p>
+      <p class="improve-writing-preview-text" id="improveWritingOriginal"></p>
+      <p class="improve-writing-preview-label improve-writing-preview-label--improved" id="improveWritingResultLabel">Improved</p>
+      <p class="improve-writing-preview-text improve-writing-preview-text--improved" id="improveWritingImproved"></p>
+      <p class="improve-writing-status" id="improveWritingModalStatus" aria-live="polite"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn-nav-secondary" id="improveWritingCancel">Cancel</button>
+        <button type="button" class="btn-save" id="improveWritingApply"><span class="btn-label" id="improveWritingApplyLabel">Apply Improved Writing</span></button>
+      </div>
+    </div>
+  </div>
+
   <div class="modal-overlay" id="roomNotesModal" hidden role="dialog" aria-modal="true" aria-labelledby="roomNotesModalTitle">
     <div class="modal-panel">
       <h3 id="roomNotesModalTitle">Room notes</h3>
       <p class="modal-room-label" id="roomNotesModalRoom">Room 101</p>
       <label class="visually-hidden" for="roomNotesModalText">Room notes</label>
       <textarea class="notes-textarea" id="roomNotesModalText" placeholder="Operational notes for this room — quirks, preferences, maintenance, or allocation guidance."></textarea>
+      <button type="button" class="improve-writing-btn" data-improve-writing="roomNotesModalText">Improve Writing</button>
       <div class="modal-actions">
         <button type="button" class="btn-nav-secondary" id="roomNotesModalCancel">Cancel</button>
         <button type="button" class="btn-save" id="roomNotesModalSave"><span class="btn-label">Save Notes</span></button>
@@ -2763,29 +2986,616 @@
         });
       }
 
-      function initKnowledgeAiPolish() {
-        document.querySelectorAll('[data-ai-polish-target]').forEach(function (btn) {
-          if (btn.getAttribute('data-polish-bound')) return;
-          btn.setAttribute('data-polish-bound', '1');
-          btn.addEventListener('click', function () {
-            var targetId = btn.getAttribute('data-ai-polish-target');
-            var field = document.getElementById(targetId);
-            if (!field) return;
-            var raw = String(field.value || '').trim();
-            if (!raw) return;
-            var polished = (window.HotelProfileKnowledge && window.HotelProfileKnowledge.polishKnowledgeText)
-              ? window.HotelProfileKnowledge.polishKnowledgeText(raw)
-              : (window.AiWritingEngine
-                ? window.AiWritingEngine.rewriteKnowledge(raw)
-                : raw);
-            if (polished && polished !== raw) {
-              field.value = polished;
-              updateCharCounter(targetId);
-              field.dispatchEvent(new Event('input', { bubbles: true }));
-              markUnsaved();
-            }
-          });
+      function isHotelBrainDevToolsEnabled() {
+        try {
+          var params = new URLSearchParams(window.location.search || '');
+          if (params.get('hf_dev') === '1') return true;
+          if (window.__HF_DEV_MODE__ === true) return true;
+          return false;
+        } catch (err) {
+          return false;
+        }
+      }
+
+      function initHotelBrainDevToolsVisibility() {
+        var enabled = isHotelBrainDevToolsEnabled();
+        document.querySelectorAll('.dev-only-panel').forEach(function (panel) {
+          panel.hidden = !enabled;
+          if (!enabled) {
+            panel.setAttribute('aria-hidden', 'true');
+          } else {
+            panel.removeAttribute('aria-hidden');
+          }
         });
+        var sampleBtn = document.getElementById('loadZetterSampleBtn');
+        if (sampleBtn) {
+          sampleBtn.disabled = !enabled;
+          sampleBtn.hidden = !enabled;
+          if (!enabled) sampleBtn.setAttribute('aria-hidden', 'true');
+          else sampleBtn.removeAttribute('aria-hidden');
+        }
+      }
+
+      var IMPROVE_WRITING_ICON =
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">' +
+        '<path d="M12 3l1.4 4.6L18 9l-4.6 1.4L12 15l-1.4-4.6L6 9l4.6-1.4L12 3z"/>' +
+        '<path d="M19 14l.7 2.1L22 17l-2.3.7L19 20l-.7-2.3L16 17l2.3-.9L19 14z"/>' +
+        '</svg>';
+      var EXPLAIN_WRITING_ICON =
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">' +
+        '<circle cx="12" cy="12" r="9"/>' +
+        '<path d="M12 10v6"/><path d="M12 7h.01"/>' +
+        '</svg>';
+      var IMPROVE_WRITING_TIP = 'Add more detail before improving the writing.';
+      var EXPLAIN_WRITING_TIP = 'Add more detail before explaining briefly.';
+
+      var improveWritingState = {
+        field: null,
+        button: null,
+        original: '',
+        improved: '',
+        busy: false,
+        mode: 'improve'
+      };
+
+      function getImproveWritingPrefs() {
+        var prefs = collectAiPrefs ? collectAiPrefs() : {};
+        return {
+          language: prefs.language || 'British English',
+          tone: prefs.tone === 'friendly' ? 'professional' : (prefs.tone || 'concise'),
+          instructions: prefs.instructions || ''
+        };
+      }
+
+      function unwrapHotelBrainWritingResult(result) {
+        if (result && typeof result === 'object' && result.text != null) return String(result.text);
+        return String(result == null ? '' : result);
+      }
+
+      function improveHotelBrainFieldText(raw) {
+        if (!window.AiWritingEngine) return String(raw || '');
+        if (typeof window.AiWritingEngine.improveHotelBrainWriting === 'function') {
+          return unwrapHotelBrainWritingResult(window.AiWritingEngine.improveHotelBrainWriting(raw, {
+            module: window.AiWritingEngine.MODULES.hotelBrain,
+            prefs: getImproveWritingPrefs()
+          }));
+        }
+        return unwrapHotelBrainWritingResult(window.AiWritingEngine.rewriteKnowledge
+          ? window.AiWritingEngine.rewriteKnowledge(raw, {
+              module: window.AiWritingEngine.MODULES.knowledge,
+              prefs: getImproveWritingPrefs()
+            })
+          : String(raw || ''));
+      }
+
+      function explainHotelBrainFieldText(raw) {
+        if (!window.AiWritingEngine || typeof window.AiWritingEngine.explainHotelBrainBriefly !== 'function') {
+          return improveHotelBrainFieldText(raw);
+        }
+        return unwrapHotelBrainWritingResult(window.AiWritingEngine.explainHotelBrainBriefly(raw, {
+          module: window.AiWritingEngine.MODULES.hotelBrain,
+          prefs: getImproveWritingPrefs()
+        }));
+      }
+
+      function isAlreadyHotelBrainProfessional(text) {
+        if (window.AiWritingEngine && typeof window.AiWritingEngine.looksLikeHotelBrainProfessional === 'function') {
+          return !!window.AiWritingEngine.looksLikeHotelBrainProfessional(text);
+        }
+        return false;
+      }
+
+      function countMeaningfulWords(text) {
+        return String(text || '')
+          .trim()
+          .split(/\s+/)
+          .filter(function (word) {
+            return !!String(word).replace(/[^\w£$%./:-]/g, '').length;
+          }).length;
+      }
+
+      function isImproveWritingEligible(text) {
+        var raw = String(text || '').trim();
+        if (!raw) return false;
+        if (countMeaningfulWords(raw) < 8) return false;
+        if (/^[\d\s#.,:-]+$/.test(raw)) return false;
+        if (/^[A-Za-z]?\d{1,4}[A-Za-z]?$/.test(raw)) return false;
+        if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw)) return false;
+        if (/^\d{1,2}[\/\-]\d{1,2}([\/\-]\d{2,4})?$/.test(raw)) return false;
+        if (/^(yes|no|n\/a|na|none|tbc|tba)$/i.test(raw)) return false;
+        return true;
+      }
+
+      function resolveImproveWritingField(button) {
+        if (!button) return null;
+        var targetId = button.getAttribute('data-improve-writing') ||
+          button.getAttribute('data-explain-writing') ||
+          button.getAttribute('data-ai-polish-target');
+        var field = targetId ? document.getElementById(targetId) : null;
+        if (!field) {
+          var fieldName = button.getAttribute('data-ai-polish') ||
+            button.getAttribute('data-explain-field') ||
+            button.getAttribute('data-improve-field');
+          var scope = button.closest('.form-group, .policy-card, .entry-card, .knowledge-field, .textarea-wrap, .modal-panel, .field-label-row') || button.parentElement;
+          if (fieldName && scope) {
+            var searchRoot = scope.classList.contains('field-label-row') ? (scope.parentElement || scope) : scope;
+            field = searchRoot.querySelector('[data-f="' + fieldName + '"]');
+          }
+          if (!field && scope) {
+            var root = scope.classList.contains('field-label-row') ? (scope.parentElement || scope) : scope;
+            field = root.querySelector('textarea, input[data-f="instructions"]');
+          }
+        }
+        return field;
+      }
+
+      function decorateImproveWritingButton(btn) {
+        if (!btn) return;
+        btn.classList.add('improve-writing-btn');
+        btn.type = 'button';
+        var label = btn.querySelector('.improve-writing-label');
+        if (!btn.querySelector('svg') || !label) {
+          btn.innerHTML = IMPROVE_WRITING_ICON + '<span class="improve-writing-label">Improve Writing</span>';
+        } else if (label) {
+          label.textContent = 'Improve Writing';
+        }
+      }
+
+      function ensureExplainWritingButton(improveBtn) {
+        if (!improveBtn) return null;
+        var group = improveBtn.closest('.writing-actions');
+        if (!group) {
+          group = document.createElement('div');
+          group.className = 'writing-actions';
+          if (improveBtn.parentNode) {
+            improveBtn.parentNode.insertBefore(group, improveBtn);
+            group.appendChild(improveBtn);
+          }
+        }
+        var explainBtn = group.querySelector('.explain-writing-btn');
+        if (!explainBtn) {
+          explainBtn = document.createElement('button');
+          explainBtn.type = 'button';
+          explainBtn.className = 'explain-writing-btn';
+          var target = improveBtn.getAttribute('data-improve-writing') ||
+            improveBtn.getAttribute('data-ai-polish-target') || '';
+          var fieldName = improveBtn.getAttribute('data-ai-polish') || '';
+          if (target) explainBtn.setAttribute('data-explain-writing', target);
+          if (fieldName) explainBtn.setAttribute('data-explain-field', fieldName);
+          explainBtn.innerHTML = EXPLAIN_WRITING_ICON + '<span class="explain-writing-label">Explain Briefly</span>';
+          group.appendChild(explainBtn);
+        }
+        return explainBtn;
+      }
+
+      function setWritingActionButtonLoading(btn, loading, mode) {
+        if (!btn) return;
+        var isExplain = mode === 'explain' || btn.classList.contains('explain-writing-btn');
+        var label = btn.querySelector(isExplain ? '.explain-writing-label' : '.improve-writing-label');
+        if (loading) {
+          btn.classList.add('is-loading');
+          btn.disabled = true;
+          if (label) label.textContent = isExplain ? 'Explaining…' : 'Improving…';
+          btn.setAttribute('aria-busy', 'true');
+        } else {
+          btn.classList.remove('is-loading');
+          btn.removeAttribute('aria-busy');
+          if (label) label.textContent = isExplain ? 'Explain Briefly' : 'Improve Writing';
+          syncImproveWritingButtonState(btn);
+        }
+      }
+
+      function setImproveWritingButtonLoading(btn, loading) {
+        setWritingActionButtonLoading(btn, loading, 'improve');
+      }
+
+      function clearImproveWritingStatus(button) {
+        var slot = getImproveWritingStatusSlot(button);
+        if (!slot) return;
+        if (slot._hideTimer) {
+          window.clearTimeout(slot._hideTimer);
+          slot._hideTimer = null;
+        }
+        slot.textContent = '';
+        slot.className = 'improve-writing-field-status';
+        slot.removeAttribute('data-kind');
+      }
+
+      function getImproveWritingStatusSlot(button) {
+        if (!button) return null;
+        var row = button.closest('.field-label-row');
+        if (!row) {
+          /* Ensure a row exists so status can sit with the button */
+          placeImproveWritingBesideLabel(button.classList.contains('explain-writing-btn')
+            ? (button.closest('.writing-actions') || {}).querySelector('.improve-writing-btn') || button
+            : button);
+          row = button.closest('.field-label-row');
+        }
+        if (!row) return null;
+
+        /* Remove legacy stacked status nodes for this field */
+        var host = row.parentElement;
+        if (host) {
+          Array.prototype.slice.call(host.querySelectorAll('.improve-writing-status, .improve-writing-tip')).forEach(function (node) {
+            if (node.id === 'improveWritingModalStatus') return;
+            if (!node.classList.contains('improve-writing-field-status')) node.remove();
+          });
+        }
+
+        var slot = row.querySelector(':scope > .improve-writing-field-status');
+        if (!slot) {
+          slot = document.createElement('p');
+          slot.className = 'improve-writing-field-status';
+          slot.setAttribute('aria-live', 'polite');
+          row.appendChild(slot);
+        }
+        return slot;
+      }
+
+      function showImproveWritingStatus(button, text, kind) {
+        var slot = getImproveWritingStatusSlot(button);
+        if (!slot) return null;
+        if (slot._hideTimer) {
+          window.clearTimeout(slot._hideTimer);
+          slot._hideTimer = null;
+        }
+        slot.textContent = text || '';
+        slot.className = 'improve-writing-field-status is-visible' + (kind ? ' is-' + kind : '');
+        slot.setAttribute('data-kind', kind || 'info');
+        if (kind !== 'error' && text) {
+          slot._hideTimer = window.setTimeout(function () {
+            clearImproveWritingStatus(button);
+          }, 3000);
+        }
+        return slot;
+      }
+
+      function syncImproveWritingButtonState(btn) {
+        if (!btn || btn.classList.contains('is-loading')) return;
+        if (improveWritingState.busy && improveWritingState.button === btn) return;
+        var field = resolveImproveWritingField(btn);
+        var eligible = field ? isImproveWritingEligible(field.value) : false;
+        btn.disabled = !eligible;
+        btn.classList.toggle('is-disabled-soft', !eligible);
+        var isExplain = btn.classList.contains('explain-writing-btn');
+        btn.title = eligible
+          ? (isExplain ? 'Explain Briefly' : 'Improve Writing')
+          : (isExplain ? EXPLAIN_WRITING_TIP : IMPROVE_WRITING_TIP);
+        btn.setAttribute('aria-disabled', eligible ? 'false' : 'true');
+        var slot = getImproveWritingStatusSlot(btn);
+        if (slot && slot.getAttribute('data-kind') === 'hint') {
+          clearImproveWritingStatus(btn);
+        }
+        /* Keep paired action in sync */
+        var group = btn.closest('.writing-actions');
+        if (group) {
+          var peer = isExplain
+            ? group.querySelector('.improve-writing-btn')
+            : group.querySelector('.explain-writing-btn');
+          if (peer && peer !== btn && !peer.classList.contains('is-loading')) {
+            peer.disabled = !eligible;
+            peer.classList.toggle('is-disabled-soft', !eligible);
+            peer.title = eligible
+              ? (peer.classList.contains('explain-writing-btn') ? 'Explain Briefly' : 'Improve Writing')
+              : (peer.classList.contains('explain-writing-btn') ? EXPLAIN_WRITING_TIP : IMPROVE_WRITING_TIP);
+            peer.setAttribute('aria-disabled', eligible ? 'false' : 'true');
+          }
+        }
+      }
+
+      function placeImproveWritingBesideLabel(btn) {
+        if (!btn) return;
+        if (btn.classList.contains('explain-writing-btn')) {
+          var improvePeer = (btn.closest('.writing-actions') || {}).querySelector('.improve-writing-btn');
+          if (improvePeer) btn = improvePeer;
+        }
+        ensureExplainWritingButton(btn);
+        var actions = btn.closest('.writing-actions') || btn;
+        var field = resolveImproveWritingField(btn);
+        if (!field) return;
+        var existingRow = actions.closest('.field-label-row');
+        if (existingRow && existingRow.contains(actions)) return;
+
+        var label = null;
+        if (field.id) label = document.querySelector('label.form-label[for="' + field.id + '"]');
+        if (!label) {
+          var group = field.closest('.form-group, .knowledge-field') || field.parentElement;
+          if (group) label = group.querySelector('label.form-label, .form-label');
+        }
+
+        if (!label && field.id === 'okStaffingContext') {
+          var wrap = field.closest('.textarea-wrap') || field.parentElement;
+          var heading = wrap && wrap.previousElementSibling;
+          if (heading && heading.classList.contains('subsection-heading')) {
+            var sectionRow = document.createElement('div');
+            sectionRow.className = 'field-label-row field-label-row--section';
+            wrap.parentNode.insertBefore(sectionRow, heading);
+            sectionRow.appendChild(heading);
+            sectionRow.appendChild(actions);
+            return;
+          }
+        }
+
+        if (!label && field.id === 'roomNotesModalText') {
+          var modalTitle = document.getElementById('roomNotesModalTitle');
+          if (modalTitle) {
+            var titleParent = modalTitle.parentNode;
+            var titleRow = null;
+            Array.prototype.slice.call(titleParent.children).forEach(function (child) {
+              if (child.classList && child.classList.contains('field-label-row--modal')) titleRow = child;
+            });
+            if (!titleRow) {
+              titleRow = document.createElement('div');
+              titleRow.className = 'field-label-row field-label-row--modal';
+              titleParent.insertBefore(titleRow, modalTitle);
+              titleRow.appendChild(modalTitle);
+            }
+            titleRow.appendChild(actions);
+            return;
+          }
+        }
+
+        if (!label) return;
+        var row = label.closest('.field-label-row');
+        if (!row) {
+          row = document.createElement('div');
+          row.className = 'field-label-row';
+          label.parentNode.insertBefore(row, label);
+          row.appendChild(label);
+        }
+        row.appendChild(actions);
+      }
+
+      function bindImproveWritingFieldWatch(btn) {
+        var field = resolveImproveWritingField(btn);
+        if (!field || field.getAttribute('data-improve-watch')) return;
+        field.setAttribute('data-improve-watch', '1');
+        field.addEventListener('input', function () { syncImproveWritingButtonState(btn); });
+        field.addEventListener('change', function () { syncImproveWritingButtonState(btn); });
+      }
+
+      function setImproveWritingModalStatus(message, state) {
+        var el = document.getElementById('improveWritingModalStatus');
+        if (!el) return;
+        el.textContent = message || '';
+        el.className = 'improve-writing-status' + (state ? ' is-' + state : '');
+      }
+
+      function closeImproveWritingModal() {
+        var modal = document.getElementById('improveWritingModal');
+        if (modal) modal.hidden = true;
+        document.body.style.overflow = '';
+        var btn = improveWritingState.button;
+        var mode = improveWritingState.mode || 'improve';
+        improveWritingState.field = null;
+        improveWritingState.button = null;
+        improveWritingState.original = '';
+        improveWritingState.improved = '';
+        improveWritingState.busy = false;
+        improveWritingState.mode = 'improve';
+        setImproveWritingModalStatus('', '');
+        if (btn) {
+          setWritingActionButtonLoading(btn, false, mode);
+          clearImproveWritingStatus(btn);
+        }
+      }
+
+      function configureImproveWritingModal(mode) {
+        var isExplain = mode === 'explain';
+        var title = document.getElementById('improveWritingModalTitle');
+        var helper = document.getElementById('improveWritingModalHelper');
+        var resultLabel = document.getElementById('improveWritingResultLabel');
+        var applyLabel = document.getElementById('improveWritingApplyLabel');
+        if (title) title.textContent = isExplain ? 'Explain Briefly' : 'Improve Writing';
+        if (helper) {
+          helper.textContent = isExplain
+            ? 'Review the brief explanation for new staff, then apply it to this field only. Save Hotel Brain to persist changes.'
+            : 'Review the improved text, then apply it to this field only. Save Hotel Brain to persist changes.';
+        }
+        if (resultLabel) resultLabel.textContent = isExplain ? 'Brief explanation' : 'Improved';
+        if (applyLabel) applyLabel.textContent = isExplain ? 'Apply Brief Explanation' : 'Apply Improved Writing';
+      }
+
+      function openImproveWritingModal(field, button, original, improved, mode) {
+        var modal = document.getElementById('improveWritingModal');
+        var originalEl = document.getElementById('improveWritingOriginal');
+        var improvedEl = document.getElementById('improveWritingImproved');
+        if (!modal || !originalEl || !improvedEl) return;
+        var activeMode = mode || 'improve';
+        improveWritingState.field = field;
+        improveWritingState.button = button;
+        improveWritingState.original = original;
+        improveWritingState.improved = improved;
+        improveWritingState.mode = activeMode;
+        configureImproveWritingModal(activeMode);
+        originalEl.textContent = original;
+        improvedEl.textContent = improved;
+        clearImproveWritingStatus(button);
+        setImproveWritingModalStatus(
+          activeMode === 'explain'
+            ? 'Review the brief explanation, then Apply Brief Explanation or Cancel.'
+            : 'Review the improved text, then Apply Improved Writing or Cancel.',
+          'success'
+        );
+        modal.hidden = false;
+        document.body.style.overflow = 'hidden';
+        var applyBtn = document.getElementById('improveWritingApply');
+        if (applyBtn) applyBtn.focus();
+      }
+
+      function runImproveWriting(button, mode) {
+        if (!button || improveWritingState.busy) return;
+        var activeMode = mode || 'improve';
+        var field = resolveImproveWritingField(button);
+        if (!field) return;
+        var raw = String(field.value || '').trim();
+        if (!isImproveWritingEligible(raw)) {
+          syncImproveWritingButtonState(button);
+          return;
+        }
+        clearImproveWritingStatus(button);
+        improveWritingState.busy = true;
+        setWritingActionButtonLoading(button, true, activeMode);
+        window.setTimeout(function () {
+          try {
+            var improved = activeMode === 'explain'
+              ? explainHotelBrainFieldText(raw)
+              : improveHotelBrainFieldText(raw);
+            if (!improved || improved === raw) {
+              improveWritingState.busy = false;
+              setWritingActionButtonLoading(button, false, activeMode);
+              if (activeMode === 'explain') {
+                showImproveWritingStatus(button, 'Could not create a shorter explanation. Please edit manually.', 'info');
+              } else if (isAlreadyHotelBrainProfessional(raw)) {
+                showImproveWritingStatus(button, 'No improvements needed.', 'info');
+              } else {
+                showImproveWritingStatus(button, 'Could not improve this wording further. Please edit manually.', 'info');
+              }
+              return;
+            }
+            openImproveWritingModal(field, button, raw, improved, activeMode);
+            improveWritingState.busy = false;
+          } catch (err) {
+            improveWritingState.busy = false;
+            setWritingActionButtonLoading(button, false, activeMode);
+            showImproveWritingStatus(
+              button,
+              activeMode === 'explain'
+                ? 'Explanation could not be created. Please try again.'
+                : 'Writing could not be improved. Please try again.',
+              'error'
+            );
+          }
+        }, 40);
+      }
+
+      function applyImproveWriting() {
+        if (!improveWritingState.field || !improveWritingState.improved) {
+          closeImproveWritingModal();
+          return;
+        }
+        improveWritingState.field.value = improveWritingState.improved;
+        if (improveWritingState.field.id) updateCharCounter(improveWritingState.field.id);
+        improveWritingState.field.dispatchEvent(new Event('input', { bubbles: true }));
+        markUnsaved();
+        var appliedBtn = improveWritingState.button;
+        var mode = improveWritingState.mode || 'improve';
+        /* Close without the Cancel clear — then show Apply message */
+        var modal = document.getElementById('improveWritingModal');
+        if (modal) modal.hidden = true;
+        document.body.style.overflow = '';
+        improveWritingState.field = null;
+        improveWritingState.button = null;
+        improveWritingState.original = '';
+        improveWritingState.improved = '';
+        improveWritingState.busy = false;
+        improveWritingState.mode = 'improve';
+        setImproveWritingModalStatus('', '');
+        if (appliedBtn) {
+          setWritingActionButtonLoading(appliedBtn, false, mode);
+          showImproveWritingStatus(
+            appliedBtn,
+            mode === 'explain'
+              ? 'Brief explanation applied. Save Hotel Brain to keep the change.'
+              : 'Writing improved. Save Hotel Brain to keep the change.',
+            'info'
+          );
+        }
+      }
+
+      function initImproveWritingControls() {
+        /* Remove any previously stacked field status nodes */
+        document.querySelectorAll('.improve-writing-status, .improve-writing-tip').forEach(function (node) {
+          if (node.id === 'improveWritingModalStatus') return;
+          if (node.classList.contains('improve-writing-field-status')) return;
+          node.remove();
+        });
+
+        document.querySelectorAll('[data-improve-writing], [data-ai-polish], [data-ai-polish-target]').forEach(function (btn) {
+          if (btn.getAttribute('data-ai-polish') === 'summary') {
+            btn.remove();
+            return;
+          }
+          decorateImproveWritingButton(btn);
+          placeImproveWritingBesideLabel(btn);
+          var explainBtn = ensureExplainWritingButton(btn);
+          getImproveWritingStatusSlot(btn);
+          bindImproveWritingFieldWatch(btn);
+          syncImproveWritingButtonState(btn);
+          if (!btn.getAttribute('data-improve-bound')) {
+            btn.setAttribute('data-improve-bound', '1');
+            btn.addEventListener('click', function () {
+              runImproveWriting(btn, 'improve');
+            });
+          }
+          if (explainBtn && !explainBtn.getAttribute('data-explain-bound')) {
+            explainBtn.setAttribute('data-explain-bound', '1');
+            explainBtn.addEventListener('click', function () {
+              runImproveWriting(explainBtn, 'explain');
+            });
+            syncImproveWritingButtonState(explainBtn);
+          }
+        });
+
+        var cancelBtn = document.getElementById('improveWritingCancel');
+        var applyBtn = document.getElementById('improveWritingApply');
+        var modal = document.getElementById('improveWritingModal');
+        if (cancelBtn && !cancelBtn.getAttribute('data-bound')) {
+          cancelBtn.setAttribute('data-bound', '1');
+          cancelBtn.addEventListener('click', closeImproveWritingModal);
+        }
+        if (applyBtn && !applyBtn.getAttribute('data-bound')) {
+          applyBtn.setAttribute('data-bound', '1');
+          applyBtn.addEventListener('click', applyImproveWriting);
+        }
+        if (modal && !modal.getAttribute('data-bound')) {
+          modal.setAttribute('data-bound', '1');
+          modal.addEventListener('click', function (e) {
+            if (e.target === modal) closeImproveWritingModal();
+          });
+        }
+      }
+
+      function initKnowledgeAiPolish() {
+        initImproveWritingControls();
+      }
+
+      /* Re-bind Improve Writing after dynamic policy / reservations / ops cards render */
+      var _origRenderPolicyUI = HPK && HPK.renderPolicyUI;
+      if (_origRenderPolicyUI && !_origRenderPolicyUI._improveWrapped) {
+        HPK.renderPolicyUI = function () {
+          var result = _origRenderPolicyUI.apply(HPK, arguments);
+          initImproveWritingControls();
+          return result;
+        };
+        HPK.renderPolicyUI._improveWrapped = true;
+      }
+      var _origRenderReservationsUI = HPK && HPK.renderReservationsUI;
+      if (_origRenderReservationsUI && !_origRenderReservationsUI._improveWrapped) {
+        HPK.renderReservationsUI = function () {
+          var result = _origRenderReservationsUI.apply(HPK, arguments);
+          initImproveWritingControls();
+          return result;
+        };
+        HPK.renderReservationsUI._improveWrapped = true;
+      }
+      var _origRenderPaymentPoliciesUI = HPK && HPK.renderPaymentPoliciesUI;
+      if (_origRenderPaymentPoliciesUI && !_origRenderPaymentPoliciesUI._improveWrapped) {
+        HPK.renderPaymentPoliciesUI = function () {
+          var result = _origRenderPaymentPoliciesUI.apply(HPK, arguments);
+          initImproveWritingControls();
+          return result;
+        };
+        HPK.renderPaymentPoliciesUI._improveWrapped = true;
+      }
+      var _origRenderOperationalUI = HPO && HPO.renderOperationalKnowledgeUI;
+      if (_origRenderOperationalUI && !_origRenderOperationalUI._improveWrapped) {
+        HPO.renderOperationalKnowledgeUI = function () {
+          var result = _origRenderOperationalUI.apply(HPO, arguments);
+          initImproveWritingControls();
+          return result;
+        };
+        HPO.renderOperationalKnowledgeUI._improveWrapped = true;
       }
 
       function getRoomNotesInput(row) {
@@ -2818,6 +3628,7 @@
         }
         roomNotesModal.hidden = false;
         document.body.style.overflow = 'hidden';
+        initImproveWritingControls();
         if (roomNotesModalText) roomNotesModalText.focus();
       }
 
@@ -3612,6 +4423,7 @@
       loadProfile();
       initGeneralFieldGroups();
       initPageDisclosures();
+      initHotelBrainDevToolsVisibility();
       initKnowledgeCharCounters();
       initKnowledgeAiPolish();
 
@@ -3623,10 +4435,15 @@
       var loadZetterSampleBtn = document.getElementById('loadZetterSampleBtn');
       if (loadZetterSampleBtn && HPO) {
         loadZetterSampleBtn.addEventListener('click', function () {
+          if (!isHotelBrainDevToolsEnabled()) {
+            var statusEl = document.getElementById('zetterSampleStatus');
+            if (statusEl) statusEl.textContent = 'Sample data is only available in local development or authorised operator mode.';
+            return;
+          }
           if (!window.confirm(
             'Load Zetter Marylebone test knowledge?\n\n' +
             'This merges missing sample entries only. Your existing Hotel Brain data will not be overwritten.\n\n' +
-            'Continue?'
+            'Development / operator use only.'
           )) return;
           var result = HPO.loadZetterSample(collectProfileData());
           if (!result.ok) {
