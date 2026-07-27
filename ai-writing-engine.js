@@ -662,144 +662,150 @@
   function buildLateCheckoutBody(normalized, prefs) {
     var until = extractUntilTime(normalized, prefs);
     var untilBit = until ? " until " + until : "";
-    var status;
-    if (isConfirmedLanguage(normalized) || (until && !isRequestLanguage(normalized))) {
-      status = "Late check-out has been confirmed" + untilBit;
-    } else if (isRequestLanguage(normalized)) {
-      status = "Late check-out has been requested" + untilBit;
-    } else {
-      status = "Late check-out has been noted" + untilBit;
-    }
-    if (isConfirmedLanguage(normalized) || (until && !isRequestLanguage(normalized))) {
-      return appendAction(
-        status,
-        "Please advise Housekeeping and ensure the guest is not disturbed before the agreed departure time"
-      );
+    /* Phase 3A: status from language only — never invent HK/DM/guest chase actions.
+       Do not treat a bare time as confirmation. */
+    if (isConfirmedLanguage(normalized)) {
+      return "Late check-out has been confirmed" + untilBit;
     }
     if (isRequestLanguage(normalized)) {
-      return appendAction(
-        status,
-        "Please confirm with the Duty Manager whether this can be approved and update the guest"
-      );
+      return "Late check-out has been requested" + untilBit;
     }
-    return appendAction(
-      status,
-      "Please confirm the departure time with the guest and advise Housekeeping if approved"
-    );
+    return "Late check-out has been noted" + untilBit;
   }
 
   function buildExtendStayBody(normalized) {
-    var when = /morning|am\b|speak|call|follow/i.test(normalized)
-      ? "in the morning"
-      : "as soon as practical";
-    return appendAction(
-      "The guest has requested to extend their stay",
-      "Please follow up with the guest " + when +
-        ", confirm availability, and update the reservation if the extension is agreed"
-    );
+    /* Phase 3B: extension request only — morning/availability/reservation only if stated. */
+    var status;
+    if (/\b(?:one|1)\s+night\b/i.test(normalized)) {
+      status = "The guest has requested a one-night stay extension";
+    } else {
+      var nightsMatch = normalized.match(/\b(\d+)\s+nights?\b/i);
+      if (nightsMatch) {
+        status = "The guest has requested a " + nightsMatch[1] + "-night stay extension";
+      } else {
+        status = "The guest has requested to extend their stay";
+      }
+    }
+    if (/speak\s+morning|call\s+morning|follow[\s-]*up\s+(?:in\s+)?(?:the\s+)?morning|morning\s+follow/i.test(normalized) ||
+        (/\bmorning\b/i.test(normalized) && noteContains(normalized, ["speak", "call", "follow"]))) {
+      status += ". Follow-up in the morning is noted";
+    }
+    if (/\bavailability\b/i.test(normalized) && noteContains(normalized, ["confirm", "check", "verify"])) {
+      status += ". Availability confirmation noted";
+    }
+    if (/update\s+(?:the\s+)?reservation|reservation\s+update/i.test(normalized)) {
+      status += ". Reservation update noted";
+    }
+    return status;
   }
 
   function buildRoomMoveBody(normalized, rooms, options) {
     var dest = extractDestinationRoom(normalized, rooms);
     var amount = extractPrimaryAmount(normalized, options && options.currency);
+    var destBit = dest ? " to Room " + dest : " to another room";
     var status;
+    var completedMove = /\b(?:relocated|has been moved|was moved|moved to)\b/i.test(normalized) ||
+      (/\bmoved\b/i.test(normalized) && isConfirmedLanguage(normalized));
 
-    if (dest) {
-      status = "The guest has been relocated to Room " + dest;
+    /* Phase 3A: never claim relocation or invent PMS posting unless source supports it. */
+    if (isRequestLanguage(normalized) && !completedMove) {
+      status = "The guest has requested to move" + destBit;
+    } else if (completedMove || isConfirmedLanguage(normalized)) {
+      status = "The guest has been relocated" + destBit;
     } else {
-      status = "The guest has been relocated to another room";
+      status = "Room move" + destBit + " has been noted";
     }
 
     if (/\bupgrade\b/i.test(normalized) || amount) {
       if (amount) {
-        status += ". The upgrade is confirmed at an additional charge of " + amount + " per night";
-      } else {
-        status += ". The room upgrade is confirmed";
+        if (/\bpaid\b/i.test(normalized) || isConfirmedLanguage(normalized)) {
+          status += ". The upgrade is recorded at an additional charge of " + amount + " per night";
+        } else {
+          status += ". An upgrade charge of " + amount + " per night is noted";
+        }
+      } else if (/\bupgrade\b/i.test(normalized)) {
+        status += ". Room upgrade noted";
       }
     } else if (amount) {
-      status += ". An additional charge of " + amount + " per night applies";
+      status += ". An additional charge of " + amount + " per night is noted";
     }
 
-    return appendAction(
-      status,
-      "Please ensure the PMS reflects the new room allocation" +
-        (amount || /\bupgrade\b/i.test(normalized) ? " and that the upgrade charge has been posted" : "")
-    );
+    return status;
   }
 
-  function buildIronBody() {
-    return appendAction(
-      "The guest has requested an iron and ironing board",
-      "Please arrange delivery to the room and confirm with the guest once provided"
-    );
+  function buildIronBody(normalized) {
+    /* Phase 3B: request status only — no invented delivery/confirmation. */
+    var text = normalized || "";
+    if (/\biron(?:ing)?\s+board\b/i.test(text) || (/\biron\b/i.test(text) && /\bboard\b/i.test(text))) {
+      return "Iron and ironing board requested";
+    }
+    return "Iron requested";
   }
 
   function buildAcBody(normalized) {
+    /* Phase 3B: AC status only — no invented Maintenance chase or guest follow-up. */
+    var status;
     if (detectComplaint(normalized)) {
-      return appendAction(
-        "The guest has reported an air-conditioning issue and is unhappy with the situation",
-        "Please arrange for Maintenance to attend, follow up with the guest to confirm the issue has been resolved, and record the outcome"
-      );
-    }
-    if (noteContains(normalized, ["not cooling", "broken", "not working", "faulty"])) {
-      var status = "Air conditioning is not cooling correctly and requires inspection";
-      if (noteContains(normalized, ["informed", "eta", "engineer", "not attended"])) {
-        status += ". Maintenance has been informed but has not yet completed the attendance";
+      if (noteContains(normalized, ["not cooling", "broken", "not working", "faulty"])) {
+        status = "Air conditioning is not cooling and the guest is unhappy with the situation";
+      } else {
+        status = "The guest has reported an air-conditioning issue and is unhappy with the situation";
       }
-      return appendAction(
-        status,
-        "Please chase Maintenance for an update and follow up with the guest once resolved"
-      );
+    } else if (noteContains(normalized, ["not cooling", "broken", "not working", "faulty"])) {
+      status = "Air conditioning is not cooling";
+    } else {
+      status = "An air-conditioning issue has been reported";
     }
-    return appendAction(
-      "An air-conditioning issue has been reported",
-      "Please arrange for Maintenance to attend and follow up with the guest to confirm the issue has been resolved"
-    );
+    if (noteContains(normalized, ["maintenance", "engineer"]) &&
+        noteContains(normalized, ["informed", "notified", "advised"])) {
+      status += ". Maintenance has been informed";
+      if (noteContains(normalized, ["not attended", "not yet", "awaiting", "eta"])) {
+        status += " but attendance is still outstanding";
+      }
+    }
+    return status;
   }
 
   function buildComplaintBody(normalized) {
-    if (detectAcIssue(normalized)) return buildAcBody(normalized);
+    /* Phase 3A/3B: state the complaint only — do not invent contact/escalate/compensation. */
+    if (detectAcIssue(normalized)) {
+      return buildAcBody(normalized);
+    }
     var topic = "";
     if (noteContains(normalized, ["noise"])) topic = " regarding noise";
     else if (noteContains(normalized, ["smell", "odour", "odor"])) topic = " regarding an odour";
     else if (noteContains(normalized, ["clean", "housekeeping"])) topic = " regarding room cleanliness";
     else if (noteContains(normalized, ["wifi", "internet"])) topic = " regarding Wi-Fi";
-    return appendAction(
-      "The guest has raised a complaint" + topic + " and requires recovery follow-up",
-      "Please contact the guest, resolve the concern where possible, and escalate to the Duty Manager if compensation or further support is needed"
-    );
+    return "The guest has raised a complaint" + topic;
   }
 
   function buildInventoryBody(normalized) {
+    /* Phase 3B: inventory/request status only — no invented log/delivery/collection. */
     if (/\badapter/i.test(normalized)) {
-      if (noteContains(normalized, ["outstanding", "still", "issued", "not return", "not returned"])) {
-        return appendAction(
-          "Loan adapter(s) issued to the guest remain outstanding",
-          "Please collect the adapter(s) before departure and update the inventory log"
-        );
+      if (noteContains(normalized, ["not return", "not returned", "outstanding", "still"])) {
+        return "Loan adapter(s) remain outstanding";
       }
-      return appendAction(
-        "The guest has requested a loan adapter",
-        "Please issue the adapter, record it in the inventory log, and confirm delivery with the guest"
-      );
+      if (noteContains(normalized, ["request", "requested", "needs", "need", "wants", "want"])) {
+        return "Adapter requested";
+      }
+      if (noteContains(normalized, ["issued", "given", "provided"]) ||
+          /\bhas\s+(?:an?\s+)?adapter/i.test(normalized)) {
+        return "Adapter issued";
+      }
+      return "Adapter noted";
     }
-    if (detectIronRequest(normalized)) return buildIronBody();
+    if (detectIronRequest(normalized)) return buildIronBody(normalized);
     if (noteContains(normalized, ["pillow"])) {
-      return appendAction(
-        "Extra pillows have been requested and remain outstanding",
-        "Please arrange delivery with Housekeeping and confirm once provided"
-      );
+      return "Extra pillows requested";
     }
     if (noteContains(normalized, ["towel"])) {
-      return appendAction(
-        "Additional towels have been requested",
-        "Please arrange delivery with Housekeeping and confirm once provided"
-      );
+      return "Additional towels requested";
     }
     return "";
   }
 
   function buildVipBody(normalized, original, guestName, prefs) {
+    /* Phase 3B: VIP facts only — no invented reservation review or department briefing. */
     var status = "VIP" + (guestName ? " " + guestName : " guest") +
       (noteContains(normalized, ["arriv"]) ? " is arriving" : " is noted for this shift");
     var timeMatch = original.match(/\b(\d{1,2}[:.]\d{2}|\d{1,2}\s*(?:am|pm))\b/i) ||
@@ -812,112 +818,140 @@
     if (noteContains(normalized, ["water"])) amenityBits.push("extra water");
     if (noteContains(normalized, ["quiet"])) amenityBits.push("a quiet room");
     if (amenityBits.length) {
-      status += ". Welcome amenities to prepare: " + joinNatural(amenityBits);
+      status += ". Welcome amenities noted: " + joinNatural(amenityBits);
     }
 
-    return appendAction(
-      status,
-      "Please review the reservation before arrival and ensure Reception and Housekeeping are briefed"
-    );
+    return status;
   }
 
   function buildPaymentBody(normalized, options) {
+    /* Phase 3B: payment status only — no invented settle/departure/alt-method advice. */
     var amount = extractPrimaryAmount(normalized, options && options.currency);
     var amountBit = amount ? " of " + amount : "";
+    var departureBit = noteContains(normalized, [
+      "departure", "departing", "checkout", "check-out", "check out", "checking out"
+    ]) ? " before departure" : "";
+
     if (noteContains(normalized, ["declined"])) {
-      return appendAction(
-        "The guest's card was declined and an outstanding balance" + amountBit + " remains on the folio",
-        "Please settle the balance before departure and offer an alternative payment method if required"
-      );
+      var declined = "The guest's card was declined and an outstanding balance" +
+        amountBit + " remains on the folio";
+      if (departureBit) declined += departureBit;
+      if (noteContains(normalized, ["alternative", "another card", "different card", "other payment"])) {
+        declined += ". Alternative payment method noted";
+      }
+      return declined;
     }
-    if (noteContains(normalized, ["outstanding", "balance", "folio"])) {
-      return appendAction(
-        "An outstanding balance" + amountBit + " remains on the guest folio",
-        "Please settle the account before departure"
-      );
+    if (noteContains(normalized, ["outstanding", "balance", "folio", "account"])) {
+      var accountWord = noteContains(normalized, ["folio"]) ? "folio"
+        : "account";
+      var openBal = "Outstanding balance" + amountBit + " remains on the " + accountWord;
+      if (departureBit) openBal += departureBit;
+      return openBal;
     }
     if (noteContains(normalized, ["minibar"])) {
-      return appendAction(
-        "A minibar charge" + amountBit + " requires review" +
-          (noteContains(normalized, ["dispute", "not consumed"]) ? " following a guest dispute" : ""),
-        "Please review the charge with the guest and adjust the folio if appropriate"
-      );
+      var mini = "A minibar charge" + amountBit + " requires review";
+      if (noteContains(normalized, ["dispute", "not consumed"])) {
+        mini += " following a guest dispute";
+      }
+      return mini;
     }
     if (noteContains(normalized, ["ota", "virtual card", "booking.com", "expedia"])) {
-      return appendAction(
-        "An OTA or channel payment" + amountBit + " still needs to be processed",
-        "Please complete the payment posting and confirm the folio is clear"
-      );
+      return "An OTA or channel payment" + amountBit + " still needs to be processed";
     }
     return "";
   }
 
   function buildMaintenanceBody(normalized, section) {
     if (detectAcIssue(normalized)) return buildAcBody(normalized);
-    if (noteContains(normalized, ["leak", "leaking", "shower"])) {
-      var leakStatus = "A shower leak remains open" +
-        (noteContains(normalized, ["previous shift", "still", "carried"])
-          ? " from the previous shift"
-          : "");
-      if (section === "urgent" || noteContains(normalized, ["urgent", "asap"])) {
+    /* Phase 3A: factual maintenance status only — no invented Reception/safe/chase actions. */
+    if (noteContains(normalized, ["leak", "leaking", "shower", "bathroom"])) {
+      var leakStatus = noteContains(normalized, ["leak", "leaking"])
+        ? "A leak remains open"
+        : "A shower issue remains open";
+      if (noteContains(normalized, ["shower"]) && noteContains(normalized, ["leak", "leaking"])) {
+        leakStatus = "A shower leak remains open";
+      } else if (noteContains(normalized, ["bathroom"]) && noteContains(normalized, ["leak", "leaking"])) {
+        leakStatus = "A bathroom leak remains open";
+      }
+      if (noteContains(normalized, ["previous shift", "still", "carried"])) {
+        leakStatus += " from the previous shift";
+      }
+      if (noteContains(normalized, ["urgent", "asap"])) {
         leakStatus += " and requires priority attention";
       }
-      return appendAction(
-        leakStatus,
-        "Please arrange an inspection with Maintenance and update Reception once the room is safe for the guest"
-      );
+      if (noteContains(normalized, ["maintenance", "engineer"]) &&
+          noteContains(normalized, ["informed", "notified", "advised"])) {
+        leakStatus += ". Maintenance has been informed";
+      }
+      return leakStatus;
     }
     if (noteContains(normalized, ["tv", "remote"])) {
-      return appendAction(
-        "The television remote is not working",
-        "Please supply a replacement remote and confirm with the guest once resolved"
-      );
+      return "The television remote is not working";
     }
     if (noteContains(normalized, ["heating", "no heat", "cold"])) {
-      return appendAction(
-        "A heating issue has been reported",
-        "Please arrange for Maintenance to attend and follow up with the guest once resolved"
-      );
+      return "A heating issue has been reported";
     }
     if (noteContains(normalized, ["lock", "key", "cannot enter", "card not"])) {
-      return appendAction(
-        "The guest is experiencing a room access or lock issue",
-        "Please re-encode or replace the key card and escort the guest if required"
-      );
+      return "The guest is experiencing a room access or lock issue";
     }
     return "";
   }
 
-  function buildDeliveryBody(guestName) {
-    return appendAction(
-      "A package is being held at Reception" + (guestName ? " for " + guestName : ""),
-      "Please contact the guest to arrange collection and record when it has been handed over"
-    );
+  function buildDeliveryBody(normalized, guestName) {
+    /* Phase 3B: held package status only — no invented contact/recording. */
+    var status = "Package is being held at Reception";
+    if (guestName) status += " for " + guestName;
+    if (noteContains(normalized || "", ["contact", "call", "notify", "advise", "phone"])) {
+      status += ". Guest contact noted";
+    }
+    if (noteContains(normalized || "", ["handed over", "collected", "collection recorded", "signed for"])) {
+      status += ". Collection/handover noted";
+    }
+    return status;
   }
 
   function buildTaskBody(normalized) {
-    if (noteContains(normalized, ["dnd"])) {
-      return appendAction(
-        "The room is on Do Not Disturb",
-        "Please hold cleaning until the DND is released and check again later in the shift"
-      );
+    /* Phase 3B: task/DND status only — no invented cleaning holds or HK completion. */
+    if (noteContains(normalized, ["dnd", "do not disturb"])) {
+      return "Do Not Disturb is active";
     }
     if (noteContains(normalized, ["pillow"])) {
-      return appendAction(
-        "Extra pillows have been requested and remain outstanding",
-        "Please arrange delivery with Housekeeping and confirm once provided"
-      );
+      return "Extra pillows requested";
     }
     if (noteContains(normalized, ["turndown"])) {
-      return appendAction(
-        "Turndown service has been requested",
-        "Please ensure Housekeeping complete turndown at the agreed time"
-      );
+      return "Turndown service has been requested";
     }
     return "";
   }
 
+  function buildLostPropertyBody(normalized, guestName) {
+    /* Phase 3B: found/lost status only — no invented secure/log/contact. */
+    var detail = String(normalized || "")
+      .replace(/\b(?:room|rm\.?|suite)\s*[#.]?\s*\d{1,4}[a-z]?\b/gi, " ")
+      .replace(/\blost\s+property\b/gi, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    detail = tidyPhrase(detail).replace(/\b(?:on|with|for|to|at|from|in)\.?$/i, "").trim();
+
+    if (/\bfound\b/i.test(normalized)) {
+      if (detail && !/^found\b/i.test(detail)) {
+        return capitalize(detail);
+      }
+      return "Lost property found";
+    }
+    if (/\bleft\s+behind\b/i.test(normalized) || /\blost\b/i.test(normalized)) {
+      return detail ? capitalize(detail) : "Lost property noted";
+    }
+    var status = "Lost property noted";
+    if (guestName) status += " for " + guestName;
+    if (noteContains(normalized, ["secure", "secured", "safe"])) status += ". Item secured as noted";
+    if (noteContains(normalized, ["contact", "call", "notify"])) status += ". Guest contact noted";
+    if (noteContains(normalized, ["logged", "log", "book"])) status += ". Logged as noted";
+    return status;
+  }
+
   function fallbackOperationalBody(normalized, room, options) {
+    /* Phase 3A: minimally clean source remnant only — never invent chase actions. */
     var detail = room ? stripRoomLead(normalized, room) : normalized;
     detail = detail
       .replace(/^\[[^\]]+\]\s*/, "")
@@ -927,49 +961,675 @@
       .replace(/\bnot cooling properly\b/gi, "not cooling correctly")
       .replace(/\bhas been informed but has not attended yet\b/gi, "has been informed but has not yet attended")
       .replace(/\balready booked\b/gi, "has been booked")
-      .replace(/\bplease\b/gi, "please")
       .replace(/\s{2,}/g, " ");
     detail = tidyPhrase(detail);
     if (!detail) return "";
-
-    /* Expand into a Duty Manager instruction rather than leaving a fragment */
-    if (!/^(the |a |an |guest |please |maintenance |housekeeping |reception )/i.test(detail)) {
-      detail = "Please note: " + detail.charAt(0).toLowerCase() + detail.slice(1);
-    }
-
-    if (!/\b(please|follow up|arrange|confirm|ensure|advise|contact|update)\b/i.test(detail)) {
-      detail = appendAction(
-        detail,
-        "Please follow up during this shift and update the incoming team with the outcome"
-      );
-      return tidyPhrase(detail).replace(/\.$/, "");
-    }
-
     return detail;
   }
 
   function maybeAddFollowUp(body, normalized, options) {
     if (!body) return body;
     if (options && options.addFollowUp === false) return body;
+    if (/\bfollow[\s-]*up\b/i.test(body)) return body;
     if (/\bplease\b/i.test(body) && /\b(follow up|arrange|confirm|ensure|advise|contact|settle|chase|collect|issue|update)\b/i.test(body)) {
       return body;
     }
 
-    var needsFollowUp =
-      detectExtendStay(normalized) ||
-      detectComplaint(normalized) ||
-      (detectAcIssue(normalized) && !isConfirmedLanguage(normalized)) ||
-      noteContains(normalized, ["speak morning", "call morning", "pending", "outstanding", "still need"]);
+    /* Only append follow-up when the source already asks for it — not from balance/status words alone. */
+    var sourceAsksFollowUp =
+      /\bfollow[\s-]*up\b/i.test(normalized) ||
+      noteContains(normalized, ["speak morning", "call morning", "still need"]) ||
+      (/\bpending\b/i.test(normalized) && !/\boutstanding\s+balance\b/i.test(normalized));
+    if (!sourceAsksFollowUp) return body;
 
-    if (!needsFollowUp) return body;
     if (/morning/i.test(normalized)) {
-      return appendAction(body, "Please follow up in the morning and update the handover with the outcome");
+      return appendAction(body, "Please follow up in the morning");
     }
-    return appendAction(body, "Please follow up during this shift and record the outcome");
+    return appendAction(body, "Please follow up during this shift");
+  }
+
+  /* ------------------------------------------------------------------ */
+  /*  Phase 1 — structured operational facts (extract → safe render)    */
+  /*  Existing template writer remains the fallback for other notes.    */
+  /* ------------------------------------------------------------------ */
+
+  var FACT_STATUS = {
+    open: "open",
+    requested: "requested",
+    confirmed: "confirmed",
+    in_progress: "in_progress",
+    done: "done",
+    unknown: "unknown"
+  };
+
+  function createEmptyOperationalFact(sourceText) {
+    return {
+      sourceText: String(sourceText || ""),
+      rooms: [],
+      subject: "",
+      status: FACT_STATUS.unknown,
+      ownerDept: "",
+      ownerName: "",
+      actionVerb: "",
+      actionTarget: "",
+      details: [],
+      sectionHint: ""
+    };
+  }
+
+  /**
+   * True only when "settled" / related language has payment or account context.
+   * Guest-status uses of "settled" (checked in, comfortable) must not match.
+   */
+  function hasFinancialSettlementContext(text) {
+    var lower = String(text || "").toLowerCase();
+    return /\bbalance\b/.test(lower) ||
+      /\bbill\b/.test(lower) ||
+      /\binvoice\b/.test(lower) ||
+      /\bfolio\b/.test(lower) ||
+      /\baccount\b/.test(lower) ||
+      /\bpayment\b/.test(lower) ||
+      /\bpaid\b/.test(lower) ||
+      /\bcharge\b/.test(lower) ||
+      /\boutstanding\s+amount\b/.test(lower);
+  }
+
+  /**
+   * Clear financial noun for settlement rendering. Empty when subject is unclear
+   * (caller should use minimally cleaned sourceText instead of inventing one).
+   */
+  function financialSettlementNoun(text) {
+    var src = String(text || "");
+    if (/\binvoice\b/i.test(src)) return "invoice";
+    if (/\bbill\b/i.test(src)) return "bill";
+    if (/\bpayment\b/i.test(src)) return "payment";
+    if (/\bfolio\b/i.test(src)) return "folio";
+    if (/\baccount\b/i.test(src)) return "account";
+    if (/\bcharge\b/i.test(src)) return "charge";
+    if (/\bbalance\b/i.test(src) || /\boutstanding\s+amount\b/i.test(src)) {
+      return "outstanding balance";
+    }
+    return "";
+  }
+
+  /**
+   * Ordered status classifier: negatives/open first, then completed,
+   * then requested / confirmed / in_progress, otherwise unknown.
+   * Bare "settled" is financial only when payment/account context is present.
+   */
+  function classifyFactStatus(text) {
+    var lower = String(text || "").toLowerCase();
+    var financial = hasFinancialSettlementContext(text);
+
+    if (
+      (/\bnot\s+settled\b/.test(lower) && financial) ||
+      /\bunpaid\b/.test(lower) ||
+      /\bstill\s+outstanding\b/.test(lower) ||
+      /\bunresolved\b/.test(lower) ||
+      /\bpending\b/.test(lower) ||
+      /\bnot\s+completed\b/.test(lower) ||
+      /\bnot\s+done\b/.test(lower) ||
+      /\bnot\s+fixed\b/.test(lower) ||
+      /\bnot\s+resolved\b/.test(lower) ||
+      (/\bnot\s+yet\s+(?:settled|paid|cleared|completed|resolved|fixed|done)\b/.test(lower) &&
+        (financial || !/\bsettled\b/.test(lower))) ||
+      /\bstill\s+to\s+pay\b/.test(lower)
+    ) {
+      return FACT_STATUS.open;
+    }
+
+    if (
+      (/\b(?:has\s+been\s+)?settled\b/.test(lower) && financial) ||
+      /\b(?:has\s+been\s+)?paid\b/.test(lower) ||
+      /\bcleared\b/.test(lower) ||
+      /\bcompleted\b/.test(lower) ||
+      /\bresolved\b/.test(lower) ||
+      /\bfixed\b/.test(lower) ||
+      /\bcollected\b/.test(lower) ||
+      /\bdelivered\b/.test(lower) ||
+      /\bdone\b/.test(lower)
+    ) {
+      return FACT_STATUS.done;
+    }
+
+    if (
+      /\bnot\s+booked\b/.test(lower) ||
+      /\bnot\s+yet\s+booked\b/.test(lower)
+    ) {
+      return FACT_STATUS.open;
+    }
+
+    if (
+      /\b(?:request(?:ed)?|asking|asked|would like|wants?|needs?)\b/.test(lower)
+    ) {
+      return FACT_STATUS.requested;
+    }
+
+    if (
+      /\b(?:approved|confirmed|agreed|granted|authorised|authorized)\b/.test(lower) ||
+      /\balready\s+booked\b/.test(lower) ||
+      /\bbooked\b/.test(lower)
+    ) {
+      return FACT_STATUS.confirmed;
+    }
+
+    if (
+      /\bin\s+progress\b/.test(lower) ||
+      /\bawaiting\b/.test(lower) ||
+      /\bbeing\s+(?:handled|processed|repaired|investigated)\b/.test(lower) ||
+      /\bchasing\b/.test(lower)
+    ) {
+      return FACT_STATUS.in_progress;
+    }
+
+    return FACT_STATUS.unknown;
+  }
+
+  function departmentFromTarget(target) {
+    var t = String(target || "").toLowerCase();
+    if (t === "maintenance" || t === "engineering") return "Maintenance";
+    if (t === "housekeeping") return "Housekeeping";
+    if (t === "reception" || t === "front") return "Reception";
+    if (t === "concierge") return "Concierge";
+    if (t === "manager" || t === "management") return "Duty Manager";
+    return capitalize(t);
+  }
+
+  /**
+   * Pure extraction: never mutates or strips rooms from sourceText.
+   */
+  function extractOperationalFact(rawText, options) {
+    options = options || {};
+    var sourceText = String(rawText == null ? "" : rawText);
+    var fact = createEmptyOperationalFact(sourceText);
+
+    fact.rooms = extractRoomNumbers(sourceText).slice();
+    if (options.rooms && options.rooms.length) {
+      options.rooms.forEach(function (room) {
+        var key = String(room).toUpperCase();
+        if (fact.rooms.indexOf(key) === -1 && fact.rooms.indexOf(String(room)) === -1) {
+          fact.rooms.push(String(room));
+        }
+      });
+    }
+
+    fact.status = classifyFactStatus(sourceText);
+    fact.sectionHint = options.section ? String(options.section) : "";
+
+    var followMatch = sourceText.match(/\bfollow[\s-]*up\s+with\s+([A-Za-z][A-Za-z\s]*?)(?=\s+on\b|\s+regarding\b|\s+about\b|[.,;]|$)/i);
+    if (followMatch) {
+      fact.actionVerb = "follow_up";
+      fact.actionTarget = trimText(followMatch[1]).toLowerCase().replace(/\s+/g, " ");
+      fact.ownerDept = departmentFromTarget(fact.actionTarget.split(/\s+/)[0]);
+      fact.subject = "follow_up";
+    }
+
+    if (hasFinancialSettlementContext(sourceText) &&
+        (/\bsettled\b/i.test(sourceText) || /\boutstanding\s+(?:balance|amount)\b/i.test(sourceText) ||
+          /\b(?:balance|folio|payment|invoice|bill)\b/i.test(sourceText))) {
+      var noun = financialSettlementNoun(sourceText);
+      if (noun === "invoice") fact.subject = "invoice";
+      else if (noun === "bill") fact.subject = "bill";
+      else if (noun === "payment") fact.subject = "payment";
+      else if (noun === "folio") fact.subject = "folio";
+      else if (noun === "account") fact.subject = "account";
+      else if (noun === "charge") fact.subject = "charge";
+      else if (noun) fact.subject = "outstanding_balance";
+      else fact.subject = "financial_settlement_unclear";
+      if (!fact.ownerDept) fact.ownerDept = "Reception";
+      if (!fact.actionVerb && fact.status !== FACT_STATUS.done && fact.status !== FACT_STATUS.confirmed) {
+        fact.actionVerb = "settle";
+      }
+    }
+
+    if (/\blate\s+check-?out\b/i.test(sourceText) || /\blate\s+c\/?o\b/i.test(sourceText)) {
+      fact.subject = "late_checkout";
+      if (!fact.ownerDept) fact.ownerDept = "Housekeeping";
+      if (!fact.actionVerb && fact.status === FACT_STATUS.requested) fact.actionVerb = "confirm";
+    }
+
+    if (/\bwake-?\s*up\b/i.test(sourceText) || /\bwakeup\b/i.test(sourceText)) {
+      fact.subject = "wake_up";
+      if (!fact.ownerDept) fact.ownerDept = "Reception";
+      if (!fact.actionVerb && fact.status !== FACT_STATUS.confirmed && fact.status !== FACT_STATUS.done) {
+        fact.actionVerb = "confirm";
+      }
+    }
+
+    if (/\bvip\b/i.test(sourceText) || options.isVip) {
+      if (!fact.subject || fact.subject === "follow_up") fact.subject = "vip_arrival";
+      if (!fact.ownerDept) fact.ownerDept = "Reception";
+      if (!fact.actionVerb && fact.status !== FACT_STATUS.done && fact.status !== FACT_STATUS.confirmed) {
+        fact.actionVerb = "prepare";
+      }
+    }
+
+    if (/\b(?:air\s*con|a\/c|\bac\b|leak|leaking|broken|faulty|repair|maintenance|not cooling|heating)\b/i.test(sourceText) &&
+        !fact.subject) {
+      fact.subject = "maintenance";
+      if (!fact.ownerDept) fact.ownerDept = "Maintenance";
+      if (!fact.actionVerb) fact.actionVerb = "follow_up";
+    }
+
+    if (/\b(?:extra\s+bed|rollaway|pillow|towel|iron|adapter|amenity)\b/i.test(sourceText) &&
+        (!fact.subject || fact.subject === "follow_up")) {
+      if (!/\bvip\b/i.test(sourceText)) fact.subject = "guest_request";
+      if (!fact.ownerDept) {
+        fact.ownerDept = /\b(?:pillow|towel|bed|linen)\b/i.test(sourceText) ? "Housekeeping" : "Reception";
+      }
+      if (!fact.actionVerb && fact.status === FACT_STATUS.requested) fact.actionVerb = "arrange";
+    }
+
+    if (/\b(?:package|parcel|delivery|courier)\b/i.test(sourceText) && !fact.subject) {
+      fact.subject = "delivery";
+      if (!fact.ownerDept) fact.ownerDept = "Reception";
+      if (!fact.actionVerb) fact.actionVerb = "contact";
+    }
+
+    if (/\b(?:mov(?:e|ing|ed)|relocat(?:e|ed|ing))\b/i.test(sourceText)) {
+      fact.subject = "room_move";
+      var dest = extractDestinationRoom(sourceText, fact.rooms);
+      if (dest) {
+        fact.details.push({ type: "destination_room", value: dest });
+      }
+      if (!fact.ownerDept) fact.ownerDept = "Reception";
+    }
+
+    if (options.section === "maintenance" && !fact.ownerDept) fact.ownerDept = "Maintenance";
+    if (options.section === "payments" && !fact.ownerDept) fact.ownerDept = "Reception";
+    if (options.section === "vip" && !fact.ownerDept) fact.ownerDept = "Reception";
+
+    var staffMatch = sourceText.match(/\b(?:assigned\s+to|owner[:\s]+|handed\s+to)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/);
+    if (staffMatch) {
+      fact.ownerName = trimText(staffMatch[1]);
+    }
+
+    extractMoney(sourceText).forEach(function (amount) {
+      fact.details.push({ type: "money", value: amount });
+    });
+    extractTimes(sourceText).forEach(function (time) {
+      fact.details.push({ type: "time", value: time });
+    });
+
+    return fact;
+  }
+
+  /** Map structured fact.status → handover item status id. */
+  function mapFactStatusToItemStatus(factStatus) {
+    var status = String(factStatus || FACT_STATUS.unknown);
+    if (status === FACT_STATUS.done) return "done";
+    if (status === FACT_STATUS.confirmed) return "confirmed";
+    if (status === FACT_STATUS.in_progress) return "in_progress";
+    return "pending";
+  }
+
+  /** Open work that should appear in follow-up counts / recommendations. */
+  function isFactUnresolved(fact) {
+    if (!fact || !fact.status) return true;
+    return fact.status !== FACT_STATUS.done && fact.status !== FACT_STATUS.confirmed;
+  }
+
+  /** Completed or confirmed — do not chase. */
+  function isFactClosed(fact) {
+    if (!fact || !fact.status) return false;
+    return fact.status === FACT_STATUS.done || fact.status === FACT_STATUS.confirmed;
+  }
+
+  function classifyFactSummaryTopic(fact, note) {
+    if (!fact && note) return classifySummaryTopic(note);
+    var subject = (fact && fact.subject) || "";
+    var section = (note && note.section) || (fact && fact.sectionHint) || "";
+    var text = String((fact && fact.sourceText) || (note && note.original) || "").toLowerCase();
+
+    if (section === "urgent" || subject === "critical" ||
+        noteContains(text, ["flood", "fire", "evacuat", "unsafe", "injury"])) {
+      return "critical";
+    }
+    if (subject === "maintenance" || section === "maintenance" || detectAcIssue(text) ||
+        noteContains(text, ["leak", "broken", "repair"])) {
+      return "maintenance";
+    }
+    if (subject === "outstanding_balance" || subject === "payment" || subject === "invoice" ||
+        subject === "bill" || subject === "folio" || subject === "account" || subject === "charge" ||
+        section === "payments") {
+      return "payment";
+    }
+    if (subject === "vip_arrival" || section === "vip" || (note && note.isVip) || /\bvip\b/.test(text)) {
+      return "vip";
+    }
+    if (subject === "late_checkout" || detectLateCheckout(text)) return "lateCheckout";
+    if (subject === "room_move" || detectRoomMove(text)) return "roomMove";
+    if (subject === "guest_request" || detectExtendStay(text)) {
+      return detectExtendStay(text) ? "extension" : "guest";
+    }
+    if (subject === "wake_up") return "task";
+    if (subject === "delivery" || section === "deliveries") return "delivery";
+    if (section === "inventory" || subject === "inventory") return "inventory";
+    if (section === "events") return "event";
+    if (section === "tasks") return "task";
+    if (section === "lostproperty") return "lostProperty";
+    if (detectComplaint(text)) return "complaint";
+    if (section === "guest") return "guest";
+    return "other";
+  }
+
+  function completedTopicLabel(topic, count) {
+    var map = {
+      payment: ["payment issue", "payment issues"],
+      maintenance: ["maintenance issue", "maintenance issues"],
+      guest: ["guest request", "guest requests"],
+      vip: ["VIP item", "VIP items"],
+      lateCheckout: ["late check-out", "late check-outs"],
+      task: ["task", "tasks"],
+      delivery: ["delivery", "deliveries"],
+      other: ["item", "items"]
+    };
+    var pair = map[topic] || map.other;
+    return countWord(count, pair[0], pair[1]);
+  }
+
+  function summarizeFromFacts(analyzed, options) {
+    options = options || {};
+    var prefs = options.prefs || {};
+    var detail = prefs.detail || options.detail || "standard";
+
+    var unresolved = [];
+    var completed = [];
+
+    analyzed.forEach(function (note) {
+      if (!note) return;
+      var fact = note.fact || null;
+      if (!fact && note.original) {
+        fact = extractOperationalFact(note.original, {
+          section: note.section,
+          rooms: note.rooms,
+          isVip: note.isVip
+        });
+      }
+      if (!fact) return;
+      if (note.section === "completed" && fact.status === FACT_STATUS.unknown) {
+        fact = Object.assign({}, fact, { status: FACT_STATUS.done });
+      }
+      if (isFactClosed(fact) && fact.status === FACT_STATUS.done) {
+        completed.push({ note: note, fact: fact, topic: classifyFactSummaryTopic(fact, note) });
+      } else if (isFactUnresolved(fact) && note.section !== "completed") {
+        unresolved.push({ note: note, fact: fact, topic: classifyFactSummaryTopic(fact, note) });
+      }
+    });
+
+    var topicCounts = {};
+    var topicOrder = [];
+    unresolved.forEach(function (entry) {
+      var topic = entry.topic;
+      if (topic === "completed") return;
+      if (!topicCounts[topic]) {
+        topicCounts[topic] = 0;
+        topicOrder.push(topic);
+      }
+      topicCounts[topic] += 1;
+    });
+
+    var criticalCount = topicCounts.critical || 0;
+    var followUpTopics = topicOrder.filter(function (t) {
+      return t !== "critical" && t !== "completed";
+    });
+    if (!followUpTopics.length && topicCounts.other) followUpTopics = ["other"];
+
+    var followUpCount = followUpTopics.reduce(function (sum, t) {
+      return sum + (topicCounts[t] || 0);
+    }, 0);
+
+    var sentences = [];
+
+    if (!unresolved.length && !completed.length) {
+      sentences.push("No operational issues were identified during the shift.");
+    } else if (criticalCount === 0) {
+      sentences.push("No critical operational issues were identified during the shift.");
+    } else if (criticalCount === 1) {
+      sentences.push("One critical operational issue requires immediate attention.");
+    } else {
+      sentences.push(criticalCount + " critical operational issues require immediate attention.");
+    }
+
+    if (followUpCount > 0) {
+      var includeList = followUpTopics.slice(0, detail === "brief" ? 2 : 4);
+      var listed = includeList.map(function (topic) {
+        return countWord(topicCounts[topic], topicLabel(topic, 1).replace(/^one\s+/i, ""), topicLabel(topic, 2));
+      });
+      var opener = followUpCount === 1
+        ? "One follow-up item remains"
+        : capitalize(numberWord(followUpCount)) + " follow-up items remain";
+      if (listed.length === 1 && followUpCount === topicCounts[includeList[0]]) {
+        sentences.push(opener + ", including " + listed[0] + ".");
+      } else if (listed.length) {
+        sentences.push(opener + ", including " + joinNatural(listed) + ".");
+      } else {
+        sentences.push(opener + ".");
+      }
+    } else if (unresolved.length === 0 && criticalCount === 0) {
+      sentences.push("The incoming team has a clear handover with no outstanding follow-ups.");
+    }
+
+    if (completed.length) {
+      var completedCounts = {};
+      var completedOrder = [];
+      completed.forEach(function (entry) {
+        var topic = entry.topic === "critical" ? "other" : entry.topic;
+        if (!completedCounts[topic]) {
+          completedCounts[topic] = 0;
+          completedOrder.push(topic);
+        }
+        completedCounts[topic] += 1;
+      });
+      if (completed.length === 1) {
+        var onlyTopic = completedOrder[0];
+        sentences.push(
+          capitalize(completedTopicLabel(onlyTopic, 1)).replace(/^One\s+/i, "One ") +
+          " was completed during the shift."
+        );
+      } else if (completedOrder.length === 1) {
+        sentences.push(
+          capitalize(completedTopicLabel(completedOrder[0], completed.length)) +
+          " were completed during the shift."
+        );
+      } else {
+        sentences.push(
+          capitalize(numberWord(completed.length)) +
+          " items were completed during the shift, including " +
+          joinNatural(completedOrder.slice(0, 3).map(function (topic) {
+            return completedTopicLabel(topic, completedCounts[topic]);
+          })) + "."
+        );
+      }
+    }
+
+    var limit = detail === "brief" ? 2 : (detail === "comprehensive" ? 5 : 4);
+    var summary = sentences.slice(0, limit).join(" ");
+    return applyPreferences(summary, { prefs: prefs, terminologyMap: options.terminologyMap });
+  }
+
+  function isPhase1SupportedFact(fact) {
+    if (!fact || !fact.sourceText) return false;
+    var src = fact.sourceText;
+    var lower = src.toLowerCase();
+
+    /* Financial settlement — only with payment/account context. */
+    if (/\bsettled\b/.test(lower) && hasFinancialSettlementContext(src)) return true;
+
+    /*
+     * Non-financial "settled" (guest status) — Phase 1 minimal path only,
+     * so legacy templates cannot rewrite it as payment completion.
+     */
+    if (/\bsettled\b/.test(lower) && !hasFinancialSettlementContext(src)) return true;
+
+    if (
+      fact.actionVerb === "follow_up" &&
+      fact.actionTarget &&
+      /\bon\s+(?:room\s*)?\d{1,4}[a-z]?\b/i.test(src)
+    ) {
+      return true;
+    }
+
+    if (
+      fact.subject === "room_move" &&
+      /\b(?:wants?|want|requested?|asking|asked|would like)\b/i.test(src)
+    ) {
+      return true;
+    }
+
+    return false;
+  }
+
+  function endsWithDanglingPreposition(text) {
+    return /\b(?:on|with|for|to|at|from)\.?$/i.test(trimText(text));
+  }
+
+  function stripTrailingDanglingPreposition(text) {
+    return trimText(String(text || "")).replace(/\s*\b(?:on|with|for|to|at|from)\.?$/i, "");
+  }
+
+  function roomLeadFromFact(fact) {
+    if (!fact || !fact.rooms || !fact.rooms.length) return "";
+    if (fact.rooms.length === 1) return "Room " + fact.rooms[0];
+    return "Rooms " + fact.rooms.join(", ");
+  }
+
+  function finishFactRender(lead, body) {
+    var cleaned = stripTrailingDanglingPreposition(tidyPhrase(body));
+    if (!cleaned) return "";
+    var result = lead ? lead + " – " + capitalize(cleaned) : capitalize(cleaned);
+    result = ensureSentence(result);
+    if (endsWithDanglingPreposition(result)) {
+      result = ensureSentence(stripTrailingDanglingPreposition(result.replace(/\.+$/, "")));
+    }
+    return result;
+  }
+
+  /** Minimally cleaned source — no invented meaning, rooms left intact. */
+  function renderMinimalFact(fact) {
+    var text = tidyPhrase(fact.sourceText);
+    if (!text) return "";
+    text = stripTrailingDanglingPreposition(text);
+    return ensureSentence(text);
+  }
+
+  function renderSettlementFact(fact) {
+    if (!hasFinancialSettlementContext(fact.sourceText)) return "";
+
+    var noun = financialSettlementNoun(fact.sourceText);
+    /* Unclear financial subject — do not invent "balance" / bare "Settled." */
+    if (!noun) return "";
+
+    var lead = roomLeadFromFact(fact);
+
+    if (fact.status === FACT_STATUS.done) {
+      return finishFactRender(lead, "The " + noun + " has been settled");
+    }
+
+    if (fact.status === FACT_STATUS.open) {
+      return finishFactRender(lead, "The " + noun + " remains unsettled");
+    }
+
+    return "";
+  }
+
+  function renderFollowUpFact(fact) {
+    var lead = roomLeadFromFact(fact);
+    var targetLabel = fact.ownerDept || departmentFromTarget(fact.actionTarget) || "the team";
+    var src = fact.sourceText;
+
+    /* Copy only — never mutate fact.sourceText. Pull trailing detail after the room ref. */
+    var detail = String(src)
+      .replace(/\bfollow[\s-]*up\s+with\s+[A-Za-z][A-Za-z\s]*?\s+on\b/gi, " ")
+      .replace(/\b(?:room|rm\.?|suite)\s*[#.]?\s*\d{1,4}[a-z]?\b/gi, " ")
+      .replace(/^\s*please\s+/i, " ")
+      .replace(/[.?!,;:]+$/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    var body;
+    if (detail && !/^(please|follow|with|on)$/i.test(detail)) {
+      body = "Please follow up with " + targetLabel + " regarding " + detail.charAt(0).toLowerCase() + detail.slice(1);
+    } else {
+      body = "Please follow up with " + targetLabel;
+    }
+
+    return finishFactRender(lead, body);
+  }
+
+  function renderRoomMoveRequestFact(fact) {
+    var dest = "";
+    (fact.details || []).forEach(function (detail) {
+      if (detail && detail.type === "destination_room") dest = detail.value;
+    });
+    if (!dest) dest = extractDestinationRoom(fact.sourceText, fact.rooms);
+
+    var sourceRooms = (fact.rooms || []).filter(function (room) {
+      return String(room).toUpperCase() !== String(dest || "").toUpperCase();
+    });
+    var lead = sourceRooms.length === 1
+      ? "Room " + sourceRooms[0]
+      : (sourceRooms.length > 1 ? "Rooms " + sourceRooms.join(", ") : "");
+
+    if (dest && lead) {
+      return finishFactRender(lead, "The guest has requested to move to Room " + dest);
+    }
+    if (dest) {
+      return ensureSentence("The guest has requested to move to Room " + dest);
+    }
+    return finishFactRender(lead || roomLeadFromFact(fact), "The guest has requested a room move");
+  }
+
+  /**
+   * Safe Phase 1 renderer for supported facts only.
+   * Returns "" when the fact should fall through to the legacy writer.
+   */
+  function renderFactPhase1(fact, options) {
+    if (!isPhase1SupportedFact(fact)) return "";
+
+    var src = fact.sourceText;
+    var rendered = "";
+
+    if (/\bsettled\b/i.test(src)) {
+      if (hasFinancialSettlementContext(src)) {
+        rendered = renderSettlementFact(fact);
+        if (rendered) return rendered;
+        /* Financial cue present but subject unclear — keep source meaning. */
+        return renderMinimalFact(fact);
+      }
+      /* Guest-status "settled" — preserve original wording, never payment rewrite. */
+      return renderMinimalFact(fact);
+    }
+
+    if (fact.actionVerb === "follow_up" && fact.actionTarget) {
+      rendered = renderFollowUpFact(fact);
+      if (rendered && !endsWithDanglingPreposition(rendered)) return rendered;
+      return renderMinimalFact(fact);
+    }
+
+    if (fact.subject === "room_move") {
+      rendered = renderRoomMoveRequestFact(fact);
+      if (rendered && !/\b(?:has been relocated|relocated to)\b/i.test(rendered)) {
+        return rendered;
+      }
+      return renderMinimalFact(fact);
+    }
+
+    return renderMinimalFact(fact);
   }
 
   function rewriteOperationalNote(rawText, options) {
     options = options || {};
+
+    /* Phase 1 fact path — supported cases only; legacy writer otherwise. */
+    var fact = extractOperationalFact(rawText, options);
+    if (isPhase1SupportedFact(fact)) {
+      var phase1Text = renderFactPhase1(fact, options);
+      if (phase1Text) {
+        return applyPreferences(phase1Text, options);
+      }
+    }
+
     var original = trimText(rawText);
     if (!original) return "";
 
@@ -994,7 +1654,7 @@
     } else if (detectRoomMove(normalized) || detectRoomMove(original)) {
       body = buildRoomMoveBody(normalized, rooms, options);
     } else if (detectIronRequest(normalized) || detectIronRequest(original)) {
-      body = buildIronBody();
+      body = buildIronBody(normalized);
     } else if (detectComplaint(normalized) && detectAcIssue(normalized)) {
       body = buildAcBody(normalized);
     } else if (detectComplaint(normalized) && (section === "guest" || !section)) {
@@ -1006,18 +1666,16 @@
     } else if (section === "inventory" || /\badapter/i.test(normalized)) {
       body = buildInventoryBody(normalized) || fallbackOperationalBody(normalized, room, options);
     } else if (section === "deliveries" || noteContains(normalized, ["package", "parcel", "delivery held"])) {
-      body = buildDeliveryBody(guestName);
+      body = buildDeliveryBody(normalized, guestName);
     } else if (section === "tasks") {
       body = buildTaskBody(normalized) || fallbackOperationalBody(normalized, room, options);
     } else if (section === "payments") {
       body = buildPaymentBody(normalized, options) || fallbackOperationalBody(normalized, room, options);
     } else if (section === "maintenance" || section === "urgent") {
       body = buildMaintenanceBody(normalized, section) || fallbackOperationalBody(normalized, room, options);
-    } else if (section === "lostproperty" || noteContains(normalized, ["lost property", "left behind", "found in"])) {
-      body = appendAction(
-        "Lost property has been logged" + (guestName ? " for " + guestName : ""),
-        "Please secure the item, update the lost property book, and contact the guest if details are available"
-      );
+    } else if (section === "lostproperty" || noteContains(normalized, ["lost property", "left behind", "found in"]) ||
+               /\bfound\b/i.test(normalized) && /\b(?:room|rm\.?|suite|lobby|corridor)\b/i.test(normalized)) {
+      body = buildLostPropertyBody(normalized, guestName);
     } else {
       body = buildInventoryBody(normalized) ||
         buildTaskBody(normalized) ||
@@ -1822,8 +2480,21 @@
     options = options || {};
     input = input || {};
     var analyzed = input.analyzed || (input.classified && input.classified._analyzed) || [];
-    var active = analyzed.filter(isActiveAnalyzedNote);
     var prefs = options.prefs || input.prefs || {};
+
+    /* Phase 2A: use structured facts when notes already carry them. */
+    var hasAttachedFacts = analyzed.some(function (note) {
+      return note && note.fact;
+    });
+    if (hasAttachedFacts) {
+      return summarizeFromFacts(analyzed, {
+        prefs: prefs,
+        detail: prefs.detail || options.detail,
+        terminologyMap: options.terminologyMap
+      });
+    }
+
+    var active = analyzed.filter(isActiveAnalyzedNote);
     var detail = prefs.detail || options.detail || "standard";
 
     var topicCounts = {};
@@ -1934,7 +2605,18 @@
     containsHandoverActionTemplate: containsHandoverActionTemplate,
     inventsCompletionStatus: inventsCompletionStatus,
     formatTime: formatTime,
-    formatMoneyAmount: formatMoneyAmount
+    formatMoneyAmount: formatMoneyAmount,
+
+    /* Phase 1 / 2A structured facts */
+    FACT_STATUS: FACT_STATUS,
+    extractOperationalFact: extractOperationalFact,
+    classifyFactStatus: classifyFactStatus,
+    isPhase1SupportedFact: isPhase1SupportedFact,
+    renderFactPhase1: renderFactPhase1,
+    mapFactStatusToItemStatus: mapFactStatusToItemStatus,
+    isFactUnresolved: isFactUnresolved,
+    isFactClosed: isFactClosed,
+    summarizeFromFacts: summarizeFromFacts
   };
 
   global.AiWritingEngine = Api;

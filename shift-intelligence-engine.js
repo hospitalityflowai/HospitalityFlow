@@ -518,6 +518,184 @@
     return "this shift";
   }
 
+  function ensureNoteFact(note) {
+    if (!note) return null;
+    if (note.fact) return note.fact;
+    if (global.AiWritingEngine && global.AiWritingEngine.extractOperationalFact) {
+      note.fact = global.AiWritingEngine.extractOperationalFact(note.original || "", {
+        rooms: note.rooms,
+        section: note.section,
+        isVip: note.isVip
+      });
+      return note.fact;
+    }
+    return null;
+  }
+
+  function isFactClosedForRecs(fact) {
+    if (!fact) return false;
+    if (global.AiWritingEngine && global.AiWritingEngine.isFactClosed) {
+      return global.AiWritingEngine.isFactClosed(fact);
+    }
+    return fact.status === "done" || fact.status === "confirmed";
+  }
+
+  function roomRefFromFact(fact, note) {
+    if (fact && fact.rooms && fact.rooms.length === 1) return "Room " + fact.rooms[0];
+    if (fact && fact.rooms && fact.rooms.length > 1) return "Rooms " + fact.rooms.join(", ");
+    return roomPhrase(note);
+  }
+
+  /**
+   * Build a recommendation strictly from structured fact fields + original sourceText.
+   * Returns null when facts are insufficient (omit rather than invent).
+   */
+  function recommendationFromFact(fact, note, departments, fallbackDept, shiftType) {
+    if (!fact || isFactClosedForRecs(fact)) return null;
+
+    var src = fact.sourceText || note.original || "";
+    var dept = fact.ownerDept || ownerDepartmentForIssue(note, departments, fallbackDept);
+    if (!dept) return null;
+
+    var roomRef = roomRefFromFact(fact, note);
+    var subject = fact.subject || "";
+    var verb = fact.actionVerb || "";
+    var priority = note.section === "urgent" || note.maintenancePriority === "Critical"
+      ? "urgent"
+      : (note.maintenancePriority === "High" || note.isVip || subject === "vip_arrival" ? "high" : "normal");
+
+    if (subject === "outstanding_balance" || subject === "payment" || subject === "invoice" ||
+        subject === "bill" || subject === "folio" || subject === "account" || subject === "charge" ||
+        verb === "settle") {
+      if (!roomRef && !/\b(balance|payment|folio|invoice|bill)\b/i.test(src)) return null;
+      return {
+        text: dept + " — Settle outstanding balance" + (roomRef ? " for " + roomRef : "") + " before departure.",
+        priority: priority === "urgent" ? "urgent" : "high",
+        department: resolveDepartment([dept, "Reception", "Front Office"], "Reception", departments)
+      };
+    }
+
+    if (subject === "maintenance" || (verb === "follow_up" && /maintenance/i.test(fact.actionTarget || dept))) {
+      if (!roomRef && !subject) return null;
+      var issueHint = "";
+      if (/leak|leaking/i.test(src)) issueHint = "shower leak";
+      else if (/pressure/i.test(src) && /shower/i.test(src)) issueHint = "shower pressure";
+      else if (/shower/i.test(src)) issueHint = "shower issue";
+      else if (/air con|a\/c|\bac\b|not cooling/i.test(src)) issueHint = "AC fault";
+      else if (/heating/i.test(src)) issueHint = "heating issue";
+      else if (/tv|remote/i.test(src)) issueHint = "TV/remote fault";
+      var maintNotInformed = /not yet informed|not informed|maintenance not|not yet notified/i.test(src);
+      var maintText = maintNotInformed
+        ? dept + " — Notify and inspect " + (roomRef || "the reported fault") +
+          (issueHint ? " (" + issueHint + ")" : "") + "."
+        : dept + " — Inspect " + (roomRef || "open fault") +
+          (issueHint ? " (" + issueHint + ")" : "") + ".";
+      return {
+        text: maintText,
+        priority: priority,
+        department: resolveDepartment([dept, "Maintenance", "Engineering"], "Maintenance", departments)
+      };
+    }
+
+    if (subject === "vip_arrival" || note.isVip) {
+      if (!roomRef && !/\bvip\b/i.test(src)) return null;
+      var pref = extractGuestPreference(src);
+      var vipText = dept + " — Prepare" + (roomRef ? " " + roomRef : "") +
+        " for VIP arrival";
+      if (pref) vipText += " (" + pref + ")";
+      vipText += ".";
+      return {
+        text: vipText,
+        priority: "high",
+        department: resolveDepartment([dept, "Reception", "Front Office", "Duty Manager"], "Reception", departments)
+      };
+    }
+
+    if (subject === "late_checkout") {
+      /* Confirmed late COs are closed; requested ones need confirmation — only if still open/requested. */
+      if (fact.status === "requested" || fact.status === "open" || fact.status === "unknown") {
+        return {
+          text: dept + " — Confirm late check-out" + (roomRef ? " for " + roomRef : "") +
+            " and advise Housekeeping of the release time.",
+          priority: "high",
+          department: resolveDepartment([dept, "Housekeeping", "Reception"], "Housekeeping", departments)
+        };
+      }
+      return null;
+    }
+
+    if (subject === "wake_up") {
+      if (fact.status === "confirmed" || fact.status === "done") return null;
+      var timeMatch = src.match(/\b(\d{1,2}[:.]\d{2})\b/);
+      return {
+        text: dept + " — Confirm" + (timeMatch ? " " + timeMatch[1].replace(".", ":") : "") +
+          " wake-up call" + (roomRef ? " for " + roomRef : "") + " is loaded.",
+        priority: "normal",
+        department: resolveDepartment([dept, "Reception", "Front Office"], "Reception", departments)
+      };
+    }
+
+    if (subject === "guest_request" || verb === "arrange") {
+      return {
+        text: dept + " — Arrange guest request" + (roomRef ? " for " + roomRef : "") +
+          " as recorded.",
+        priority: "normal",
+        department: resolveDepartment([dept, "Housekeeping", "Reception"], dept, departments)
+      };
+    }
+
+    if (subject === "delivery" || verb === "contact") {
+      return {
+        text: dept + " — Contact guest regarding held delivery" +
+          (roomRef ? " for " + roomRef : "") + ".",
+        priority: "normal",
+        department: resolveDepartment([dept, "Reception"], "Reception", departments)
+      };
+    }
+
+    if (subject === "room_move" && (fact.status === "requested" || verb)) {
+      var dest = "";
+      (fact.details || []).forEach(function (d) {
+        if (d && d.type === "destination_room") dest = d.value;
+      });
+      return {
+        text: dept + " — Action room move request" +
+          (roomRef ? " for " + roomRef : "") +
+          (dest ? " to Room " + dest : "") + ".",
+        priority: "high",
+        department: resolveDepartment([dept, "Reception", "Front Office"], "Reception", departments)
+      };
+    }
+
+    if (verb === "follow_up" && fact.actionTarget) {
+      var target = fact.ownerDept || departmentFromTargetSafe(fact.actionTarget);
+      return {
+        text: target + " — Follow up" + (roomRef ? " on " + roomRef : "") +
+          (subject && subject !== "follow_up" ? " regarding " + subject.replace(/_/g, " ") : "") + ".",
+        priority: priority,
+        department: resolveDepartment([target, dept], target || fallbackDept, departments)
+      };
+    }
+
+    /* Insufficient structured fields — omit rather than invent. */
+    return null;
+  }
+
+  function departmentFromTargetSafe(target) {
+    var t = String(target || "").toLowerCase();
+    if (t.indexOf("maintenance") !== -1) return "Maintenance";
+    if (t.indexOf("housekeeping") !== -1) return "Housekeeping";
+    if (t.indexOf("reception") !== -1) return "Reception";
+    if (t.indexOf("concierge") !== -1) return "Concierge";
+    return capitalizeWord(t.split(/\s+/)[0] || "Reception");
+  }
+
+  function capitalizeWord(str) {
+    var s = String(str || "");
+    if (!s) return "";
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
   function generateRecommendations(input, signals) {
     var classified = input.classified || {};
     var analyzed = (classified._analyzed || input.analyzedNotes || []).slice();
@@ -534,6 +712,16 @@
     var candidates = [];
     var seen = {};
     var seenIssue = {};
+    var closedRooms = {};
+
+    analyzed.forEach(function (note) {
+      var fact = ensureNoteFact(note);
+      if (fact && isFactClosedForRecs(fact) && fact.rooms) {
+        fact.rooms.forEach(function (room) {
+          closedRooms[String(room) + "|" + (fact.subject || "")] = true;
+        });
+      }
+    });
 
     function addCandidate(rec) {
       if (!rec || !rec.text) return;
@@ -548,131 +736,16 @@
 
     analyzed.forEach(function (note) {
       if (isResolvedNote(note.original)) return;
-      var line = note.original;
-      var roomRef = roomPhrase(note);
-      var issue = actionIssueLabel(note);
+      var fact = ensureNoteFact(note);
+      if (fact && isFactClosedForRecs(fact)) return;
 
-      if (maintenanceNeedsFollowUp(note)) {
-        var maintPriority = note.maintenancePriority === "Critical" ? "urgent"
-          : note.maintenancePriority === "High" ? "high" : "normal";
-        var ownerDept = resolveDepartment(["Maintenance", "Engineering"], "Maintenance", departments);
-        var maintNotInformed = noteContains(line, [
-          "not yet informed", "not informed", "maintenance not", "awaiting maintenance",
-          "needs informing", "not yet notified", "not notified yet"
-        ]);
-        addCandidate({
-          text: maintNotInformed
-            ? "Maintenance – Notify and inspect " + (roomRef || "the reported fault") +
-              " (" + issue + "); update Reception once resolved."
-            : "Maintenance – Inspect " + (roomRef || "open fault") +
-              " (" + issue + ") and update Reception once resolved.",
-          priority: maintPriority,
-          department: ownerDept
-        });
+      var fromFact = recommendationFromFact(fact, note, departments, fallbackDept, shiftType);
+      if (fromFact) {
+        addCandidate(fromFact);
         return;
       }
 
-      if (note.isVip || (note.section === "guest" && detectVip(line))) {
-        addCandidate({
-          text: vipActionText(note, shiftType, brainContext),
-          priority: "high",
-          department: resolveDepartment(["Duty Manager", "Front Office", "Reception"], "Front Office", departments)
-        });
-        return;
-      }
-
-      if (noteContains(line, ["late checkout", "late check-out", "late check out", "checkout extension", "extended checkout"])) {
-        addCandidate({
-          text: "Housekeeping – Hold " + (roomRef || "late check-out room") +
-            " from early clean and confirm release time with Reception.",
-          priority: "high",
-          department: resolveDepartment(["Housekeeping"], "Housekeeping", departments)
-        });
-        return;
-      }
-
-      if (noteContains(line, ["housekeeping"]) &&
-          noteContains(line, ["waiting", "wait for", "waiting for", "held", "release", "released", "dirty"])) {
-        addCandidate({
-          text: "Housekeeping — prioritise " + (roomRef || "released room") + " as soon as status allows.",
-          priority: "high",
-          department: resolveDepartment(["Housekeeping"], "Housekeeping", departments)
-        });
-        return;
-      }
-
-      if (note.section === "payments" || isPaymentIssueLine(line)) {
-        addCandidate({
-          text: paymentActionText(note, shiftType),
-          priority: note.section === "urgent" ? "urgent" : "high",
-          department: resolveDepartment(["Front Office", "Reception", "Duty Manager"], "Reception", departments)
-        });
-        return;
-      }
-
-      if (noteContains(line, ["complaint", "complain", "unhappy", "dissatisfied", "escalat"]) &&
-          noteContains(line, ["guest", "room"]) && note.section !== "general") {
-        addCandidate({
-          text: "Duty Manager — review " + (roomRef ? roomRef + " " : "") + "guest complaint and agree recovery " +
-            nextShiftPhrase(shiftType) + ".",
-          priority: note.section === "urgent" ? "urgent" : "high",
-          department: resolveDepartment(["Duty Manager", "Front Office", "Management"], "Duty Manager", departments)
-        });
-        return;
-      }
-
-      if (noteContains(line, ["wake-up call", "wakeup call", "wake up call"])) {
-        var timeMatch = line.match(/\b(\d{1,2}[:.]\d{2})\b/);
-        addCandidate({
-          text: "Reception — confirm " + (timeMatch ? timeMatch[1].replace(".", ":") + " " : "") +
-            "wake-up call" + (roomRef ? " for " + roomRef : "") + " is loaded.",
-          priority: "normal",
-          department: resolveDepartment(["Front Office", "Reception"], "Reception", departments)
-        });
-        return;
-      }
-
-      if (noteContains(line, ["airport transfer", "transfer", "pick up", "pickup", "taxi", "car service"]) &&
-          !noteContains(line, ["already booked", "booked and confirmed", "completed"])) {
-        addCandidate({
-          text: "Concierge — confirm transfer arrangements" + (roomRef ? " for " + roomRef : "") + " " +
-            nextShiftPhrase(shiftType) + ".",
-          priority: "normal",
-          department: resolveDepartment(["Concierge", "Front Office", "Reception"], "Front Office", departments)
-        });
-        return;
-      }
-
-      if (noteContains(line, ["lost property", "lost item", "left item", "missing item"])) {
-        addCandidate({
-          text: "Reception — secure lost property" + (roomRef ? " from " + roomRef : "") + " and log per hotel procedure.",
-          priority: "normal",
-          department: resolveDepartment(["Front Office", "Reception", "Duty Manager"], "Front Office", departments)
-        });
-        return;
-      }
-
-      if (noteContains(line, ["physical key", "key card", "keycard", "room key", "master key"]) &&
-          noteContains(line, ["lost", "missing", "not working", "faulty", "replacement", "issue"])) {
-        addCandidate({
-          text: "Reception — resolve key issue" + (roomRef ? " for " + roomRef : "") + " before guest inconvenience escalates.",
-          priority: "high",
-          department: resolveDepartment(["Front Office", "Maintenance", "Reception"], "Front Office", departments)
-        });
-        return;
-      }
-
-      if ((note.isFollowUp || note.section === "tasks" || note.section === "urgent") &&
-          noteContains(line, ["follow up", "follow-up", "outstanding", "pending", "must", "need to", "ensure"])) {
-        if (note.section === "general" && !note.isFollowUp) return;
-        var taskOwner = ownerDepartmentForIssue(note, departments, fallbackDept);
-        addCandidate({
-          text: taskOwner + " — complete " + issue + (roomRef ? " for " + roomRef : "") +
-            " and confirm " + nextShiftPhrase(shiftType) + ".",
-          priority: note.section === "urgent" ? "urgent" : "normal",
-          department: taskOwner
-        });
-      }
+      /* Phase 2A: do not invent from rewritten display or legacy templates when facts are thin. */
     });
 
     if (global.HotelProfileOperational && brainContext) {
@@ -683,10 +756,18 @@
       );
       (okMatched.matchedActions || []).forEach(function (action) {
         if (!action || !action.followUpInstruction) return;
-        /* VIP note recommendations already enrich with Hotel Brain VIP guidance — avoid duplicate lines. */
         if (/vip/i.test(action.category || "") || /vip/i.test(action.title || "")) return;
+        var actionText = action.actionText || action.followUpInstruction;
+        /* Skip brain actions that chase closed financial/settlement facts. */
+        var contradictsClosed = analyzed.some(function (note) {
+          var fact = note.fact;
+          if (!fact || !isFactClosedForRecs(fact)) return false;
+          if (!/settled|balance|payment/i.test(fact.subject || fact.sourceText || "")) return false;
+          return /settle|balance|payment|outstanding/i.test(actionText);
+        });
+        if (contradictsClosed) return;
         addCandidate({
-          text: action.actionText || action.followUpInstruction,
+          text: actionText,
           priority: action.priority || "normal",
           department: resolveDepartment([action.department], fallbackDept, departments)
         });
@@ -694,7 +775,12 @@
       global.HotelProfileOperational.getRoomAttributeReminders(
         brainContext,
         input.rawNotesText || ""
-      ).forEach(addCandidate);
+      ).forEach(function (rec) {
+        if (!rec || !rec.text) return;
+        var roomHit = String(rec.text).match(/\broom\s+(\d+[a-z]?)/i);
+        if (roomHit && closedRooms[roomHit[1] + "|outstanding_balance"]) return;
+        addCandidate(rec);
+      });
     }
 
     candidates.sort(function (a, b) {
