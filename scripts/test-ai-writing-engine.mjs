@@ -84,8 +84,8 @@ assertEqual(
 );
 assertEqual(
   Engine.rewriteNote("room 31 wants extend stay speak morning"),
-  "Room 31 – The guest has requested to extend their stay. Please follow up with the guest in the morning, confirm availability, and update the reservation if the extension is agreed.",
-  "extend stay speak morning"
+  "Room 31 – The guest has requested to extend their stay. Follow-up in the morning is noted.",
+  "extend stay speak morning (no invented availability/reservation)"
 );
 assertEqual(
   Engine.rewriteNote("room 1 moving to 51 upgrade paid 50 per extra per night"),
@@ -94,22 +94,28 @@ assertEqual(
 );
 assertEqual(
   Engine.rewriteNote("11 iron board with ireon"),
-  "Room 11 – The guest has requested an iron and ironing board. Please arrange delivery to the room and confirm with the guest once provided.",
-  "iron board with spelling fix"
+  "Room 11 – Iron and ironing board requested.",
+  "iron board with spelling fix (no invented delivery)"
 );
 assertEqual(
   Engine.rewriteNote("guest upset ac"),
-  "The guest has reported an air-conditioning issue and is unhappy with the situation. Please arrange for Maintenance to attend, follow up with the guest to confirm the issue has been resolved, and record the outcome.",
-  "guest upset ac"
+  "The guest has reported an air-conditioning issue and is unhappy with the situation.",
+  "guest upset ac (no invented Maintenance chase)"
 );
 
-console.log("\nActionable Duty Manager voice (templates not yet Phase-3A hardened)");
+console.log("\nPhase 3B — remaining templates stay factual (no invented Please chase)");
 [
   "room 31 wants extend stay speak morning",
   "11 iron board with ireon",
-  "guest upset ac"
+  "guest upset ac",
+  "Room 12 AC not cooling.",
+  "Room 9 DND."
 ].forEach(function (note) {
-  assertActionable(Engine.rewriteNote(note), note);
+  const out = Engine.rewriteNote(note);
+  assert(
+    !/\bPlease\b/.test(out) || /\bfollow-up in the morning is noted\b/i.test(out),
+    "no invented Please chase for: " + note
+  );
 });
 
 console.log("\nPolicy / knowledge rewrites");
@@ -142,11 +148,11 @@ assertIncludes(summary, "inventory request", "summary mentions inventory");
 console.log("\nSafety: preserve protected facts");
 const moneyNote = Engine.rewriteNote("Room 118 card declined, £320 balance on folio", { section: "payments" });
 assertIncludes(moneyNote, "£320", "preserves monetary amount");
-assertActionable(moneyNote, "payment note");
+assert(!/before departure|alternative payment/i.test(moneyNote), "payment note does not invent departure/alt method");
 const named = Engine.rewriteNote("VIP Mr Henderson arriving 14:00", { section: "vip", isVip: true });
 assertIncludes(named, "Mr Henderson", "preserves guest name");
 assertIncludes(named, "14:00", "preserves arrival time");
-assertActionable(named, "VIP note");
+assert(!/review the reservation|Housekeeping are briefed/i.test(named), "VIP note does not invent briefing");
 
 console.log("\nShared polish + preferences");
 const polished = Engine.polish("Please authorize the refund at the center", {
@@ -356,6 +362,95 @@ console.log("\nPhase 3A — critical templates must not invent actions");
     "unmatched note preserves factual meaning");
   assertNoInventedOps(unmatched, unmatchedSrc, "unmatched operational note");
   assert(!/Please note:/i.test(unmatched), "unmatched note must not use Please note salvage");
+})();
+
+console.log("\nPhase 3B — remaining legacy templates must not invent actions");
+(function () {
+  function assertNoUnsupportedActions(text, source, label) {
+    const out = String(text || "");
+    const src = String(source || "").toLowerCase();
+    const banned = [
+      { re: /contact\s+(?:the\s+)?guest/i, key: "contact the guest" },
+      { re: /chase\s+maintenance/i, key: "chase Maintenance" },
+      { re: /update\s+reception/i, key: "update Reception" },
+      { re: /brief(?:ed)?\s+(?:reception\s+and\s+)?housekeeping|housekeeping\s+are\s+briefed/i, key: "brief Housekeeping" },
+      { re: /confirm\s+with\s+the\s+guest/i, key: "confirm with the guest" },
+      { re: /record\s+the\s+outcome/i, key: "record the outcome" },
+      { re: /update\s+the\s+pms|pms\s+reflects/i, key: "update the PMS" },
+      { re: /settle\s+(?:the\s+)?(?:account|balance)\s+before\s+departure|before\s+departure/i, key: "settle before departure" },
+      { re: /arrange\s+delivery/i, key: "arrange delivery" },
+      { re: /inventory\s+log/i, key: "update the inventory log" },
+      { re: /secure\s+(?:the\s+)?(?:item|lost\s+property)/i, key: "secure lost property" },
+      { re: /\bescalate\b/i, key: "escalate" },
+      { re: /\bcompensation\b/i, key: "compensation" },
+      { re: /\bescort\s+the\s+guest\b/i, key: "escort the guest" }
+    ];
+    banned.forEach(function (c) {
+      if (src.indexOf(c.key.toLowerCase()) !== -1) return;
+      /* allow "before departure" only when source mentions departure/checkout */
+      if (c.key === "settle before departure" &&
+          /departure|checkout|check-out|checking out/i.test(src)) {
+        return;
+      }
+      assert(!c.re.test(out), label + " must not invent `" + c.key + "`");
+    });
+  }
+
+  const acSrc = "Room 12 AC not cooling.";
+  const ac = Engine.rewriteNote(acSrc, { section: "maintenance" });
+  assertIncludes(ac, "12", "AC retains Room 12");
+  assert(/\bair conditioning is not cooling\b/i.test(ac), "AC factual not-cooling status");
+  assertNoUnsupportedActions(ac, acSrc, "AC issue");
+
+  const extSrc = "Room 14 wants to extend for one night.";
+  const ext = Engine.rewriteNote(extSrc);
+  assertIncludes(ext, "14", "extend stay retains Room 14");
+  assert(/\bone-night stay extension\b/i.test(ext), "extend stay one-night request");
+  assertNoUnsupportedActions(ext, extSrc, "stay-extension request");
+
+  const ironSrc = "Room 11 needs an iron and ironing board.";
+  const iron = Engine.rewriteNote(ironSrc);
+  assertIncludes(iron, "11", "iron retains Room 11");
+  assert(/\biron and ironing board requested\b/i.test(iron), "iron request factual");
+  assertNoUnsupportedActions(iron, ironSrc, "iron request");
+
+  const vipSrc = "VIP Mr Henderson arriving at 14:00 in Room 22.";
+  const vip = Engine.rewriteNote(vipSrc, { section: "vip", isVip: true });
+  assertIncludes(vip, "22", "VIP retains Room 22");
+  assertIncludes(vip, "Mr Henderson", "VIP preserves name");
+  assertIncludes(vip, "14:00", "VIP preserves time");
+  assertNoUnsupportedActions(vip, vipSrc, "VIP arrival with time");
+
+  const balSrc = "Room 14 has an outstanding balance of £120.";
+  const bal = Engine.rewriteNote(balSrc, { section: "payments" });
+  assertIncludes(bal, "14", "balance retains Room 14");
+  assertIncludes(bal, "£120", "balance preserves amount");
+  assert(/\boutstanding balance\b/i.test(bal), "open balance factual");
+  assertNoUnsupportedActions(bal, balSrc, "open balance with amount");
+
+  const pkgSrc = "Package for Room 18 is held at Reception.";
+  const pkg = Engine.rewriteNote(pkgSrc, { section: "deliveries" });
+  assertIncludes(pkg, "18", "package retains Room 18");
+  assert(/\bheld at Reception\b/i.test(pkg), "held package factual");
+  assertNoUnsupportedActions(pkg, pkgSrc, "held package");
+
+  const adapterSrc = "Room 7 has an adapter.";
+  const adapter = Engine.rewriteNote(adapterSrc, { section: "inventory" });
+  assertIncludes(adapter, "7", "adapter retains Room 7");
+  assert(/\badapter issued\b/i.test(adapter), "adapter issued factual");
+  assertNoUnsupportedActions(adapter, adapterSrc, "adapter issued");
+
+  const dndSrc = "Room 9 DND.";
+  const dnd = Engine.rewriteNote(dndSrc, { section: "tasks" });
+  assertIncludes(dnd, "9", "DND retains Room 9");
+  assert(/\bDo Not Disturb is active\b/i.test(dnd), "DND status factual");
+  assertNoUnsupportedActions(dnd, dndSrc, "DND status");
+
+  const lostSrc = "Watch found in Room 16.";
+  const lost = Engine.rewriteNote(lostSrc, { section: "lostproperty" });
+  assertIncludes(lost, "16", "lost property retains Room 16");
+  assert(/\bwatch found\b/i.test(lost), "lost property found factual");
+  assertNoUnsupportedActions(lost, lostSrc, "lost property found");
 })();
 
 console.log("\n" + passed + " passed, " + failed + " failed\n");

@@ -674,14 +674,29 @@
   }
 
   function buildExtendStayBody(normalized) {
-    var when = /morning|am\b|speak|call|follow/i.test(normalized)
-      ? "in the morning"
-      : "as soon as practical";
-    return appendAction(
-      "The guest has requested to extend their stay",
-      "Please follow up with the guest " + when +
-        ", confirm availability, and update the reservation if the extension is agreed"
-    );
+    /* Phase 3B: extension request only — morning/availability/reservation only if stated. */
+    var status;
+    if (/\b(?:one|1)\s+night\b/i.test(normalized)) {
+      status = "The guest has requested a one-night stay extension";
+    } else {
+      var nightsMatch = normalized.match(/\b(\d+)\s+nights?\b/i);
+      if (nightsMatch) {
+        status = "The guest has requested a " + nightsMatch[1] + "-night stay extension";
+      } else {
+        status = "The guest has requested to extend their stay";
+      }
+    }
+    if (/speak\s+morning|call\s+morning|follow[\s-]*up\s+(?:in\s+)?(?:the\s+)?morning|morning\s+follow/i.test(normalized) ||
+        (/\bmorning\b/i.test(normalized) && noteContains(normalized, ["speak", "call", "follow"]))) {
+      status += ". Follow-up in the morning is noted";
+    }
+    if (/\bavailability\b/i.test(normalized) && noteContains(normalized, ["confirm", "check", "verify"])) {
+      status += ". Availability confirmation noted";
+    }
+    if (/update\s+(?:the\s+)?reservation|reservation\s+update/i.test(normalized)) {
+      status += ". Reservation update noted";
+    }
+    return status;
   }
 
   function buildRoomMoveBody(normalized, rooms, options) {
@@ -718,41 +733,43 @@
     return status;
   }
 
-  function buildIronBody() {
-    return appendAction(
-      "The guest has requested an iron and ironing board",
-      "Please arrange delivery to the room and confirm with the guest once provided"
-    );
+  function buildIronBody(normalized) {
+    /* Phase 3B: request status only — no invented delivery/confirmation. */
+    var text = normalized || "";
+    if (/\biron(?:ing)?\s+board\b/i.test(text) || (/\biron\b/i.test(text) && /\bboard\b/i.test(text))) {
+      return "Iron and ironing board requested";
+    }
+    return "Iron requested";
   }
 
   function buildAcBody(normalized) {
+    /* Phase 3B: AC status only — no invented Maintenance chase or guest follow-up. */
+    var status;
     if (detectComplaint(normalized)) {
-      return appendAction(
-        "The guest has reported an air-conditioning issue and is unhappy with the situation",
-        "Please arrange for Maintenance to attend, follow up with the guest to confirm the issue has been resolved, and record the outcome"
-      );
-    }
-    if (noteContains(normalized, ["not cooling", "broken", "not working", "faulty"])) {
-      var status = "Air conditioning is not cooling correctly and requires inspection";
-      if (noteContains(normalized, ["informed", "eta", "engineer", "not attended"])) {
-        status += ". Maintenance has been informed but has not yet completed the attendance";
+      if (noteContains(normalized, ["not cooling", "broken", "not working", "faulty"])) {
+        status = "Air conditioning is not cooling and the guest is unhappy with the situation";
+      } else {
+        status = "The guest has reported an air-conditioning issue and is unhappy with the situation";
       }
-      return appendAction(
-        status,
-        "Please chase Maintenance for an update and follow up with the guest once resolved"
-      );
+    } else if (noteContains(normalized, ["not cooling", "broken", "not working", "faulty"])) {
+      status = "Air conditioning is not cooling";
+    } else {
+      status = "An air-conditioning issue has been reported";
     }
-    return appendAction(
-      "An air-conditioning issue has been reported",
-      "Please arrange for Maintenance to attend and follow up with the guest to confirm the issue has been resolved"
-    );
+    if (noteContains(normalized, ["maintenance", "engineer"]) &&
+        noteContains(normalized, ["informed", "notified", "advised"])) {
+      status += ". Maintenance has been informed";
+      if (noteContains(normalized, ["not attended", "not yet", "awaiting", "eta"])) {
+        status += " but attendance is still outstanding";
+      }
+    }
+    return status;
   }
 
   function buildComplaintBody(normalized) {
-    /* Phase 3A: state the complaint only — do not invent contact/escalate/compensation. */
+    /* Phase 3A/3B: state the complaint only — do not invent contact/escalate/compensation. */
     if (detectAcIssue(normalized)) {
-      return "The guest has reported an air-conditioning issue" +
-        (detectComplaint(normalized) ? " and is unhappy with the situation" : "");
+      return buildAcBody(normalized);
     }
     var topic = "";
     if (noteContains(normalized, ["noise"])) topic = " regarding noise";
@@ -763,35 +780,32 @@
   }
 
   function buildInventoryBody(normalized) {
+    /* Phase 3B: inventory/request status only — no invented log/delivery/collection. */
     if (/\badapter/i.test(normalized)) {
-      if (noteContains(normalized, ["outstanding", "still", "issued", "not return", "not returned"])) {
-        return appendAction(
-          "Loan adapter(s) issued to the guest remain outstanding",
-          "Please collect the adapter(s) before departure and update the inventory log"
-        );
+      if (noteContains(normalized, ["not return", "not returned", "outstanding", "still"])) {
+        return "Loan adapter(s) remain outstanding";
       }
-      return appendAction(
-        "The guest has requested a loan adapter",
-        "Please issue the adapter, record it in the inventory log, and confirm delivery with the guest"
-      );
+      if (noteContains(normalized, ["request", "requested", "needs", "need", "wants", "want"])) {
+        return "Adapter requested";
+      }
+      if (noteContains(normalized, ["issued", "given", "provided"]) ||
+          /\bhas\s+(?:an?\s+)?adapter/i.test(normalized)) {
+        return "Adapter issued";
+      }
+      return "Adapter noted";
     }
-    if (detectIronRequest(normalized)) return buildIronBody();
+    if (detectIronRequest(normalized)) return buildIronBody(normalized);
     if (noteContains(normalized, ["pillow"])) {
-      return appendAction(
-        "Extra pillows have been requested and remain outstanding",
-        "Please arrange delivery with Housekeeping and confirm once provided"
-      );
+      return "Extra pillows requested";
     }
     if (noteContains(normalized, ["towel"])) {
-      return appendAction(
-        "Additional towels have been requested",
-        "Please arrange delivery with Housekeeping and confirm once provided"
-      );
+      return "Additional towels requested";
     }
     return "";
   }
 
   function buildVipBody(normalized, original, guestName, prefs) {
+    /* Phase 3B: VIP facts only — no invented reservation review or department briefing. */
     var status = "VIP" + (guestName ? " " + guestName : " guest") +
       (noteContains(normalized, ["arriv"]) ? " is arriving" : " is noted for this shift");
     var timeMatch = original.match(/\b(\d{1,2}[:.]\d{2}|\d{1,2}\s*(?:am|pm))\b/i) ||
@@ -804,42 +818,45 @@
     if (noteContains(normalized, ["water"])) amenityBits.push("extra water");
     if (noteContains(normalized, ["quiet"])) amenityBits.push("a quiet room");
     if (amenityBits.length) {
-      status += ". Welcome amenities to prepare: " + joinNatural(amenityBits);
+      status += ". Welcome amenities noted: " + joinNatural(amenityBits);
     }
 
-    return appendAction(
-      status,
-      "Please review the reservation before arrival and ensure Reception and Housekeeping are briefed"
-    );
+    return status;
   }
 
   function buildPaymentBody(normalized, options) {
+    /* Phase 3B: payment status only — no invented settle/departure/alt-method advice. */
     var amount = extractPrimaryAmount(normalized, options && options.currency);
     var amountBit = amount ? " of " + amount : "";
+    var departureBit = noteContains(normalized, [
+      "departure", "departing", "checkout", "check-out", "check out", "checking out"
+    ]) ? " before departure" : "";
+
     if (noteContains(normalized, ["declined"])) {
-      return appendAction(
-        "The guest's card was declined and an outstanding balance" + amountBit + " remains on the folio",
-        "Please settle the balance before departure and offer an alternative payment method if required"
-      );
+      var declined = "The guest's card was declined and an outstanding balance" +
+        amountBit + " remains on the folio";
+      if (departureBit) declined += departureBit;
+      if (noteContains(normalized, ["alternative", "another card", "different card", "other payment"])) {
+        declined += ". Alternative payment method noted";
+      }
+      return declined;
     }
-    if (noteContains(normalized, ["outstanding", "balance", "folio"])) {
-      return appendAction(
-        "An outstanding balance" + amountBit + " remains on the guest folio",
-        "Please settle the account before departure"
-      );
+    if (noteContains(normalized, ["outstanding", "balance", "folio", "account"])) {
+      var accountWord = noteContains(normalized, ["folio"]) ? "folio"
+        : "account";
+      var openBal = "Outstanding balance" + amountBit + " remains on the " + accountWord;
+      if (departureBit) openBal += departureBit;
+      return openBal;
     }
     if (noteContains(normalized, ["minibar"])) {
-      return appendAction(
-        "A minibar charge" + amountBit + " requires review" +
-          (noteContains(normalized, ["dispute", "not consumed"]) ? " following a guest dispute" : ""),
-        "Please review the charge with the guest and adjust the folio if appropriate"
-      );
+      var mini = "A minibar charge" + amountBit + " requires review";
+      if (noteContains(normalized, ["dispute", "not consumed"])) {
+        mini += " following a guest dispute";
+      }
+      return mini;
     }
     if (noteContains(normalized, ["ota", "virtual card", "booking.com", "expedia"])) {
-      return appendAction(
-        "An OTA or channel payment" + amountBit + " still needs to be processed",
-        "Please complete the payment posting and confirm the folio is clear"
-      );
+      return "An OTA or channel payment" + amountBit + " still needs to be processed";
     }
     return "";
   }
@@ -880,33 +897,57 @@
     return "";
   }
 
-  function buildDeliveryBody(guestName) {
-    return appendAction(
-      "A package is being held at Reception" + (guestName ? " for " + guestName : ""),
-      "Please contact the guest to arrange collection and record when it has been handed over"
-    );
+  function buildDeliveryBody(normalized, guestName) {
+    /* Phase 3B: held package status only — no invented contact/recording. */
+    var status = "Package is being held at Reception";
+    if (guestName) status += " for " + guestName;
+    if (noteContains(normalized || "", ["contact", "call", "notify", "advise", "phone"])) {
+      status += ". Guest contact noted";
+    }
+    if (noteContains(normalized || "", ["handed over", "collected", "collection recorded", "signed for"])) {
+      status += ". Collection/handover noted";
+    }
+    return status;
   }
 
   function buildTaskBody(normalized) {
-    if (noteContains(normalized, ["dnd"])) {
-      return appendAction(
-        "The room is on Do Not Disturb",
-        "Please hold cleaning until the DND is released and check again later in the shift"
-      );
+    /* Phase 3B: task/DND status only — no invented cleaning holds or HK completion. */
+    if (noteContains(normalized, ["dnd", "do not disturb"])) {
+      return "Do Not Disturb is active";
     }
     if (noteContains(normalized, ["pillow"])) {
-      return appendAction(
-        "Extra pillows have been requested and remain outstanding",
-        "Please arrange delivery with Housekeeping and confirm once provided"
-      );
+      return "Extra pillows requested";
     }
     if (noteContains(normalized, ["turndown"])) {
-      return appendAction(
-        "Turndown service has been requested",
-        "Please ensure Housekeeping complete turndown at the agreed time"
-      );
+      return "Turndown service has been requested";
     }
     return "";
+  }
+
+  function buildLostPropertyBody(normalized, guestName) {
+    /* Phase 3B: found/lost status only — no invented secure/log/contact. */
+    var detail = String(normalized || "")
+      .replace(/\b(?:room|rm\.?|suite)\s*[#.]?\s*\d{1,4}[a-z]?\b/gi, " ")
+      .replace(/\blost\s+property\b/gi, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    detail = tidyPhrase(detail).replace(/\b(?:on|with|for|to|at|from|in)\.?$/i, "").trim();
+
+    if (/\bfound\b/i.test(normalized)) {
+      if (detail && !/^found\b/i.test(detail)) {
+        return capitalize(detail);
+      }
+      return "Lost property found";
+    }
+    if (/\bleft\s+behind\b/i.test(normalized) || /\blost\b/i.test(normalized)) {
+      return detail ? capitalize(detail) : "Lost property noted";
+    }
+    var status = "Lost property noted";
+    if (guestName) status += " for " + guestName;
+    if (noteContains(normalized, ["secure", "secured", "safe"])) status += ". Item secured as noted";
+    if (noteContains(normalized, ["contact", "call", "notify"])) status += ". Guest contact noted";
+    if (noteContains(normalized, ["logged", "log", "book"])) status += ". Logged as noted";
+    return status;
   }
 
   function fallbackOperationalBody(normalized, room, options) {
@@ -929,16 +970,16 @@
   function maybeAddFollowUp(body, normalized, options) {
     if (!body) return body;
     if (options && options.addFollowUp === false) return body;
+    if (/\bfollow[\s-]*up\b/i.test(body)) return body;
     if (/\bplease\b/i.test(body) && /\b(follow up|arrange|confirm|ensure|advise|contact|settle|chase|collect|issue|update)\b/i.test(body)) {
       return body;
     }
 
-    /* Phase 3A companion: only append follow-up when the source already asks for it.
-       Do not invent chase lines from complaint/AC detectors alone. */
-    var sourceAsksFollowUp = noteContains(normalized, [
-      "follow up", "follow-up", "speak morning", "call morning",
-      "pending", "outstanding", "still need"
-    ]);
+    /* Only append follow-up when the source already asks for it — not from balance/status words alone. */
+    var sourceAsksFollowUp =
+      /\bfollow[\s-]*up\b/i.test(normalized) ||
+      noteContains(normalized, ["speak morning", "call morning", "still need"]) ||
+      (/\bpending\b/i.test(normalized) && !/\boutstanding\s+balance\b/i.test(normalized));
     if (!sourceAsksFollowUp) return body;
 
     if (/morning/i.test(normalized)) {
@@ -1613,7 +1654,7 @@
     } else if (detectRoomMove(normalized) || detectRoomMove(original)) {
       body = buildRoomMoveBody(normalized, rooms, options);
     } else if (detectIronRequest(normalized) || detectIronRequest(original)) {
-      body = buildIronBody();
+      body = buildIronBody(normalized);
     } else if (detectComplaint(normalized) && detectAcIssue(normalized)) {
       body = buildAcBody(normalized);
     } else if (detectComplaint(normalized) && (section === "guest" || !section)) {
@@ -1625,18 +1666,16 @@
     } else if (section === "inventory" || /\badapter/i.test(normalized)) {
       body = buildInventoryBody(normalized) || fallbackOperationalBody(normalized, room, options);
     } else if (section === "deliveries" || noteContains(normalized, ["package", "parcel", "delivery held"])) {
-      body = buildDeliveryBody(guestName);
+      body = buildDeliveryBody(normalized, guestName);
     } else if (section === "tasks") {
       body = buildTaskBody(normalized) || fallbackOperationalBody(normalized, room, options);
     } else if (section === "payments") {
       body = buildPaymentBody(normalized, options) || fallbackOperationalBody(normalized, room, options);
     } else if (section === "maintenance" || section === "urgent") {
       body = buildMaintenanceBody(normalized, section) || fallbackOperationalBody(normalized, room, options);
-    } else if (section === "lostproperty" || noteContains(normalized, ["lost property", "left behind", "found in"])) {
-      body = appendAction(
-        "Lost property has been logged" + (guestName ? " for " + guestName : ""),
-        "Please secure the item, update the lost property book, and contact the guest if details are available"
-      );
+    } else if (section === "lostproperty" || noteContains(normalized, ["lost property", "left behind", "found in"]) ||
+               /\bfound\b/i.test(normalized) && /\b(?:room|rm\.?|suite|lobby|corridor)\b/i.test(normalized)) {
+      body = buildLostPropertyBody(normalized, guestName);
     } else {
       body = buildInventoryBody(normalized) ||
         buildTaskBody(normalized) ||
