@@ -141,8 +141,8 @@ assertEqual(
   "early check-in full operations-manual rewrite"
 );
 
-console.log("\nExplain Briefly");
-assert(typeof Engine.explainHotelBrainBriefly === "function", "explainHotelBrainBriefly exported");
+console.log("\nExplain Briefly (engine retained; UI removed)");
+assert(typeof Engine.explainHotelBrainBriefly === "function", "explainHotelBrainBriefly still exported");
 const earlyBrief = Engine.explainHotelBrainBriefly(earlyBefore);
 assertIncludes(earlyBrief, "not guaranteed", "brief early check-in: not guaranteed");
 assertIncludes(earlyBrief, "night before", "brief early check-in: night before");
@@ -236,8 +236,13 @@ assert(profileHtml.includes('id="devSamplePanel"'), "sample panel exists in mark
 assert(profileHtml.includes("dev-only-panel"), "dev panels use gated class");
 assert(profileHtml.includes("isHotelBrainDevToolsEnabled"), "visibility gate is wired");
 assert(profileHtml.includes("Improve Writing"), "Improve Writing UI present");
-assert(profileHtml.includes("Explain Briefly"), "Explain Briefly UI present");
-assert(profileHtml.includes("explainHotelBrainBriefly"), "Explain Briefly engine wired");
+assert(!profileHtml.includes("Explain Briefly"), "Explain Briefly UI removed");
+assert(!/ensureExplainWritingButton/.test(profileHtml), "Explain Briefly UI helper removed");
+const knowledgeJs = fs.readFileSync(path.join(ROOT, "hotel-profile-knowledge.js"), "utf8");
+assert(knowledgeJs.includes("Knowledge Library"), "Optional Modules renamed to Knowledge Library");
+assert(knowledgeJs.includes("getSectionProgress"), "section progress helper present");
+assert(knowledgeJs.includes("nav-progress"), "nav progress marker present");
+assert(!knowledgeJs.includes("Optional Modules"), "Optional Modules label removed");
 assert(profileHtml.includes("isAlreadyHotelBrainProfessional"), "professional gate wired for no-improvements");
 assert(profileHtml.includes("Set how Hospitality Flow should write, prioritise and interpret"),
   "AI instructions helper text present");
