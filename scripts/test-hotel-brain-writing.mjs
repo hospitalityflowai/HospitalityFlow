@@ -1,5 +1,5 @@
 /**
- * Hotel Brain writing improvement + Advanced Settings visibility tests.
+ * Hotel Brain writing improvement + Settings visibility tests.
  * Run: node scripts/test-hotel-brain-writing.mjs
  */
 import fs from "fs";
@@ -239,10 +239,27 @@ assert(profileHtml.includes("Improve Writing"), "Improve Writing UI present");
 assert(!profileHtml.includes("Explain Briefly"), "Explain Briefly UI removed");
 assert(!/ensureExplainWritingButton/.test(profileHtml), "Explain Briefly UI helper removed");
 const knowledgeJs = fs.readFileSync(path.join(ROOT, "hotel-profile-knowledge.js"), "utf8");
-assert(knowledgeJs.includes("Knowledge Library"), "Optional Modules renamed to Knowledge Library");
-assert(knowledgeJs.includes("getSectionProgress"), "section progress helper present");
-assert(knowledgeJs.includes("nav-progress"), "nav progress marker present");
+assert(knowledgeJs.includes("Knowledge"), "Knowledge nav group present");
+assert(knowledgeJs.includes("Core Setup"), "Core Setup nav group present");
+assert(knowledgeJs.includes("Shift Procedures"), "Shift Procedures label present");
+assert(knowledgeJs.includes('label: \'Settings\''), "Settings nav group present");
+assert(!/\blabel: 'Advanced'/.test(knowledgeJs), "Advanced nav group renamed to Settings");
+assert(!/id: 'operations'/.test(knowledgeJs), "Daily Trackers removed from sidebar PROFILE_SECTIONS");
+assert(profileHtml.includes('id="operations"'), "Daily Trackers id preserved inside Settings");
+assert(profileHtml.includes("Daily Trackers"), "Daily Trackers page heading present");
+assert(profileHtml.includes('data-settings-group="operations"'), "Daily Trackers nested in Settings accordion");
+assert(profileHtml.includes('data-general-group="branding"'), "Branding lives in General");
+assert(profileHtml.includes('data-settings-group="regional"'), "Regional Settings moved to Settings");
+assert(!profileHtml.includes('data-general-group="regional"'), "Regional Settings removed from General");
 assert(!knowledgeJs.includes("Optional Modules"), "Optional Modules label removed");
+assert(!knowledgeJs.includes("Knowledge Library"), "Knowledge Library label renamed");
+assert(!/"Operational Knowledge"/.test(knowledgeJs), "Operational Knowledge nav label renamed");
+assert(!knowledgeJs.includes("nav-progress"), "sidebar progress metrics removed");
+assert(!/Configured/.test(knowledgeJs.replace(/configuredCount/g, "")), "Configured status labels removed from knowledge JS");
+assert(!profileHtml.includes("nav-progress"), "sidebar progress CSS removed");
+assert(profileHtml.includes("nav-trailing"), "future-ready nav trailing slot present");
+assert(profileHtml.includes("Shift Procedures"), "Shift Procedures page heading present");
+assert(profileHtml.includes("Daily Trackers"), "Daily Trackers heading retained");
 assert(profileHtml.includes("isAlreadyHotelBrainProfessional"), "professional gate wired for no-improvements");
 assert(profileHtml.includes("Set how Hospitality Flow should write, prioritise and interpret"),
   "AI instructions helper text present");
