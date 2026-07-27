@@ -160,6 +160,17 @@
 
     var source = String(text || "");
 
+    /* Multi-room lists: "Rooms 12 and 14", "Rooms 12, 14 & 16" */
+    var listPattern = /\brooms?\s+((?:\d{1,4}[a-z]?)(?:\s*(?:,|&|and|\/)\s*\d{1,4}[a-z]?)*)/gi;
+    var listMatch;
+    listPattern.lastIndex = 0;
+    while ((listMatch = listPattern.exec(source)) !== null) {
+      String(listMatch[1] || "").split(/\s*(?:,|&|and|\/)\s*/i).forEach(function (part) {
+        var m = String(part || "").match(/(\d{1,4}[a-z]?)/i);
+        if (m) addRoom(m[1]);
+      });
+    }
+
     /* Primary room references (source room / subject of the note) */
     var primaryPatterns = [
       /\broom\s*[#.]?\s*(\d{1,4}[a-z]?)\b/gi,
@@ -1003,8 +1014,11 @@
   };
 
   function createEmptyOperationalFact(sourceText) {
+    var src = String(sourceText || "");
     return {
-      sourceText: String(sourceText || ""),
+      sourceText: src,
+      sourceTexts: src ? [src] : [],
+      sourceHistory: [],
       rooms: [],
       subject: "",
       status: FACT_STATUS.unknown,
@@ -1155,6 +1169,10 @@
 
     fact.status = classifyFactStatus(sourceText);
     fact.sectionHint = options.section ? String(options.section) : "";
+    fact.sourceTexts = sourceText ? [sourceText] : [];
+    fact.sourceHistory = sourceText
+      ? [{ status: fact.status, sourceText: sourceText, section: fact.sectionHint || "" }]
+      : [];
 
     var followMatch = sourceText.match(/\bfollow[\s-]*up\s+with\s+([A-Za-z][A-Za-z\s]*?)(?=\s+on\b|\s+regarding\b|\s+about\b|[.,;]|$)/i);
     if (followMatch) {
@@ -1910,6 +1928,384 @@
     };
   }
 
+  /* ------------------------------------------------------------------ */
+  /*  Phase 5A — merge / dedupe by structured fact identity             */
+  /* ------------------------------------------------------------------ */
+
+  var FACT_STATUS_RANK = {
+    done: 100,
+    confirmed: 80,
+    in_progress: 55,
+    open: 40,
+    requested: 40,
+    unknown: 10
+  };
+
+  function normalizeFactRooms(rooms) {
+    var seen = {};
+    var out = [];
+    (rooms || []).forEach(function (room) {
+      var key = String(room || "").toUpperCase();
+      if (!key || seen[key]) return;
+      seen[key] = true;
+      out.push(String(room));
+    });
+    return out.sort(function (a, b) {
+      var na = parseInt(a, 10);
+      var nb = parseInt(b, 10);
+      if (!isNaN(na) && !isNaN(nb) && na !== nb) return na - nb;
+      return String(a).localeCompare(String(b));
+    });
+  }
+
+  function normalizeSubjectForIdentity(subject) {
+    var s = String(subject || "").toLowerCase().trim();
+    if (
+      s === "outstanding_balance" || s === "payment" || s === "invoice" ||
+      s === "bill" || s === "folio" || s === "account" || s === "charge" ||
+      s === "financial_settlement_unclear"
+    ) {
+      return "payment_balance";
+    }
+    return s;
+  }
+
+  function sectionFromFact(fact, fallbackSection) {
+    if (!fact) return fallbackSection || "general";
+    var fallback = String(fallbackSection || "");
+    if (fallback === "completed") return "completed";
+    if (fact.status === FACT_STATUS.done && fallback === "completed") return "completed";
+
+    var hint = String(fact.sectionHint || "").toLowerCase();
+    if (hint === "completed") return "completed";
+    if (hint && hint !== "general" && hint !== "completed") return hint;
+
+    var subject = String(fact.subject || "");
+    var normalized = normalizeSubjectForIdentity(subject);
+    if (normalized === "payment_balance") return "payments";
+    if (subject === "maintenance") return "maintenance";
+    if (subject === "vip_arrival") return "vip";
+    if (subject === "late_checkout" || subject === "room_move" || subject === "extension") return "guest";
+    if (subject === "guest_request") return "guest";
+    if (subject === "wake_up") return fallback === "completed" ? "completed" : "tasks";
+    if (subject === "delivery") return "deliveries";
+    if (subject === "inventory") return "inventory";
+    if (subject === "follow_up") {
+      if (fact.ownerDept === "Maintenance") return "maintenance";
+      if (fact.ownerDept === "Housekeeping") return "tasks";
+      return fallback || "tasks";
+    }
+    return fallback || hint || "general";
+  }
+
+  function sourceFingerprint(text) {
+    return String(text || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  /**
+   * Fact identity key: rooms + subject + status + actionVerb + actionTarget + sectionHint.
+   * Never uses rewritten / truncated display text.
+   */
+  function factIdentityKey(fact, options) {
+    options = options || {};
+    if (!fact) return "";
+    var rooms = normalizeFactRooms(fact.rooms).join(",");
+    var subject = normalizeSubjectForIdentity(fact.subject);
+    if (!subject) subject = "src:" + sourceFingerprint(fact.sourceText).slice(0, 80);
+    var section = String(fact.sectionHint || sectionFromFact(fact) || "").toLowerCase();
+    var verb = String(fact.actionVerb || "").toLowerCase();
+    var target = String(fact.actionTarget || "").toLowerCase();
+    var status = String(fact.status || FACT_STATUS.unknown);
+
+    if (options.family) {
+      /* Same-room / same-subject family for status resolution (status omitted). */
+      return ["fam", rooms, subject, target, section].join("|");
+    }
+
+    return ["id", rooms, subject, status, verb, target, section].join("|");
+  }
+
+  function factMergeFamilyKey(fact) {
+    return factIdentityKey(fact, { family: true });
+  }
+
+  function collectSourceTexts(fact) {
+    if (!fact) return [];
+    if (fact.sourceTexts && fact.sourceTexts.length) {
+      return fact.sourceTexts.slice();
+    }
+    return fact.sourceText ? [String(fact.sourceText)] : [];
+  }
+
+  function uniqueStrings(values) {
+    var seen = {};
+    var out = [];
+    (values || []).forEach(function (value) {
+      var key = String(value || "");
+      if (!key || seen[key]) return;
+      seen[key] = true;
+      out.push(key);
+    });
+    return out;
+  }
+
+  function mergeFactDetails(facts) {
+    var out = [];
+    var seen = {};
+    (facts || []).forEach(function (fact) {
+      (fact.details || []).forEach(function (detail) {
+        if (!detail) return;
+        var key = String(detail.type || "") + "::" + String(detail.value || "");
+        if (seen[key]) return;
+        seen[key] = true;
+        out.push({ type: detail.type, value: detail.value });
+      });
+    });
+    return out;
+  }
+
+  function detailsCompatible(factA, factB) {
+    if (!factA || !factB) return true;
+    var moneyA = [];
+    var moneyB = [];
+    (factA.details || []).forEach(function (d) {
+      if (d && d.type === "money") moneyA.push(String(d.value));
+    });
+    (factB.details || []).forEach(function (d) {
+      if (d && d.type === "money") moneyB.push(String(d.value));
+    });
+    if (moneyA.length && moneyB.length) {
+      var overlap = moneyA.some(function (m) { return moneyB.indexOf(m) !== -1; });
+      var sameSet = moneyA.slice().sort().join() === moneyB.slice().sort().join();
+      if (!overlap && !sameSet) return false;
+    }
+    var destA = "";
+    var destB = "";
+    (factA.details || []).forEach(function (d) {
+      if (d && d.type === "destination_room") destA = String(d.value);
+    });
+    (factB.details || []).forEach(function (d) {
+      if (d && d.type === "destination_room") destB = String(d.value);
+    });
+    if (destA && destB && destA !== destB) return false;
+    return true;
+  }
+
+  function groupDetailsCompatible(notes) {
+    for (var i = 0; i < notes.length; i += 1) {
+      for (var j = i + 1; j < notes.length; j += 1) {
+        if (!detailsCompatible(notes[i].fact, notes[j].fact)) return false;
+      }
+    }
+    return true;
+  }
+
+  function pickStrongestFactNote(notes) {
+    var best = notes[0];
+    var bestRank = FACT_STATUS_RANK[best.fact.status] || 0;
+    var bestIndex = 0;
+    notes.forEach(function (note, index) {
+      var rank = FACT_STATUS_RANK[(note.fact && note.fact.status) || ""] || 0;
+      if (rank > bestRank || (rank === bestRank && index > bestIndex)) {
+        best = note;
+        bestRank = rank;
+        bestIndex = index;
+      }
+    });
+    return best;
+  }
+
+  function compareNotesByFactDuty(a, b) {
+    var order = {
+      urgent: 0, vip: 1, guest: 2, maintenance: 3, payments: 4,
+      events: 5, tasks: 6, inventory: 7, deliveries: 8, lostproperty: 9,
+      general: 10, completed: 11
+    };
+    function rank(note) {
+      var section = (note && note.section) || "general";
+      var score = (order[section] != null ? order[section] : 20) * 10;
+      if (note && note.needsManagementAttention) score -= 5;
+      if (note && note.maintenancePriority === "Critical") score -= 8;
+      if (note && note.isVip) score -= 4;
+      if (note && note.isCarriedOver) score -= 2;
+      if (note && note.fact && note.fact.status === FACT_STATUS.done) score += 80;
+      return score;
+    }
+    return rank(a) - rank(b);
+  }
+
+  function mergeNotesByFactIdentityGroup(notes) {
+    if (!notes || !notes.length) return null;
+    if (notes.length === 1) {
+      var only = notes[0];
+      var onlySection = sectionFromFact(only.fact, only.section);
+      if (onlySection) only.section = onlySection;
+      if (only.fact) only.fact.sectionHint = onlySection;
+      return only;
+    }
+
+    var primary = pickStrongestFactNote(notes);
+    var allFacts = notes.map(function (n) { return n.fact; });
+    var sourceTexts = uniqueStrings(notes.reduce(function (acc, note) {
+      return acc.concat(collectSourceTexts(note.fact)).concat(note.original ? [note.original] : []);
+    }, []));
+    var sourceHistory = [];
+    notes.forEach(function (note) {
+      if (note.fact && note.fact.sourceHistory && note.fact.sourceHistory.length) {
+        note.fact.sourceHistory.forEach(function (entry) {
+          sourceHistory.push(entry);
+        });
+      } else {
+        sourceHistory.push({
+          status: (note.fact && note.fact.status) || FACT_STATUS.unknown,
+          sourceText: (note.fact && note.fact.sourceText) || note.original || "",
+          section: note.section || ""
+        });
+      }
+    });
+
+    var rooms = normalizeFactRooms(notes.reduce(function (acc, note) {
+      return acc.concat((note.fact && note.fact.rooms) || note.rooms || []);
+    }, []));
+
+    var mergedFact = Object.assign({}, primary.fact, {
+      rooms: rooms,
+      status: primary.fact.status,
+      sourceText: primary.fact.sourceText || sourceTexts[0] || "",
+      sourceTexts: sourceTexts,
+      sourceHistory: sourceHistory,
+      details: mergeFactDetails(allFacts),
+      subject: primary.fact.subject,
+      actionVerb: primary.fact.status === FACT_STATUS.done || primary.fact.status === FACT_STATUS.confirmed
+        ? (primary.fact.actionVerb || "")
+        : (primary.fact.actionVerb || notes.map(function (n) {
+          return n.fact && n.fact.actionVerb;
+        }).filter(Boolean)[0] || ""),
+      actionTarget: primary.fact.actionTarget || "",
+      ownerDept: primary.fact.ownerDept || "",
+      ownerName: primary.fact.ownerName || ""
+    });
+
+    var section = sectionFromFact(mergedFact, primary.section);
+    mergedFact.sectionHint = section;
+
+    return {
+      original: sourceTexts.join(" | "),
+      rooms: rooms,
+      section: section,
+      isVip: notes.some(function (n) { return n.isVip; }),
+      isCarriedOver: notes.some(function (n) { return n.isCarriedOver; }),
+      isFollowUp: notes.some(function (n) { return n.isFollowUp; }),
+      needsManagementAttention: notes.some(function (n) { return n.needsManagementAttention; }),
+      maintenancePriority: notes.reduce(function (best, n) {
+        var rank = { Critical: 3, High: 2, Normal: 1 };
+        if (!n.maintenancePriority) return best;
+        if (!best) return n.maintenancePriority;
+        return (rank[n.maintenancePriority] || 0) > (rank[best] || 0)
+          ? n.maintenancePriority
+          : best;
+      }, null),
+      fact: mergedFact,
+      _mergedNotes: notes.slice(),
+      _factConsolidated: true
+    };
+  }
+
+  /**
+   * Consolidate analyzed notes using fact identity — not rewritten display text.
+   * Same room + different subjects stay separate.
+   * Same room + same subject + same status merge when details are compatible.
+   * Same room + same subject + different status resolve to strongest status with source history.
+   */
+  function consolidateNotesByFacts(analyzed) {
+    var withFacts = [];
+    var withoutFacts = [];
+
+    (analyzed || []).forEach(function (note) {
+      if (!note) return;
+      var fact = ensureNoteFact(note);
+      if (!fact || (!fact.subject && !fact.sourceText)) {
+        withoutFacts.push(note);
+        return;
+      }
+      if (!fact.sourceTexts || !fact.sourceTexts.length) {
+        fact.sourceTexts = collectSourceTexts(fact);
+      }
+      if (!fact.sectionHint && note.section) fact.sectionHint = note.section;
+      note.fact = fact;
+      withFacts.push(note);
+    });
+
+    var families = {};
+    withFacts.forEach(function (note) {
+      var key = factMergeFamilyKey(note.fact);
+      if (!families[key]) families[key] = [];
+      families[key].push(note);
+    });
+
+    var consolidated = [];
+
+    Object.keys(families).forEach(function (familyKey) {
+      var family = families[familyKey];
+
+      /* Exact identity buckets first (dedupe identical / same-status merges). */
+      var byIdentity = {};
+      family.forEach(function (note) {
+        var id = factIdentityKey(note.fact);
+        if (!byIdentity[id]) byIdentity[id] = [];
+        byIdentity[id].push(note);
+      });
+
+      var identityMerged = Object.keys(byIdentity).map(function (id) {
+        var bucket = byIdentity[id];
+        if (bucket.length === 1) return bucket[0];
+        return mergeNotesByFactIdentityGroup(bucket);
+      });
+
+      if (identityMerged.length === 1) {
+        var single = identityMerged[0];
+        if (!single._factConsolidated) {
+          single.section = sectionFromFact(single.fact, single.section);
+          if (single.fact) single.fact.sectionHint = single.section;
+        }
+        consolidated.push(single);
+        return;
+      }
+
+      /* Different statuses in same subject family — resolve if details compatible. */
+      if (groupDetailsCompatible(identityMerged)) {
+        consolidated.push(mergeNotesByFactIdentityGroup(identityMerged));
+        return;
+      }
+
+      /* Incompatible details — keep separate facts (never merge on display text). */
+      identityMerged.forEach(function (note) {
+        note.section = sectionFromFact(note.fact, note.section);
+        if (note.fact) note.fact.sectionHint = note.section;
+        consolidated.push(note);
+      });
+    });
+
+    withoutFacts.forEach(function (note) {
+      consolidated.push(note);
+    });
+
+    return consolidated.sort(compareNotesByFactDuty);
+  }
+
+  function displayDedupeKeyFromItem(item) {
+    if (!item) return "";
+    if (item.fact) return factIdentityKey(item.fact);
+    if (item._notes && item._notes[0] && item._notes[0].fact) {
+      return factIdentityKey(item._notes[0].fact);
+    }
+    return "";
+  }
+
   function isPhase1SupportedFact(fact) {
     if (!fact || !fact.sourceText) return false;
     var src = fact.sourceText;
@@ -2168,6 +2564,25 @@
     if (typeof note === "string") {
       return rewriteOperationalNote(note, options);
     }
+
+    /* Prefer attached structured fact when present (merged / status-resolved notes). */
+    if (note.fact && isPhase1SupportedFact(note.fact)) {
+      var attached = renderFactPhase1(note.fact, {
+        section: note.section || options.section,
+        rooms: note.rooms || options.rooms,
+        isVip: note.isVip || options.isVip,
+        prefs: options.prefs
+      });
+      if (attached) {
+        return applyPreferences(attached, {
+          prefs: options.prefs,
+          terminologyMap: options.terminologyMap,
+          platformLabels: options.platformLabels,
+          uiLabels: options.uiLabels
+        });
+      }
+    }
+
     return rewriteOperationalNote(note.original || note.text || "", {
       section: note.section || options.section,
       rooms: note.rooms || options.rooms,
@@ -3081,7 +3496,11 @@
     summarizeFromFacts: summarizeFromFacts,
     buildSummaryDetailCards: buildSummaryDetailCards,
     computeHandoverMetricsFromFacts: computeHandoverMetricsFromFacts,
-    isGlanceActiveFact: isGlanceActiveFact
+    isGlanceActiveFact: isGlanceActiveFact,
+    factIdentityKey: factIdentityKey,
+    factMergeFamilyKey: factMergeFamilyKey,
+    consolidateNotesByFacts: consolidateNotesByFacts,
+    sectionFromFact: sectionFromFact
   };
 
   global.AiWritingEngine = Api;
