@@ -8,7 +8,9 @@ import vm from "vm";
 import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const engineSrc = fs.readFileSync(path.join(__dirname, "..", "shift-intelligence-engine.js"), "utf8");
+const ROOT = path.join(__dirname, "..");
+const engineSrc = fs.readFileSync(path.join(ROOT, "shift-intelligence-engine.js"), "utf8");
+const writingSrc = fs.readFileSync(path.join(ROOT, "ai-writing-engine.js"), "utf8");
 
 const context = {
   window: {},
@@ -19,22 +21,32 @@ const context = {
   Object: Object,
   Array: Array,
   String: String,
+  Number: Number,
   parseFloat: parseFloat,
-  isNaN: isNaN
+  parseInt: parseInt,
+  isNaN: isNaN,
+  RegExp: RegExp
 };
 context.global = context.window;
 vm.createContext(context);
+vm.runInContext(writingSrc, context);
 vm.runInContext(engineSrc, context);
 
 var ShiftIntelligenceEngine = context.window.ShiftIntelligenceEngine;
+var AiWritingEngine = context.window.AiWritingEngine;
 
 function makeNote(text, section, rooms) {
+  var isVip = /vip/i.test(text);
+  var fact = AiWritingEngine
+    ? AiWritingEngine.extractOperationalFact(text, { rooms: rooms || [], section: section, isVip: isVip })
+    : null;
   return {
     original: text,
     section: section || "guest",
     rooms: rooms || [],
-    isVip: /vip/i.test(text),
-    maintenancePriority: section === "maintenance" ? "High" : null
+    isVip: isVip,
+    maintenancePriority: section === "maintenance" ? "High" : null,
+    fact: fact
   };
 }
 

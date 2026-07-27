@@ -167,5 +167,146 @@ assert(typeof Engine.summarizeHandover === "function", "summarizeHandover()");
 assert(Engine.MODULES.handover === "handover", "MODULES.handover");
 assert(Engine.MODULES.policy === "policy", "MODULES.policy");
 
+console.log("\nPhase 1 structured facts — extraction");
+(function () {
+  const source = "Please follow up with maintenance on Room 205.";
+  const fact = Engine.extractOperationalFact(source);
+  assertEqual(fact.sourceText, source, "sourceText preserved unchanged");
+  assert(fact.rooms.indexOf("205") !== -1, "extracts Room 205 into rooms[]");
+  assertEqual(fact.actionVerb, "follow_up", "follow_up actionVerb");
+  assertEqual(fact.actionTarget, "maintenance", "maintenance actionTarget");
+
+  assert(
+    Engine.classifyFactStatus("Room 12 is settled") !== "done",
+    "bare room settled is not financial done"
+  );
+  assertEqual(
+    Engine.classifyFactStatus("Outstanding balance Room 12 settled"),
+    "done",
+    "outstanding…settled → done"
+  );
+  assertEqual(
+    Engine.classifyFactStatus("Room 12 balance is not settled"),
+    "open",
+    "balance not settled → open"
+  );
+  assert(
+    Engine.classifyFactStatus("Room 12 is not settled") !== "open",
+    "bare not settled without finance is not open financial"
+  );
+  assertEqual(Engine.classifyFactStatus("Guest wants to move to Room 51"), "requested", "wants to move → requested");
+  assert(
+    Engine.classifyFactStatus("Guests are settled in their rooms.") !== "done",
+    "guests settled in rooms is not financial done"
+  );
+})();
+
+console.log("\nPhase 1 structured facts — regression renders");
+(function () {
+  function assertNoFollowUpChase(text, label) {
+    assert(
+      !/\bplease\s+(?:settle|follow up|chase|arrange)\b/i.test(text) &&
+        !/\bsettle the (?:account|balance)\b/i.test(text),
+      label
+    );
+  }
+
+  function assertNotVagueSettled(text, label) {
+    const trimmed = String(text || "").trim();
+    assert(
+      !/^(?:Room\s+\d+[A-Za-z]?\s*[–—-]\s*)?(?:Not\s+)?Settled\.?$/i.test(trimmed),
+      label
+    );
+  }
+
+  const followUp = Engine.rewriteNote("Please follow up with maintenance on Room 205.");
+  assertIncludes(followUp, "205", "follow-up retains Room 205");
+  assert(!/\bon\.?\s*$/i.test(followUp.trim()), "follow-up must not end with dangling on.");
+  assert(!/Please note:\s*is settled/i.test(followUp), "follow-up is not Please note fragment");
+  assertIncludes(followUp, "Maintenance", "follow-up names Maintenance");
+
+  const balanceSettled = Engine.rewriteNote("Outstanding balance in Room 12 has been settled.");
+  assertIncludes(balanceSettled, "12", "balance settled retains Room 12");
+  assertIncludes(balanceSettled, "outstanding balance", "balance settled names outstanding balance");
+  assert(/\bsettled\b/i.test(balanceSettled), "balance settled preserves settled meaning");
+  assertNoFollowUpChase(balanceSettled, "balance settled must not ask next shift to settle");
+  assertNotVagueSettled(balanceSettled, "balance settled is not vague Settled.");
+
+  const balanceSettledAlt = Engine.rewriteNote("Outstanding balance in Room 12 is settled.");
+  assertIncludes(balanceSettledAlt, "12", "is settled retains Room 12");
+  assertEqual(
+    Engine.extractOperationalFact("Outstanding balance in Room 12 is settled.").status,
+    "done",
+    "is settled with balance → done"
+  );
+  assertNoFollowUpChase(balanceSettledAlt, "is settled with balance must not chase payment");
+
+  const notSettled = Engine.rewriteNote("Room 12 balance is not settled.");
+  assertIncludes(notSettled, "12", "balance not settled retains Room 12");
+  assert(/\bunsettled\b/i.test(notSettled), "balance not settled remains open/unsettled");
+  assertEqual(
+    Engine.extractOperationalFact("Room 12 balance is not settled.").status,
+    "open",
+    "balance not settled fact status open"
+  );
+  assertNotVagueSettled(notSettled, "open balance is not vague Not settled.");
+
+  const moveRequest = Engine.rewriteNote("Guest wants to move to Room 51.");
+  assertIncludes(moveRequest, "51", "move request retains Room 51");
+  assert(!/\bhas been relocated\b/i.test(moveRequest), "move request must not claim already moved");
+  assert(!/\brelocated to\b/i.test(moveRequest), "move request must not say relocated to");
+  assert(/\brequest(?:ed)?\b/i.test(moveRequest), "move request keeps request language");
+})();
+
+console.log("\nPhase 1 hardening — settled is not always financial");
+(function () {
+  function assertNotFinancialPaymentRewrite(text, label) {
+    assert(
+      !/\b(?:balance|payment|bill|invoice|folio|account|charge)\b/i.test(text),
+      label
+    );
+  }
+
+  function assertNotVagueSettled(text, label) {
+    const trimmed = String(text || "").trim();
+    assert(
+      !/^(?:Room\s+\d+[A-Za-z]?\s*[–—-]\s*)?(?:Not\s+)?Settled\.?$/i.test(trimmed),
+      label
+    );
+  }
+
+  const allGuests = Engine.rewriteNote("All guests settled.");
+  assert(/\bguests?\b/i.test(allGuests), "All guests settled preserves guest-status meaning");
+  assertNotFinancialPaymentRewrite(allGuests, "All guests settled is not a payment rewrite");
+  assertNotVagueSettled(allGuests, "All guests settled is not vague Settled.");
+
+  const inRooms = Engine.rewriteNote("Guests are settled in their rooms.");
+  assert(
+    Engine.classifyFactStatus("Guests are settled in their rooms.") !== "done",
+    "Guests are settled in their rooms is not classified financial done"
+  );
+  assertNotFinancialPaymentRewrite(inRooms, "settled in rooms is not a payment rewrite");
+  assert(/\bsettled\b/i.test(inRooms) && /\brooms?\b/i.test(inRooms),
+    "settled in rooms preserves original guest meaning");
+
+  const guestSettled = Engine.rewriteNote("Room 12 guest is now settled.");
+  assertIncludes(guestSettled, "12", "guest settled retains Room 12");
+  assertNotFinancialPaymentRewrite(guestSettled, "Room 12 guest settled must not mention balance/payment");
+  assert(/\bguest\b/i.test(guestSettled) && /\bsettled\b/i.test(guestSettled),
+    "Room 12 guest settled preserves guest wording");
+  assertNotVagueSettled(guestSettled, "guest settled is not Room 12 – Settled.");
+
+  assertNotVagueSettled(Engine.rewriteNote("Room 12 is settled."), "Room 12 is settled is not vague Settled.");
+  assertNotVagueSettled(Engine.rewriteNote("Room 12 is not settled."), "Room 12 is not settled is not vague Not settled.");
+})();
+
+console.log("\nPhase 1 — legacy fallback still used for unsupported notes");
+(function () {
+  const lateCo = Engine.rewriteNote("room 22 late c/o at noon");
+  assertIncludes(lateCo, "Late check-out", "late check-out still uses legacy writer");
+  assert(Engine.isPhase1SupportedFact(Engine.extractOperationalFact("room 22 late c/o at noon")) === false,
+    "late check-out is not Phase 1 supported");
+})();
+
 console.log("\n" + passed + " passed, " + failed + " failed\n");
 if (failed) process.exit(1);

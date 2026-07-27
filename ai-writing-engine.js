@@ -968,8 +968,648 @@
     return appendAction(body, "Please follow up during this shift and record the outcome");
   }
 
+  /* ------------------------------------------------------------------ */
+  /*  Phase 1 — structured operational facts (extract → safe render)    */
+  /*  Existing template writer remains the fallback for other notes.    */
+  /* ------------------------------------------------------------------ */
+
+  var FACT_STATUS = {
+    open: "open",
+    requested: "requested",
+    confirmed: "confirmed",
+    in_progress: "in_progress",
+    done: "done",
+    unknown: "unknown"
+  };
+
+  function createEmptyOperationalFact(sourceText) {
+    return {
+      sourceText: String(sourceText || ""),
+      rooms: [],
+      subject: "",
+      status: FACT_STATUS.unknown,
+      ownerDept: "",
+      ownerName: "",
+      actionVerb: "",
+      actionTarget: "",
+      details: [],
+      sectionHint: ""
+    };
+  }
+
+  /**
+   * True only when "settled" / related language has payment or account context.
+   * Guest-status uses of "settled" (checked in, comfortable) must not match.
+   */
+  function hasFinancialSettlementContext(text) {
+    var lower = String(text || "").toLowerCase();
+    return /\bbalance\b/.test(lower) ||
+      /\bbill\b/.test(lower) ||
+      /\binvoice\b/.test(lower) ||
+      /\bfolio\b/.test(lower) ||
+      /\baccount\b/.test(lower) ||
+      /\bpayment\b/.test(lower) ||
+      /\bpaid\b/.test(lower) ||
+      /\bcharge\b/.test(lower) ||
+      /\boutstanding\s+amount\b/.test(lower);
+  }
+
+  /**
+   * Clear financial noun for settlement rendering. Empty when subject is unclear
+   * (caller should use minimally cleaned sourceText instead of inventing one).
+   */
+  function financialSettlementNoun(text) {
+    var src = String(text || "");
+    if (/\binvoice\b/i.test(src)) return "invoice";
+    if (/\bbill\b/i.test(src)) return "bill";
+    if (/\bpayment\b/i.test(src)) return "payment";
+    if (/\bfolio\b/i.test(src)) return "folio";
+    if (/\baccount\b/i.test(src)) return "account";
+    if (/\bcharge\b/i.test(src)) return "charge";
+    if (/\bbalance\b/i.test(src) || /\boutstanding\s+amount\b/i.test(src)) {
+      return "outstanding balance";
+    }
+    return "";
+  }
+
+  /**
+   * Ordered status classifier: negatives/open first, then completed,
+   * then requested / confirmed / in_progress, otherwise unknown.
+   * Bare "settled" is financial only when payment/account context is present.
+   */
+  function classifyFactStatus(text) {
+    var lower = String(text || "").toLowerCase();
+    var financial = hasFinancialSettlementContext(text);
+
+    if (
+      (/\bnot\s+settled\b/.test(lower) && financial) ||
+      /\bunpaid\b/.test(lower) ||
+      /\bstill\s+outstanding\b/.test(lower) ||
+      /\bunresolved\b/.test(lower) ||
+      /\bpending\b/.test(lower) ||
+      /\bnot\s+completed\b/.test(lower) ||
+      /\bnot\s+done\b/.test(lower) ||
+      /\bnot\s+fixed\b/.test(lower) ||
+      /\bnot\s+resolved\b/.test(lower) ||
+      (/\bnot\s+yet\s+(?:settled|paid|cleared|completed|resolved|fixed|done)\b/.test(lower) &&
+        (financial || !/\bsettled\b/.test(lower))) ||
+      /\bstill\s+to\s+pay\b/.test(lower)
+    ) {
+      return FACT_STATUS.open;
+    }
+
+    if (
+      (/\b(?:has\s+been\s+)?settled\b/.test(lower) && financial) ||
+      /\b(?:has\s+been\s+)?paid\b/.test(lower) ||
+      /\bcleared\b/.test(lower) ||
+      /\bcompleted\b/.test(lower) ||
+      /\bresolved\b/.test(lower) ||
+      /\bfixed\b/.test(lower) ||
+      /\bcollected\b/.test(lower) ||
+      /\bdelivered\b/.test(lower) ||
+      /\bdone\b/.test(lower)
+    ) {
+      return FACT_STATUS.done;
+    }
+
+    if (
+      /\bnot\s+booked\b/.test(lower) ||
+      /\bnot\s+yet\s+booked\b/.test(lower)
+    ) {
+      return FACT_STATUS.open;
+    }
+
+    if (
+      /\b(?:request(?:ed)?|asking|asked|would like|wants?|needs?)\b/.test(lower)
+    ) {
+      return FACT_STATUS.requested;
+    }
+
+    if (
+      /\b(?:approved|confirmed|agreed|granted|authorised|authorized)\b/.test(lower) ||
+      /\balready\s+booked\b/.test(lower) ||
+      /\bbooked\b/.test(lower)
+    ) {
+      return FACT_STATUS.confirmed;
+    }
+
+    if (
+      /\bin\s+progress\b/.test(lower) ||
+      /\bawaiting\b/.test(lower) ||
+      /\bbeing\s+(?:handled|processed|repaired|investigated)\b/.test(lower) ||
+      /\bchasing\b/.test(lower)
+    ) {
+      return FACT_STATUS.in_progress;
+    }
+
+    return FACT_STATUS.unknown;
+  }
+
+  function departmentFromTarget(target) {
+    var t = String(target || "").toLowerCase();
+    if (t === "maintenance" || t === "engineering") return "Maintenance";
+    if (t === "housekeeping") return "Housekeeping";
+    if (t === "reception" || t === "front") return "Reception";
+    if (t === "concierge") return "Concierge";
+    if (t === "manager" || t === "management") return "Duty Manager";
+    return capitalize(t);
+  }
+
+  /**
+   * Pure extraction: never mutates or strips rooms from sourceText.
+   */
+  function extractOperationalFact(rawText, options) {
+    options = options || {};
+    var sourceText = String(rawText == null ? "" : rawText);
+    var fact = createEmptyOperationalFact(sourceText);
+
+    fact.rooms = extractRoomNumbers(sourceText).slice();
+    if (options.rooms && options.rooms.length) {
+      options.rooms.forEach(function (room) {
+        var key = String(room).toUpperCase();
+        if (fact.rooms.indexOf(key) === -1 && fact.rooms.indexOf(String(room)) === -1) {
+          fact.rooms.push(String(room));
+        }
+      });
+    }
+
+    fact.status = classifyFactStatus(sourceText);
+    fact.sectionHint = options.section ? String(options.section) : "";
+
+    var followMatch = sourceText.match(/\bfollow[\s-]*up\s+with\s+([A-Za-z][A-Za-z\s]*?)(?=\s+on\b|\s+regarding\b|\s+about\b|[.,;]|$)/i);
+    if (followMatch) {
+      fact.actionVerb = "follow_up";
+      fact.actionTarget = trimText(followMatch[1]).toLowerCase().replace(/\s+/g, " ");
+      fact.ownerDept = departmentFromTarget(fact.actionTarget.split(/\s+/)[0]);
+      fact.subject = "follow_up";
+    }
+
+    if (hasFinancialSettlementContext(sourceText) &&
+        (/\bsettled\b/i.test(sourceText) || /\boutstanding\s+(?:balance|amount)\b/i.test(sourceText) ||
+          /\b(?:balance|folio|payment|invoice|bill)\b/i.test(sourceText))) {
+      var noun = financialSettlementNoun(sourceText);
+      if (noun === "invoice") fact.subject = "invoice";
+      else if (noun === "bill") fact.subject = "bill";
+      else if (noun === "payment") fact.subject = "payment";
+      else if (noun === "folio") fact.subject = "folio";
+      else if (noun === "account") fact.subject = "account";
+      else if (noun === "charge") fact.subject = "charge";
+      else if (noun) fact.subject = "outstanding_balance";
+      else fact.subject = "financial_settlement_unclear";
+      if (!fact.ownerDept) fact.ownerDept = "Reception";
+      if (!fact.actionVerb && fact.status !== FACT_STATUS.done && fact.status !== FACT_STATUS.confirmed) {
+        fact.actionVerb = "settle";
+      }
+    }
+
+    if (/\blate\s+check-?out\b/i.test(sourceText) || /\blate\s+c\/?o\b/i.test(sourceText)) {
+      fact.subject = "late_checkout";
+      if (!fact.ownerDept) fact.ownerDept = "Housekeeping";
+      if (!fact.actionVerb && fact.status === FACT_STATUS.requested) fact.actionVerb = "confirm";
+    }
+
+    if (/\bwake-?\s*up\b/i.test(sourceText) || /\bwakeup\b/i.test(sourceText)) {
+      fact.subject = "wake_up";
+      if (!fact.ownerDept) fact.ownerDept = "Reception";
+      if (!fact.actionVerb && fact.status !== FACT_STATUS.confirmed && fact.status !== FACT_STATUS.done) {
+        fact.actionVerb = "confirm";
+      }
+    }
+
+    if (/\bvip\b/i.test(sourceText) || options.isVip) {
+      if (!fact.subject || fact.subject === "follow_up") fact.subject = "vip_arrival";
+      if (!fact.ownerDept) fact.ownerDept = "Reception";
+      if (!fact.actionVerb && fact.status !== FACT_STATUS.done && fact.status !== FACT_STATUS.confirmed) {
+        fact.actionVerb = "prepare";
+      }
+    }
+
+    if (/\b(?:air\s*con|a\/c|\bac\b|leak|leaking|broken|faulty|repair|maintenance|not cooling|heating)\b/i.test(sourceText) &&
+        !fact.subject) {
+      fact.subject = "maintenance";
+      if (!fact.ownerDept) fact.ownerDept = "Maintenance";
+      if (!fact.actionVerb) fact.actionVerb = "follow_up";
+    }
+
+    if (/\b(?:extra\s+bed|rollaway|pillow|towel|iron|adapter|amenity)\b/i.test(sourceText) &&
+        (!fact.subject || fact.subject === "follow_up")) {
+      if (!/\bvip\b/i.test(sourceText)) fact.subject = "guest_request";
+      if (!fact.ownerDept) {
+        fact.ownerDept = /\b(?:pillow|towel|bed|linen)\b/i.test(sourceText) ? "Housekeeping" : "Reception";
+      }
+      if (!fact.actionVerb && fact.status === FACT_STATUS.requested) fact.actionVerb = "arrange";
+    }
+
+    if (/\b(?:package|parcel|delivery|courier)\b/i.test(sourceText) && !fact.subject) {
+      fact.subject = "delivery";
+      if (!fact.ownerDept) fact.ownerDept = "Reception";
+      if (!fact.actionVerb) fact.actionVerb = "contact";
+    }
+
+    if (/\b(?:mov(?:e|ing|ed)|relocat(?:e|ed|ing))\b/i.test(sourceText)) {
+      fact.subject = "room_move";
+      var dest = extractDestinationRoom(sourceText, fact.rooms);
+      if (dest) {
+        fact.details.push({ type: "destination_room", value: dest });
+      }
+      if (!fact.ownerDept) fact.ownerDept = "Reception";
+    }
+
+    if (options.section === "maintenance" && !fact.ownerDept) fact.ownerDept = "Maintenance";
+    if (options.section === "payments" && !fact.ownerDept) fact.ownerDept = "Reception";
+    if (options.section === "vip" && !fact.ownerDept) fact.ownerDept = "Reception";
+
+    var staffMatch = sourceText.match(/\b(?:assigned\s+to|owner[:\s]+|handed\s+to)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/);
+    if (staffMatch) {
+      fact.ownerName = trimText(staffMatch[1]);
+    }
+
+    extractMoney(sourceText).forEach(function (amount) {
+      fact.details.push({ type: "money", value: amount });
+    });
+    extractTimes(sourceText).forEach(function (time) {
+      fact.details.push({ type: "time", value: time });
+    });
+
+    return fact;
+  }
+
+  /** Map structured fact.status → handover item status id. */
+  function mapFactStatusToItemStatus(factStatus) {
+    var status = String(factStatus || FACT_STATUS.unknown);
+    if (status === FACT_STATUS.done) return "done";
+    if (status === FACT_STATUS.confirmed) return "confirmed";
+    if (status === FACT_STATUS.in_progress) return "in_progress";
+    return "pending";
+  }
+
+  /** Open work that should appear in follow-up counts / recommendations. */
+  function isFactUnresolved(fact) {
+    if (!fact || !fact.status) return true;
+    return fact.status !== FACT_STATUS.done && fact.status !== FACT_STATUS.confirmed;
+  }
+
+  /** Completed or confirmed — do not chase. */
+  function isFactClosed(fact) {
+    if (!fact || !fact.status) return false;
+    return fact.status === FACT_STATUS.done || fact.status === FACT_STATUS.confirmed;
+  }
+
+  function classifyFactSummaryTopic(fact, note) {
+    if (!fact && note) return classifySummaryTopic(note);
+    var subject = (fact && fact.subject) || "";
+    var section = (note && note.section) || (fact && fact.sectionHint) || "";
+    var text = String((fact && fact.sourceText) || (note && note.original) || "").toLowerCase();
+
+    if (section === "urgent" || subject === "critical" ||
+        noteContains(text, ["flood", "fire", "evacuat", "unsafe", "injury"])) {
+      return "critical";
+    }
+    if (subject === "maintenance" || section === "maintenance" || detectAcIssue(text) ||
+        noteContains(text, ["leak", "broken", "repair"])) {
+      return "maintenance";
+    }
+    if (subject === "outstanding_balance" || subject === "payment" || subject === "invoice" ||
+        subject === "bill" || subject === "folio" || subject === "account" || subject === "charge" ||
+        section === "payments") {
+      return "payment";
+    }
+    if (subject === "vip_arrival" || section === "vip" || (note && note.isVip) || /\bvip\b/.test(text)) {
+      return "vip";
+    }
+    if (subject === "late_checkout" || detectLateCheckout(text)) return "lateCheckout";
+    if (subject === "room_move" || detectRoomMove(text)) return "roomMove";
+    if (subject === "guest_request" || detectExtendStay(text)) {
+      return detectExtendStay(text) ? "extension" : "guest";
+    }
+    if (subject === "wake_up") return "task";
+    if (subject === "delivery" || section === "deliveries") return "delivery";
+    if (section === "inventory" || subject === "inventory") return "inventory";
+    if (section === "events") return "event";
+    if (section === "tasks") return "task";
+    if (section === "lostproperty") return "lostProperty";
+    if (detectComplaint(text)) return "complaint";
+    if (section === "guest") return "guest";
+    return "other";
+  }
+
+  function completedTopicLabel(topic, count) {
+    var map = {
+      payment: ["payment issue", "payment issues"],
+      maintenance: ["maintenance issue", "maintenance issues"],
+      guest: ["guest request", "guest requests"],
+      vip: ["VIP item", "VIP items"],
+      lateCheckout: ["late check-out", "late check-outs"],
+      task: ["task", "tasks"],
+      delivery: ["delivery", "deliveries"],
+      other: ["item", "items"]
+    };
+    var pair = map[topic] || map.other;
+    return countWord(count, pair[0], pair[1]);
+  }
+
+  function summarizeFromFacts(analyzed, options) {
+    options = options || {};
+    var prefs = options.prefs || {};
+    var detail = prefs.detail || options.detail || "standard";
+
+    var unresolved = [];
+    var completed = [];
+
+    analyzed.forEach(function (note) {
+      if (!note) return;
+      var fact = note.fact || null;
+      if (!fact && note.original) {
+        fact = extractOperationalFact(note.original, {
+          section: note.section,
+          rooms: note.rooms,
+          isVip: note.isVip
+        });
+      }
+      if (!fact) return;
+      if (note.section === "completed" && fact.status === FACT_STATUS.unknown) {
+        fact = Object.assign({}, fact, { status: FACT_STATUS.done });
+      }
+      if (isFactClosed(fact) && fact.status === FACT_STATUS.done) {
+        completed.push({ note: note, fact: fact, topic: classifyFactSummaryTopic(fact, note) });
+      } else if (isFactUnresolved(fact) && note.section !== "completed") {
+        unresolved.push({ note: note, fact: fact, topic: classifyFactSummaryTopic(fact, note) });
+      }
+    });
+
+    var topicCounts = {};
+    var topicOrder = [];
+    unresolved.forEach(function (entry) {
+      var topic = entry.topic;
+      if (topic === "completed") return;
+      if (!topicCounts[topic]) {
+        topicCounts[topic] = 0;
+        topicOrder.push(topic);
+      }
+      topicCounts[topic] += 1;
+    });
+
+    var criticalCount = topicCounts.critical || 0;
+    var followUpTopics = topicOrder.filter(function (t) {
+      return t !== "critical" && t !== "completed";
+    });
+    if (!followUpTopics.length && topicCounts.other) followUpTopics = ["other"];
+
+    var followUpCount = followUpTopics.reduce(function (sum, t) {
+      return sum + (topicCounts[t] || 0);
+    }, 0);
+
+    var sentences = [];
+
+    if (!unresolved.length && !completed.length) {
+      sentences.push("No operational issues were identified during the shift.");
+    } else if (criticalCount === 0) {
+      sentences.push("No critical operational issues were identified during the shift.");
+    } else if (criticalCount === 1) {
+      sentences.push("One critical operational issue requires immediate attention.");
+    } else {
+      sentences.push(criticalCount + " critical operational issues require immediate attention.");
+    }
+
+    if (followUpCount > 0) {
+      var includeList = followUpTopics.slice(0, detail === "brief" ? 2 : 4);
+      var listed = includeList.map(function (topic) {
+        return countWord(topicCounts[topic], topicLabel(topic, 1).replace(/^one\s+/i, ""), topicLabel(topic, 2));
+      });
+      var opener = followUpCount === 1
+        ? "One follow-up item remains"
+        : capitalize(numberWord(followUpCount)) + " follow-up items remain";
+      if (listed.length === 1 && followUpCount === topicCounts[includeList[0]]) {
+        sentences.push(opener + ", including " + listed[0] + ".");
+      } else if (listed.length) {
+        sentences.push(opener + ", including " + joinNatural(listed) + ".");
+      } else {
+        sentences.push(opener + ".");
+      }
+    } else if (unresolved.length === 0 && criticalCount === 0) {
+      sentences.push("The incoming team has a clear handover with no outstanding follow-ups.");
+    }
+
+    if (completed.length) {
+      var completedCounts = {};
+      var completedOrder = [];
+      completed.forEach(function (entry) {
+        var topic = entry.topic === "critical" ? "other" : entry.topic;
+        if (!completedCounts[topic]) {
+          completedCounts[topic] = 0;
+          completedOrder.push(topic);
+        }
+        completedCounts[topic] += 1;
+      });
+      if (completed.length === 1) {
+        var onlyTopic = completedOrder[0];
+        sentences.push(
+          capitalize(completedTopicLabel(onlyTopic, 1)).replace(/^One\s+/i, "One ") +
+          " was completed during the shift."
+        );
+      } else if (completedOrder.length === 1) {
+        sentences.push(
+          capitalize(completedTopicLabel(completedOrder[0], completed.length)) +
+          " were completed during the shift."
+        );
+      } else {
+        sentences.push(
+          capitalize(numberWord(completed.length)) +
+          " items were completed during the shift, including " +
+          joinNatural(completedOrder.slice(0, 3).map(function (topic) {
+            return completedTopicLabel(topic, completedCounts[topic]);
+          })) + "."
+        );
+      }
+    }
+
+    var limit = detail === "brief" ? 2 : (detail === "comprehensive" ? 5 : 4);
+    var summary = sentences.slice(0, limit).join(" ");
+    return applyPreferences(summary, { prefs: prefs, terminologyMap: options.terminologyMap });
+  }
+
+  function isPhase1SupportedFact(fact) {
+    if (!fact || !fact.sourceText) return false;
+    var src = fact.sourceText;
+    var lower = src.toLowerCase();
+
+    /* Financial settlement — only with payment/account context. */
+    if (/\bsettled\b/.test(lower) && hasFinancialSettlementContext(src)) return true;
+
+    /*
+     * Non-financial "settled" (guest status) — Phase 1 minimal path only,
+     * so legacy templates cannot rewrite it as payment completion.
+     */
+    if (/\bsettled\b/.test(lower) && !hasFinancialSettlementContext(src)) return true;
+
+    if (
+      fact.actionVerb === "follow_up" &&
+      fact.actionTarget &&
+      /\bon\s+(?:room\s*)?\d{1,4}[a-z]?\b/i.test(src)
+    ) {
+      return true;
+    }
+
+    if (
+      fact.subject === "room_move" &&
+      /\b(?:wants?|want|requested?|asking|asked|would like)\b/i.test(src)
+    ) {
+      return true;
+    }
+
+    return false;
+  }
+
+  function endsWithDanglingPreposition(text) {
+    return /\b(?:on|with|for|to|at|from)\.?$/i.test(trimText(text));
+  }
+
+  function stripTrailingDanglingPreposition(text) {
+    return trimText(String(text || "")).replace(/\s*\b(?:on|with|for|to|at|from)\.?$/i, "");
+  }
+
+  function roomLeadFromFact(fact) {
+    if (!fact || !fact.rooms || !fact.rooms.length) return "";
+    if (fact.rooms.length === 1) return "Room " + fact.rooms[0];
+    return "Rooms " + fact.rooms.join(", ");
+  }
+
+  function finishFactRender(lead, body) {
+    var cleaned = stripTrailingDanglingPreposition(tidyPhrase(body));
+    if (!cleaned) return "";
+    var result = lead ? lead + " – " + capitalize(cleaned) : capitalize(cleaned);
+    result = ensureSentence(result);
+    if (endsWithDanglingPreposition(result)) {
+      result = ensureSentence(stripTrailingDanglingPreposition(result.replace(/\.+$/, "")));
+    }
+    return result;
+  }
+
+  /** Minimally cleaned source — no invented meaning, rooms left intact. */
+  function renderMinimalFact(fact) {
+    var text = tidyPhrase(fact.sourceText);
+    if (!text) return "";
+    text = stripTrailingDanglingPreposition(text);
+    return ensureSentence(text);
+  }
+
+  function renderSettlementFact(fact) {
+    if (!hasFinancialSettlementContext(fact.sourceText)) return "";
+
+    var noun = financialSettlementNoun(fact.sourceText);
+    /* Unclear financial subject — do not invent "balance" / bare "Settled." */
+    if (!noun) return "";
+
+    var lead = roomLeadFromFact(fact);
+
+    if (fact.status === FACT_STATUS.done) {
+      return finishFactRender(lead, "The " + noun + " has been settled");
+    }
+
+    if (fact.status === FACT_STATUS.open) {
+      return finishFactRender(lead, "The " + noun + " remains unsettled");
+    }
+
+    return "";
+  }
+
+  function renderFollowUpFact(fact) {
+    var lead = roomLeadFromFact(fact);
+    var targetLabel = fact.ownerDept || departmentFromTarget(fact.actionTarget) || "the team";
+    var src = fact.sourceText;
+
+    /* Copy only — never mutate fact.sourceText. Pull trailing detail after the room ref. */
+    var detail = String(src)
+      .replace(/\bfollow[\s-]*up\s+with\s+[A-Za-z][A-Za-z\s]*?\s+on\b/gi, " ")
+      .replace(/\b(?:room|rm\.?|suite)\s*[#.]?\s*\d{1,4}[a-z]?\b/gi, " ")
+      .replace(/^\s*please\s+/i, " ")
+      .replace(/[.?!,;:]+$/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    var body;
+    if (detail && !/^(please|follow|with|on)$/i.test(detail)) {
+      body = "Please follow up with " + targetLabel + " regarding " + detail.charAt(0).toLowerCase() + detail.slice(1);
+    } else {
+      body = "Please follow up with " + targetLabel;
+    }
+
+    return finishFactRender(lead, body);
+  }
+
+  function renderRoomMoveRequestFact(fact) {
+    var dest = "";
+    (fact.details || []).forEach(function (detail) {
+      if (detail && detail.type === "destination_room") dest = detail.value;
+    });
+    if (!dest) dest = extractDestinationRoom(fact.sourceText, fact.rooms);
+
+    var sourceRooms = (fact.rooms || []).filter(function (room) {
+      return String(room).toUpperCase() !== String(dest || "").toUpperCase();
+    });
+    var lead = sourceRooms.length === 1
+      ? "Room " + sourceRooms[0]
+      : (sourceRooms.length > 1 ? "Rooms " + sourceRooms.join(", ") : "");
+
+    if (dest && lead) {
+      return finishFactRender(lead, "The guest has requested to move to Room " + dest);
+    }
+    if (dest) {
+      return ensureSentence("The guest has requested to move to Room " + dest);
+    }
+    return finishFactRender(lead || roomLeadFromFact(fact), "The guest has requested a room move");
+  }
+
+  /**
+   * Safe Phase 1 renderer for supported facts only.
+   * Returns "" when the fact should fall through to the legacy writer.
+   */
+  function renderFactPhase1(fact, options) {
+    if (!isPhase1SupportedFact(fact)) return "";
+
+    var src = fact.sourceText;
+    var rendered = "";
+
+    if (/\bsettled\b/i.test(src)) {
+      if (hasFinancialSettlementContext(src)) {
+        rendered = renderSettlementFact(fact);
+        if (rendered) return rendered;
+        /* Financial cue present but subject unclear — keep source meaning. */
+        return renderMinimalFact(fact);
+      }
+      /* Guest-status "settled" — preserve original wording, never payment rewrite. */
+      return renderMinimalFact(fact);
+    }
+
+    if (fact.actionVerb === "follow_up" && fact.actionTarget) {
+      rendered = renderFollowUpFact(fact);
+      if (rendered && !endsWithDanglingPreposition(rendered)) return rendered;
+      return renderMinimalFact(fact);
+    }
+
+    if (fact.subject === "room_move") {
+      rendered = renderRoomMoveRequestFact(fact);
+      if (rendered && !/\b(?:has been relocated|relocated to)\b/i.test(rendered)) {
+        return rendered;
+      }
+      return renderMinimalFact(fact);
+    }
+
+    return renderMinimalFact(fact);
+  }
+
   function rewriteOperationalNote(rawText, options) {
     options = options || {};
+
+    /* Phase 1 fact path — supported cases only; legacy writer otherwise. */
+    var fact = extractOperationalFact(rawText, options);
+    if (isPhase1SupportedFact(fact)) {
+      var phase1Text = renderFactPhase1(fact, options);
+      if (phase1Text) {
+        return applyPreferences(phase1Text, options);
+      }
+    }
+
     var original = trimText(rawText);
     if (!original) return "";
 
@@ -1822,8 +2462,21 @@
     options = options || {};
     input = input || {};
     var analyzed = input.analyzed || (input.classified && input.classified._analyzed) || [];
-    var active = analyzed.filter(isActiveAnalyzedNote);
     var prefs = options.prefs || input.prefs || {};
+
+    /* Phase 2A: use structured facts when notes already carry them. */
+    var hasAttachedFacts = analyzed.some(function (note) {
+      return note && note.fact;
+    });
+    if (hasAttachedFacts) {
+      return summarizeFromFacts(analyzed, {
+        prefs: prefs,
+        detail: prefs.detail || options.detail,
+        terminologyMap: options.terminologyMap
+      });
+    }
+
+    var active = analyzed.filter(isActiveAnalyzedNote);
     var detail = prefs.detail || options.detail || "standard";
 
     var topicCounts = {};
@@ -1934,7 +2587,18 @@
     containsHandoverActionTemplate: containsHandoverActionTemplate,
     inventsCompletionStatus: inventsCompletionStatus,
     formatTime: formatTime,
-    formatMoneyAmount: formatMoneyAmount
+    formatMoneyAmount: formatMoneyAmount,
+
+    /* Phase 1 / 2A structured facts */
+    FACT_STATUS: FACT_STATUS,
+    extractOperationalFact: extractOperationalFact,
+    classifyFactStatus: classifyFactStatus,
+    isPhase1SupportedFact: isPhase1SupportedFact,
+    renderFactPhase1: renderFactPhase1,
+    mapFactStatusToItemStatus: mapFactStatusToItemStatus,
+    isFactUnresolved: isFactUnresolved,
+    isFactClosed: isFactClosed,
+    summarizeFromFacts: summarizeFromFacts
   };
 
   global.AiWritingEngine = Api;

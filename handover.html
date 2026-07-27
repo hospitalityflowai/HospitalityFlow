@@ -1562,7 +1562,7 @@
       border: 1px solid rgba(7, 14, 26, 0.07);
       border-radius: 100px;
       padding: 2px 6px 2px 5px;
-      max-width: 78px;
+      max-width: 96px;
       min-height: 22px;
       cursor: pointer;
       appearance: none;
@@ -1585,10 +1585,17 @@
       border-color: rgba(232, 93, 93, 0.22);
     }
 
-    .handover-item-status-select.status-follow-up {
+    .handover-item-status-select.status-follow-up,
+    .handover-item-status-select.status-in-progress {
       color: #9a7b2e;
       background-color: var(--amber-50);
       border-color: rgba(232, 184, 77, 0.28);
+    }
+
+    .handover-item-status-select.status-confirmed {
+      color: #2f6f9f;
+      background-color: var(--blue-50);
+      border-color: rgba(74, 143, 196, 0.28);
     }
 
     .handover-item-status-select.status-done {
@@ -1617,6 +1624,10 @@
     }
 
     .handover-item.is-follow-up .handover-item-text {
+      color: var(--navy-800);
+    }
+
+    .handover-item.is-confirmed .handover-item-text {
       color: var(--navy-800);
     }
 
@@ -4810,16 +4821,31 @@
       ];
       var ITEM_STATUSES = [
         { id: "pending", label: "Pending" },
+        { id: "confirmed", label: "Confirmed" },
+        { id: "in_progress", label: "In Progress" },
         { id: "follow_up", label: "Follow-up" },
-        { id: "done", label: "Done" }
+        { id: "done", label: "Completed" }
       ];
 
       function normalizeItemStatus(status) {
         if (status === "done" || status === "completed") return "done";
-        if (status === "follow_up" || status === "follow-up" || status === "in_progress" || status === "in-progress") {
-          return "follow_up";
+        if (status === "confirmed") return "confirmed";
+        if (status === "in_progress" || status === "in-progress") return "in_progress";
+        if (status === "follow_up" || status === "follow-up") return "follow_up";
+        if (status === "pending" || status === "open" || status === "requested" || status === "unknown") {
+          return "pending";
         }
-        if (status === "pending" || status === "open") return "pending";
+        return "pending";
+      }
+
+      function mapFactToItemStatus(fact) {
+        if (window.AiWritingEngine && window.AiWritingEngine.mapFactStatusToItemStatus && fact) {
+          return normalizeItemStatus(window.AiWritingEngine.mapFactStatusToItemStatus(fact.status));
+        }
+        if (!fact || !fact.status) return "pending";
+        if (fact.status === "done") return "done";
+        if (fact.status === "confirmed") return "confirmed";
+        if (fact.status === "in_progress") return "in_progress";
         return "pending";
       }
 
@@ -5330,7 +5356,10 @@
         li.setAttribute("data-item-id", normalized.id);
 
         if (normalized.status === "done") li.classList.add("is-done");
-        if (normalized.status === "follow_up") li.classList.add("is-follow-up");
+        if (normalized.status === "follow_up" || normalized.status === "in_progress") {
+          li.classList.add("is-follow-up");
+        }
+        if (normalized.status === "confirmed") li.classList.add("is-confirmed");
 
         var main = document.createElement("div");
         main.className = "handover-item-main";
@@ -5851,16 +5880,58 @@
       }
 
       function analyzeNote(line) {
-        return {
+        var rooms = extractRoomNumbers(line);
+        var note = {
           original: line,
-          rooms: extractRoomNumbers(line),
+          rooms: rooms,
           isVip: detectVip(line),
           isCarriedOver: detectCarriedOver(line),
           isFollowUp: detectFollowUp(line),
           section: null,
           maintenancePriority: null,
-          needsManagementAttention: false
+          needsManagementAttention: false,
+          fact: null
         };
+        if (window.AiWritingEngine && window.AiWritingEngine.extractOperationalFact) {
+          note.fact = window.AiWritingEngine.extractOperationalFact(line, {
+            rooms: rooms,
+            isVip: note.isVip
+          });
+        }
+        return note;
+      }
+
+      function refreshNoteFact(note) {
+        if (!note) return note;
+        if (note._mergedNotes && note._mergedNotes.length) {
+          note._mergedNotes.forEach(function (child) {
+            if (!child.fact && window.AiWritingEngine && window.AiWritingEngine.extractOperationalFact) {
+              child.fact = window.AiWritingEngine.extractOperationalFact(child.original, {
+                rooms: child.rooms,
+                section: child.section,
+                isVip: child.isVip
+              });
+            }
+          });
+          var unresolvedChild = note._mergedNotes.filter(function (child) {
+            if (!child.fact) return false;
+            if (window.AiWritingEngine && window.AiWritingEngine.isFactClosed) {
+              return !window.AiWritingEngine.isFactClosed(child.fact);
+            }
+            return child.fact.status !== "done" && child.fact.status !== "confirmed";
+          })[0];
+          note.fact = (unresolvedChild || note._mergedNotes[0]).fact || null;
+          return note;
+        }
+        if (!window.AiWritingEngine || !window.AiWritingEngine.extractOperationalFact) {
+          return note;
+        }
+        note.fact = window.AiWritingEngine.extractOperationalFact(note.original, {
+          rooms: note.rooms,
+          section: note.section,
+          isVip: note.isVip
+        });
+        return note;
       }
 
       function finalizeNote(note) {
@@ -6072,6 +6143,32 @@
         return detail;
       }
 
+      function itemStatusFromNotes(notes) {
+        var list = (notes || []).filter(Boolean);
+        if (!list.length) return "pending";
+        var statuses = list.map(function (note) {
+          if (note.fact) return mapFactToItemStatus(note.fact);
+          if (isCompletedActionNote(note.original)) return "done";
+          return "pending";
+        });
+        if (statuses.every(function (s) { return s === "done"; })) return "done";
+        if (statuses.some(function (s) { return s === "in_progress"; })) return "in_progress";
+        if (statuses.some(function (s) { return s === "pending" || s === "follow_up"; })) return "pending";
+        if (statuses.every(function (s) { return s === "confirmed" || s === "done"; })) return "confirmed";
+        if (statuses.some(function (s) { return s === "confirmed"; })) return "confirmed";
+        return "pending";
+      }
+
+      function makeDisplayItem(text, notes) {
+        var noteList = Array.isArray(notes) ? notes : (notes ? [notes] : []);
+        var primary = noteList[0] || null;
+        return {
+          text: String(text || ""),
+          status: itemStatusFromNotes(noteList),
+          fact: primary && primary.fact ? primary.fact : null
+        };
+      }
+
       function rewriteNoteForDisplay(note) {
         if (window.AiWritingEngine && note) {
           return window.AiWritingEngine.rewriteNote(note, getAiWritingOptions({
@@ -6104,7 +6201,7 @@
       }
 
       function formatNoteDisplay(note) {
-        return rewriteNoteForDisplay(note);
+        return makeDisplayItem(rewriteNoteForDisplay(note), note);
       }
 
       function composeMergedRoomNarrative(room, notes) {
@@ -6122,9 +6219,11 @@
           seen[key] = true;
           parts.push(text);
         });
-        if (!parts.length) return "Room " + room + " – update required";
-        if (parts.length === 1) return "Room " + room + " – " + parts[0];
-        return "Room " + room + " – " + parts.join("; ");
+        var body;
+        if (!parts.length) body = "Room " + room + " – update required";
+        else if (parts.length === 1) body = "Room " + room + " – " + parts[0];
+        else body = "Room " + room + " – " + parts.join("; ");
+        return makeDisplayItem(body, sorted);
       }
 
       function formatMergedRoomNotes(room, notes) {
@@ -6260,9 +6359,11 @@
         analyzed.forEach(function (note) {
           note.section = classifyAnalyzedNote(note);
           finalizeNote(note);
+          refreshNoteFact(note);
         });
         ensureNoteCoverage(analyzed);
         analyzed = consolidateAnalyzedNotes(analyzed);
+        analyzed.forEach(refreshNoteFact);
 
         var classified = {};
         SECTIONS.forEach(function (section) {
@@ -6291,6 +6392,11 @@
       }
 
       function isActiveNote(note) {
+        if (note && note.fact && window.AiWritingEngine && window.AiWritingEngine.isFactClosed) {
+          if (window.AiWritingEngine.isFactClosed(note.fact)) return false;
+        } else if (note && note.fact && (note.fact.status === "done" || note.fact.status === "confirmed")) {
+          return false;
+        }
         return !isResolvedNote(note.original);
       }
 
