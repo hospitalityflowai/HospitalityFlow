@@ -1740,6 +1740,176 @@
     };
   }
 
+  /* ------------------------------------------------------------------ */
+  /*  Phase 4B — Shift Glance / top badge metrics from structured facts */
+  /* ------------------------------------------------------------------ */
+
+  /**
+   * Confirmed facts stay out of outstanding counts unless source still asks
+   * for follow-up / pending preparation (e.g. amenities still needed).
+   */
+  function hasExplicitFollowUpRemaining(note, fact) {
+    if (note && note.isFollowUp) return true;
+    var src = String((fact && fact.sourceText) || (note && note.original) || "");
+    if (/\bamenities?\b/i.test(src) &&
+        /\b(?:still\s+)?(?:need|needs|needed|to\s+be\s+placed|pending|not\s+yet)\b/i.test(src)) {
+      return true;
+    }
+    if (/\bstill\s+(?:need|needs|to\s+be|pending|open|outstanding)\b/i.test(src)) return true;
+    if (/\bfollow[\s-]*up\b/i.test(src) &&
+        !/\bfollow[\s-]*up\s+(?:complete|completed|done|closed)\b/i.test(src)) {
+      return true;
+    }
+    if (/\b(?:prepare|preparation|to\s+be\s+prepared)\b/i.test(src) &&
+        !/\b(?:prepared|preparation\s+complete)\b/i.test(src)) {
+      return true;
+    }
+    return false;
+  }
+
+  /** Active issue for glance badges (done excluded; confirmed only with leftover follow-up). */
+  function isGlanceActiveFact(note, fact) {
+    if (!fact) return true;
+    if (note && note.section === "completed" && fact.status === FACT_STATUS.unknown) {
+      return false;
+    }
+    if (fact.status === FACT_STATUS.done) return false;
+    if (fact.status === FACT_STATUS.confirmed) {
+      return hasExplicitFollowUpRemaining(note, fact);
+    }
+    /* open | requested | in_progress | unknown — include conservatively */
+    return true;
+  }
+
+  function isVipGlanceNote(note, fact) {
+    if (!note && !fact) return false;
+    if (note && (note.isVip || note.section === "vip")) return true;
+    if (fact && (fact.subject === "vip_arrival" || fact.sectionHint === "vip")) return true;
+    var topic = classifyFactSummaryTopic(fact, note);
+    return topic === "vip";
+  }
+
+  function isTaskLikeGlanceNote(note, fact) {
+    var section = (note && note.section) || "";
+    if (section === "tasks" || section === "inventory" || section === "deliveries") return true;
+    var topic = classifyFactSummaryTopic(fact, note);
+    return topic === "task" || topic === "inventory" || topic === "delivery";
+  }
+
+  function countNotesUniqueByRoom(notes) {
+    var roomSeen = {};
+    var count = 0;
+    (notes || []).forEach(function (note) {
+      if (!note) return;
+      var rooms = note.rooms || [];
+      if (rooms.length === 1) {
+        var room = String(rooms[0]);
+        if (roomSeen[room]) return;
+        roomSeen[room] = true;
+        count += 1;
+        return;
+      }
+      count += 1;
+    });
+    return count;
+  }
+
+  /**
+   * Shift Glance / top badge metrics from structured facts.
+   * Shape matches handover computeHandoverMetrics for drop-in use.
+   */
+  function computeHandoverMetricsFromFacts(analyzed) {
+    var urgentNotes = [];
+    var vipNotes = [];
+    var maintenanceNotes = [];
+    var paymentNotes = [];
+    var eventNotes = [];
+    var taskLikeNotes = [];
+    var guestNotes = [];
+    var generalNotes = [];
+
+    (analyzed || []).forEach(function (note) {
+      if (!note) return;
+      var fact = ensureNoteFact(note);
+      if (!fact) return;
+      if (note.section === "completed" && fact.status === FACT_STATUS.unknown) {
+        fact = Object.assign({}, fact, { status: FACT_STATUS.done });
+      }
+
+      var section = note.section || fact.sectionHint || "";
+      var topic = classifyFactSummaryTopic(fact, note);
+      var active = isGlanceActiveFact(note, fact);
+
+      if (section === "urgent" || topic === "critical") {
+        if (active) urgentNotes.push(note);
+      }
+      if (isVipGlanceNote(note, fact) && active) {
+        vipNotes.push(note);
+      }
+      if ((section === "maintenance" || topic === "maintenance") && active) {
+        maintenanceNotes.push(note);
+      }
+      if ((section === "payments" || topic === "payment") && active) {
+        paymentNotes.push(note);
+      }
+      if (section === "events" || topic === "event") {
+        /*
+         * Events: keep counting unless structured status clearly closes the item.
+         * Unknown / missing closure → include (preserve prior behaviour).
+         */
+        if (fact.status !== FACT_STATUS.done && fact.status !== FACT_STATUS.confirmed) {
+          eventNotes.push(note);
+        }
+      }
+      if (isTaskLikeGlanceNote(note, fact) && active) {
+        taskLikeNotes.push(note);
+      }
+      if (
+        (section === "guest" || section === "vip" || topic === "guest" || topic === "vip" ||
+          topic === "lateCheckout" || topic === "roomMove" || topic === "extension" ||
+          topic === "complaint") &&
+        active
+      ) {
+        guestNotes.push(note);
+      }
+      if ((section === "general" || section === "lostproperty") && active) {
+        generalNotes.push(note);
+      }
+    });
+
+    var vip = countNotesUniqueByRoom(vipNotes);
+    var taskLike = countNotesUniqueByRoom(taskLikeNotes);
+    /*
+     * Outstanding Tasks includes unresolved VIP preparation so pending amenities
+     * surface on both VIP Arrivals and Outstanding Tasks badges.
+     */
+    var tasks = taskLike + vip;
+    var maintenance = countNotesUniqueByRoom(maintenanceNotes);
+    var payments = countNotesUniqueByRoom(paymentNotes);
+    var events = countNotesUniqueByRoom(eventNotes);
+    var urgent = countNotesUniqueByRoom(urgentNotes);
+    var guest = countNotesUniqueByRoom(guestNotes);
+    var general = countNotesUniqueByRoom(generalNotes);
+
+    return {
+      urgent: urgent,
+      vip: vip,
+      maintenance: maintenance,
+      payments: payments,
+      events: events,
+      tasks: tasks,
+      display: {
+        urgent: urgent,
+        guest: guest,
+        maintenance: maintenance,
+        payments: payments,
+        events: events,
+        tasks: tasks,
+        general: general
+      }
+    };
+  }
+
   function isPhase1SupportedFact(fact) {
     if (!fact || !fact.sourceText) return false;
     var src = fact.sourceText;
@@ -2909,7 +3079,9 @@
     isFactUnresolved: isFactUnresolved,
     isFactClosed: isFactClosed,
     summarizeFromFacts: summarizeFromFacts,
-    buildSummaryDetailCards: buildSummaryDetailCards
+    buildSummaryDetailCards: buildSummaryDetailCards,
+    computeHandoverMetricsFromFacts: computeHandoverMetricsFromFacts,
+    isGlanceActiveFact: isGlanceActiveFact
   };
 
   global.AiWritingEngine = Api;

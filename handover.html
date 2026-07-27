@@ -6418,7 +6418,7 @@
         return buildSectionDisplay(analyzed, sectionId).length;
       }
 
-      function computeHandoverMetrics(analyzed) {
+      function computeHandoverMetricsLegacy(analyzed) {
         var vipNotes = analyzed.filter(function (n) {
           return isActiveNote(n) && (n.isVip || n.section === "vip");
         });
@@ -6445,6 +6445,14 @@
               sectionDisplayCount(analyzed, "lostproperty")
           }
         };
+      }
+
+      function computeHandoverMetrics(analyzed) {
+        /* Phase 4B: Shift Glance / top badges from structured facts when available. */
+        if (window.AiWritingEngine && window.AiWritingEngine.computeHandoverMetricsFromFacts) {
+          return window.AiWritingEngine.computeHandoverMetricsFromFacts(analyzed || []);
+        }
+        return computeHandoverMetricsLegacy(analyzed || []);
       }
 
       function getHandoverMetrics(classified) {
