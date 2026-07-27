@@ -12,23 +12,22 @@
     { id: 'rooms-facilities', label: 'Rooms & Facilities', shortLabel: 'Rooms & Facilities', icon: 'grid', layer: 'essential' },
     { id: 'departments-shifts', label: 'Departments & Shifts', shortLabel: 'Departments', icon: 'users', layer: 'essential' },
     { id: 'policies', label: 'Policies', shortLabel: 'Policies', icon: 'document', layer: 'essential' },
-    { id: 'hotel-knowledge', label: 'Hotel Knowledge', shortLabel: 'Hotel Knowledge', icon: 'knowledge', layer: 'essential' },
-    { id: 'operational-knowledge', label: 'Operational Knowledge', shortLabel: 'Operational Knowledge', icon: 'activity', layer: 'essential' },
+    { id: 'hotel-knowledge', label: 'Hotel Knowledge', shortLabel: 'Hotel Knowledge', icon: 'knowledge', layer: 'optional' },
+    { id: 'operational-knowledge', label: 'Shift Procedures', shortLabel: 'Shift Procedures', icon: 'activity', layer: 'optional' },
     { id: 'reservations-payments', label: 'Reservations & Payments', shortLabel: 'Reservations & Payments', icon: 'card', layer: 'optional' },
     { id: 'guest-services', label: 'Guest Services', shortLabel: 'Guest Services', icon: 'concierge', layer: 'optional' },
     { id: 'inventory', label: 'Inventory', shortLabel: 'Inventory', icon: 'box', layer: 'optional' },
-    { id: 'operations', label: 'Operations', shortLabel: 'Operations', icon: 'activity', layer: 'optional' },
-    { id: 'advanced-settings', label: 'Advanced Settings', shortLabel: 'Advanced', icon: 'settings', layer: 'advanced' }
+    { id: 'advanced-settings', label: 'Settings', shortLabel: 'Settings', icon: 'settings', layer: 'settings' }
   ];
 
   var NAV_LAYERS = [
-    { id: 'essential', label: 'Essential Setup', defaultExpanded: true },
-    { id: 'optional', label: 'Knowledge Library', defaultExpanded: false },
-    { id: 'advanced', label: 'Advanced', defaultExpanded: false }
+    { id: 'essential', label: 'Core Setup', defaultExpanded: true },
+    { id: 'optional', label: 'Knowledge', defaultExpanded: false },
+    { id: 'settings', label: 'Settings', defaultExpanded: false }
   ];
 
   var ESSENTIAL_PROGRESS_SECTIONS = [
-    'general', 'rooms-facilities', 'departments-shifts', 'policies', 'hotel-knowledge', 'operational-knowledge'
+    'general', 'rooms-facilities', 'departments-shifts', 'policies'
   ];
 
   var PROGRESS_SECTIONS = [
@@ -433,13 +432,14 @@
     card.className = 'policy-card disclosure-card disclosure-card--collapsed' + (hasContent ? ' disclosure-card--filled' : '');
     card.setAttribute('data-policy-key', key);
     card.setAttribute('data-policy-group-id', groupId);
-    var metaText = hasContent ? (trimDisclosureText(entry.summary) || 'Configured') : 'Not configured';
+    var summary = trimDisclosureText(entry.summary);
+    var metaText = summary ? (summary.length > 48 ? summary.substring(0, 48) + '…' : summary) : '';
     card.innerHTML =
       '<div class="policy-card-header">' +
       '<button type="button" class="disclosure-card-toggle policy-card-toggle" aria-expanded="' + (hasContent ? 'true' : 'false') + '">' +
       '<span class="policy-card-title-wrap">' +
       '<span class="policy-card-title">' + esc(label) + '</span>' +
-      '<span class="disclosure-card-meta">' + esc(metaText.length > 48 ? metaText.substring(0, 48) + '…' : metaText) + '</span>' +
+      (metaText ? '<span class="disclosure-card-meta">' + esc(metaText) + '</span>' : '<span class="disclosure-card-meta" hidden></span>') +
       '</span>' +
       disclosureChevron() +
       '</button>' +
@@ -501,7 +501,6 @@
 
   function buildReservationCard(ch, idx) {
     var hasContent = otaChannelHasContent(ch);
-    var metaText = hasContent ? 'Configured' : 'Not configured';
     var card = document.createElement('div');
     card.className = 'reservation-card disclosure-card disclosure-card--collapsed' + (hasContent ? ' disclosure-card--filled' : '');
     card.setAttribute('data-ota-channel', idx);
@@ -509,7 +508,6 @@
       '<button type="button" class="reservation-card-header disclosure-card-toggle" data-collapse-toggle aria-expanded="false">' +
       '<span class="reservation-card-title">' + esc(ch.label) + '</span>' +
       '<span class="reservation-card-status">' +
-      '<span class="disclosure-card-meta">' + metaText + '</span>' +
       disclosureChevron() +
       '</span>' +
       '</button>' +
@@ -724,9 +722,13 @@
     if (!meta) return;
     var summary = (card.querySelector('[data-f="summary"]') || {}).value || '';
     var instructions = (card.querySelector('[data-f="instructions"]') || {}).value || '';
-    if (trimDisclosureText(summary)) meta.textContent = summary.length > 48 ? summary.substring(0, 48) + '…' : summary;
-    else if (trimDisclosureText(instructions)) meta.textContent = 'Configured';
-    else meta.textContent = 'Not configured';
+    if (trimDisclosureText(summary)) {
+      meta.hidden = false;
+      meta.textContent = summary.length > 48 ? summary.substring(0, 48) + '…' : summary;
+    } else {
+      meta.textContent = '';
+      meta.hidden = true;
+    }
     card.classList.toggle('disclosure-card--filled', policyEntryHasContent({
       summary: summary,
       instructions: instructions,
@@ -801,7 +803,7 @@
     link.innerHTML =
       '<span class="nav-icon">' + sectionIconSvg(sec.icon) + '</span>' +
       '<span class="nav-label">' + esc(sec.shortLabel || sec.label) + '</span>' +
-      '<span class="nav-progress" aria-hidden="true"></span>';
+      '<span class="nav-trailing" aria-hidden="true"></span>';
     return link;
   }
 
@@ -904,9 +906,13 @@
         var target = document.getElementById(id);
         if (target) {
           e.preventDefault();
-          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          if (typeof global.__hfNavigateProfileSection === 'function') {
+            global.__hfNavigateProfileSection(id);
+          } else {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
         }
-        setActive(id);
+        setActive(id === 'operations' ? 'advanced-settings' : id);
       });
     });
 
@@ -1257,8 +1263,8 @@
     }
     if (titleEl) {
       titleEl.textContent = progress.isComplete
-        ? 'Essential Setup Complete'
-        : 'Essential Setup — ' + progress.completed + ' of ' + progress.total + ' complete';
+        ? 'Core Setup Complete'
+        : 'Core Setup — ' + progress.completed + ' of ' + progress.total + ' complete';
     }
     if (pctEl) pctEl.textContent = progress.overall + '%';
     if (fillEl) fillEl.style.width = progress.overall + '%';
@@ -1266,7 +1272,7 @@
     if (messageEl) {
       messageEl.textContent = progress.isComplete
         ? 'Your Hotel Brain is ready to power AI Shift Handover.'
-        : 'Complete the core sections first. Knowledge Library sections can be added over time.';
+        : 'Complete the core sections first. Knowledge sections can be added over time.';
     }
     var brainStatusEl = document.getElementById('hotelBrainStatus');
     if (brainStatusEl) {
@@ -1278,8 +1284,8 @@
     if (barEl) {
       barEl.setAttribute('aria-valuenow', String(progress.overall));
       barEl.setAttribute('aria-label', progress.isComplete
-        ? 'Essential Setup complete'
-        : 'Essential Setup ' + progress.overall + ' percent complete');
+        ? 'Core Setup complete'
+        : 'Core Setup ' + progress.overall + ' percent complete');
     }
   }
 
@@ -1287,24 +1293,14 @@
     document.querySelectorAll('.section-nav-link').forEach(function (link) {
       var id = link.getAttribute('data-section');
       if (!id) return;
-      var progress = getSectionProgress(id);
-      var el = link.querySelector('.nav-progress');
-      if (!el) {
-        el = document.createElement('span');
-        el.className = 'nav-progress';
-        el.setAttribute('aria-hidden', 'true');
-        link.appendChild(el);
-      }
-      el.textContent = progress.display || '';
       link.classList.toggle('is-complete', isSectionComplete(id));
-      link.classList.toggle('has-progress', !!(progress.display && progress.mode !== 'none'));
-      link.classList.toggle('is-progress-complete', !!progress.complete);
-      if (progress.display) {
-        link.setAttribute('title', (link.querySelector('.nav-label') || {}).textContent
-          ? String((link.querySelector('.nav-label') || {}).textContent).trim() + ' — ' + progress.display
-          : progress.display);
-      } else {
-        link.removeAttribute('title');
+      link.classList.remove('has-progress', 'is-progress-complete');
+      link.removeAttribute('title');
+      if (!link.querySelector('.nav-trailing')) {
+        var trailing = document.createElement('span');
+        trailing.className = 'nav-trailing';
+        trailing.setAttribute('aria-hidden', 'true');
+        link.appendChild(trailing);
       }
     });
   }
