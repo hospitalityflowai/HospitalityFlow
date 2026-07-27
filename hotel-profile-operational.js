@@ -639,6 +639,7 @@
           '<label class="ok-toggle"><input type="checkbox" data-f="checklistEnabled"' + (entry.checklistEnabled ? ' checked' : '') + '> Checklist</label>' +
         '</div>' +
       '</div>' +
+      '<div class="field-label-row"><label class="form-label">Knowledge content</label><button type="button" class="improve-writing-btn" data-ai-polish="content"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l1.4 4.6L18 9l-4.6 1.4L12 15l-1.4-4.6L6 9l4.6-1.4L12 3z"/><path d="M19 14l.7 2.1L22 17l-2.3.7L19 20l-.7-2.3L16 17l2.3-.9L19 14z"/></svg><span class="improve-writing-label">Improve Writing</span></button></div>' +
       '<textarea class="notes-textarea" data-f="content" placeholder="Operational knowledge content">' + escAttr(entry.content) + '</textarea>' +
       '<div class="ok-entry-grid">' +
         '<input class="form-input" data-f="department" placeholder="Department" value="' + escAttr(entry.department) + '">' +
@@ -652,7 +653,9 @@
         '<label class="ok-toggle"><input type="checkbox" data-f="optional"' + (entry.optional ? ' checked' : '') + '> Optional</label>' +
         '<label class="ok-toggle"><input type="checkbox" data-f="triggersRequired"' + (entry.triggersRequired ? ' checked' : '') + '> Triggers required</label>' +
       '</div>' +
+      '<div class="field-label-row"><label class="form-label">Recommended action</label><button type="button" class="improve-writing-btn" data-ai-polish="followUpInstruction"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l1.4 4.6L18 9l-4.6 1.4L12 15l-1.4-4.6L6 9l4.6-1.4L12 3z"/><path d="M19 14l.7 2.1L22 17l-2.3.7L19 20l-.7-2.3L16 17l2.3-.9L19 14z"/></svg><span class="improve-writing-label">Improve Writing</span></button></div>' +
       '<textarea class="notes-textarea" data-f="followUpInstruction" placeholder="Recommended action (used by Shift Intelligence when this knowledge is retrieved)">' + escAttr(entry.followUpInstruction) + '</textarea>' +
+      '<div class="field-label-row"><label class="form-label">Internal notes</label><button type="button" class="improve-writing-btn" data-ai-polish="notes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l1.4 4.6L18 9l-4.6 1.4L12 15l-1.4-4.6L6 9l4.6-1.4L12 3z"/><path d="M19 14l.7 2.1L22 17l-2.3.7L19 20l-.7-2.3L16 17l2.3-.9L19 14z"/></svg><span class="improve-writing-label">Improve Writing</span></button></div>' +
       '<textarea class="notes-textarea ok-notes" data-f="notes" placeholder="Internal notes (not used as the recommended action)">' + escAttr(entry.notes) + '</textarea>' +
       '<button type="button" class="btn-text ok-remove-entry">Remove entry</button>';
 
@@ -682,6 +685,7 @@
         '<label class="ok-toggle"><input type="checkbox" data-f="checklistEnabled"' + (step.checklistEnabled ? ' checked' : '') + '> Checklist</label>' +
         '<label class="ok-toggle"><input type="checkbox" data-f="active"' + (step.active ? ' checked' : '') + '> Active</label>' +
       '</div>' +
+      '<div class="field-label-row"><label class="form-label">Step notes</label><button type="button" class="improve-writing-btn" data-ai-polish="notes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l1.4 4.6L18 9l-4.6 1.4L12 15l-1.4-4.6L6 9l4.6-1.4L12 3z"/><path d="M19 14l.7 2.1L22 17l-2.3.7L19 20l-.7-2.3L16 17l2.3-.9L19 14z"/></svg><span class="improve-writing-label">Improve Writing</span></button></div>' +
       '<textarea class="notes-textarea ok-notes" data-f="notes" placeholder="Notes">' + escAttr(step.notes) + '</textarea>' +
       '<button type="button" class="btn-text ok-remove-step">Remove step</button>';
     return card;

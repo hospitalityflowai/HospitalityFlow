@@ -447,8 +447,8 @@
       '</div>' +
       '<div class="disclosure-card-body"' + (hasContent ? '' : ' hidden') + '>' +
       '<input type="hidden" data-f="title" value="' + esc(entry.title || label) + '">' +
-      '<div class="form-group"><label class="form-label">Short summary</label><input class="form-input" data-f="summary" value="' + esc(entry.summary) + '" placeholder="One-line summary for staff"><button type="button" class="btn-text ai-polish-btn" data-ai-polish="summary">Polish with AI</button></div>' +
-      '<div class="form-group"><label class="form-label">Detailed instructions</label><textarea class="notes-textarea" data-f="instructions" style="min-height:72px" placeholder="What should staff do?">' + esc(entry.instructions) + '</textarea><button type="button" class="btn-text ai-polish-btn" data-ai-polish="instructions">Polish with AI</button></div>' +
+      '<div class="form-group"><label class="form-label">Short summary</label><input class="form-input" data-f="summary" value="' + esc(entry.summary) + '" placeholder="One-line summary for staff"></div>' +
+      '<div class="form-group"><div class="field-label-row"><label class="form-label">Detailed instructions</label><button type="button" class="improve-writing-btn" data-ai-polish="instructions"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l1.4 4.6L18 9l-4.6 1.4L12 15l-1.4-4.6L6 9l4.6-1.4L12 3z"/><path d="M19 14l.7 2.1L22 17l-2.3.7L19 20l-.7-2.3L16 17l2.3-.9L19 14z"/></svg><span class="improve-writing-label">Improve Writing</span></button></div><textarea class="notes-textarea" data-f="instructions" style="min-height:72px" placeholder="What should staff do?">' + esc(entry.instructions) + '</textarea></div>' +
       '<div class="form-group"><label class="form-label">Fee or charge (if applicable)</label><input class="form-input" data-f="charge" value="' + esc(entry.charge) + '" placeholder="e.g. £25 before 2pm"></div>' +
       (isCustom ? '<div class="form-group"><label class="form-label">Policy name</label><input class="form-input" data-f="title-edit" value="' + esc(entry.title || label) + '" placeholder="e.g. Day-use rooms"></div>' : '') +
       '<input type="hidden" data-f="approvalLevel" value="' + esc(entry.approvalLevel) + '">' +
@@ -642,7 +642,11 @@
   }
 
   function fieldArea(label, name, val) {
-    return '<div class="form-group full"><label class="form-label">' + label + '</label><textarea class="notes-textarea" data-f="' + name + '" style="min-height:64px">' + esc(val) + '</textarea></div>';
+    return '<div class="form-group full"><div class="field-label-row"><label class="form-label">' + label + '</label>' +
+      '<button type="button" class="improve-writing-btn" data-ai-polish="' + name + '">' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l1.4 4.6L18 9l-4.6 1.4L12 15l-1.4-4.6L6 9l4.6-1.4L12 3z"/><path d="M19 14l.7 2.1L22 17l-2.3.7L19 20l-.7-2.3L16 17l2.3-.9L19 14z"/></svg>' +
+      '<span class="improve-writing-label">Improve Writing</span></button></div>' +
+      '<textarea class="notes-textarea" data-f="' + name + '" style="min-height:64px">' + esc(val) + '</textarea></div>';
   }
 
   function esc(s) {
@@ -736,11 +740,7 @@
     card.querySelectorAll('[data-f="summary"], [data-f="instructions"], [data-f="charge"]').forEach(function (el) {
       el.addEventListener('input', function () { updatePolicyCardMeta(card); });
     });
-    card.querySelectorAll('[data-ai-polish]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        polishPolicyField(card, btn.getAttribute('data-ai-polish'));
-      });
-    });
+    /* Improve Writing buttons are bound by hotel-profile.html preview flow */
   }
 
   function polishPolicyField(card, fieldName) {
@@ -750,10 +750,16 @@
     var raw = String(field.value || '').trim();
     if (!raw) return;
     if (!global.AiWritingEngine) return;
-    var polished = global.AiWritingEngine.rewritePolicy(raw, {
-      module: global.AiWritingEngine.MODULES.policy,
-      prefs: { language: 'British English', tone: 'professional' }
-    });
+    var polished = global.AiWritingEngine.improveHotelBrainWriting
+      ? global.AiWritingEngine.improveHotelBrainWriting(raw, {
+          module: global.AiWritingEngine.MODULES.hotelBrain,
+          prefs: { language: 'British English', tone: 'concise' }
+        })
+      : global.AiWritingEngine.rewritePolicy(raw, {
+          module: global.AiWritingEngine.MODULES.policy,
+          prefs: { language: 'British English', tone: 'professional' }
+        });
+    if (polished && typeof polished === 'object' && polished.text != null) polished = polished.text;
     if (polished && polished !== raw) {
       field.value = polished;
       updatePolicyCardMeta(card);
@@ -763,10 +769,20 @@
 
   function polishKnowledgeText(raw, options) {
     if (!global.AiWritingEngine) return String(raw || '');
-    return global.AiWritingEngine.rewriteKnowledge(raw, options || {
-      module: global.AiWritingEngine.MODULES.knowledge,
-      prefs: { language: 'British English', tone: 'professional' }
-    });
+    var result;
+    if (global.AiWritingEngine.improveHotelBrainWriting) {
+      result = global.AiWritingEngine.improveHotelBrainWriting(raw, options || {
+        module: global.AiWritingEngine.MODULES.hotelBrain,
+        prefs: { language: 'British English', tone: 'concise' }
+      });
+    } else {
+      result = global.AiWritingEngine.rewriteKnowledge(raw, options || {
+        module: global.AiWritingEngine.MODULES.knowledge,
+        prefs: { language: 'British English', tone: 'professional' }
+      });
+    }
+    if (result && typeof result === 'object' && result.text != null) return String(result.text);
+    return String(result == null ? raw || '' : result);
   }
 
   function updateEmptyState(listEl, emptyId, show) {
@@ -1043,7 +1059,7 @@
     if (countEl) countEl.textContent = progress.completed + ' / ' + progress.total;
     if (messageEl) {
       messageEl.textContent = progress.isComplete
-        ? 'Core setup complete. Your Hotel Brain is ready to power AI Shift Handover. Continue adding knowledge over time to make Hospitality Flow even smarter.'
+        ? 'Your Hotel Brain is ready to power AI Shift Handover.'
         : 'Complete the core sections first. Optional modules can be added over time.';
     }
     var brainStatusEl = document.getElementById('hotelBrainStatus');
@@ -1079,7 +1095,7 @@
     if (countEl) countEl.textContent = progress.completed + ' / ' + progress.total;
     if (barEl) {
       barEl.setAttribute('aria-valuenow', String(progress.overall));
-      barEl.setAttribute('aria-label', 'Full profile coverage ' + progress.overall + ' percent complete');
+      barEl.setAttribute('aria-label', 'Knowledge coverage ' + progress.overall + ' percent complete');
     }
     updateSectionStatuses();
     updateEssentialProgressUI();
