@@ -1448,6 +1448,298 @@
     return applyPreferences(summary, { prefs: prefs, terminologyMap: options.terminologyMap });
   }
 
+  /* ------------------------------------------------------------------ */
+  /*  Phase 4A — AI Summary detail cards from structured facts          */
+  /* ------------------------------------------------------------------ */
+
+  function ensureNoteFact(note) {
+    if (!note) return null;
+    if (note.fact && note.fact.status) return note.fact;
+    if (!note.original) return note.fact || null;
+    return extractOperationalFact(note.original, {
+      section: note.section,
+      rooms: note.rooms,
+      isVip: note.isVip
+    });
+  }
+
+  function stripRoomsFromSource(text, rooms) {
+    var cleaned = String(text || "");
+    (rooms || []).forEach(function (room) {
+      cleaned = stripRoomLead(cleaned, room);
+    });
+    cleaned = cleaned
+      .replace(/\b(?:room|rm\.?|suite)\s*[#.]?\s*\d{1,4}[a-z]?\b/gi, " ")
+      .replace(/^\[[^\]]+\]\s*/, "")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+    return tidyPhrase(cleaned);
+  }
+
+  function moneyFromFact(fact) {
+    var amount = "";
+    (fact.details || []).forEach(function (d) {
+      if (d && d.type === "money" && d.value) amount = d.value;
+    });
+    if (amount) return amount;
+    var extracted = extractMoney(fact.sourceText || "");
+    return extracted.length ? extracted[0] : "";
+  }
+
+  function summaryCardBucket(note, fact) {
+    var topic = classifyFactSummaryTopic(fact, note);
+    var section = (note && note.section) || (fact && fact.sectionHint) || "";
+
+    if (topic === "critical" || section === "urgent") return "urgent";
+    if (topic === "payment" || section === "payments") return "payments";
+    if (topic === "maintenance" || section === "maintenance") return "maintenance";
+    if (
+      topic === "vip" || topic === "guest" || topic === "lateCheckout" ||
+      topic === "roomMove" || topic === "extension" || topic === "complaint" ||
+      section === "guest" || section === "vip"
+    ) {
+      return "guest";
+    }
+    if (
+      topic === "task" || topic === "inventory" || topic === "delivery" ||
+      section === "tasks" || section === "inventory" || section === "deliveries"
+    ) {
+      return "tasks";
+    }
+    if (topic === "event" || section === "events") return "events";
+    return "";
+  }
+
+  function buildPaymentCardPhrase(note, fact) {
+    var lead = roomLeadFromFact(fact) ||
+      (note.rooms && note.rooms.length === 1 ? "Room " + note.rooms[0] : "");
+    var noun = financialSettlementNoun(fact.sourceText) || "outstanding balance";
+    var money = moneyFromFact(fact);
+    var moneyBit = money ? " of " + money : "";
+
+    if (fact.status === FACT_STATUS.done) {
+      return finishFactRender(lead, capitalize(noun) + " settled");
+    }
+    if (fact.status === FACT_STATUS.confirmed) {
+      return finishFactRender(lead, capitalize(noun) + " confirmed");
+    }
+    if (fact.status === FACT_STATUS.in_progress) {
+      return finishFactRender(lead, capitalize(noun) + moneyBit + " is being processed");
+    }
+    if (fact.status === FACT_STATUS.requested) {
+      return finishFactRender(lead, capitalize(noun) + moneyBit + " payment requested");
+    }
+    /* open / unknown — factual, never invent "requiring settlement before departure" */
+    return finishFactRender(lead, capitalize(noun) + moneyBit + " remains open");
+  }
+
+  function buildMaintenanceCardPhrase(note, fact) {
+    var lead = roomLeadFromFact(fact) ||
+      (note.rooms && note.rooms.length === 1 ? "Room " + note.rooms[0] : "");
+    var detail = stripRoomsFromSource(fact.sourceText, fact.rooms || note.rooms);
+    detail = detail
+      .replace(/\b(?:please\s+)?(?:follow\s*up|update\s+(?:reception|the\s+team)|contact\s+guest)\b.*$/i, "")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+
+    if (fact.status === FACT_STATUS.done) {
+      if (detail) {
+        return finishFactRender(lead, detail.replace(/\bremains?\s+open\b/i, "").trim() || "Maintenance issue resolved");
+      }
+      return finishFactRender(lead, "Maintenance issue resolved");
+    }
+    if (fact.status === FACT_STATUS.confirmed) {
+      return finishFactRender(lead, (detail || "Maintenance update") + " confirmed");
+    }
+    if (fact.status === FACT_STATUS.in_progress) {
+      if (detail && !/\bin\s+progress\b/i.test(detail)) {
+        return finishFactRender(lead, detail.replace(/\.$/, "") + " in progress");
+      }
+      return finishFactRender(lead, detail || "Maintenance work in progress");
+    }
+    if (fact.status === FACT_STATUS.open || fact.status === FACT_STATUS.requested ||
+        fact.status === FACT_STATUS.unknown) {
+      if (detail) {
+        if (/\bremains?\s+open\b/i.test(detail) || /\bunresolved\b/i.test(detail) ||
+            /\bstill\b/i.test(detail)) {
+          return finishFactRender(lead, detail);
+        }
+        if (fact.status === FACT_STATUS.open || /\bleak|broken|fault|damage|repair/i.test(detail)) {
+          return finishFactRender(lead, detail.replace(/\.$/, "") + " remains open");
+        }
+        return finishFactRender(lead, detail);
+      }
+      return finishFactRender(lead, "Maintenance issue remains open");
+    }
+    return finishFactRender(lead, detail || "Maintenance note recorded");
+  }
+
+  function buildGuestCardPhrase(note, fact) {
+    var lead = roomLeadFromFact(fact) ||
+      (note.rooms && note.rooms.length === 1 ? "Room " + note.rooms[0] : "");
+    var detail = stripRoomsFromSource(fact.sourceText, fact.rooms || note.rooms);
+
+    if (fact.status === FACT_STATUS.confirmed && detectLateCheckout(fact.sourceText)) {
+      var until = String(fact.sourceText || "").match(/until\s+(\d{1,2}[:.]?\d{0,2}\s*(?:am|pm)?)/i);
+      var untilBit = until ? " until " + until[1] : "";
+      return finishFactRender(lead, "Late check-out confirmed" + untilBit);
+    }
+    if (fact.status === FACT_STATUS.done) {
+      if (detail) return finishFactRender(lead, detail.replace(/\.$/, "") + " completed");
+      return finishFactRender(lead, "Guest follow-up completed");
+    }
+    if (fact.status === FACT_STATUS.confirmed) {
+      if (detail) return finishFactRender(lead, detail);
+      return finishFactRender(lead, "Guest arrangement confirmed");
+    }
+    /* Preserve useful source detail (VIP amenities, arrivals) — no generic rewrite */
+    if (detail) return finishFactRender(lead, detail);
+    if (fact.subject === "vip_arrival" || (note && note.isVip)) {
+      return finishFactRender(lead, "VIP guest follow-up noted");
+    }
+    return finishFactRender(lead, "Guest follow-up noted");
+  }
+
+  function buildTasksCardPhrase(note, fact) {
+    var lead = roomLeadFromFact(fact) ||
+      (note.rooms && note.rooms.length === 1 ? "Room " + note.rooms[0] : "");
+    var detail = stripRoomsFromSource(fact.sourceText, fact.rooms || note.rooms);
+
+    if (fact.status === FACT_STATUS.done) {
+      return finishFactRender(lead, (detail || "Task") + " completed");
+    }
+    if (fact.status === FACT_STATUS.confirmed) {
+      return finishFactRender(lead, detail || "Task confirmed");
+    }
+    if (fact.status === FACT_STATUS.in_progress) {
+      return finishFactRender(lead, (detail || "Task") + " in progress");
+    }
+    if (fact.status === FACT_STATUS.requested || fact.status === FACT_STATUS.open) {
+      return finishFactRender(lead, detail || "Task remains open");
+    }
+    return finishFactRender(lead, detail || "Operational task noted");
+  }
+
+  function buildCardPhraseForBucket(bucket, note, fact) {
+    if (bucket === "payments") return buildPaymentCardPhrase(note, fact);
+    if (bucket === "maintenance") return buildMaintenanceCardPhrase(note, fact);
+    if (bucket === "guest") return buildGuestCardPhrase(note, fact);
+    if (bucket === "tasks") return buildTasksCardPhrase(note, fact);
+    return "";
+  }
+
+  function joinSummaryCardPhrases(phrases) {
+    var cleaned = (phrases || []).filter(Boolean);
+    if (!cleaned.length) return "";
+    if (cleaned.length === 1) return cleaned[0];
+    if (cleaned.length === 2) {
+      return cleaned[0].replace(/\.$/, "") + ". " + cleaned[1];
+    }
+    return cleaned.slice(0, 3).map(function (p, i) {
+      return i < cleaned.length - 1 ? p.replace(/\.$/, "") : p;
+    }).join(". ") + (cleaned.length > 3 ? " (+" + (cleaned.length - 3) + " more)." : "");
+  }
+
+  function emptySummaryCard() {
+    return {
+      show: false,
+      unresolvedCount: 0,
+      completedCount: 0,
+      confirmedCount: 0,
+      sentence: ""
+    };
+  }
+
+  /**
+   * Build AI Summary detail-card models from structured facts.
+   * Badge counts are unresolved only; completed facts never use open/settlement language.
+   */
+  function buildSummaryDetailCards(analyzed) {
+    var buckets = {
+      guest: [],
+      maintenance: [],
+      payments: [],
+      tasks: []
+    };
+
+    (analyzed || []).forEach(function (note) {
+      if (!note) return;
+      var fact = ensureNoteFact(note);
+      if (!fact) return;
+      if (note.section === "completed" && fact.status === FACT_STATUS.unknown) {
+        fact = Object.assign({}, fact, { status: FACT_STATUS.done });
+      }
+      var bucket = summaryCardBucket(note, fact);
+      if (!buckets[bucket]) return;
+      buckets[bucket].push({ note: note, fact: fact });
+    });
+
+    function buildCard(bucket, entries) {
+      var card = emptySummaryCard();
+      if (!entries.length) return card;
+
+      var unresolved = [];
+      var completed = [];
+      var confirmed = [];
+
+      entries.forEach(function (entry) {
+        if (entry.fact.status === FACT_STATUS.done) {
+          completed.push(entry);
+        } else if (entry.fact.status === FACT_STATUS.confirmed) {
+          confirmed.push(entry);
+        } else {
+          unresolved.push(entry);
+        }
+      });
+
+      card.unresolvedCount = unresolved.length;
+      card.completedCount = completed.length;
+      card.confirmedCount = confirmed.length;
+      card.show = unresolved.length > 0 || completed.length > 0 || confirmed.length > 0;
+
+      var phrases = [];
+      /* Prefer unresolved first, then completed/confirmed so settled items still appear */
+      unresolved.concat(completed).concat(confirmed).forEach(function (entry) {
+        var phrase = buildCardPhraseForBucket(bucket, entry.note, entry.fact);
+        if (phrase) phrases.push(phrase);
+      });
+
+      if (!phrases.length && card.show) {
+        if (unresolved.length) {
+          phrases.push(countWord(unresolved.length, "item remains open", "items remain open"));
+        } else if (completed.length) {
+          phrases.push(countWord(completed.length, "item was completed", "items were completed"));
+        } else {
+          phrases.push(countWord(confirmed.length, "item is confirmed", "items are confirmed"));
+        }
+      }
+
+      if (phrases.length > 3 && bucket === "tasks") {
+        var openN = unresolved.length;
+        var doneN = completed.length;
+        var confN = confirmed.length;
+        var bits = [];
+        if (openN) bits.push(countWord(openN, "open item", "open items"));
+        if (doneN) bits.push(countWord(doneN, "completed item", "completed items"));
+        if (confN) bits.push(countWord(confN, "confirmed item", "confirmed items"));
+        card.sentence = ensureSentence(
+          capitalize(bits.join("; ") || (entries.length + " housekeeping and inventory notes"))
+        );
+        return card;
+      }
+
+      card.sentence = joinSummaryCardPhrases(phrases);
+      return card;
+    }
+
+    return {
+      guest: buildCard("guest", buckets.guest),
+      maintenance: buildCard("maintenance", buckets.maintenance),
+      payments: buildCard("payments", buckets.payments),
+      tasks: buildCard("tasks", buckets.tasks)
+    };
+  }
+
   function isPhase1SupportedFact(fact) {
     if (!fact || !fact.sourceText) return false;
     var src = fact.sourceText;
@@ -2616,7 +2908,8 @@
     mapFactStatusToItemStatus: mapFactStatusToItemStatus,
     isFactUnresolved: isFactUnresolved,
     isFactClosed: isFactClosed,
-    summarizeFromFacts: summarizeFromFacts
+    summarizeFromFacts: summarizeFromFacts,
+    buildSummaryDetailCards: buildSummaryDetailCards
   };
 
   global.AiWritingEngine = Api;
