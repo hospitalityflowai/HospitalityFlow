@@ -5903,6 +5903,20 @@
 
       function refreshNoteFact(note) {
         if (!note) return note;
+        if (note._factConsolidated && note.fact) {
+          if (note._mergedNotes && note._mergedNotes.length) {
+            note._mergedNotes.forEach(function (child) {
+              if (!child.fact && window.AiWritingEngine && window.AiWritingEngine.extractOperationalFact) {
+                child.fact = window.AiWritingEngine.extractOperationalFact(child.original, {
+                  rooms: child.rooms,
+                  section: child.section,
+                  isVip: child.isVip
+                });
+              }
+            });
+          }
+          return note;
+        }
         if (note._mergedNotes && note._mergedNotes.length) {
           note._mergedNotes.forEach(function (child) {
             if (!child.fact && window.AiWritingEngine && window.AiWritingEngine.extractOperationalFact) {
@@ -6187,6 +6201,9 @@
       }
 
       function noteDedupeKey(note) {
+        if (note && note.fact && window.AiWritingEngine && window.AiWritingEngine.factIdentityKey) {
+          return window.AiWritingEngine.factIdentityKey(note.fact);
+        }
         var rooms = (note.rooms || []).slice().sort().join(",");
         if (rooms) return "room|" + rooms;
         var fp = topicFingerprint(note.original || "");
@@ -6253,7 +6270,7 @@
         return sorted[0] ? sorted[0].section : "general";
       }
 
-      function consolidateAnalyzedNotes(analyzed) {
+      function consolidateAnalyzedNotesLegacy(analyzed) {
         var byRoom = {};
         var standalone = [];
         analyzed.forEach(function (note) {
@@ -6304,7 +6321,32 @@
         return consolidated.sort(compareNotesByDutyPriority);
       }
 
-      function mergeNotesByRoom(notes) {
+      function consolidateAnalyzedNotes(analyzed) {
+        /* Phase 5A: fact-identity consolidation; legacy room-merge only as fallback. */
+        if (window.AiWritingEngine && window.AiWritingEngine.consolidateNotesByFacts) {
+          var hasFacts = (analyzed || []).some(function (note) {
+            return note && (note.fact || note.original);
+          });
+          if (hasFacts) {
+            return window.AiWritingEngine.consolidateNotesByFacts(analyzed || []);
+          }
+        }
+        return consolidateAnalyzedNotesLegacy(analyzed || []);
+      }
+
+      function mergeNotesByFactIdentity(notes) {
+        var dedupe = {};
+        var merged = [];
+        (notes || []).slice().sort(compareNotesByDutyPriority).forEach(function (note) {
+          var key = noteDedupeKey(note);
+          if (key && dedupe[key]) return;
+          if (key) dedupe[key] = true;
+          merged.push(formatNoteDisplay(note));
+        });
+        return merged;
+      }
+
+      function mergeNotesByRoomLegacy(notes) {
         var byRoom = {};
         var standalone = [];
         var dedupe = {};
@@ -6344,6 +6386,17 @@
         return merged;
       }
 
+      function mergeNotesByRoom(notes) {
+        var list = notes || [];
+        var factDriven = list.some(function (note) {
+          return note && note.fact;
+        });
+        if (factDriven && window.AiWritingEngine && window.AiWritingEngine.factIdentityKey) {
+          return mergeNotesByFactIdentity(list);
+        }
+        return mergeNotesByRoomLegacy(list);
+      }
+
       function getNotesForSection(analyzed, sectionId) {
         return analyzed.filter(function (note) {
           return note.section === sectionId;
@@ -6370,9 +6423,19 @@
           classified[section.id] = buildSectionDisplay(analyzed, section.id);
         });
 
-        var seenDisplay = {};
+        var seenIdentity = {};
         SECTIONS.forEach(function (section) {
           classified[section.id] = (classified[section.id] || []).filter(function (item) {
+            var factKey = "";
+            if (item && item.fact && window.AiWritingEngine && window.AiWritingEngine.factIdentityKey) {
+              factKey = window.AiWritingEngine.factIdentityKey(item.fact);
+            }
+            if (factKey) {
+              if (seenIdentity[factKey]) return false;
+              seenIdentity[factKey] = true;
+              return true;
+            }
+            /* Legacy fallback: text signature only when no fact identity exists. */
             var text = typeof item === "string" ? item : (item && item.text) || "";
             var sig = text.toLowerCase()
               .replace(/[^a-z0-9\s]/g, " ")
@@ -6380,8 +6443,8 @@
               .trim()
               .slice(0, 90);
             if (!sig) return true;
-            if (seenDisplay[sig]) return false;
-            seenDisplay[sig] = true;
+            if (seenIdentity["text|" + sig]) return false;
+            seenIdentity["text|" + sig] = true;
             return true;
           });
         });
