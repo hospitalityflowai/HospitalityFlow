@@ -79,8 +79,8 @@ console.log("\nAI Writing Engine v" + Engine.version + "\n");
 console.log("Duty Manager operational rewrites");
 assertEqual(
   Engine.rewriteNote("room 22 late c/o at noon"),
-  "Room 22 – Late check-out has been confirmed until 12:00 PM. Please advise Housekeeping and ensure the guest is not disturbed before the agreed departure time.",
-  "late c/o at noon"
+  "Room 22 – Late check-out has been noted until 12:00 PM.",
+  "late c/o at noon (noted, no invented actions)"
 );
 assertEqual(
   Engine.rewriteNote("room 31 wants extend stay speak morning"),
@@ -89,8 +89,8 @@ assertEqual(
 );
 assertEqual(
   Engine.rewriteNote("room 1 moving to 51 upgrade paid 50 per extra per night"),
-  "Room 1 – The guest has been relocated to Room 51. The upgrade is confirmed at an additional charge of £50 per night. Please ensure the PMS reflects the new room allocation and that the upgrade charge has been posted.",
-  "room move with paid upgrade"
+  "Room 1 – Room move to Room 51 has been noted. The upgrade is recorded at an additional charge of £50 per night.",
+  "room move with paid upgrade (no invented PMS action)"
 );
 assertEqual(
   Engine.rewriteNote("11 iron board with ireon"),
@@ -103,9 +103,8 @@ assertEqual(
   "guest upset ac"
 );
 
-console.log("\nActionable Duty Manager voice");
+console.log("\nActionable Duty Manager voice (templates not yet Phase-3A hardened)");
 [
-  "room 22 late c/o at noon",
   "room 31 wants extend stay speak morning",
   "11 iron board with ireon",
   "guest upset ac"
@@ -306,6 +305,57 @@ console.log("\nPhase 1 — legacy fallback still used for unsupported notes");
   assertIncludes(lateCo, "Late check-out", "late check-out still uses legacy writer");
   assert(Engine.isPhase1SupportedFact(Engine.extractOperationalFact("room 22 late c/o at noon")) === false,
     "late check-out is not Phase 1 supported");
+})();
+
+console.log("\nPhase 3A — critical templates must not invent actions");
+(function () {
+  function assertNoInventedOps(text, source, label) {
+    const out = String(text || "");
+    const src = String(source || "").toLowerCase();
+    const checks = [
+      { re: /update\s+reception/i, key: "update reception" },
+      { re: /contact\s+(?:the\s+)?guest/i, key: "contact guest" },
+      { re: /room\s+is\s+safe/i, key: "room is safe" },
+      { re: /update\s+(?:the\s+)?incoming\s+team/i, key: "update incoming team" }
+    ];
+    checks.forEach(function (c) {
+      if (src.indexOf(c.key) !== -1) return;
+      assert(!c.re.test(out), label + " must not invent `" + c.key + "`");
+    });
+  }
+
+  const leakSrc = "Room 14 bathroom leak still open";
+  const leak = Engine.rewriteNote(leakSrc, { section: "maintenance" });
+  assertIncludes(leak, "14", "bathroom leak retains Room 14");
+  assert(/\bleak\b/i.test(leak), "bathroom leak keeps leak meaning");
+  assertNoInventedOps(leak, leakSrc, "bathroom leak");
+
+  const noiseSrc = "Room 5 noise complaint";
+  const noise = Engine.rewriteNote(noiseSrc, { section: "guest" });
+  assertIncludes(noise, "5", "noise complaint retains Room 5");
+  assert(/\bcomplaint\b/i.test(noise) && /\bnoise\b/i.test(noise), "noise complaint keeps meaning");
+  assertNoInventedOps(noise, noiseSrc, "noise complaint");
+
+  const moveReqSrc = "Guest wants to move to Room 51.";
+  const moveReq = Engine.rewriteNote(moveReqSrc);
+  assertIncludes(moveReq, "51", "room move request retains Room 51");
+  assert(!/\bhas been relocated\b/i.test(moveReq), "room move request must not claim relocated");
+  assertNoInventedOps(moveReq, moveReqSrc, "room move request");
+
+  const lateSrc = "Room 22 late checkout until 2pm";
+  const late = Engine.rewriteNote(lateSrc, { section: "guest" });
+  assertIncludes(late, "22", "late checkout retains Room 22");
+  assert(/\blate check-out\b/i.test(late), "late checkout keeps meaning");
+  assert(!/\bhas been confirmed\b/i.test(late), "late checkout without approval language is not confirmed");
+  assertNoInventedOps(late, lateSrc, "late checkout");
+
+  const unmatchedSrc = "Room 19 corridor light flickering";
+  const unmatched = Engine.rewriteNote(unmatchedSrc, { section: "general" });
+  assertIncludes(unmatched, "19", "unmatched note retains Room 19");
+  assert(/\bflickering\b/i.test(unmatched) || /\blight\b/i.test(unmatched),
+    "unmatched note preserves factual meaning");
+  assertNoInventedOps(unmatched, unmatchedSrc, "unmatched operational note");
+  assert(!/Please note:/i.test(unmatched), "unmatched note must not use Please note salvage");
 })();
 
 console.log("\n" + passed + " passed, " + failed + " failed\n");

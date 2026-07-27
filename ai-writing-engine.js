@@ -662,30 +662,15 @@
   function buildLateCheckoutBody(normalized, prefs) {
     var until = extractUntilTime(normalized, prefs);
     var untilBit = until ? " until " + until : "";
-    var status;
-    if (isConfirmedLanguage(normalized) || (until && !isRequestLanguage(normalized))) {
-      status = "Late check-out has been confirmed" + untilBit;
-    } else if (isRequestLanguage(normalized)) {
-      status = "Late check-out has been requested" + untilBit;
-    } else {
-      status = "Late check-out has been noted" + untilBit;
-    }
-    if (isConfirmedLanguage(normalized) || (until && !isRequestLanguage(normalized))) {
-      return appendAction(
-        status,
-        "Please advise Housekeeping and ensure the guest is not disturbed before the agreed departure time"
-      );
+    /* Phase 3A: status from language only — never invent HK/DM/guest chase actions.
+       Do not treat a bare time as confirmation. */
+    if (isConfirmedLanguage(normalized)) {
+      return "Late check-out has been confirmed" + untilBit;
     }
     if (isRequestLanguage(normalized)) {
-      return appendAction(
-        status,
-        "Please confirm with the Duty Manager whether this can be approved and update the guest"
-      );
+      return "Late check-out has been requested" + untilBit;
     }
-    return appendAction(
-      status,
-      "Please confirm the departure time with the guest and advise Housekeeping if approved"
-    );
+    return "Late check-out has been noted" + untilBit;
   }
 
   function buildExtendStayBody(normalized) {
@@ -702,29 +687,35 @@
   function buildRoomMoveBody(normalized, rooms, options) {
     var dest = extractDestinationRoom(normalized, rooms);
     var amount = extractPrimaryAmount(normalized, options && options.currency);
+    var destBit = dest ? " to Room " + dest : " to another room";
     var status;
+    var completedMove = /\b(?:relocated|has been moved|was moved|moved to)\b/i.test(normalized) ||
+      (/\bmoved\b/i.test(normalized) && isConfirmedLanguage(normalized));
 
-    if (dest) {
-      status = "The guest has been relocated to Room " + dest;
+    /* Phase 3A: never claim relocation or invent PMS posting unless source supports it. */
+    if (isRequestLanguage(normalized) && !completedMove) {
+      status = "The guest has requested to move" + destBit;
+    } else if (completedMove || isConfirmedLanguage(normalized)) {
+      status = "The guest has been relocated" + destBit;
     } else {
-      status = "The guest has been relocated to another room";
+      status = "Room move" + destBit + " has been noted";
     }
 
     if (/\bupgrade\b/i.test(normalized) || amount) {
       if (amount) {
-        status += ". The upgrade is confirmed at an additional charge of " + amount + " per night";
-      } else {
-        status += ". The room upgrade is confirmed";
+        if (/\bpaid\b/i.test(normalized) || isConfirmedLanguage(normalized)) {
+          status += ". The upgrade is recorded at an additional charge of " + amount + " per night";
+        } else {
+          status += ". An upgrade charge of " + amount + " per night is noted";
+        }
+      } else if (/\bupgrade\b/i.test(normalized)) {
+        status += ". Room upgrade noted";
       }
     } else if (amount) {
-      status += ". An additional charge of " + amount + " per night applies";
+      status += ". An additional charge of " + amount + " per night is noted";
     }
 
-    return appendAction(
-      status,
-      "Please ensure the PMS reflects the new room allocation" +
-        (amount || /\bupgrade\b/i.test(normalized) ? " and that the upgrade charge has been posted" : "")
-    );
+    return status;
   }
 
   function buildIronBody() {
@@ -758,16 +749,17 @@
   }
 
   function buildComplaintBody(normalized) {
-    if (detectAcIssue(normalized)) return buildAcBody(normalized);
+    /* Phase 3A: state the complaint only — do not invent contact/escalate/compensation. */
+    if (detectAcIssue(normalized)) {
+      return "The guest has reported an air-conditioning issue" +
+        (detectComplaint(normalized) ? " and is unhappy with the situation" : "");
+    }
     var topic = "";
     if (noteContains(normalized, ["noise"])) topic = " regarding noise";
     else if (noteContains(normalized, ["smell", "odour", "odor"])) topic = " regarding an odour";
     else if (noteContains(normalized, ["clean", "housekeeping"])) topic = " regarding room cleanliness";
     else if (noteContains(normalized, ["wifi", "internet"])) topic = " regarding Wi-Fi";
-    return appendAction(
-      "The guest has raised a complaint" + topic + " and requires recovery follow-up",
-      "Please contact the guest, resolve the concern where possible, and escalate to the Duty Manager if compensation or further support is needed"
-    );
+    return "The guest has raised a complaint" + topic;
   }
 
   function buildInventoryBody(normalized) {
@@ -854,36 +846,36 @@
 
   function buildMaintenanceBody(normalized, section) {
     if (detectAcIssue(normalized)) return buildAcBody(normalized);
-    if (noteContains(normalized, ["leak", "leaking", "shower"])) {
-      var leakStatus = "A shower leak remains open" +
-        (noteContains(normalized, ["previous shift", "still", "carried"])
-          ? " from the previous shift"
-          : "");
-      if (section === "urgent" || noteContains(normalized, ["urgent", "asap"])) {
+    /* Phase 3A: factual maintenance status only — no invented Reception/safe/chase actions. */
+    if (noteContains(normalized, ["leak", "leaking", "shower", "bathroom"])) {
+      var leakStatus = noteContains(normalized, ["leak", "leaking"])
+        ? "A leak remains open"
+        : "A shower issue remains open";
+      if (noteContains(normalized, ["shower"]) && noteContains(normalized, ["leak", "leaking"])) {
+        leakStatus = "A shower leak remains open";
+      } else if (noteContains(normalized, ["bathroom"]) && noteContains(normalized, ["leak", "leaking"])) {
+        leakStatus = "A bathroom leak remains open";
+      }
+      if (noteContains(normalized, ["previous shift", "still", "carried"])) {
+        leakStatus += " from the previous shift";
+      }
+      if (noteContains(normalized, ["urgent", "asap"])) {
         leakStatus += " and requires priority attention";
       }
-      return appendAction(
-        leakStatus,
-        "Please arrange an inspection with Maintenance and update Reception once the room is safe for the guest"
-      );
+      if (noteContains(normalized, ["maintenance", "engineer"]) &&
+          noteContains(normalized, ["informed", "notified", "advised"])) {
+        leakStatus += ". Maintenance has been informed";
+      }
+      return leakStatus;
     }
     if (noteContains(normalized, ["tv", "remote"])) {
-      return appendAction(
-        "The television remote is not working",
-        "Please supply a replacement remote and confirm with the guest once resolved"
-      );
+      return "The television remote is not working";
     }
     if (noteContains(normalized, ["heating", "no heat", "cold"])) {
-      return appendAction(
-        "A heating issue has been reported",
-        "Please arrange for Maintenance to attend and follow up with the guest once resolved"
-      );
+      return "A heating issue has been reported";
     }
     if (noteContains(normalized, ["lock", "key", "cannot enter", "card not"])) {
-      return appendAction(
-        "The guest is experiencing a room access or lock issue",
-        "Please re-encode or replace the key card and escort the guest if required"
-      );
+      return "The guest is experiencing a room access or lock issue";
     }
     return "";
   }
@@ -918,6 +910,7 @@
   }
 
   function fallbackOperationalBody(normalized, room, options) {
+    /* Phase 3A: minimally clean source remnant only — never invent chase actions. */
     var detail = room ? stripRoomLead(normalized, room) : normalized;
     detail = detail
       .replace(/^\[[^\]]+\]\s*/, "")
@@ -927,24 +920,9 @@
       .replace(/\bnot cooling properly\b/gi, "not cooling correctly")
       .replace(/\bhas been informed but has not attended yet\b/gi, "has been informed but has not yet attended")
       .replace(/\balready booked\b/gi, "has been booked")
-      .replace(/\bplease\b/gi, "please")
       .replace(/\s{2,}/g, " ");
     detail = tidyPhrase(detail);
     if (!detail) return "";
-
-    /* Expand into a Duty Manager instruction rather than leaving a fragment */
-    if (!/^(the |a |an |guest |please |maintenance |housekeeping |reception )/i.test(detail)) {
-      detail = "Please note: " + detail.charAt(0).toLowerCase() + detail.slice(1);
-    }
-
-    if (!/\b(please|follow up|arrange|confirm|ensure|advise|contact|update)\b/i.test(detail)) {
-      detail = appendAction(
-        detail,
-        "Please follow up during this shift and update the incoming team with the outcome"
-      );
-      return tidyPhrase(detail).replace(/\.$/, "");
-    }
-
     return detail;
   }
 
@@ -955,17 +933,18 @@
       return body;
     }
 
-    var needsFollowUp =
-      detectExtendStay(normalized) ||
-      detectComplaint(normalized) ||
-      (detectAcIssue(normalized) && !isConfirmedLanguage(normalized)) ||
-      noteContains(normalized, ["speak morning", "call morning", "pending", "outstanding", "still need"]);
+    /* Phase 3A companion: only append follow-up when the source already asks for it.
+       Do not invent chase lines from complaint/AC detectors alone. */
+    var sourceAsksFollowUp = noteContains(normalized, [
+      "follow up", "follow-up", "speak morning", "call morning",
+      "pending", "outstanding", "still need"
+    ]);
+    if (!sourceAsksFollowUp) return body;
 
-    if (!needsFollowUp) return body;
     if (/morning/i.test(normalized)) {
-      return appendAction(body, "Please follow up in the morning and update the handover with the outcome");
+      return appendAction(body, "Please follow up in the morning");
     }
-    return appendAction(body, "Please follow up during this shift and record the outcome");
+    return appendAction(body, "Please follow up during this shift");
   }
 
   /* ------------------------------------------------------------------ */
