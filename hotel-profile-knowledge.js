@@ -23,7 +23,7 @@
 
   var NAV_LAYERS = [
     { id: 'essential', label: 'Essential Setup', defaultExpanded: true },
-    { id: 'optional', label: 'Optional Modules', defaultExpanded: false },
+    { id: 'optional', label: 'Knowledge Library', defaultExpanded: false },
     { id: 'advanced', label: 'Advanced', defaultExpanded: false }
   ];
 
@@ -801,7 +801,7 @@
     link.innerHTML =
       '<span class="nav-icon">' + sectionIconSvg(sec.icon) + '</span>' +
       '<span class="nav-label">' + esc(sec.shortLabel || sec.label) + '</span>' +
-      '<span class="nav-check" aria-hidden="true">✓</span>';
+      '<span class="nav-progress" aria-hidden="true"></span>';
     return link;
   }
 
@@ -961,6 +961,212 @@
     });
   }
 
+  function countFilledFields(ids) {
+    var filled = 0;
+    (ids || []).forEach(function (id) {
+      if (fieldHasText(id)) filled += 1;
+    });
+    return filled;
+  }
+
+  function policyCardFilled(card) {
+    if (!card) return false;
+    var summary = card.querySelector('[data-f="summary"]');
+    var instructions = card.querySelector('[data-f="instructions"]');
+    return !!(String((summary && summary.value) || '').trim() || String((instructions && instructions.value) || '').trim());
+  }
+
+  function countPolicyProgress(rootId) {
+    var root = document.getElementById(rootId);
+    if (!root) return { filled: 0, total: 0 };
+    var cards = Array.from(root.querySelectorAll('.policy-card'));
+    var filled = cards.filter(policyCardFilled).length;
+    return { filled: filled, total: cards.length };
+  }
+
+  function countChannelProgress() {
+    var root = document.getElementById('reservationsRoot');
+    if (!root) return { filled: 0, total: RESERVATION_CHANNELS.length };
+    var cards = Array.from(root.querySelectorAll('.reservation-card'));
+    var total = Math.max(cards.length, RESERVATION_CHANNELS.length);
+    var filled = cards.filter(function (card) {
+      return card.classList.contains('disclosure-card--filled') ||
+        Array.from(card.querySelectorAll('input:not([type="hidden"]), textarea, select')).some(function (el) {
+          if (el.type === 'checkbox') return el.checked;
+          return String(el.value || '').trim().length > 0;
+        });
+    }).length;
+    return { filled: filled, total: total };
+  }
+
+  function countListItemProgress(listSelector, itemSelector, isFilled) {
+    var list = document.querySelector(listSelector);
+    if (!list) return { filled: 0, total: 0 };
+    var items = Array.from(list.querySelectorAll(itemSelector));
+    var filled = items.filter(isFilled).length;
+    return { filled: filled, total: items.length };
+  }
+
+  /**
+   * Meaningful section progress from existing UI state.
+   * Prefer percentage when the denominator is a known checklist.
+   * Prefer filled/total for open-ended entry lists.
+   */
+  function getSectionProgress(sectionId) {
+    var filled = 0;
+    var total = 0;
+    var mode = 'none';
+
+    switch (sectionId) {
+      case 'general': {
+        var generalIds = [
+          'hotelName', 'hotelType', 'address', 'city', 'country',
+          'phone', 'email', 'timezone', 'currency', 'operatingNotes'
+        ];
+        filled = countFilledFields(generalIds);
+        total = generalIds.length;
+        mode = 'pct';
+        break;
+      }
+      case 'rooms-facilities': {
+        var roomRows = document.querySelectorAll('#roomsTableBody [data-room-row]').length;
+        var facilityBoxes = Array.from(document.querySelectorAll(
+          '#facilityGrid input[type="checkbox"], #facilityCustomList input[type="checkbox"]'
+        ));
+        var facilityChecked = facilityBoxes.filter(function (el) { return el.checked; }).length;
+        var facilityTotal = facilityBoxes.length;
+        /* Rooms are open-ended; facilities have a fixed checkbox set when present */
+        if (facilityTotal > 0) {
+          filled = (roomRows > 0 ? 1 : 0) + facilityChecked;
+          total = 1 + facilityTotal;
+          mode = 'pct';
+        } else {
+          filled = roomRows;
+          total = roomRows;
+          mode = roomRows > 0 ? 'count' : 'empty';
+        }
+        break;
+      }
+      case 'departments-shifts': {
+        var depts = countListItemProgress('#deptGrid', '[data-dept]', function (item) {
+          var name = item.querySelector('.dept-name, input[data-f="name"], input.dept-name');
+          return !!(name && String(name.value || '').trim());
+        });
+        var shifts = document.querySelectorAll('#shiftTableBody tr').length;
+        var terms = document.querySelectorAll('#termList [data-term]').length;
+        filled = depts.filled + (shifts > 0 ? shifts : 0) + (terms > 0 ? terms : 0);
+        total = depts.total + shifts + terms;
+        mode = total > 0 ? 'count' : 'empty';
+        break;
+      }
+      case 'policies': {
+        var pol = countPolicyProgress('policyStructuredRoot');
+        filled = pol.filled;
+        total = pol.total || PRIMARY_POLICIES.length;
+        mode = 'pct';
+        break;
+      }
+      case 'hotel-knowledge': {
+        var hkIds = [
+          'hkGeneralNotes', 'hkHotelStandards', 'hkVipRules', 'hkCommonTerms',
+          'hkOperationalNotes', 'hkLocalRecommendations', 'hkAiInstructions'
+        ];
+        filled = countFilledFields(hkIds);
+        total = hkIds.length;
+        mode = 'pct';
+        break;
+      }
+      case 'operational-knowledge': {
+        var staffing = fieldHasText('okStaffingContext') ? 1 : 0;
+        var knowledge = countListItemProgress('#okKnowledgeList', '[data-ok-entry]', function (card) {
+          var content = card.querySelector('[data-f="content"]');
+          var title = card.querySelector('[data-f="title"]');
+          return !!(String((content && content.value) || '').trim() || String((title && title.value) || '').trim());
+        });
+        var sources = countListItemProgress('#okSourcesList', '[data-ok-source]', function (card) {
+          var desc = card.querySelector('[data-f="description"]');
+          var title = card.querySelector('[data-f="title"]');
+          return !!(String((desc && desc.value) || '').trim() || String((title && title.value) || '').trim());
+        });
+        var steps = countListItemProgress('#operational-knowledge', '[data-ok-step]', function (card) {
+          var title = card.querySelector('[data-f="title"]');
+          var notes = card.querySelector('[data-f="notes"]');
+          return !!(String((title && title.value) || '').trim() || String((notes && notes.value) || '').trim());
+        });
+        /* Always include staffing slot; only count lists that exist in the DOM */
+        filled = staffing + knowledge.filled + sources.filled + steps.filled;
+        total = 1 + knowledge.total + sources.total + steps.total;
+        mode = 'count';
+        break;
+      }
+      case 'reservations-payments': {
+        var channels = countChannelProgress();
+        var pay = countPolicyProgress('paymentPoliciesRoot');
+        var payTotal = pay.total || PAYMENT_POLICIES.length;
+        filled = channels.filled + pay.filled;
+        total = channels.total + payTotal;
+        mode = 'pct';
+        break;
+      }
+      case 'guest-services': {
+        var gsIds = [
+          'gsAirportTransfers', 'gsPreferredTaxi', 'gsWakeUpCalls', 'gsLuggageStorage',
+          'gsGuestItemLoans', 'gsSpecialOccasions', 'gsWelcomeAmenities',
+          'gsLocalRecommendations', 'gsCustomInstructions'
+        ];
+        filled = countFilledFields(gsIds);
+        total = gsIds.length;
+        mode = 'pct';
+        break;
+      }
+      case 'inventory': {
+        var supplies = countListItemProgress('#suppliesList', '[data-supply]', function (item) {
+          var nameEl = item.querySelector('[data-field="name"]');
+          return !!(nameEl && String(nameEl.value || '').trim());
+        });
+        filled = supplies.filled;
+        total = supplies.total;
+        mode = total > 0 ? 'count' : 'empty';
+        break;
+      }
+      case 'operations': {
+        var trackerRoot = document.getElementById('trackersList');
+        var trackerCards = trackerRoot ? Array.from(trackerRoot.querySelectorAll('[data-tracker]')) : [];
+        var trackerTotal = Math.max(trackerCards.length, TRACKER_DEFS.length);
+        var trackerFilled = trackerCards.filter(function (card) {
+          var cb = card.querySelector('[data-f="enabled"]');
+          return cb && cb.checked;
+        }).length;
+        var emails = document.querySelectorAll('#emailRecipientList [data-email-recipient]').length;
+        filled = trackerFilled + emails;
+        total = trackerTotal + emails;
+        mode = total > 0 ? 'count' : 'empty';
+        break;
+      }
+      case 'advanced-settings':
+      case 'academy':
+        return { filled: 0, total: 0, pct: null, display: '', mode: 'none', complete: false };
+      default:
+        return { filled: 0, total: 0, pct: null, display: '', mode: 'none', complete: false };
+    }
+
+    if (mode === 'empty' || total <= 0) {
+      return { filled: 0, total: 0, pct: null, display: '0', mode: 'empty', complete: false };
+    }
+
+    var pct = Math.round((filled / total) * 100);
+    var complete = filled >= total && total > 0;
+    var display = mode === 'pct' ? (pct + '%') : (filled + ' / ' + total);
+    return {
+      filled: filled,
+      total: total,
+      pct: pct,
+      display: display,
+      mode: mode,
+      complete: complete
+    };
+  }
+
   function isSectionComplete(sectionId) {
     switch (sectionId) {
       case 'general':
@@ -1060,7 +1266,7 @@
     if (messageEl) {
       messageEl.textContent = progress.isComplete
         ? 'Your Hotel Brain is ready to power AI Shift Handover.'
-        : 'Complete the core sections first. Optional modules can be added over time.';
+        : 'Complete the core sections first. Knowledge Library sections can be added over time.';
     }
     var brainStatusEl = document.getElementById('hotelBrainStatus');
     if (brainStatusEl) {
@@ -1080,7 +1286,26 @@
   function updateSectionStatuses() {
     document.querySelectorAll('.section-nav-link').forEach(function (link) {
       var id = link.getAttribute('data-section');
-      if (id) link.classList.toggle('is-complete', isSectionComplete(id));
+      if (!id) return;
+      var progress = getSectionProgress(id);
+      var el = link.querySelector('.nav-progress');
+      if (!el) {
+        el = document.createElement('span');
+        el.className = 'nav-progress';
+        el.setAttribute('aria-hidden', 'true');
+        link.appendChild(el);
+      }
+      el.textContent = progress.display || '';
+      link.classList.toggle('is-complete', isSectionComplete(id));
+      link.classList.toggle('has-progress', !!(progress.display && progress.mode !== 'none'));
+      link.classList.toggle('is-progress-complete', !!progress.complete);
+      if (progress.display) {
+        link.setAttribute('title', (link.querySelector('.nav-label') || {}).textContent
+          ? String((link.querySelector('.nav-label') || {}).textContent).trim() + ' — ' + progress.display
+          : progress.display);
+      } else {
+        link.removeAttribute('title');
+      }
     });
   }
 
@@ -1166,6 +1391,7 @@
     computeEssentialProgress: computeEssentialProgress,
     updateEssentialProgressUI: updateEssentialProgressUI,
     isSectionComplete: isSectionComplete,
+    getSectionProgress: getSectionProgress,
     initSearch: initSearch,
     confirmDelete: confirmDelete,
     renderSupplyHints: renderSupplyHints,

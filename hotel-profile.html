@@ -164,8 +164,23 @@
     .section-nav-link .nav-icon svg { width: 16px; height: 16px; display: block; }
     .section-nav-link.active .nav-icon { color: var(--blue-500); }
     .section-nav-link .nav-label { flex: 1; min-width: 0; line-height: 1.35; }
-    .section-nav-link .nav-check { width: 16px; font-size: .7rem; font-weight: 700; color: var(--green-600); opacity: 0; transform: scale(.85); transition: opacity var(--transition), transform var(--transition); flex-shrink: 0; text-align: center; line-height: 1; }
-    .section-nav-link.is-complete .nav-check { opacity: 1; transform: scale(1); }
+    .section-nav-link .nav-progress {
+      flex-shrink: 0;
+      margin-left: auto;
+      min-width: 2.6em;
+      font-size: .68rem;
+      font-weight: 650;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: .01em;
+      color: var(--gray-400);
+      text-align: right;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+    .section-nav-link.has-progress .nav-progress { color: var(--navy-700); }
+    .section-nav-link.is-progress-complete .nav-progress { color: var(--green-600); }
+    .section-nav-link.active .nav-progress { color: var(--navy-900); }
+    .section-nav-link.is-progress-complete.active .nav-progress { color: var(--green-600); }
     .profile-sections { display: flex; flex-direction: column; gap: 32px; }
     .profile-card { background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); transition: box-shadow var(--transition-smooth), transform var(--transition-smooth); scroll-margin-top: calc(var(--nav-height) + 20px); animation: fadeUp .45s ease both; }
     .profile-card:hover { box-shadow: var(--shadow-card-hover); transform: translateY(-1px); }
@@ -647,8 +662,7 @@
       flex-wrap: wrap;
       justify-content: flex-end;
     }
-    .improve-writing-btn,
-    .explain-writing-btn {
+    .improve-writing-btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -671,22 +685,18 @@
       cursor: pointer;
       transition: background var(--transition), border-color var(--transition), color var(--transition), box-shadow var(--transition), opacity var(--transition);
     }
-    .improve-writing-btn:hover:not(:disabled):not(.is-loading),
-    .explain-writing-btn:hover:not(:disabled):not(.is-loading) {
+    .improve-writing-btn:hover:not(:disabled):not(.is-loading) {
       color: var(--blue-600);
       border-color: rgba(74,143,196,.45);
       background: var(--blue-50);
       box-shadow: 0 1px 3px rgba(74,143,196,.12);
     }
-    .improve-writing-btn:focus-visible,
-    .explain-writing-btn:focus-visible {
+    .improve-writing-btn:focus-visible {
       outline: 2px solid var(--blue-500);
       outline-offset: 2px;
     }
     .improve-writing-btn:disabled,
-    .improve-writing-btn.is-disabled-soft,
-    .explain-writing-btn:disabled,
-    .explain-writing-btn.is-disabled-soft {
+    .improve-writing-btn.is-disabled-soft {
       color: var(--gray-400);
       background: var(--gray-50);
       border-color: var(--gray-200);
@@ -694,8 +704,7 @@
       cursor: not-allowed;
       opacity: 1;
     }
-    .improve-writing-btn.is-loading,
-    .explain-writing-btn.is-loading {
+    .improve-writing-btn.is-loading {
       color: var(--blue-600);
       background: var(--blue-50);
       border-color: rgba(74,143,196,.35);
@@ -703,15 +712,13 @@
       opacity: 1;
       pointer-events: none;
     }
-    .improve-writing-btn svg,
-    .explain-writing-btn svg {
+    .improve-writing-btn svg {
       width: 13px;
       height: 13px;
       flex-shrink: 0;
       color: currentColor;
     }
-    .improve-writing-label,
-    .explain-writing-label { display: inline; }
+    .improve-writing-label { display: inline; }
     .improve-writing-tip {
       display: none !important;
     }
@@ -794,8 +801,7 @@
     .improve-writing-status.is-success { color: var(--gray-500); }
     .improve-writing-status.is-loading { color: var(--blue-600); }
     @media (max-width: 600px) {
-      .improve-writing-btn,
-      .explain-writing-btn { padding: 0 10px; font-size: .72rem; }
+      .improve-writing-btn { padding: 0 10px; font-size: .72rem; }
     }
     .profile-hero--calm { margin-bottom: 10px; }
     .profile-hero--calm .page-subtitle { max-width: 46ch; }
@@ -862,7 +868,7 @@
             </div>
             <div class="essential-progress-meta">
               <span class="essential-progress-count" id="essentialProgressCount">0 / 5</span>
-              <p class="essential-progress-message" id="essentialProgressMessage">Complete the core sections first. Optional modules can be added over time.</p>
+              <p class="essential-progress-message" id="essentialProgressMessage">Complete the core sections first. Knowledge Library sections can be added over time.</p>
             </div>
           </div>
           <div class="profile-progress-panel" id="profileProgressPanel" aria-live="polite">
@@ -3021,21 +3027,14 @@
         '<path d="M12 3l1.4 4.6L18 9l-4.6 1.4L12 15l-1.4-4.6L6 9l4.6-1.4L12 3z"/>' +
         '<path d="M19 14l.7 2.1L22 17l-2.3.7L19 20l-.7-2.3L16 17l2.3-.9L19 14z"/>' +
         '</svg>';
-      var EXPLAIN_WRITING_ICON =
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">' +
-        '<circle cx="12" cy="12" r="9"/>' +
-        '<path d="M12 10v6"/><path d="M12 7h.01"/>' +
-        '</svg>';
       var IMPROVE_WRITING_TIP = 'Add more detail before improving the writing.';
-      var EXPLAIN_WRITING_TIP = 'Add more detail before explaining briefly.';
 
       var improveWritingState = {
         field: null,
         button: null,
         original: '',
         improved: '',
-        busy: false,
-        mode: 'improve'
+        busy: false
       };
 
       function getImproveWritingPrefs() {
@@ -3068,16 +3067,6 @@
           : String(raw || ''));
       }
 
-      function explainHotelBrainFieldText(raw) {
-        if (!window.AiWritingEngine || typeof window.AiWritingEngine.explainHotelBrainBriefly !== 'function') {
-          return improveHotelBrainFieldText(raw);
-        }
-        return unwrapHotelBrainWritingResult(window.AiWritingEngine.explainHotelBrainBriefly(raw, {
-          module: window.AiWritingEngine.MODULES.hotelBrain,
-          prefs: getImproveWritingPrefs()
-        }));
-      }
-
       function isAlreadyHotelBrainProfessional(text) {
         if (window.AiWritingEngine && typeof window.AiWritingEngine.looksLikeHotelBrainProfessional === 'function') {
           return !!window.AiWritingEngine.looksLikeHotelBrainProfessional(text);
@@ -3108,14 +3097,10 @@
 
       function resolveImproveWritingField(button) {
         if (!button) return null;
-        var targetId = button.getAttribute('data-improve-writing') ||
-          button.getAttribute('data-explain-writing') ||
-          button.getAttribute('data-ai-polish-target');
+        var targetId = button.getAttribute('data-improve-writing') || button.getAttribute('data-ai-polish-target');
         var field = targetId ? document.getElementById(targetId) : null;
         if (!field) {
-          var fieldName = button.getAttribute('data-ai-polish') ||
-            button.getAttribute('data-explain-field') ||
-            button.getAttribute('data-improve-field');
+          var fieldName = button.getAttribute('data-ai-polish') || button.getAttribute('data-improve-field');
           var scope = button.closest('.form-group, .policy-card, .entry-card, .knowledge-field, .textarea-wrap, .modal-panel, .field-label-row') || button.parentElement;
           if (fieldName && scope) {
             var searchRoot = scope.classList.contains('field-label-row') ? (scope.parentElement || scope) : scope;
@@ -3141,8 +3126,8 @@
         }
       }
 
-      function ensureExplainWritingButton(improveBtn) {
-        if (!improveBtn) return null;
+      function ensureWritingActionsWrap(improveBtn) {
+        if (!improveBtn) return improveBtn;
         var group = improveBtn.closest('.writing-actions');
         if (!group) {
           group = document.createElement('div');
@@ -3152,41 +3137,27 @@
             group.appendChild(improveBtn);
           }
         }
-        var explainBtn = group.querySelector('.explain-writing-btn');
-        if (!explainBtn) {
-          explainBtn = document.createElement('button');
-          explainBtn.type = 'button';
-          explainBtn.className = 'explain-writing-btn';
-          var target = improveBtn.getAttribute('data-improve-writing') ||
-            improveBtn.getAttribute('data-ai-polish-target') || '';
-          var fieldName = improveBtn.getAttribute('data-ai-polish') || '';
-          if (target) explainBtn.setAttribute('data-explain-writing', target);
-          if (fieldName) explainBtn.setAttribute('data-explain-field', fieldName);
-          explainBtn.innerHTML = EXPLAIN_WRITING_ICON + '<span class="explain-writing-label">Explain Briefly</span>';
-          group.appendChild(explainBtn);
-        }
-        return explainBtn;
+        /* Remove any leftover brief-explain controls from earlier builds */
+        Array.prototype.slice.call(group.querySelectorAll('.explain-writing-btn')).forEach(function (node) {
+          node.remove();
+        });
+        return group;
       }
 
-      function setWritingActionButtonLoading(btn, loading, mode) {
+      function setImproveWritingButtonLoading(btn, loading) {
         if (!btn) return;
-        var isExplain = mode === 'explain' || btn.classList.contains('explain-writing-btn');
-        var label = btn.querySelector(isExplain ? '.explain-writing-label' : '.improve-writing-label');
+        var label = btn.querySelector('.improve-writing-label');
         if (loading) {
           btn.classList.add('is-loading');
           btn.disabled = true;
-          if (label) label.textContent = isExplain ? 'Explaining…' : 'Improving…';
+          if (label) label.textContent = 'Improving…';
           btn.setAttribute('aria-busy', 'true');
         } else {
           btn.classList.remove('is-loading');
           btn.removeAttribute('aria-busy');
-          if (label) label.textContent = isExplain ? 'Explain Briefly' : 'Improve Writing';
+          if (label) label.textContent = 'Improve Writing';
           syncImproveWritingButtonState(btn);
         }
-      }
-
-      function setImproveWritingButtonLoading(btn, loading) {
-        setWritingActionButtonLoading(btn, loading, 'improve');
       }
 
       function clearImproveWritingStatus(button) {
@@ -3206,9 +3177,7 @@
         var row = button.closest('.field-label-row');
         if (!row) {
           /* Ensure a row exists so status can sit with the button */
-          placeImproveWritingBesideLabel(button.classList.contains('explain-writing-btn')
-            ? (button.closest('.writing-actions') || {}).querySelector('.improve-writing-btn') || button
-            : button);
+          placeImproveWritingBesideLabel(button);
           row = button.closest('.field-label-row');
         }
         if (!row) return null;
@@ -3257,39 +3226,17 @@
         var eligible = field ? isImproveWritingEligible(field.value) : false;
         btn.disabled = !eligible;
         btn.classList.toggle('is-disabled-soft', !eligible);
-        var isExplain = btn.classList.contains('explain-writing-btn');
-        btn.title = eligible
-          ? (isExplain ? 'Explain Briefly' : 'Improve Writing')
-          : (isExplain ? EXPLAIN_WRITING_TIP : IMPROVE_WRITING_TIP);
+        btn.title = eligible ? 'Improve Writing' : IMPROVE_WRITING_TIP;
         btn.setAttribute('aria-disabled', eligible ? 'false' : 'true');
         var slot = getImproveWritingStatusSlot(btn);
         if (slot && slot.getAttribute('data-kind') === 'hint') {
           clearImproveWritingStatus(btn);
         }
-        /* Keep paired action in sync */
-        var group = btn.closest('.writing-actions');
-        if (group) {
-          var peer = isExplain
-            ? group.querySelector('.improve-writing-btn')
-            : group.querySelector('.explain-writing-btn');
-          if (peer && peer !== btn && !peer.classList.contains('is-loading')) {
-            peer.disabled = !eligible;
-            peer.classList.toggle('is-disabled-soft', !eligible);
-            peer.title = eligible
-              ? (peer.classList.contains('explain-writing-btn') ? 'Explain Briefly' : 'Improve Writing')
-              : (peer.classList.contains('explain-writing-btn') ? EXPLAIN_WRITING_TIP : IMPROVE_WRITING_TIP);
-            peer.setAttribute('aria-disabled', eligible ? 'false' : 'true');
-          }
-        }
       }
 
       function placeImproveWritingBesideLabel(btn) {
         if (!btn) return;
-        if (btn.classList.contains('explain-writing-btn')) {
-          var improvePeer = (btn.closest('.writing-actions') || {}).querySelector('.improve-writing-btn');
-          if (improvePeer) btn = improvePeer;
-        }
-        ensureExplainWritingButton(btn);
+        ensureWritingActionsWrap(btn);
         var actions = btn.closest('.writing-actions') || btn;
         var field = resolveImproveWritingField(btn);
         if (!field) return;
@@ -3366,66 +3313,49 @@
         if (modal) modal.hidden = true;
         document.body.style.overflow = '';
         var btn = improveWritingState.button;
-        var mode = improveWritingState.mode || 'improve';
         improveWritingState.field = null;
         improveWritingState.button = null;
         improveWritingState.original = '';
         improveWritingState.improved = '';
         improveWritingState.busy = false;
-        improveWritingState.mode = 'improve';
         setImproveWritingModalStatus('', '');
         if (btn) {
-          setWritingActionButtonLoading(btn, false, mode);
+          setImproveWritingButtonLoading(btn, false);
           clearImproveWritingStatus(btn);
         }
       }
 
-      function configureImproveWritingModal(mode) {
-        var isExplain = mode === 'explain';
+      function openImproveWritingModal(field, button, original, improved) {
+        var modal = document.getElementById('improveWritingModal');
+        var originalEl = document.getElementById('improveWritingOriginal');
+        var improvedEl = document.getElementById('improveWritingImproved');
         var title = document.getElementById('improveWritingModalTitle');
         var helper = document.getElementById('improveWritingModalHelper');
         var resultLabel = document.getElementById('improveWritingResultLabel');
         var applyLabel = document.getElementById('improveWritingApplyLabel');
-        if (title) title.textContent = isExplain ? 'Explain Briefly' : 'Improve Writing';
-        if (helper) {
-          helper.textContent = isExplain
-            ? 'Review the brief explanation for new staff, then apply it to this field only. Save Hotel Brain to persist changes.'
-            : 'Review the improved text, then apply it to this field only. Save Hotel Brain to persist changes.';
-        }
-        if (resultLabel) resultLabel.textContent = isExplain ? 'Brief explanation' : 'Improved';
-        if (applyLabel) applyLabel.textContent = isExplain ? 'Apply Brief Explanation' : 'Apply Improved Writing';
-      }
-
-      function openImproveWritingModal(field, button, original, improved, mode) {
-        var modal = document.getElementById('improveWritingModal');
-        var originalEl = document.getElementById('improveWritingOriginal');
-        var improvedEl = document.getElementById('improveWritingImproved');
         if (!modal || !originalEl || !improvedEl) return;
-        var activeMode = mode || 'improve';
         improveWritingState.field = field;
         improveWritingState.button = button;
         improveWritingState.original = original;
         improveWritingState.improved = improved;
-        improveWritingState.mode = activeMode;
-        configureImproveWritingModal(activeMode);
+        if (title) title.textContent = 'Improve Writing';
+        if (helper) {
+          helper.textContent = 'Review the improved text, then apply it to this field only. Save Hotel Brain to persist changes.';
+        }
+        if (resultLabel) resultLabel.textContent = 'Improved';
+        if (applyLabel) applyLabel.textContent = 'Apply Improved Writing';
         originalEl.textContent = original;
         improvedEl.textContent = improved;
         clearImproveWritingStatus(button);
-        setImproveWritingModalStatus(
-          activeMode === 'explain'
-            ? 'Review the brief explanation, then Apply Brief Explanation or Cancel.'
-            : 'Review the improved text, then Apply Improved Writing or Cancel.',
-          'success'
-        );
+        setImproveWritingModalStatus('Review the improved text, then Apply Improved Writing or Cancel.', 'success');
         modal.hidden = false;
         document.body.style.overflow = 'hidden';
         var applyBtn = document.getElementById('improveWritingApply');
         if (applyBtn) applyBtn.focus();
       }
 
-      function runImproveWriting(button, mode) {
+      function runImproveWriting(button) {
         if (!button || improveWritingState.busy) return;
-        var activeMode = mode || 'improve';
         var field = resolveImproveWritingField(button);
         if (!field) return;
         var raw = String(field.value || '').trim();
@@ -3435,36 +3365,26 @@
         }
         clearImproveWritingStatus(button);
         improveWritingState.busy = true;
-        setWritingActionButtonLoading(button, true, activeMode);
+        setImproveWritingButtonLoading(button, true);
         window.setTimeout(function () {
           try {
-            var improved = activeMode === 'explain'
-              ? explainHotelBrainFieldText(raw)
-              : improveHotelBrainFieldText(raw);
+            var improved = improveHotelBrainFieldText(raw);
             if (!improved || improved === raw) {
               improveWritingState.busy = false;
-              setWritingActionButtonLoading(button, false, activeMode);
-              if (activeMode === 'explain') {
-                showImproveWritingStatus(button, 'Could not create a shorter explanation. Please edit manually.', 'info');
-              } else if (isAlreadyHotelBrainProfessional(raw)) {
+              setImproveWritingButtonLoading(button, false);
+              if (isAlreadyHotelBrainProfessional(raw)) {
                 showImproveWritingStatus(button, 'No improvements needed.', 'info');
               } else {
                 showImproveWritingStatus(button, 'Could not improve this wording further. Please edit manually.', 'info');
               }
               return;
             }
-            openImproveWritingModal(field, button, raw, improved, activeMode);
+            openImproveWritingModal(field, button, raw, improved);
             improveWritingState.busy = false;
           } catch (err) {
             improveWritingState.busy = false;
-            setWritingActionButtonLoading(button, false, activeMode);
-            showImproveWritingStatus(
-              button,
-              activeMode === 'explain'
-                ? 'Explanation could not be created. Please try again.'
-                : 'Writing could not be improved. Please try again.',
-              'error'
-            );
+            setImproveWritingButtonLoading(button, false);
+            showImproveWritingStatus(button, 'Writing could not be improved. Please try again.', 'error');
           }
         }, 40);
       }
@@ -3479,7 +3399,6 @@
         improveWritingState.field.dispatchEvent(new Event('input', { bubbles: true }));
         markUnsaved();
         var appliedBtn = improveWritingState.button;
-        var mode = improveWritingState.mode || 'improve';
         /* Close without the Cancel clear — then show Apply message */
         var modal = document.getElementById('improveWritingModal');
         if (modal) modal.hidden = true;
@@ -3489,17 +3408,10 @@
         improveWritingState.original = '';
         improveWritingState.improved = '';
         improveWritingState.busy = false;
-        improveWritingState.mode = 'improve';
         setImproveWritingModalStatus('', '');
         if (appliedBtn) {
-          setWritingActionButtonLoading(appliedBtn, false, mode);
-          showImproveWritingStatus(
-            appliedBtn,
-            mode === 'explain'
-              ? 'Brief explanation applied. Save Hotel Brain to keep the change.'
-              : 'Writing improved. Save Hotel Brain to keep the change.',
-            'info'
-          );
+          setImproveWritingButtonLoading(appliedBtn, false);
+          showImproveWritingStatus(appliedBtn, 'Writing improved. Save Hotel Brain to keep the change.', 'info');
         }
       }
 
@@ -3510,6 +3422,9 @@
           if (node.classList.contains('improve-writing-field-status')) return;
           node.remove();
         });
+        document.querySelectorAll('.explain-writing-btn').forEach(function (node) {
+          node.remove();
+        });
 
         document.querySelectorAll('[data-improve-writing], [data-ai-polish], [data-ai-polish-target]').forEach(function (btn) {
           if (btn.getAttribute('data-ai-polish') === 'summary') {
@@ -3518,22 +3433,14 @@
           }
           decorateImproveWritingButton(btn);
           placeImproveWritingBesideLabel(btn);
-          var explainBtn = ensureExplainWritingButton(btn);
           getImproveWritingStatusSlot(btn);
           bindImproveWritingFieldWatch(btn);
           syncImproveWritingButtonState(btn);
           if (!btn.getAttribute('data-improve-bound')) {
             btn.setAttribute('data-improve-bound', '1');
             btn.addEventListener('click', function () {
-              runImproveWriting(btn, 'improve');
+              runImproveWriting(btn);
             });
-          }
-          if (explainBtn && !explainBtn.getAttribute('data-explain-bound')) {
-            explainBtn.setAttribute('data-explain-bound', '1');
-            explainBtn.addEventListener('click', function () {
-              runImproveWriting(explainBtn, 'explain');
-            });
-            syncImproveWritingButtonState(explainBtn);
           }
         });
 
