@@ -8071,8 +8071,21 @@
         return applyAiPreferencesToSummary(buildOpeningSentence(metrics, analyzed), classified);
       }
 
-      function buildSummaryRowSentence(rowId, classified, metrics) {
+      function getSummaryDetailCards(classified) {
+        var analyzed = (classified && classified._analyzed) || [];
+        if (window.AiWritingEngine && window.AiWritingEngine.buildSummaryDetailCards) {
+          return window.AiWritingEngine.buildSummaryDetailCards(analyzed);
+        }
+        return null;
+      }
+
+      function buildSummaryRowSentence(rowId, classified, metrics, factCards) {
         var analyzed = classified._analyzed || [];
+        var cards = factCards || getSummaryDetailCards(classified);
+
+        if (cards && cards[rowId] && cards[rowId].sentence) {
+          return cards[rowId].sentence;
+        }
 
         switch (rowId) {
           case "urgent": {
@@ -8138,6 +8151,7 @@
 
       function renderSummaryUI(classified) {
         var metrics = getHandoverMetrics(classified);
+        var factCards = getSummaryDetailCards(classified);
         summaryOverview.textContent = buildSummaryOverview(classified);
         summaryRows.innerHTML = "";
 
@@ -8151,9 +8165,15 @@
         ];
 
         rows.forEach(function (row) {
-          if (!row.count) return;
+          var factCard = factCards && factCards[row.id] ? factCards[row.id] : null;
+          if (factCard) {
+            if (!factCard.show) return;
+            row.count = factCard.unresolvedCount;
+          } else if (!row.count) {
+            return;
+          }
 
-          var sentence = buildSummaryRowSentence(row.id, classified, metrics);
+          var sentence = buildSummaryRowSentence(row.id, classified, metrics, factCards);
           if (!sentence) return;
           sentence = applyAiPreferencesToSummary(sentence, classified);
 
