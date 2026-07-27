@@ -639,10 +639,37 @@
   /*  Operational note rewriting (Duty Manager handover voice)          */
   /* ------------------------------------------------------------------ */
 
+  function hasClearAction(text) {
+    var t = String(text || "");
+    if (!t) return false;
+    if (/\b(?:maintenance|engineering|housekeeping|reception|front office|duty manager|concierge)\s+to\b/i.test(t)) {
+      return true;
+    }
+    if (/\bfollow up\b/i.test(t)) return true;
+    /* Imperative / instruction clause — not past-tense status ("has been confirmed") */
+    if (/(?:^|[.;:]\s*)(?:please\s+)?(?:confirm|advise|arrange|ensure|update|settle|collect|issue|inspect|chase|contact|review|secure|supply|re-encode|hold|complete|attend|resolve|escalate|brief|deliver|post|record|offer|adjust|do not disturb|action this)\b/i.test(t)) {
+      return true;
+    }
+    return false;
+  }
+
+  function isCompletedNote(text, options) {
+    if (options && (options.section === "completed" || options.completed === true)) return true;
+    var t = String(text || "").toLowerCase();
+    if (!/\b(resolved|completed|fixed|done|closed|sorted|handed over|already (?:delivered|provided|collected|completed))\b/.test(t)) {
+      return false;
+    }
+    if (/\b(not |still |un|to be|needs?|pending|outstanding|awaiting)\b/.test(t)) return false;
+    return true;
+  }
+
   function appendAction(body, action) {
     var base = tidyPhrase(body).replace(/\.$/, "");
     var next = tidyPhrase(action).replace(/\.$/, "");
     if (!next) return ensureSentence(base);
+    if (!base) return ensureSentence(next);
+    /* At most one follow-up instruction per rewritten item */
+    if (hasClearAction(base)) return ensureSentence(base);
     if (new RegExp(escapeRegExp(next), "i").test(base)) return ensureSentence(base);
     return ensureSentence(base) + " " + ensureSentence(next);
   }
@@ -661,18 +688,18 @@
     if (isConfirmedLanguage(normalized) || (until && !isRequestLanguage(normalized))) {
       return appendAction(
         status,
-        "Please advise Housekeeping and ensure the guest is not disturbed before the agreed departure time"
+        "Advise Housekeeping; do not disturb the guest before the agreed departure time"
       );
     }
     if (isRequestLanguage(normalized)) {
       return appendAction(
         status,
-        "Please confirm with the Duty Manager whether this can be approved and update the guest"
+        "Confirm with the Duty Manager whether this can be approved and update the guest"
       );
     }
     return appendAction(
       status,
-      "Please confirm the departure time with the guest and advise Housekeeping if approved"
+      "Confirm the departure time with the guest and advise Housekeeping if approved"
     );
   }
 
@@ -682,8 +709,8 @@
       : "as soon as practical";
     return appendAction(
       "The guest has requested to extend their stay",
-      "Please follow up with the guest " + when +
-        ", confirm availability, and update the reservation if the extension is agreed"
+      "Confirm availability with the guest " + when +
+        " and update the reservation if the extension is agreed"
     );
   }
 
@@ -710,15 +737,15 @@
 
     return appendAction(
       status,
-      "Please ensure the PMS reflects the new room allocation" +
-        (amount || /\bupgrade\b/i.test(normalized) ? " and that the upgrade charge has been posted" : "")
+      "Update the PMS with the new room allocation" +
+        (amount || /\bupgrade\b/i.test(normalized) ? " and post the upgrade charge" : "")
     );
   }
 
   function buildIronBody() {
     return appendAction(
       "The guest has requested an iron and ironing board",
-      "Please arrange delivery to the room and confirm with the guest once provided"
+      "Housekeeping to deliver to the room and confirm with the guest once provided"
     );
   }
 
@@ -726,7 +753,7 @@
     if (detectComplaint(normalized)) {
       return appendAction(
         "The guest has reported an air-conditioning issue and is unhappy with the situation",
-        "Please arrange for Maintenance to attend, follow up with the guest to confirm the issue has been resolved, and record the outcome"
+        "Maintenance to attend and confirm with the guest once resolved"
       );
     }
     if (noteContains(normalized, ["not cooling", "broken", "not working", "faulty"])) {
@@ -736,12 +763,12 @@
       }
       return appendAction(
         status,
-        "Please chase Maintenance for an update and follow up with the guest once resolved"
+        "Engineering to inspect and confirm with the guest once resolved"
       );
     }
     return appendAction(
       "An air-conditioning issue has been reported",
-      "Please arrange for Maintenance to attend and follow up with the guest to confirm the issue has been resolved"
+      "Maintenance to attend and confirm with the guest once resolved"
     );
   }
 
@@ -753,8 +780,8 @@
     else if (noteContains(normalized, ["clean", "housekeeping"])) topic = " regarding room cleanliness";
     else if (noteContains(normalized, ["wifi", "internet"])) topic = " regarding Wi-Fi";
     return appendAction(
-      "The guest has raised a complaint" + topic + " and requires recovery follow-up",
-      "Please contact the guest, resolve the concern where possible, and escalate to the Duty Manager if compensation or further support is needed"
+      "The guest has raised a complaint" + topic,
+      "Contact the guest, resolve where possible, and escalate to the Duty Manager if compensation is needed"
     );
   }
 
@@ -763,25 +790,25 @@
       if (noteContains(normalized, ["outstanding", "still", "issued", "not return", "not returned"])) {
         return appendAction(
           "Loan adapter(s) issued to the guest remain outstanding",
-          "Please collect the adapter(s) before departure and update the inventory log"
+          "Collect the adapter(s) before departure and update the inventory log"
         );
       }
       return appendAction(
         "The guest has requested a loan adapter",
-        "Please issue the adapter, record it in the inventory log, and confirm delivery with the guest"
+        "Issue the adapter, record it in the inventory log, and confirm delivery with the guest"
       );
     }
     if (detectIronRequest(normalized)) return buildIronBody();
     if (noteContains(normalized, ["pillow"])) {
       return appendAction(
         "Extra pillows have been requested and remain outstanding",
-        "Please arrange delivery with Housekeeping and confirm once provided"
+        "Housekeeping to deliver and confirm once provided"
       );
     }
     if (noteContains(normalized, ["towel"])) {
       return appendAction(
         "Additional towels have been requested",
-        "Please arrange delivery with Housekeeping and confirm once provided"
+        "Housekeeping to deliver and confirm once provided"
       );
     }
     return "";
@@ -805,7 +832,7 @@
 
     return appendAction(
       status,
-      "Please review the reservation before arrival and ensure Reception and Housekeeping are briefed"
+      "Review the reservation before arrival and brief Reception and Housekeeping"
     );
   }
 
@@ -815,26 +842,27 @@
     if (noteContains(normalized, ["declined"])) {
       return appendAction(
         "The guest's card was declined and an outstanding balance" + amountBit + " remains on the folio",
-        "Please settle the balance before departure and offer an alternative payment method if required"
+        "Reception to collect" + (amount ? " " + amount : " the balance") +
+          " before departure; offer an alternative payment method if required"
       );
     }
     if (noteContains(normalized, ["outstanding", "balance", "folio"])) {
       return appendAction(
-        "An outstanding balance" + amountBit + " remains on the guest folio",
-        "Please settle the account before departure"
+        "Payment remains outstanding" + (amount ? " (" + amount + ")" : "") + " on the guest folio",
+        "Reception to collect" + (amount ? " " + amount : " the balance") + " before departure"
       );
     }
     if (noteContains(normalized, ["minibar"])) {
       return appendAction(
         "A minibar charge" + amountBit + " requires review" +
           (noteContains(normalized, ["dispute", "not consumed"]) ? " following a guest dispute" : ""),
-        "Please review the charge with the guest and adjust the folio if appropriate"
+        "Review the charge with the guest and adjust the folio if appropriate"
       );
     }
     if (noteContains(normalized, ["ota", "virtual card", "booking.com", "expedia"])) {
       return appendAction(
         "An OTA or channel payment" + amountBit + " still needs to be processed",
-        "Please complete the payment posting and confirm the folio is clear"
+        "Complete the payment posting and confirm the folio is clear"
       );
     }
     return "";
@@ -852,25 +880,25 @@
       }
       return appendAction(
         leakStatus,
-        "Please arrange an inspection with Maintenance and update Reception once the room is safe for the guest"
+        "Maintenance to inspect and update Reception once the room is safe for the guest"
       );
     }
     if (noteContains(normalized, ["tv", "remote"])) {
       return appendAction(
         "The television remote is not working",
-        "Please supply a replacement remote and confirm with the guest once resolved"
+        "Supply a replacement remote and confirm with the guest once resolved"
       );
     }
     if (noteContains(normalized, ["heating", "no heat", "cold"])) {
       return appendAction(
         "A heating issue has been reported",
-        "Please arrange for Maintenance to attend and follow up with the guest once resolved"
+        "Maintenance to attend and confirm with the guest once resolved"
       );
     }
     if (noteContains(normalized, ["lock", "key", "cannot enter", "card not"])) {
       return appendAction(
         "The guest is experiencing a room access or lock issue",
-        "Please re-encode or replace the key card and escort the guest if required"
+        "Re-encode or replace the key card and escort the guest if required"
       );
     }
     return "";
@@ -879,7 +907,7 @@
   function buildDeliveryBody(guestName) {
     return appendAction(
       "A package is being held at Reception" + (guestName ? " for " + guestName : ""),
-      "Please contact the guest to arrange collection and record when it has been handed over"
+      "Contact the guest to arrange collection and record when it has been handed over"
     );
   }
 
@@ -887,22 +915,32 @@
     if (noteContains(normalized, ["dnd"])) {
       return appendAction(
         "The room is on Do Not Disturb",
-        "Please hold cleaning until the DND is released and check again later in the shift"
+        "Hold cleaning until the DND is released and check again later in the shift"
       );
     }
     if (noteContains(normalized, ["pillow"])) {
       return appendAction(
         "Extra pillows have been requested and remain outstanding",
-        "Please arrange delivery with Housekeeping and confirm once provided"
+        "Housekeeping to deliver and confirm once provided"
       );
     }
     if (noteContains(normalized, ["turndown"])) {
       return appendAction(
         "Turndown service has been requested",
-        "Please ensure Housekeeping complete turndown at the agreed time"
+        "Housekeeping to complete turndown at the agreed time"
       );
     }
     return "";
+  }
+
+  function buildCompletedBody(normalized, room) {
+    var detail = room ? stripRoomLead(normalized, room) : normalized;
+    detail = detail
+      .replace(/^\[[^\]]+\]\s*/, "")
+      .replace(/\bplease\s+follow up\b.*$/i, "")
+      .replace(/\s{2,}/g, " ");
+    detail = tidyPhrase(detail);
+    return detail || "Completed during the shift";
   }
 
   function fallbackOperationalBody(normalized, room, options) {
@@ -915,33 +953,30 @@
       .replace(/\bnot cooling properly\b/gi, "not cooling correctly")
       .replace(/\bhas been informed but has not attended yet\b/gi, "has been informed but has not yet attended")
       .replace(/\balready booked\b/gi, "has been booked")
-      .replace(/\bplease\b/gi, "please")
       .replace(/\s{2,}/g, " ");
     detail = tidyPhrase(detail);
     if (!detail) return "";
 
-    /* Expand into a Duty Manager instruction rather than leaving a fragment */
-    if (!/^(the |a |an |guest |please |maintenance |housekeeping |reception )/i.test(detail)) {
-      detail = "Please note: " + detail.charAt(0).toLowerCase() + detail.slice(1);
+    if (isCompletedNote(normalized, options) || isCompletedNote(detail, options)) {
+      return detail;
     }
 
-    if (!/\b(please|follow up|arrange|confirm|ensure|advise|contact|update)\b/i.test(detail)) {
-      detail = appendAction(
-        detail,
-        "Please follow up during this shift and update the incoming team with the outcome"
-      );
-      return tidyPhrase(detail).replace(/\.$/, "");
+    if (hasClearAction(detail)) {
+      return detail;
     }
 
-    return detail;
+    /* One direct operational instruction — never generic "Please follow up during this shift" */
+    if (noteContains(normalized, ["pending", "outstanding", "still need", "awaiting"])) {
+      return appendAction(detail, "Chase for an update and record the outcome");
+    }
+    return appendAction(detail, "Incoming team to action and record the outcome");
   }
 
   function maybeAddFollowUp(body, normalized, options) {
     if (!body) return body;
     if (options && options.addFollowUp === false) return body;
-    if (/\bplease\b/i.test(body) && /\b(follow up|arrange|confirm|ensure|advise|contact|settle|chase|collect|issue|update)\b/i.test(body)) {
-      return body;
-    }
+    if (isCompletedNote(normalized, options)) return body;
+    if (hasClearAction(body)) return body;
 
     var needsFollowUp =
       detectExtendStay(normalized) ||
@@ -951,9 +986,9 @@
 
     if (!needsFollowUp) return body;
     if (/morning/i.test(normalized)) {
-      return appendAction(body, "Please follow up in the morning and update the handover with the outcome");
+      return appendAction(body, "Confirm with the guest in the morning and update the handover with the outcome");
     }
-    return appendAction(body, "Please follow up during this shift and record the outcome");
+    return appendAction(body, "Action this shift and record the outcome");
   }
 
   function rewriteOperationalNote(rawText, options) {
@@ -974,8 +1009,12 @@
     var guestName = guestNames[0] || "";
     var section = options.section || "";
     var body = "";
+    var skipFollowUp = false;
 
-    if (detectLateCheckout(normalized) || detectLateCheckout(original)) {
+    if (section === "completed" || isCompletedNote(normalized, options) || isCompletedNote(original, options)) {
+      body = buildCompletedBody(normalized, room);
+      skipFollowUp = true;
+    } else if (detectLateCheckout(normalized) || detectLateCheckout(original)) {
       body = buildLateCheckoutBody(normalized, options.prefs);
     } else if (detectExtendStay(normalized) || detectExtendStay(original)) {
       body = buildExtendStayBody(normalized);
@@ -1004,7 +1043,7 @@
     } else if (section === "lostproperty" || noteContains(normalized, ["lost property", "left behind", "found in"])) {
       body = appendAction(
         "Lost property has been logged" + (guestName ? " for " + guestName : ""),
-        "Please secure the item, update the lost property book, and contact the guest if details are available"
+        "Secure the item, update the lost property book, and contact the guest if details are available"
       );
     } else {
       body = buildInventoryBody(normalized) ||
@@ -1014,9 +1053,15 @@
         fallbackOperationalBody(normalized, room, options);
     }
 
-    body = maybeAddFollowUp(body, normalized, options);
+    if (!skipFollowUp) {
+      body = maybeAddFollowUp(body, normalized, options);
+    }
     body = tidyPhrase(body);
-    if (!body) body = tidyPhrase(fallbackOperationalBody(normalized, room, options) || normalized);
+    if (!body) {
+      body = skipFollowUp
+        ? tidyPhrase(buildCompletedBody(normalized, room) || normalized)
+        : tidyPhrase(fallbackOperationalBody(normalized, room, options) || normalized);
+    }
 
     var result;
     if (lead) {
