@@ -39,10 +39,10 @@ Access to private data is enforced with **Supabase Row Level Security (RLS)**.
 
 Requirements:
 
-- **RLS must be enabled** on every private table (for example: `hotels`, `hotel_members`, `hotel_brain_profiles`, `handover_reports`, and any future workspace-scoped tables).
+- **RLS must be enabled** on every private table (for example: `hotels`, `hotel_members`, `hotel_brain_profiles`, `handover_reports`, `maintenance_issues`, `maintenance_updates`, and any future workspace-scoped tables).
 - Access must be restricted using **`hotel_members`** and **`auth.uid()`** so that policies reflect actual workspace membership, not merely shared login.
 - Users must **only access records belonging to hotels where they are registered members**.
-- **SELECT, INSERT, UPDATE, and DELETE** policies must all be defined and reviewed for each private table.
+- **SELECT, INSERT, UPDATE, and DELETE** policies must all be defined and reviewed for each private table. Where DELETE is intentionally omitted (for example `maintenance_issues` operational records, or append-only `maintenance_updates`), document that default-deny under RLS is deliberate.
 - **UPDATE policies** must include both **`USING`** and **`WITH CHECK`** clauses where appropriate, so users cannot read or modify rows outside their workspace and cannot reassign rows to another workspace on update.
 
 Application code must still pass the correct `workspace_id` / `hotel_id`, but **must not rely on client-side checks alone**. RLS is the authoritative control.
