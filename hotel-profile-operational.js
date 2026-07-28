@@ -1166,6 +1166,258 @@
       .filter(Boolean);
   }
 
+  /**
+   * Phase 16B — Hotel Brain runtime context for operational tools.
+   * Pure transform of an already-loaded profile. Does not fetch storage or resolve workspace.
+   * Shape preserved for Handover / Shift Intelligence consumers.
+   */
+  function summarizePoliciesStructuredForContext(policiesStructured) {
+    var lines = [];
+    if (!policiesStructured) return lines;
+
+    ["guest", "payment", "operational"].forEach(function (groupId) {
+      var group = policiesStructured[groupId] || {};
+      Object.keys(group).forEach(function (key) {
+        var entry = group[key];
+        if (!entry) return;
+        var summary = trimText(entry.summary);
+        var instructions = trimText(entry.instructions);
+        var approval = trimText(entry.approvalLevel);
+        var charge = trimText(entry.charge);
+        var text = summary || instructions;
+        if (!text && !approval && !charge) return;
+        var parts = [(entry.title || key) + (text ? ": " + text : "")];
+        if (approval) parts.push("approval: " + approval);
+        if (charge) parts.push("charge: " + charge);
+        lines.push(parts.join(" · "));
+      });
+    });
+
+    return lines;
+  }
+
+  function summarizeLegacyPoliciesForContext(policies) {
+    var lines = [];
+    if (!policies) return lines;
+    Object.keys(policies).forEach(function (key) {
+      var text = trimText(policies[key]);
+      if (text) lines.push(key + ": " + text);
+    });
+    return lines;
+  }
+
+  function summarizeRoomTypesForContext(rooms) {
+    return (rooms || [])
+      .map(function (room) {
+        var type = trimText(room.type);
+        var code = trimText(room.code);
+        var count = trimText(room.count);
+        if (!type && !code) return "";
+        var label = type || code;
+        return count ? label + " (" + count + ")" : label;
+      })
+      .filter(Boolean);
+  }
+
+  function summarizeGuestServicesForContext(guestServices, hotelKnowledge) {
+    var lines = [];
+    guestServices = guestServices || {};
+    hotelKnowledge = hotelKnowledge || {};
+    var skipLocal = !!trimText(hotelKnowledge.localRecommendations);
+    [
+      "airportTransfers", "preferredTaxi", "transferPrices", "wakeUpCalls",
+      "luggageStorage", "guestItemLoans", "restaurantBookings", "specialOccasions",
+      "welcomeAmenities", "localRecommendations", "customInstructions"
+    ].forEach(function (key) {
+      if (key === "localRecommendations" && skipLocal) return;
+      var text = trimText(guestServices[key]);
+      if (text) lines.push(key.replace(/([A-Z])/g, " $1").trim() + ": " + text);
+    });
+    (guestServices.loanItems || []).forEach(function (item) {
+      if (!item) return;
+      var label = trimText(item.item);
+      var notes = trimText(item.notes);
+      if (label) lines.push("Loan item — " + label + (notes ? ": " + notes : ""));
+    });
+    (guestServices.suppliers || []).forEach(function (supplier) {
+      if (!supplier) return;
+      var name = trimText(supplier.name);
+      var service = trimText(supplier.service);
+      if (name) lines.push("Supplier — " + name + (service ? " (" + service + ")" : ""));
+    });
+    return lines;
+  }
+
+  function summarizeOtaForContext(profile) {
+    var lines = [];
+    var channels = (profile && profile.otaChannels) || [];
+    channels.forEach(function (channel) {
+      if (!channel) return;
+      var label = trimText(channel.label) || trimText(channel.type);
+      if (!label) return;
+      var parts = [label];
+      if (trimText(channel.paymentModel)) parts.push("payment: " + trimText(channel.paymentModel));
+      if (trimText(channel.prepaidOrPayAtProperty)) parts.push(trimText(channel.prepaidOrPayAtProperty));
+      if (trimText(channel.refundable)) parts.push("refundable: " + trimText(channel.refundable));
+      if (trimText(channel.specialInstructions)) parts.push(trimText(channel.specialInstructions));
+      lines.push(parts.join(" · "));
+    });
+    var otaPayment = (profile && profile.otaPayment) || {};
+    Object.keys(otaPayment).forEach(function (key) {
+      var text = trimText(otaPayment[key]);
+      if (text) lines.push(key + ": " + text);
+    });
+    return lines;
+  }
+
+  function summarizeSuppliesForContext(supplies) {
+    return summarizeGuestImpactingSupplies(supplies);
+  }
+
+  function buildHotelBrainContext(profile) {
+    if (!profile) return null;
+
+    var general = profile.general || {};
+    var hk = profile.hotelKnowledge || {};
+    var policyLines = summarizePoliciesStructuredForContext(profile.policiesStructured);
+    if (!policyLines.length) policyLines = summarizeLegacyPoliciesForContext(profile.policies);
+    var hasOperationalKnowledge = !!(
+      profile.operationalKnowledge &&
+      (
+        (profile.operationalKnowledge.knowledgeEntries || []).some(function (e) {
+          return e && e.active !== false && trimText(e.title);
+        }) ||
+        trimText(profile.operationalKnowledge.staffingContext)
+      )
+    );
+
+    var combinedInstructions = [
+      trimText(profile.aiPrefs && profile.aiPrefs.instructions),
+      trimText(hk.aiInstructions),
+      trimText(hk.commonTerms),
+      trimText(general.brandVoice ? "Brand voice: " + general.brandVoice : "")
+    ].filter(Boolean).join("\n");
+
+    var internalSections = [];
+    if (trimText(general.hotelName)) internalSections.push("Hotel: " + general.hotelName);
+    if (trimText(general.hotelType)) internalSections.push("Hotel type: " + general.hotelType);
+    if (trimText(general.totalRooms)) internalSections.push("Total rooms: " + general.totalRooms);
+    if (trimText(general.operatingNotes)) internalSections.push("Operating notes: " + general.operatingNotes);
+    if (trimText(hk.generalNotes)) internalSections.push("Hotel standards context: " + hk.generalNotes);
+    if (trimText(hk.hotelStandards)) internalSections.push("Hotel standards: " + hk.hotelStandards);
+    if (trimText(hk.vipRules)) internalSections.push("VIP house rules: " + hk.vipRules);
+    if (trimText(hk.operationalNotes)) {
+      internalSections.push(
+        (hasOperationalKnowledge ? "House context (not primary action source): " : "Operational notes: ") +
+        hk.operationalNotes
+      );
+    }
+    if (trimText(hk.localRecommendations)) internalSections.push("Local recommendations: " + hk.localRecommendations);
+
+    if (profile.operationalKnowledge) {
+      var okActionLines = summarizeOperationalActionsForContext(profile.operationalKnowledge);
+      if (okActionLines.length) {
+        internalSections.push(
+          "Operational Knowledge (preferred for operational actions):\n- " + okActionLines.join("\n- ")
+        );
+      }
+    }
+
+    if (profile.operationalKnowledge) {
+      if (trimText(profile.operationalKnowledge.staffingContext)) {
+        internalSections.push("Staffing context: " + profile.operationalKnowledge.staffingContext);
+      }
+      var sources = (profile.operationalKnowledge.handoverSources || []).filter(function (s) {
+        return s && s.active !== false && trimText(s.name);
+      });
+      if (sources.length) {
+        internalSections.push("Handover information sources:\n- " + sources.map(function (s) {
+          return s.name + (trimText(s.description) ? ": " + s.description : "");
+        }).join("\n- "));
+      }
+    }
+
+    if (policyLines.length) {
+      internalSections.push("Policies (approval rules and limits):\n- " + policyLines.join("\n- "));
+    }
+
+    var roomTypeSummary = summarizeRoomTypesForContext(profile.rooms);
+    if (roomTypeSummary.length) internalSections.push("Room types: " + roomTypeSummary.join(", "));
+
+    if ((profile.terminology || []).length) {
+      internalSections.push("Terminology:\n" + profile.terminology.map(function (entry) {
+        return "- " + trimText(entry.term) + ": " + trimText(entry.definition);
+      }).filter(function (line) { return line !== "- :"; }).join("\n"));
+    }
+
+    if (combinedInstructions) internalSections.push("AI instructions:\n" + combinedInstructions);
+
+    internalSections.push(
+      "Generation preferences: tone=" + (profile.aiPrefs && profile.aiPrefs.tone || "professional") +
+      "; detail=" + (profile.aiPrefs && profile.aiPrefs.detail || "standard") +
+      "; language=" + (profile.aiPrefs && profile.aiPrefs.language || "British English") +
+      "; dateFormat=" + (profile.aiPrefs && profile.aiPrefs.dateFormat || "DD/MM/YYYY (24-hour)")
+    );
+    internalSections.push(
+      "Source of truth: Operational Knowledge for actions; Policies for approval limits; " +
+      "Guest Services for how services are delivered; Hotel Knowledge for standards and house rules. " +
+      "Only use facts present in shift notes. Never invent guest details, room events, or policy outcomes."
+    );
+
+    if (profile.roomFacilities && profile.roomFacilities.length) {
+      var roomInventorySummary = summarizeRoomFacilitiesForContext(profile.roomFacilities);
+      if (trimText(roomInventorySummary)) internalSections.push(roomInventorySummary);
+    }
+
+    var guestServiceLines = summarizeGuestServicesForContext(profile.guestServices, hk);
+    if (guestServiceLines.length) {
+      internalSections.push("Guest service procedures:\n- " + guestServiceLines.join("\n- "));
+    }
+
+    var otaLines = summarizeOtaForContext(profile);
+    if (otaLines.length) {
+      internalSections.push("OTA / payment rules:\n- " + otaLines.join("\n- "));
+    }
+
+    var supplyLines = summarizeSuppliesForContext(profile.supplies);
+    if (supplyLines.length) {
+      internalSections.push("Guest-impacting inventory:\n- " + supplyLines.join("\n- "));
+    }
+
+    var deptLines = (profile.departments || [])
+      .map(function (dept) {
+        if (!dept || !trimText(dept.name)) return "";
+        var line = dept.name;
+        if (trimText(dept.head)) line += " (lead: " + trimText(dept.head) + ")";
+        if (trimText(dept.instructions)) line += " — " + trimText(dept.instructions);
+        return line;
+      })
+      .filter(Boolean);
+    if (deptLines.length) {
+      internalSections.push("Departments:\n- " + deptLines.join("\n- "));
+    }
+
+    return {
+      general: general,
+      hotelKnowledge: hk,
+      operationalKnowledge: profile.operationalKnowledge || null,
+      aiPrefs: profile.aiPrefs || {},
+      terminology: profile.terminology || [],
+      departments: profile.departments || [],
+      rooms: profile.rooms || [],
+      roomFacilities: profile.roomFacilities || [],
+      guestServices: profile.guestServices || {},
+      otaChannels: profile.otaChannels || [],
+      supplies: profile.supplies || [],
+      policies: profile.policies || {},
+      policiesStructured: profile.policiesStructured || null,
+      policyLines: policyLines,
+      roomTypeSummary: roomTypeSummary,
+      combinedInstructions: combinedInstructions,
+      internalInstructions: internalSections.join("\n\n")
+    };
+  }
+
   global.HotelProfileOperational = {
     SCHEMA_V4: SCHEMA_V4,
     SHIFT_TYPES: SHIFT_TYPES,
@@ -1184,6 +1436,8 @@
     summarizeGuestImpactingSupplies: summarizeGuestImpactingSupplies,
     isGuestImpactingSupply: isGuestImpactingSupply,
     buildKnowledgeActionText: buildKnowledgeActionText,
-    normalizeKnowledgeEntry: normalizeKnowledgeEntry
+    normalizeKnowledgeEntry: normalizeKnowledgeEntry,
+    buildHotelBrainContext: buildHotelBrainContext,
+    summarizeGuestServicesForContext: summarizeGuestServicesForContext
   };
 })(typeof window !== "undefined" ? window : globalThis);

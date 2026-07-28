@@ -1520,6 +1520,15 @@
       overflow-wrap: anywhere;
     }
 
+    .handover-item-import-badge {
+      display: inline-block;
+      margin-top: 5px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--gray-500);
+      letter-spacing: 0.01em;
+    }
+
     .handover-item-toolbar {
       display: flex;
       align-items: center;
@@ -3338,6 +3347,7 @@
   <script src="js/workspace.js"></script>
   <script src="js/hotel-brain-store.js"></script>
   <script src="js/handover-store.js"></script>
+  <script src="js/maintenance-store.js"></script>
   <script src="hotel-profile-operational.js"></script>
   <script src="ai-writing-engine.js"></script>
   <script src="shift-intelligence-engine.js"></script>
@@ -3825,6 +3835,12 @@
       }
 
       function summarizeGuestServicesForContext(guestServices, hotelKnowledge) {
+        if (
+          window.HotelProfileOperational &&
+          typeof window.HotelProfileOperational.summarizeGuestServicesForContext === "function"
+        ) {
+          return window.HotelProfileOperational.summarizeGuestServicesForContext(guestServices, hotelKnowledge);
+        }
         var lines = [];
         guestServices = guestServices || {};
         hotelKnowledge = hotelKnowledge || {};
@@ -3990,6 +4006,13 @@
       }
 
       function buildHotelBrainContext(profile) {
+        /* Phase 16B: shared builder lives on HotelProfileOperational; local helpers remain as fallback. */
+        if (
+          window.HotelProfileOperational &&
+          typeof window.HotelProfileOperational.buildHotelBrainContext === "function"
+        ) {
+          return window.HotelProfileOperational.buildHotelBrainContext(profile);
+        }
         if (!profile) return null;
 
         var general = profile.general || {};
@@ -4870,12 +4893,17 @@
 
       function normalizeHandoverItem(raw, sectionId) {
         if (typeof raw === "object" && raw !== null && raw.text) {
-          return {
+          var item = {
             id: raw.id || createItemId(),
             text: String(raw.text),
             status: normalizeItemStatus(raw.status || "pending"),
             sectionId: sectionId
           };
+          if (raw.importedFromMaintenance) item.importedFromMaintenance = true;
+          if (raw.sourceType) item.sourceType = String(raw.sourceType);
+          if (raw.sourceId) item.sourceId = String(raw.sourceId);
+          if (raw.fact) item.fact = raw.fact;
+          return item;
         }
         return {
           id: createItemId(),
@@ -5064,7 +5092,11 @@
 
       /**
        * Shift Intelligence — recommendations via ShiftIntelligenceEngine.
+       * M4: when Maintenance facts are present, merge with Handover facts and call analyzeFacts().
+       * Reasoning stays in the engine; this page only loads, filters, and displays.
        */
+      var lastMaintenanceFacts = [];
+
       function buildIntelligenceInput(classified, rawNotesText) {
         return {
           shiftCode: selectedShift,
@@ -5080,11 +5112,149 @@
         };
       }
 
+      function loadMaintenanceIssuesForHandover() {
+        if (!window.HFMaintenanceStore) return Promise.resolve([]);
+        var store = window.HFMaintenanceStore;
+        var boot = typeof store.init === "function"
+          ? store.init().catch(function () { return null; })
+          : Promise.resolve(null);
+        return boot.then(function () {
+          if (typeof store.refresh === "function") {
+            return store.refresh().catch(function () { return null; });
+          }
+          return null;
+        }).then(function () {
+          var issues = [];
+          if (typeof store.getCachedIssues === "function") {
+            issues = store.getCachedIssues() || [];
+          } else if (typeof store.listIssues === "function") {
+            issues = store.listIssues({ includeCompleted: true }) || [];
+          }
+          if (!window.ShiftIntelligenceEngine ||
+              typeof window.ShiftIntelligenceEngine.filterMaintenanceIssuesForHandover !== "function") {
+            return (issues || []).filter(function (issue) {
+              return issue && issue.includeInHandover === true && issue.status !== "completed";
+            });
+          }
+          return window.ShiftIntelligenceEngine.filterMaintenanceIssuesForHandover(issues);
+        }).catch(function () {
+          return [];
+        });
+      }
+
+      function formatMaintenanceImportItemText(issue, fact) {
+        var room = fact && fact.room
+          ? "Room " + fact.room
+          : (issue && trimText(issue.area) ? trimText(issue.area) : "");
+        var title = trimText(issue && issue.title) || trimText(fact && fact.detail) || "Maintenance issue";
+        var priority = trimText(issue && (issue.priorityLabel || issue.priority));
+        var text = room ? room + " – " + title : title;
+        if (priority && !/^medium$/i.test(priority)) {
+          text += " (" + priority.charAt(0).toUpperCase() + priority.slice(1) + ")";
+        }
+        return text;
+      }
+
+      function statusFromMaintenanceIssue(issue) {
+        var status = trimText(issue && issue.status).toLowerCase();
+        if (status === "in_progress") return "in_progress";
+        if (status === "waiting_parts" || status === "waiting_contractor") return "follow_up";
+        return "pending";
+      }
+
+      /**
+       * Merge eligible Maintenance issues into classified handover output.
+       * Dedupes against manual notes via the engine helper. Returns imported neutral facts.
+       */
+      function integrateMaintenanceIssues(classified, issues) {
+        lastMaintenanceFacts = [];
+        if (!classified || !window.ShiftIntelligenceEngine) return [];
+        var SI = window.ShiftIntelligenceEngine;
+        if (typeof SI.factsFromMaintenanceIssues !== "function") return [];
+
+        var eligible = typeof SI.filterMaintenanceIssuesForHandover === "function"
+          ? SI.filterMaintenanceIssuesForHandover(issues || [])
+          : (issues || []);
+        if (!eligible.length) return [];
+
+        var handoverFacts = typeof SI.factsFromHandoverAnalyzedNotes === "function"
+          ? SI.factsFromHandoverAnalyzedNotes(classified._analyzed || [], {})
+          : [];
+        var maintenanceFacts = SI.factsFromMaintenanceIssues(eligible, {});
+        var uniqueFacts = typeof SI.dedupeMaintenanceFactsAgainstHandover === "function"
+          ? SI.dedupeMaintenanceFactsAgainstHandover(maintenanceFacts, handoverFacts)
+          : maintenanceFacts;
+
+        if (!uniqueFacts.length) return [];
+
+        classified.maintenance = classified.maintenance || [];
+        classified._analyzed = classified._analyzed || [];
+
+        uniqueFacts.forEach(function (fact) {
+          var issue = fact.metadata && fact.metadata.issue ? fact.metadata.issue : null;
+          var note = typeof SI.neutralFactToAnalyzedNote === "function"
+            ? SI.neutralFactToAnalyzedNote(fact)
+            : null;
+          if (note) {
+            note.section = "maintenance";
+            note.importedFromMaintenance = true;
+            note.id = fact.sourceId || note.id;
+            note._neutralFactId = fact.id;
+            note._neutralSourceType = "maintenance";
+            if (fact.sourceId) note.sourceId = fact.sourceId;
+            classified._analyzed.push(note);
+          }
+
+          classified.maintenance.push({
+            id: "maint-" + (fact.sourceId || createItemId()),
+            text: formatMaintenanceImportItemText(issue || {}, fact),
+            status: statusFromMaintenanceIssue(issue || { status: fact.status }),
+            sectionId: "maintenance",
+            importedFromMaintenance: true,
+            sourceType: "maintenance",
+            sourceId: fact.sourceId || "",
+            fact: note && note.fact ? note.fact : null
+          });
+        });
+
+        if (typeof computeHandoverMetrics === "function") {
+          classified._metrics = computeHandoverMetrics(classified._analyzed);
+        }
+
+        lastMaintenanceFacts = uniqueFacts;
+        return uniqueFacts;
+      }
+
       function generateShiftIntelligence(classified, rawNotesText) {
         if (!window.ShiftIntelligenceEngine) {
           return { recommendations: [] };
         }
-        var result = ShiftIntelligenceEngine.analyze(buildIntelligenceInput(classified, rawNotesText));
+        var SI = window.ShiftIntelligenceEngine;
+        var baseInput = buildIntelligenceInput(classified, rawNotesText);
+        var maintenanceFacts = lastMaintenanceFacts || [];
+
+        if (maintenanceFacts.length && typeof SI.analyzeFacts === "function" &&
+            typeof SI.factsFromHandoverAnalyzedNotes === "function") {
+          var handoverFacts = SI.factsFromHandoverAnalyzedNotes(
+            (classified && classified._analyzed) || [],
+            {}
+          );
+          /* Handover adapter already includes imported notes on _analyzed; keep maintenance facts once. */
+          var withoutImported = handoverFacts.filter(function (fact) {
+            return fact.sourceType !== "maintenance";
+          });
+          var merged = withoutImported.concat(maintenanceFacts);
+          var factResult = SI.analyzeFacts(Object.assign({}, baseInput, {
+            facts: merged,
+            rawNotesText: rawNotesText || baseInput.rawNotesText
+          }));
+          return {
+            recommendations: factResult.recommendations || [],
+            facts: factResult.facts || merged
+          };
+        }
+
+        var result = SI.analyze(baseInput);
         return { recommendations: result.recommendations || [] };
       }
 
@@ -5368,6 +5538,12 @@
         text.className = "handover-item-text";
         text.textContent = normalizeAdrInText(normalized.text);
         main.appendChild(text);
+        if (normalized.importedFromMaintenance || item.importedFromMaintenance) {
+          var badge = document.createElement("div");
+          badge.className = "handover-item-import-badge";
+          badge.textContent = "🔧 Imported from Maintenance";
+          main.appendChild(badge);
+        }
         li.appendChild(main);
 
         var toolbar = document.createElement("div");
@@ -6686,25 +6862,28 @@
       }
 
       function briefIssueDetail(note) {
-        if (!note || !note.original) return "";
-        var line = note.original;
-        if (note.rooms.length === 1) {
+        if (!note) return "";
+        /* Phase 2D: reuse rewritten display text, never raw Opera/parser fragments. */
+        var rewritten = rewriteNoteForDisplay(note);
+        if (!rewritten) return "";
+        var line = String(rewritten).replace(/\.$/, "").trim();
+        if (note.rooms && note.rooms.length === 1) {
           line = stripRoomReference(line, note.rooms[0]);
+          line = line.replace(/^[\s–—\-:,]+/, "").trim();
         }
-        line = line.replace(/^\[[^\]]+\]\s*/, "").replace(/\.$/, "").trim();
         if (line.length > 72) line = line.slice(0, 69) + "…";
         return line;
       }
 
       function buildRoomIssueSentence(note) {
+        if (!note) return "";
+        /* Phase 2D: same display-writing pipeline as main handover items. */
+        var rewritten = rewriteNoteForDisplay(note);
+        if (rewritten) return rewritten;
         if (!note.rooms || !note.rooms.length) return "";
-        var detail = summariseIssueCore(note.original, note.rooms.length === 1 ? note.rooms[0] : null);
-        if (!detail) return "";
-        detail = detail.replace(/\.$/, "");
-        if (note.rooms.length === 1) {
-          return "Room " + note.rooms[0] + " — " + detail.charAt(0).toLowerCase() + detail.slice(1) + ".";
-        }
-        return "Rooms " + note.rooms.join(", ") + " — " + detail + ".";
+        return note.rooms.length === 1
+          ? "Room " + note.rooms[0] + " requires priority follow-up."
+          : "Rooms " + note.rooms.join(", ") + " require priority follow-up.";
       }
 
       function buildUrgentDetailSentences(analyzed) {
@@ -8176,9 +8355,31 @@
       function getSummaryDetailCards(classified) {
         var analyzed = (classified && classified._analyzed) || [];
         if (window.AiWritingEngine && window.AiWritingEngine.buildSummaryDetailCards) {
-          return window.AiWritingEngine.buildSummaryDetailCards(analyzed);
+          return window.AiWritingEngine.buildSummaryDetailCards(
+            analyzed,
+            getAiWritingOptions()
+          );
         }
         return null;
+      }
+
+      function joinRewrittenSummaryNotes(notes) {
+        var phrases = [];
+        var seen = {};
+        (notes || []).forEach(function (note) {
+          var text = rewriteNoteForDisplay(note);
+          if (!text || seen[text]) return;
+          seen[text] = true;
+          phrases.push(text);
+        });
+        if (!phrases.length) return "";
+        if (phrases.length === 1) return phrases[0];
+        if (phrases.length === 2) {
+          return phrases[0].replace(/\.$/, "") + ". " + phrases[1];
+        }
+        return phrases.slice(0, 3).map(function (p, i) {
+          return i < Math.min(phrases.length, 3) - 1 ? p.replace(/\.$/, "") : p;
+        }).join(". ") + (phrases.length > 3 ? " (+" + (phrases.length - 3) + " more)." : "");
       }
 
       function buildSummaryRowSentence(rowId, classified, metrics, factCards) {
@@ -8189,59 +8390,67 @@
           return cards[rowId].sentence;
         }
 
+        /* Phase 2D fallbacks: still rewrite notes — never summariseIssueCore / raw original. */
         switch (rowId) {
           case "urgent": {
             var urgentNotes = analyzed.filter(function (n) {
               return n.section === "urgent" && isActiveNote(n);
             });
-            if (!metrics.urgent) return "";
-            if (urgentNotes.length === 1) {
-              var urgentSentence = buildRoomIssueSentence(urgentNotes[0]);
-              if (urgentSentence) return capitalize(urgentSentence);
-              if (urgentNotes[0].rooms.length === 1) {
-                return "Room " + urgentNotes[0].rooms[0] + " requires priority follow-up.";
-              }
-            }
+            if (!metrics.urgent && !urgentNotes.length) return "";
+            var urgentJoined = joinRewrittenSummaryNotes(urgentNotes);
+            if (urgentJoined) return urgentJoined;
             return metrics.urgent === 1
               ? "One urgent issue requires immediate follow-up."
               : metrics.urgent + " urgent issues require immediate follow-up.";
           }
           case "guest": {
-            var guestSentence = buildGuestSentence(metrics, analyzed);
-            if (!guestSentence) {
-              return metrics.vip === 1
-                ? "One VIP arrival requires coordinated preparation."
-                : metrics.vip + " VIP arrivals require coordinated preparation.";
-            }
-            return guestSentence.replace(/\.$/, "") + ".";
+            var guestNotes = analyzed.filter(function (n) {
+              return (n.section === "guest" || n.section === "vip" || n.isVip) && isActiveNote(n);
+            });
+            var guestJoined = joinRewrittenSummaryNotes(guestNotes);
+            if (guestJoined) return guestJoined;
+            if (!metrics.vip && !(metrics.display && metrics.display.guest)) return "";
+            return metrics.vip === 1
+              ? "One VIP arrival requires coordinated preparation."
+              : (metrics.vip || metrics.display.guest) + " guest follow-ups require attention.";
           }
           case "maintenance": {
-            var maintSentence = buildMaintenanceSentence(metrics, analyzed);
-            if (maintSentence) return maintSentence;
+            var maintNotes = analyzed.filter(function (n) {
+              return n.section === "maintenance" && isActiveNote(n);
+            });
+            var maintJoined = joinRewrittenSummaryNotes(maintNotes);
+            if (maintJoined) return maintJoined;
             return metrics.maintenance === 1
               ? "One maintenance item requires follow-up."
               : metrics.maintenance + " maintenance items require follow-up.";
           }
           case "payments": {
-            var paySentence = buildPaymentsSentence(classified.payments || [], metrics);
-            if (paySentence) return paySentence;
+            var payNotes = analyzed.filter(function (n) {
+              return n.section === "payments" && isActiveNote(n);
+            });
+            var payJoined = joinRewrittenSummaryNotes(payNotes);
+            if (payJoined) return payJoined;
             return metrics.payments === 1
               ? "One payment issue requires follow-up before the next shift."
               : metrics.payments + " payment issues require follow-up before the next shift.";
           }
           case "events": {
+            var eventNotes = analyzed.filter(function (n) {
+              return n.section === "events" && isActiveNote(n);
+            });
+            var eventJoined = joinRewrittenSummaryNotes(eventNotes);
+            if (eventJoined) return eventJoined;
             return metrics.events === 1
               ? "One event requires coordination for the incoming team."
               : metrics.events + " events require coordination for the incoming team.";
           }
           case "tasks": {
-            var taskSentence = buildTasksSentence(
-              classified.tasks || [],
-              classified.general || [],
-              analyzed,
-              metrics
-            );
-            if (taskSentence) return taskSentence;
+            var taskNotes = analyzed.filter(function (n) {
+              return (n.section === "tasks" || n.section === "inventory" || n.section === "deliveries") &&
+                isActiveNote(n);
+            });
+            var taskJoined = joinRewrittenSummaryNotes(taskNotes);
+            if (taskJoined) return taskJoined;
             return metrics.tasks === 1
               ? "One operational task requires follow-up."
               : metrics.tasks + " operational tasks require follow-up.";
@@ -9065,56 +9274,61 @@
         generateBtn.disabled = true;
 
         setTimeout(function () {
-          try {
-            var lines = parseNotes(text);
-            var classified = classifyNotes(lines);
-            var now = new Date();
+          loadMaintenanceIssuesForHandover().then(function (maintenanceIssues) {
+            try {
+              var lines = parseNotes(text);
+              var classified = classifyNotes(lines);
+              var now = new Date();
 
-            commitSnapshotState(text);
+              commitSnapshotState(text);
 
-            lastSummaryText = generateSummary(classified);
-            enrichClassifiedWithItems(classified);
-            renderSections(classified);
-            renderSummaryUI(classified);
-            renderShiftAtAGlance(classified);
-            renderPreHandoverSnapshot();
-            var intelligence = generateShiftIntelligence(classified, text);
-            lastRecommendations = intelligence.recommendations || [];
-            renderShiftIntelligence();
-            lastGeneratedTime = formatTimestamp(now);
-            renderHandoverMeta(lastGeneratedTime);
-            renderSummaryStats(classified);
-            showSummaryCard();
+              integrateMaintenanceIssues(classified, maintenanceIssues || []);
 
-            lastHandoverText = formatHandoverText(classified);
-            lastClassified = classified;
-            outputSection.classList.add("visible");
-            copyBtn.disabled = false;
-            exportPdfBtn.disabled = false;
-            printHandoverBtn.disabled = false;
-            saveHandoverBtn.disabled = false;
+              lastSummaryText = generateSummary(classified);
+              enrichClassifiedWithItems(classified);
+              renderSections(classified);
+              renderSummaryUI(classified);
+              renderShiftAtAGlance(classified);
+              renderPreHandoverSnapshot();
+              var intelligence = generateShiftIntelligence(classified, text);
+              lastRecommendations = intelligence.recommendations || [];
+              renderShiftIntelligence();
+              lastGeneratedTime = formatTimestamp(now);
+              renderHandoverMeta(lastGeneratedTime);
+              renderSummaryStats(classified);
+              showSummaryCard();
 
-            showToast(uiLabels.handover + " generated successfully!");
-            scheduleDraftSave();
+              lastHandoverText = formatHandoverText(classified);
+              lastClassified = classified;
+              outputSection.classList.add("visible");
+              copyBtn.disabled = false;
+              exportPdfBtn.disabled = false;
+              printHandoverBtn.disabled = false;
+              saveHandoverBtn.disabled = false;
 
-            var scrollTarget = shiftGlance && shiftGlance.classList.contains("is-visible")
-              ? shiftGlance
-              : summaryCard;
-            if (scrollTarget) {
-              scrollTarget.scrollIntoView({ behavior: "smooth", block: "nearest" });
+              showToast(uiLabels.handover + " generated successfully!");
+              scheduleDraftSave();
+
+              var scrollTarget = shiftGlance && shiftGlance.classList.contains("is-visible")
+                ? shiftGlance
+                : summaryCard;
+              if (scrollTarget) {
+                scrollTarget.scrollIntoView({ behavior: "smooth", block: "nearest" });
+              }
+            } catch (err) {
+              console.error("[Handover] Generate failed:", err);
+              showToast("Could not generate handover. Please try again.");
+            } finally {
+              generateBtn.classList.remove("loading");
+              generateBtn.disabled = false;
             }
-          } catch (err) {
-            console.error("[Handover] Generate failed:", err);
-            showToast("Could not generate handover. Please try again.");
-          } finally {
-            generateBtn.classList.remove("loading");
-            generateBtn.disabled = false;
-          }
+          });
         }, 650);
       }
 
       function buildPdfSummaryPayload(classified) {
         var metrics = getHandoverMetrics(classified);
+        var factCards = getSummaryDetailCards(classified);
         var rowDefs = [
           { id: "urgent", heading: "Immediate Attention", count: metrics.urgent },
           { id: "guest", heading: "VIP & Guest Requests", count: metrics.vip > 0 ? metrics.vip : metrics.display.guest },
@@ -9126,8 +9340,13 @@
         var rows = [];
 
         rowDefs.forEach(function (def) {
-          if (!def.count) return;
-          var sentence = buildSummaryRowSentence(def.id, classified, metrics);
+          var factCard = factCards && factCards[def.id] ? factCards[def.id] : null;
+          if (factCard) {
+            if (!factCard.show) return;
+          } else if (!def.count) {
+            return;
+          }
+          var sentence = buildSummaryRowSentence(def.id, classified, metrics, factCards);
           if (!sentence) return;
           rows.push({ heading: def.heading, text: applyAiPreferencesToSummary(sentence, classified) });
         });
