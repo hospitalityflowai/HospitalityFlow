@@ -118,7 +118,7 @@ console.log("\nPhase 2A — summary from facts\n");
   assert(/payment/i.test(summary), "summary mentions payment in completed acknowledgement");
   assert(!/requires settlement|settle the account|outstanding balance requires/i.test(summary),
     "summary must not contradict settled payment");
-  assert(/follow-up items? remain/i.test(summary) || /follow-up item remains/i.test(summary),
+  assert(/follow-up items? remain/i.test(summary) || /follow-ups? remain/i.test(summary),
     "summary counts unresolved follow-ups");
 })();
 

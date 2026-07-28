@@ -833,17 +833,21 @@
   }
 
   function buildVipBody(normalized, original, guestName, prefs) {
-    /* Phase 3B/2B: VIP facts only — no invented "noted for this shift" placeholders. */
+    /* Phase 3B/2C: VIP facts in natural Duty Manager English. */
     var rooms = extractRoomNumbers(original || normalized);
     var hasArrival = noteContains(normalized, ["arriv"]);
     if (!guestName && !rooms.length && !hasArrival &&
         !noteContains(normalized, ["champagne", "flowers", "amenity", "quiet"])) {
       return "";
     }
-    var status = "VIP" + (guestName ? " " + guestName : " guest");
-    if (hasArrival) status += " is arriving";
-    else if (rooms.length === 1) status += " in Room " + rooms[0];
-    else status += " requires preparation";
+    var status;
+    if (guestName) {
+      status = guestName + (/\breturning\b/i.test(normalized) ? " is a returning VIP guest" : " is a VIP guest");
+      if (hasArrival) status += " arriving";
+    } else {
+      status = "A VIP guest" + (hasArrival ? " is arriving" : " requires preparation");
+    }
+    if (rooms.length === 1) status += (hasArrival || guestName ? " for Room " : " in Room ") + rooms[0];
     var timeMatch = original.match(/\b(\d{1,2}[:.]\d{2}|\d{1,2}\s*(?:am|pm))\b/i) ||
       normalized.match(/\b(\d{1,2}[:.]\d{2}|\d{1,2}\s*(?:am|pm))\b/i);
     if (timeMatch) status += " at " + formatTime(timeMatch[1], prefs);
@@ -1520,6 +1524,7 @@
     var lead = "";
     if (fact.rooms && fact.rooms.length === 1) lead = "Room " + fact.rooms[0];
     else if (fact.rooms && fact.rooms.length > 1) lead = "Rooms " + joinNatural(fact.rooms);
+    var src = String(fact.sourceText || "");
 
     if (fact.subject === "room_move") {
       /* Paid upgrades / destination-room moves keep legacy/Phase1 wording */
@@ -1527,15 +1532,13 @@
       (fact.details || []).forEach(function (d) {
         if (d && d.type === "money") hasMoney = true;
       });
-      if (hasMoney || /\bupgrade\b/i.test(fact.sourceText || "")) return "";
+      if (hasMoney || /\bupgrade\b/i.test(src)) return "";
 
-      var moveBody = "Guest";
+      var moveBody;
       if (fact.uncertainty || /maybe|possible/i.test(fact.confirmationStatus || "")) {
-        moveBody = "Guest may request a move";
-      } else if (/\b(?:request|wants?|would like)\b/i.test(fact.sourceText || "")) {
-        moveBody = "Guest has requested a move";
+        moveBody = "The guest may request a room move";
       } else {
-        moveBody = "Guest has requested a move";
+        moveBody = "The guest has requested a room move";
       }
       if (fact.preferredLocation) moveBody += " to the " + fact.preferredLocation;
       else {
@@ -1552,25 +1555,27 @@
     }
 
     if (fact.subject === "twin_setup") {
-      var twinBody = "Configure the king bed as twins";
-      if (fact.guestName) twinBody += " for " + fact.guestName;
-      if (fact.arrivalDate) twinBody += " before arrival on " + formatOperationalDate(fact.arrivalDate);
-      return finishFactRender(lead, twinBody);
+      var twinBody = "Prepare" + (lead ? " " + lead : " the room") + " with twin beds";
+      if (fact.arrivalDate) {
+        twinBody += " before the guest arrives on " + formatOperationalDate(fact.arrivalDate);
+      } else {
+        twinBody += " before arrival";
+      }
+      return ensureSentence(twinBody);
     }
 
     if (fact.subject === "maintenance" && fact.rooms && fact.rooms.length) {
-      var maintSrc = fact.sourceText || "";
       /*
-       * Only use the concise multi-room follow-up sentence when the note is a
+       * Only use the concise multi-room sentence when the note is a
        * follow-up list without a specific fault description.
        */
       if (
-        /\bmaintenance\b/i.test(maintSrc) &&
-        /\bfollow[\s-]*up\b/i.test(maintSrc) &&
-        !/\b(?:leak|leaking|broken|faulty|air\s*con|a\/c|\bac\b|shower|tv|remote|heating|plumb|drain|flicker)\b/i.test(maintSrc)
+        /\bmaintenance\b/i.test(src) &&
+        /\bfollow[\s-]*up\b/i.test(src) &&
+        !/\b(?:leak|leaking|broken|faulty|air\s*con|a\/c|\bac\b|shower|tv|remote|heating|plumb|drain|flicker)\b/i.test(src)
       ) {
         return ensureSentence(
-          "Maintenance follow-up required for " +
+          "Maintenance follow-up is required for " +
           (fact.rooms.length === 1 ? "Room " + fact.rooms[0] : "Rooms " + joinNatural(fact.rooms))
         );
       }
@@ -1578,24 +1583,48 @@
     }
 
     if (fact.subject === "guest_arrangement") {
+      var guestLabel = String(fact.guestName || "")
+        .replace(/\s+\b(?:room|rm\.?|suite)\b\.?$/i, "")
+        .trim();
+      var dualGuests = src.match(
+        /\b([A-ZÀ-ÖØ-Þ][a-zà-öø-ÿ'’-]+(?:\s+[A-ZÀ-ÖØ-Þ][a-zà-öø-ÿ'’-]+)?)\s+(?:and|&)\s+([A-ZÀ-ÖØ-Þ][a-zà-öø-ÿ'’-]+(?:\s+[A-ZÀ-ÖØ-Þ][a-zà-öø-ÿ'’-]+)?)\b/
+      );
+      var pluralGuests = false;
+      if (dualGuests &&
+          !/^(comp|bed|breakfast|room|tax|grid|post|story|stories|instagram)/i.test(dualGuests[1]) &&
+          !/^(comp|bed|breakfast|room|tax|grid|post|story|stories|instagram)/i.test(dualGuests[2])) {
+        guestLabel = dualGuests[1] + " and " + dualGuests[2];
+        pluralGuests = true;
+      }
       var arrParts = [];
-      if (fact.package) {
-        arrParts.push(capitalize(fact.package) + " stay" + (fact.guestName ? " for " + fact.guestName : ""));
-      } else if (fact.guestName) {
-        arrParts.push("Guest arrangement for " + fact.guestName);
+      if (/comp(?:limentary)?|bed\s+and\s+breakfast|bed-and-breakfast/i.test(fact.package || src)) {
+        arrParts.push(
+          (guestLabel
+            ? guestLabel + (pluralGuests ? " are staying" : " is staying")
+            : "Guests are staying") +
+          " on a complimentary bed-and-breakfast arrangement"
+        );
+      } else if (guestLabel) {
+        arrParts.push(guestLabel + " has a special guest arrangement for this stay");
+      } else {
+        arrParts.push("A complimentary guest arrangement is in place for this stay");
       }
       var deliverableBits = [];
-      var src = fact.sourceText || "";
       var grid = src.match(/(\d+)\s+instagram\s+grid\s+posts?/i);
       var stories = src.match(/(\d+)\s*[–—\-]\s*(\d+)\s+instagram\s+stories?/i) ||
         src.match(/(\d+)\s+instagram\s+stories?/i);
-      if (grid) deliverableBits.push(grid[1] === "1" ? "one Instagram grid post" : grid[1] + " Instagram grid posts");
+      if (grid) {
+        deliverableBits.push(grid[1] === "1" ? "one Instagram grid post" : grid[1] + " Instagram grid posts");
+      }
       if (stories) {
-        if (stories[2]) deliverableBits.push(stories[1] + " to " + stories[2] + " Instagram stories with tags");
-        else deliverableBits.push(stories[1] === "1" ? "one Instagram story" : stories[1] + " Instagram stories");
+        if (stories[2]) {
+          deliverableBits.push(stories[1] + " to " + stories[2] + " Instagram Stories with tags");
+        } else {
+          deliverableBits.push(stories[1] === "1" ? "one Instagram Story" : stories[1] + " Instagram Stories");
+        }
       }
       if (deliverableBits.length) {
-        arrParts.push("Agreed deliverables: " + joinNatural(deliverableBits));
+        arrParts.push("Agreed deliverables include " + joinNatural(deliverableBits));
       }
       if (!arrParts.length) return "";
       return finishFactRender(lead, arrParts.join(". "));
@@ -1606,19 +1635,62 @@
       var resParts = [];
       if (fact.guestName) {
         resParts.push(
-          fact.guestName +
-          (fact.arrivalDate ? " arriving " + formatOperationalDate(fact.arrivalDate) : "")
+          fact.guestName + " is arriving" +
+          (fact.arrivalDate ? " on " + formatOperationalDate(fact.arrivalDate) : "")
         );
       } else if (fact.arrivalDate) {
-        resParts.push("Arriving " + formatOperationalDate(fact.arrivalDate));
+        resParts.push("Arrival is scheduled for " + formatOperationalDate(fact.arrivalDate));
       }
-      if (fact.paymentMethod) resParts.push(capitalize(fact.paymentMethod));
-      if (fact.package === "room and breakfast") resParts.push("Room and breakfast included");
-      else if (fact.package) resParts.push(capitalize(fact.package));
-      if (fact.guarantee) resParts.push(capitalize(fact.guarantee));
-      if (fact.guestType) resParts.push(capitalize(fact.guestType));
+      if (fact.paymentMethod && /payment on arrival|poa/i.test(fact.paymentMethod)) {
+        resParts.push("The reservation is on a payment on arrival basis");
+      } else if (fact.paymentMethod) {
+        resParts.push("Payment method: " + fact.paymentMethod);
+      }
+      if (fact.package === "room and breakfast") {
+        resParts.push("Room and breakfast are included");
+      } else if (fact.package && /comp/i.test(fact.package)) {
+        resParts.push("The stay is on a complimentary bed-and-breakfast basis");
+      } else if (fact.package) {
+        resParts.push(capitalize(fact.package));
+      }
+      if (fact.guarantee) {
+        resParts.push("A card is held as a guarantee");
+      }
+      if (fact.guestType && /regular/i.test(fact.guestType)) {
+        resParts.push("This is a regular guest");
+      } else if (fact.guestType) {
+        resParts.push(capitalize(fact.guestType));
+      }
       if (!resParts.length) return "";
       return finishFactRender(lead, resParts.join(". "));
+    }
+
+    /* VIP corporate / commercial notes — only when discount or corporate cues are present */
+    if ((fact.subject === "vip_arrival" || /\bvip\b/i.test(src)) && fact.guestName &&
+        (/\bcorporate\b/i.test(src) || /\d+\s*%/.test(src) || /\breturning\b/i.test(src))) {
+      var vipParts = [];
+      var vipLead = fact.guestName;
+      if (/\breturning\b/i.test(src)) vipLead += " is a returning VIP";
+      else vipLead += " is a VIP";
+      if (/\bcorporate\b/i.test(src)) vipLead += " corporate guest";
+      else vipLead += " guest";
+      if (fact.arrivalDate) vipLead += " arriving on " + formatOperationalDate(fact.arrivalDate);
+      else {
+        var vipTime = src.match(/\b(\d{1,2}[:.]\d{2}|\d{1,2}\s*(?:am|pm))\b/i);
+        if (vipTime) vipLead += " arriving at " + formatTime(vipTime[1]);
+        else if (/\barriv/i.test(src)) vipLead += " arriving during this stay";
+      }
+      vipParts.push(vipLead);
+
+      var barDisc = src.match(/(\d+)\s*%\s*(?:bar\s*)?discount/i) || src.match(/(\d+)\s*%\s*(?:off\s+)?(?:bar|room)/i);
+      var fbDisc = src.match(/(\d+)\s*%\s*(?:f\s*[&+]\s*b|food|beverage|fb)/i);
+      if (barDisc || fbDisc) {
+        var discBits = [];
+        if (barDisc) discBits.push("a " + barDisc[1] + "% BAR discount");
+        if (fbDisc) discBits.push("a " + fbDisc[1] + "% food and beverage discount");
+        vipParts.push("Apply " + joinNatural(discBits) + " to the final invoice");
+      }
+      return finishFactRender(lead, vipParts.join(". "));
     }
 
     return "";
@@ -1873,24 +1945,33 @@
 
     function concreteSnippet(entry) {
       var fact = entry.fact;
-      var display = renderOperationalFactDisplay(fact);
-      if (display) {
-        return display.replace(/\.$/, "").replace(/^Room\s+/i, "Room ");
-      }
       var rooms = (fact.rooms || []).slice();
+      if (fact.subject === "vip_arrival" || (fact.guestName && /\bvip\b/i.test(fact.sourceText || ""))) {
+        return "VIP preparation for " + (fact.guestName || (rooms[0] ? "Room " + rooms[0] : "the arriving guest"));
+      }
       if (fact.subject === "room_move" && rooms[0]) {
-        return "a possible room move for Room " + rooms[0] +
+        return "a possible room move request for Room " + rooms[0] +
           (fact.preferredLocation ? " to the " + fact.preferredLocation : "");
       }
       if (fact.subject === "maintenance" && rooms.length) {
-        return "maintenance checks for " +
+        return "maintenance checks in " +
           (rooms.length === 1 ? "Room " + rooms[0] : "Rooms " + joinNatural(rooms));
       }
       if (fact.subject === "twin_setup" && rooms[0]) {
-        return "a twin-bed setup for Room " + rooms[0];
+        return "a twin-bed setup for Room " + rooms[0] +
+          (fact.arrivalDate ? " before arrival" : "");
       }
-      if (rooms[0] && fact.guestName) return "follow-up for " + fact.guestName + " in Room " + rooms[0];
-      if (rooms[0]) return "follow-up for Room " + rooms[0];
+      if (fact.subject === "guest_arrangement" && fact.guestName) {
+        return "guest arrangement preparation for " + fact.guestName;
+      }
+      if (fact.subject === "late_checkout" && rooms[0]) {
+        return "a late check-out request for Room " + rooms[0];
+      }
+      if (rooms[0] && fact.guestName) {
+        return "an outstanding action for " + fact.guestName + " in Room " + rooms[0];
+      }
+      if (rooms[0]) return "an outstanding action for Room " + rooms[0];
+      if (fact.guestName) return "an outstanding action for " + fact.guestName;
       return "";
     }
 
@@ -1898,9 +1979,9 @@
     var critical = unresolved.filter(function (e) { return e.topic === "critical"; });
 
     if (!unresolved.length && !completed.length) {
-      sentences.push("No operational issues were identified during the shift.");
+      sentences.push("No operational issues were identified during this shift.");
     } else if (!critical.length) {
-      sentences.push("No critical operational issues were identified during the shift.");
+      sentences.push("No critical operational issues were identified during this shift.");
     } else if (critical.length === 1) {
       sentences.push("One critical operational issue requires immediate attention.");
     } else {
@@ -1909,18 +1990,18 @@
 
     if (unresolved.length > 0) {
       var snippets = unresolved.map(concreteSnippet).filter(Boolean);
-      var limit = detail === "brief" ? 2 : (detail === "comprehensive" ? 5 : 3);
+      var limit = detail === "brief" ? 2 : (detail === "comprehensive" ? 5 : 4);
       var shown = snippets.slice(0, limit);
       var opener = unresolved.length === 1
-        ? "One follow-up item remains"
-        : capitalize(numberWord(unresolved.length)) + " follow-up items remain";
+        ? "One operational follow-up remains"
+        : capitalize(numberWord(unresolved.length)) + " operational follow-ups remain";
       if (shown.length) {
         sentences.push(opener + ", including " + joinNatural(shown) + ".");
       } else {
         sentences.push(opener + ".");
       }
     } else if (!critical.length) {
-      sentences.push("The incoming team has a clear handover with no outstanding follow-ups.");
+      sentences.push("The incoming team has a clear handover with no outstanding actions.");
     }
 
     if (completed.length && detail !== "brief") {
@@ -1986,29 +2067,6 @@
     });
   }
 
-  function stripRoomsFromSource(text, rooms) {
-    var cleaned = String(text || "");
-    (rooms || []).forEach(function (room) {
-      cleaned = stripRoomLead(cleaned, room);
-    });
-    cleaned = cleaned
-      .replace(/\b(?:room|rm\.?|suite)\s*[#.]?\s*\d{1,4}[a-z]?\b/gi, " ")
-      .replace(/^\[[^\]]+\]\s*/, "")
-      .replace(/\s{2,}/g, " ")
-      .trim();
-    return tidyPhrase(cleaned);
-  }
-
-  function moneyFromFact(fact) {
-    var amount = "";
-    (fact.details || []).forEach(function (d) {
-      if (d && d.type === "money" && d.value) amount = d.value;
-    });
-    if (amount) return amount;
-    var extracted = extractMoney(fact.sourceText || "");
-    return extracted.length ? extracted[0] : "";
-  }
-
   function summaryCardBucket(note, fact) {
     var topic = classifyFactSummaryTopic(fact, note);
     var section = (note && note.section) || (fact && fact.sectionHint) || "";
@@ -2033,122 +2091,52 @@
     return "";
   }
 
-  function buildPaymentCardPhrase(note, fact) {
-    var lead = roomLeadFromFact(fact) ||
-      (note.rooms && note.rooms.length === 1 ? "Room " + note.rooms[0] : "");
-    var noun = financialSettlementNoun(fact.sourceText) || "outstanding balance";
-    var money = moneyFromFact(fact);
-    var moneyBit = money ? " of " + money : "";
+  /**
+   * Phase 2D — single display-writing pipeline for summary cards and main items.
+   * Always reuse rewriteNote; never render sourceText / Opera fragments directly.
+   */
+  function displayWritingForNote(note, fact, options) {
+    options = options || {};
+    if (!note && !fact) return "";
 
-    if (fact.status === FACT_STATUS.done) {
-      return finishFactRender(lead, capitalize(noun) + " settled");
-    }
-    if (fact.status === FACT_STATUS.confirmed) {
-      return finishFactRender(lead, capitalize(noun) + " confirmed");
-    }
-    if (fact.status === FACT_STATUS.in_progress) {
-      return finishFactRender(lead, capitalize(noun) + moneyBit + " is being processed");
-    }
-    if (fact.status === FACT_STATUS.requested) {
-      return finishFactRender(lead, capitalize(noun) + moneyBit + " payment requested");
-    }
-    /* open / unknown — factual, never invent "requiring settlement before departure" */
-    return finishFactRender(lead, capitalize(noun) + moneyBit + " remains open");
-  }
-
-  function buildMaintenanceCardPhrase(note, fact) {
-    var lead = roomLeadFromFact(fact) ||
-      (note.rooms && note.rooms.length === 1 ? "Room " + note.rooms[0] : "");
-    var detail = stripRoomsFromSource(fact.sourceText, fact.rooms || note.rooms);
-    detail = detail
-      .replace(/\b(?:please\s+)?(?:follow\s*up|update\s+(?:reception|the\s+team)|contact\s+guest)\b.*$/i, "")
-      .replace(/\s{2,}/g, " ")
-      .trim();
-
-    if (fact.status === FACT_STATUS.done) {
-      if (detail) {
-        return finishFactRender(lead, detail.replace(/\bremains?\s+open\b/i, "").trim() || "Maintenance issue resolved");
-      }
-      return finishFactRender(lead, "Maintenance issue resolved");
-    }
-    if (fact.status === FACT_STATUS.confirmed) {
-      return finishFactRender(lead, (detail || "Maintenance update") + " confirmed");
-    }
-    if (fact.status === FACT_STATUS.in_progress) {
-      if (detail && !/\bin\s+progress\b/i.test(detail)) {
-        return finishFactRender(lead, detail.replace(/\.$/, "") + " in progress");
-      }
-      return finishFactRender(lead, detail || "Maintenance work in progress");
-    }
-    if (fact.status === FACT_STATUS.open || fact.status === FACT_STATUS.requested ||
-        fact.status === FACT_STATUS.unknown) {
-      if (detail) {
-        if (/\bremains?\s+open\b/i.test(detail) || /\bunresolved\b/i.test(detail) ||
-            /\bstill\b/i.test(detail)) {
-          return finishFactRender(lead, detail);
+    var payload = note
+      ? {
+          original: note.original || note.text || (fact && fact.sourceText) || "",
+          text: note.text,
+          rooms: note.rooms,
+          section: note.section,
+          isVip: note.isVip,
+          fact: fact || note.fact || null
         }
-        if (fact.status === FACT_STATUS.open || /\bleak|broken|fault|damage|repair/i.test(detail)) {
-          return finishFactRender(lead, detail.replace(/\.$/, "") + " remains open");
-        }
-        return finishFactRender(lead, detail);
-      }
-      return finishFactRender(lead, "Maintenance issue remains open");
+      : {
+          original: (fact && fact.sourceText) || "",
+          rooms: (fact && fact.rooms) || [],
+          section: (fact && fact.sectionHint) || "",
+          fact: fact
+        };
+
+    if (fact) payload.fact = fact;
+    if (!payload.original && fact && fact.sourceText) {
+      payload.original = fact.sourceText;
     }
-    return finishFactRender(lead, detail || "Maintenance note recorded");
+
+    return tidyPhrase(rewriteNote(payload, {
+      section: payload.section || options.section,
+      rooms: payload.rooms || options.rooms,
+      isVip: payload.isVip || options.isVip,
+      prefs: options.prefs,
+      terminologyMap: options.terminologyMap,
+      platformLabels: options.platformLabels,
+      uiLabels: options.uiLabels,
+      currency: options.currency,
+      module: options.module,
+      addFollowUp: options.addFollowUp
+    }));
   }
 
-  function buildGuestCardPhrase(note, fact) {
-    var lead = roomLeadFromFact(fact) ||
-      (note.rooms && note.rooms.length === 1 ? "Room " + note.rooms[0] : "");
-    var detail = stripRoomsFromSource(fact.sourceText, fact.rooms || note.rooms);
-
-    if (fact.status === FACT_STATUS.confirmed && detectLateCheckout(fact.sourceText)) {
-      var until = String(fact.sourceText || "").match(/until\s+(\d{1,2}[:.]?\d{0,2}\s*(?:am|pm)?)/i);
-      var untilBit = until ? " until " + until[1] : "";
-      return finishFactRender(lead, "Late check-out confirmed" + untilBit);
-    }
-    if (fact.status === FACT_STATUS.done) {
-      if (detail) return finishFactRender(lead, detail.replace(/\.$/, "") + " completed");
-      return finishFactRender(lead, "Guest follow-up completed");
-    }
-    if (fact.status === FACT_STATUS.confirmed) {
-      if (detail) return finishFactRender(lead, detail);
-      return finishFactRender(lead, "Guest arrangement confirmed");
-    }
-    /* Preserve useful source detail (VIP amenities, arrivals) — no generic rewrite */
-    if (detail) return finishFactRender(lead, detail);
-    if (fact.subject === "vip_arrival" || (note && note.isVip)) {
-      return finishFactRender(lead, "VIP guest follow-up noted");
-    }
-    return finishFactRender(lead, "Guest follow-up noted");
-  }
-
-  function buildTasksCardPhrase(note, fact) {
-    var lead = roomLeadFromFact(fact) ||
-      (note.rooms && note.rooms.length === 1 ? "Room " + note.rooms[0] : "");
-    var detail = stripRoomsFromSource(fact.sourceText, fact.rooms || note.rooms);
-
-    if (fact.status === FACT_STATUS.done) {
-      return finishFactRender(lead, (detail || "Task") + " completed");
-    }
-    if (fact.status === FACT_STATUS.confirmed) {
-      return finishFactRender(lead, detail || "Task confirmed");
-    }
-    if (fact.status === FACT_STATUS.in_progress) {
-      return finishFactRender(lead, (detail || "Task") + " in progress");
-    }
-    if (fact.status === FACT_STATUS.requested || fact.status === FACT_STATUS.open) {
-      return finishFactRender(lead, detail || "Task remains open");
-    }
-    return finishFactRender(lead, detail || "Operational task noted");
-  }
-
-  function buildCardPhraseForBucket(bucket, note, fact) {
-    if (bucket === "payments") return buildPaymentCardPhrase(note, fact);
-    if (bucket === "maintenance") return buildMaintenanceCardPhrase(note, fact);
-    if (bucket === "guest") return buildGuestCardPhrase(note, fact);
-    if (bucket === "tasks") return buildTasksCardPhrase(note, fact);
-    return "";
+  function buildCardPhraseForBucket(bucket, note, fact, options) {
+    if (!bucket) return "";
+    return displayWritingForNote(note, fact, options);
   }
 
   function joinSummaryCardPhrases(phrases) {
@@ -2175,14 +2163,17 @@
 
   /**
    * Build AI Summary detail-card models from structured facts.
-   * Badge counts are unresolved only; completed facts never use open/settlement language.
+   * Badge counts are unresolved only; card sentences reuse rewriteNote (Phase 2D).
    */
-  function buildSummaryDetailCards(analyzed) {
+  function buildSummaryDetailCards(analyzed, options) {
+    options = options || {};
     var buckets = {
+      urgent: [],
       guest: [],
       maintenance: [],
       payments: [],
-      tasks: []
+      tasks: [],
+      events: []
     };
 
     (analyzed || []).forEach(function (note) {
@@ -2223,7 +2214,7 @@
       var phrases = [];
       /* Prefer unresolved first, then completed/confirmed so settled items still appear */
       unresolved.concat(completed).concat(confirmed).forEach(function (entry) {
-        var phrase = buildCardPhraseForBucket(bucket, entry.note, entry.fact);
+        var phrase = buildCardPhraseForBucket(bucket, entry.note, entry.fact, options);
         if (phrase) phrases.push(phrase);
       });
 
@@ -2256,10 +2247,12 @@
     }
 
     return {
+      urgent: buildCard("urgent", buckets.urgent),
       guest: buildCard("guest", buckets.guest),
       maintenance: buildCard("maintenance", buckets.maintenance),
       payments: buildCard("payments", buckets.payments),
-      tasks: buildCard("tasks", buckets.tasks)
+      tasks: buildCard("tasks", buckets.tasks),
+      events: buildCard("events", buckets.events)
     };
   }
 
@@ -4025,6 +4018,7 @@
     isFactClosed: isFactClosed,
     summarizeFromFacts: summarizeFromFacts,
     buildSummaryDetailCards: buildSummaryDetailCards,
+    displayWritingForNote: displayWritingForNote,
     computeHandoverMetricsFromFacts: computeHandoverMetricsFromFacts,
     isGlanceActiveFact: isGlanceActiveFact,
     factIdentityKey: factIdentityKey,

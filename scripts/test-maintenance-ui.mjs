@@ -161,9 +161,13 @@ function main() {
   }
 
   if (/HFMaintenanceStore|maintenance-store\.js/i.test(read("handover.html"))) {
-    ok = fail("Handover integration must not exist in M2") && ok;
+    if (!/integrateMaintenanceIssues|factsFromMaintenanceIssues|analyzeFacts/i.test(read("handover.html"))) {
+      ok = fail("Handover loads Maintenance store but M4 wiring helpers are missing") && ok;
+    } else {
+      ok = pass("M4 Maintenance → Handover integration present") && ok;
+    }
   } else {
-    ok = pass("No handover integration in M2") && ok;
+    ok = fail("M4 requires maintenance-store.js on handover.html") && ok;
   }
 
   if (/AiWritingEngine|rewriteMaintenance|ai-writing-engine/i.test(html)) {
@@ -303,10 +307,14 @@ function main() {
     ok = pass("No AI integration in Maintenance polish") && ok;
   }
 
-  if (/importFromMaintenance|syncMaintenanceToHandover|HFMaintenanceStore|maintenance-store\.js/i.test(read("handover.html"))) {
-    ok = fail("No real Handover integration should be added") && ok;
+  if (/HFMaintenanceStore|maintenance-store\.js/i.test(read("handover.html"))) {
+    if (!/integrateMaintenanceIssues|filterMaintenanceIssuesForHandover|Imported from Maintenance/i.test(read("handover.html"))) {
+      ok = fail("M4 wiring incomplete on handover.html") && ok;
+    } else {
+      ok = pass("M4 Maintenance → Handover integration present") && ok;
+    }
   } else {
-    ok = pass("No real Handover integration") && ok;
+    ok = fail("M4 requires maintenance-store on handover.html") && ok;
   }
 
   const phase15HashBefore = phase15.length;

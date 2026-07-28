@@ -312,13 +312,11 @@ assert(Array.isArray(ctx.policyLines), "policyLines present");
 assert(Array.isArray(ctx.roomTypeSummary) && ctx.roomTypeSummary.length === 1, "room types summarised");
 assert(HPO.buildHotelBrainContext(null) === null, "null profile → null context");
 
-console.log("\n-- Guardrails: no DB / no M4 wiring --");
+console.log("\n-- Guardrails: no DB / engine stays storage-free --");
 const engineSrc = load("shift-intelligence-engine.js");
-const handoverSrc = load("handover.html");
 const maintHtml = load("maintenance.html");
 assert(!/from\s+['\"]@supabase|createClient\(|\.from\(\s*['\"]maintenance/i.test(engineSrc), "engine has no database access");
-assert(!/HFMaintenanceStore|maintenance-store\.js|importFromMaintenance|listOpenIssuesForHandover/i.test(handoverSrc), "no Maintenance → Handover wiring in handover.html");
-assert(!/ShiftIntelligenceEngine|analyzeFacts|factsFromMaintenance/i.test(maintHtml), "maintenance.html unchanged regarding intelligence");
+assert(!/ShiftIntelligenceEngine|analyzeFacts|factsFromMaintenance/i.test(maintHtml), "maintenance.html does not host intelligence engine");
 
 const migrationsDir = path.join(ROOT, "supabase", "migrations");
 const migrationFiles = fs.readdirSync(migrationsDir).filter(function (f) { return f.endsWith(".sql"); });

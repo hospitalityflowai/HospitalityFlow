@@ -103,15 +103,21 @@ function main() {
   }
 
   if (/HFMaintenanceStore|maintenance-store\.js/i.test(handover)) {
-    ok = fail("No real Handover integration should be added") && ok;
+    if (!/integrateMaintenanceIssues|factsFromMaintenanceIssues/i.test(handover)) {
+      ok = fail("Handover loads Maintenance store without M4 integrate helpers") && ok;
+    } else {
+      ok = pass("M4 Maintenance → Handover integration present") && ok;
+    }
   } else {
-    ok = pass("No real Handover integration was added") && ok;
+    ok = fail("M4 requires maintenance-store.js on handover.html") && ok;
   }
 
-  if (!/future handover integration/i.test(html)) {
-    ok = fail("Handover toggle must not claim live handover import") && ok;
+  if (/does not appear in a handover yet/i.test(html)) {
+    ok = fail("Maintenance UI still claims issues do not appear in handover") && ok;
+  } else if (!/appear in the (next )?AI Shift Handover|Maintenance section of AI Shift Handover/i.test(html)) {
+    ok = fail("Handover inclusion copy should describe live M4 import") && ok;
   } else {
-    ok = pass("Handover toggle wording is future-integration safe") && ok;
+    ok = pass("Handover inclusion wording reflects live import") && ok;
   }
 
   if (!/filters\.status === "all"|includeCompleted|status !== "completed"/i.test(store + html)) {

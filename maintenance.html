@@ -641,7 +641,7 @@
               <input type="checkbox" id="field-include-handover" name="includeInHandover">
               <div>
                 <label for="field-include-handover">Include in next handover</label>
-                <p class="form-help">Opt in so this issue can appear in AI Shift Handover later. Unresolved issues are not imported only because they exist.</p>
+                <p class="form-help">Opt in so unresolved issues appear in the next AI Shift Handover. Unresolved issues are not imported only because they exist.</p>
               </div>
             </div>
           </div>
@@ -1373,7 +1373,7 @@
             '<input type="checkbox" id="detail-handover"' + (issue.includeInHandover ? " checked" : "") +
             (offline ? " disabled" : "") + ">" +
             "<div><label for=\"detail-handover\">Include in next handover</label>" +
-            '<p class="form-help">Marks this issue for future handover integration. It does not appear in a handover yet.</p></div>' +
+            '<p class="form-help">When checked, unresolved issues appear in the Maintenance section of AI Shift Handover.</p></div>' +
           "</div>" +
         "</div>" +
       "</div>" +
@@ -1440,7 +1440,7 @@
         runWorkflow(handoverEl, function () {
           return store.setHandoverInclusion(issue.id, handoverEl.checked);
         }, handoverEl.checked
-          ? "Included for future handover integration."
+          ? "Included in next AI Shift Handover."
           : "Removed from handover inclusion.");
       });
     }

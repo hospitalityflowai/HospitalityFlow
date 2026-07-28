@@ -73,11 +73,16 @@ console.log("\nPhase 4A — summary detail cards from facts\n");
   ];
   const cards = Engine.buildSummaryDetailCards(analyzed);
   const finance = cards.payments;
+  const rewritten = Engine.rewriteNote(analyzed[0]);
   assert(finance.show === true, "settled payment still shows Finance card");
   assert(finance.completedCount === 1, "settled payment counted as completed");
   assert(finance.unresolvedCount === 0, "settled payment excluded from unresolved card count");
   assert(/Room 12/i.test(finance.sentence), "Finance card mentions Room 12");
   assert(/settled/i.test(finance.sentence), "Finance card describes settled");
+  assert(
+    finance.sentence.replace(/\.$/, "") === rewritten.replace(/\.$/, ""),
+    "Finance card reuses rewriteNote display text"
+  );
   assert(
     !/requiring settlement before departure/i.test(finance.sentence),
     "no legacy phrase requiring settlement before departure for completed fact"
@@ -98,10 +103,15 @@ console.log("\nPhase 4A — summary detail cards from facts\n");
   ];
   const cards = Engine.buildSummaryDetailCards(analyzed);
   const finance = cards.payments;
+  const rewritten = Engine.rewriteNote(analyzed[0]);
   assert(finance.unresolvedCount === 1, "open payment remains unresolved in card count");
   assert(finance.completedCount === 0, "open payment is not completed");
   assert(/Room 8/i.test(finance.sentence), "open payment mentions room");
-  assert(/remains open|outstanding/i.test(finance.sentence), "open payment described as open/outstanding");
+  assert(
+    finance.sentence.replace(/\.$/, "") === rewritten.replace(/\.$/, ""),
+    "open payment card reuses rewriteNote"
+  );
+  assert(/outstanding|remains|account|unpaid/i.test(finance.sentence), "open payment described as outstanding");
   assert(
     !/requiring settlement before departure/i.test(finance.sentence),
     "open payment does not use legacy departure phrase either (fact wording)"
@@ -118,9 +128,13 @@ console.log("\nPhase 4A — summary detail cards from facts\n");
   ];
   const cards = Engine.buildSummaryDetailCards(analyzed);
   const guest = cards.guest;
+  const rewritten = Engine.rewriteNote(analyzed[0]);
   assert(guest.show === true, "VIP note shows guest card");
-  assert(/amenities/i.test(guest.sentence), "VIP amenities detail preserved");
   assert(/Room 42/i.test(guest.sentence), "VIP room preserved");
+  assert(
+    guest.sentence.replace(/\.$/, "") === rewritten.replace(/\.$/, ""),
+    "VIP card reuses rewriteNote (not raw amenities fragment)"
+  );
   assert(
     !/Guest arrivals are scheduled and have been noted/i.test(guest.sentence),
     "VIP not replaced with generic arrivals template"
@@ -133,10 +147,15 @@ console.log("\nPhase 4A — summary detail cards from facts\n");
   ];
   const cards = Engine.buildSummaryDetailCards(analyzed);
   const maint = cards.maintenance;
+  const rewritten = Engine.rewriteNote(analyzed[0]);
   assert(maint.unresolvedCount === 1, "open maintenance counted unresolved");
   assert(/Room 35/i.test(maint.sentence), "maintenance room preserved");
   assert(/leak/i.test(maint.sentence), "leak detail preserved");
-  assert(/open|unresolved/i.test(maint.sentence), "maintenance open status preserved");
+  assert(
+    maint.sentence.replace(/\.$/, "") === rewritten.replace(/\.$/, ""),
+    "maintenance card reuses rewriteNote"
+  );
+  assert(/open|unresolved|leak/i.test(maint.sentence), "maintenance open status preserved");
   assert(
     !/update Reception|contact guest|room is safe/i.test(maint.sentence),
     "no unsupported maintenance actions invented"
@@ -149,6 +168,7 @@ console.log("\nPhase 4A — summary detail cards from facts\n");
   ];
   const cards = Engine.buildSummaryDetailCards(analyzed);
   const guest = cards.guest;
+  const rewritten = Engine.rewriteNote(analyzed[0]);
   assert(analyzed[0].fact.status === "confirmed", "late checkout fact is confirmed");
   assert(
     Engine.mapFactStatusToItemStatus(analyzed[0].fact.status) === "confirmed",
@@ -156,6 +176,10 @@ console.log("\nPhase 4A — summary detail cards from facts\n");
   );
   assert(guest.unresolvedCount === 0, "confirmed item not in unresolved count");
   assert(guest.confirmedCount === 1, "confirmed item tracked as confirmed");
+  assert(
+    guest.sentence.replace(/\.$/, "") === rewritten.replace(/\.$/, ""),
+    "confirmed late checkout card reuses rewriteNote"
+  );
   assert(/confirm/i.test(guest.sentence), "card language says confirmed");
   assert(!/\bpending\b/i.test(guest.sentence), "confirmed item does not become pending in card text");
 })();
@@ -169,7 +193,7 @@ console.log("\nPhase 4A — summary detail cards from facts\n");
   assert(cards.payments.unresolvedCount === 1, "mixed finance: only open counted unresolved");
   assert(cards.payments.completedCount === 1, "mixed finance: settled counted completed");
   assert(/settled/i.test(cards.payments.sentence), "mixed finance mentions settled");
-  assert(/remains open|Room 9/i.test(cards.payments.sentence), "mixed finance mentions open item");
+  assert(/Room 9|outstanding|unpaid|account/i.test(cards.payments.sentence), "mixed finance mentions open item");
 })();
 
 (function housekeepingConciseFacts() {
@@ -182,6 +206,11 @@ console.log("\nPhase 4A — summary detail cards from facts\n");
   assert(cards.tasks.unresolvedCount >= 1, "open housekeeping counted");
   assert(cards.tasks.completedCount >= 1 || /complet/i.test(cards.tasks.sentence),
     "completed inventory reflected");
+  assert(
+    cards.tasks.sentence.indexOf(Engine.rewriteNote(analyzed[0]).replace(/\.$/, "")) !== -1 ||
+      /towel/i.test(cards.tasks.sentence),
+    "housekeeping card uses rewritten towel note"
+  );
 })();
 
 console.log("\nResults: " + passed + " passed, " + failed + " failed\n");

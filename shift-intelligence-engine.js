@@ -237,7 +237,9 @@
     }
 
     var neutral = ensureNeutralFact({
-      sourceType: "handover",
+      sourceType: (note.importedFromMaintenance || note._neutralSourceType === "maintenance")
+        ? "maintenance"
+        : "handover",
       sourceId: sourceId,
       workspaceId: options.workspaceId || "",
       subjectType: subjectType,
@@ -344,6 +346,98 @@
     return (issues || []).map(function (issue) {
       return maintenanceIssueToNeutralFact(issue, options || {});
     }).filter(Boolean);
+  }
+
+  /**
+   * M4 — issues eligible for Handover import.
+   * include_in_handover === true AND status !== completed.
+   */
+  function filterMaintenanceIssuesForHandover(issues) {
+    return (issues || []).filter(function (issue) {
+      if (!issue || typeof issue !== "object") return false;
+      var included = issue.includeInHandover === true || issue.include_in_handover === true;
+      if (!included) return false;
+      var status = trimText(issue.status).toLowerCase();
+      if (status === "completed") return false;
+      return true;
+    });
+  }
+
+  function significantTokens(text) {
+    return trimText(text)
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, " ")
+      .split(/\s+/)
+      .filter(function (token) {
+        if (token.length < 4) return false;
+        return !/^(room|rooms|with|from|that|this|have|been|into|only|issue|open|area)$/.test(token);
+      });
+  }
+
+  function tokenOverlapCount(a, b) {
+    var left = significantTokens(a);
+    var right = significantTokens(b);
+    if (!left.length || !right.length) return 0;
+    var seen = {};
+    right.forEach(function (t) { seen[t] = true; });
+    var count = 0;
+    left.forEach(function (t) {
+      if (seen[t]) count += 1;
+    });
+    return count;
+  }
+
+  function roomsCompatible(a, b) {
+    var roomA = normalizeRoomNumber(a);
+    var roomB = normalizeRoomNumber(b);
+    if (roomA && roomB) return roomA === roomB;
+    if (!roomA && !roomB) return true;
+    return false;
+  }
+
+  /**
+   * True when a maintenance fact matches an existing handover fact closely enough
+   * to treat as the same issue (same room + overlapping detail tokens).
+   */
+  function maintenanceFactDuplicatesHandoverFact(maintFact, handoverFact) {
+    var mf = ensureNeutralFact(maintFact);
+    var hf = ensureNeutralFact(handoverFact);
+    if (hf.sourceType === "maintenance" && mf.sourceId && hf.sourceId && mf.sourceId === hf.sourceId) {
+      return true;
+    }
+    if (!roomsCompatible(mf.room, hf.room)) return false;
+    if (mf.room && hf.room && normalizeRoomNumber(mf.room) === normalizeRoomNumber(hf.room)) {
+      var overlap = tokenOverlapCount(
+        (mf.detail || "") + " " + (mf.sourceText || "") + " " + (mf.category || ""),
+        (hf.detail || "") + " " + (hf.sourceText || "") + " " + (hf.category || "") + " " + (hf.subjectType || "")
+      );
+      if (overlap >= 2) return true;
+      /* Same room + both clearly maintenance subjects with any shared token */
+      var maintSubject = /maintenance|plumb|electric|hvac|leak|shower|tap|fault|repair/i.test(
+        (mf.detail || "") + " " + (mf.category || "") + " " + (mf.subjectType || "")
+      );
+      var handSubject = /maintenance|plumb|electric|hvac|leak|shower|tap|fault|repair/i.test(
+        (hf.detail || "") + " " + (hf.sourceText || "") + " " + (hf.subjectType || "")
+      );
+      if (maintSubject && handSubject && overlap >= 1) return true;
+    }
+    if (!mf.room && !hf.room) {
+      var areaA = trimText(mf.area).toLowerCase();
+      var areaB = trimText(hf.area || hf.detail).toLowerCase();
+      if (areaA && areaB && (areaA === areaB || areaB.indexOf(areaA) !== -1 || areaA.indexOf(areaB) !== -1)) {
+        return tokenOverlapCount(mf.detail || mf.sourceText, hf.detail || hf.sourceText) >= 2;
+      }
+    }
+    return false;
+  }
+
+  function dedupeMaintenanceFactsAgainstHandover(maintenanceFacts, handoverFacts) {
+    var hand = handoverFacts || [];
+    return (maintenanceFacts || []).filter(function (mf) {
+      return !hand.some(function (hf) {
+        return maintenanceFactDuplicatesHandoverFact(mf, hf);
+      });
+    });
   }
 
   /**
@@ -1739,6 +1833,9 @@
     handoverNoteToNeutralFact: handoverNoteToNeutralFact,
     factsFromMaintenanceIssues: factsFromMaintenanceIssues,
     maintenanceIssueToNeutralFact: maintenanceIssueToNeutralFact,
+    filterMaintenanceIssuesForHandover: filterMaintenanceIssuesForHandover,
+    dedupeMaintenanceFactsAgainstHandover: dedupeMaintenanceFactsAgainstHandover,
+    maintenanceFactDuplicatesHandoverFact: maintenanceFactDuplicatesHandoverFact,
     neutralFactToAnalyzedNote: neutralFactToAnalyzedNote
   };
 
