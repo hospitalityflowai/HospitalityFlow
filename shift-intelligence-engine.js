@@ -164,7 +164,7 @@
   var ENGINE_PIPELINE = [
     { id: "adapt", label: "adapt input", status: "wired" },
     { id: "normalise", label: "normalise facts", status: "wired" },
-    { id: "classify", label: "classify", status: "partial" },
+    { id: "classify", label: "classify", status: "wired" },
     { id: "lifecycle", label: "determine lifecycle", status: "wired" },
     { id: "dedupe_link", label: "deduplicate/link", status: "partial" },
     { id: "rank", label: "rank", status: "wired" },
@@ -459,7 +459,12 @@
       sourceText: f.sourceText || "",
       evidence: evidence,
       relatedFactIds: [],
-      metadata: f.metadata || {}
+      metadata: f.metadata || {},
+      classification: classifyOperationalFact(f, {
+        section: f.sectionHint || (f.metadata && f.metadata.section) || "",
+        sourceType: f.sourceType,
+        sourceFactId: f.id
+      })
     };
   }
 
@@ -591,6 +596,260 @@
       /* Legacy recommendation gate remains phrase-based for E2 behaviour parity */
       suppressRecommendations: phraseQuiet
     };
+  }
+
+  /* ------------------------------------------------------------------ */
+  /*  E3 — Operational classification (engine-owned categories)          */
+  /* ------------------------------------------------------------------ */
+
+  /**
+   * Canonical operational categories (classification, not UI section titles).
+   * Handover section ids map onto these via adapters.
+   */
+  var OPERATIONAL_CATEGORY = {
+    urgent: "urgent",
+    guest: "guest",
+    maintenance: "maintenance",
+    payment: "payment",
+    task: "task",
+    information: "information",
+    unknown: "unknown"
+  };
+
+  /**
+   * Inventory of classification decision points (E3).
+   * status: migrated | delegated | retained | presentation
+   */
+  var CLASSIFICATION_INVENTORY = [
+    { id: "handover.classifyAnalyzedNote", status: "retained", note: "Section assignment authority; parity-checked against engine" },
+    { id: "handover.classifyLine", status: "retained", note: "Keyword fallback for sections" },
+    { id: "writing.extractOperationalFact.subject", status: "delegated", note: "Subject extraction remains Writing; engine classifies from subject" },
+    { id: "writing.sectionFromFact", status: "delegated", note: "Hint mapping; engine normalizeOperationalCategory consumes subjects/hints" },
+    { id: "writing.classifyFactSummaryTopic", status: "presentation", note: "Summary cards only" },
+    { id: "shift.recommendationFromFact", status: "retained", note: "Still routes on subject strings; E4+ may consume category" },
+    { id: "m4.maintenanceImport", status: "migrated", note: "Uses classifyOperationalFact; section stays maintenance" },
+    { id: "hotelBrain.context", status: "presentation", note: "Knowledge retrieval, not operational classification" }
+  ];
+
+  function normalizeOperationalCategory(value) {
+    var v = trimText(value).toLowerCase().replace(/[\s-]+/g, "_");
+    if (OPERATIONAL_CATEGORY[v]) return OPERATIONAL_CATEGORY[v];
+    if (v === "payments" || v === "finance" || v === "folio") return OPERATIONAL_CATEGORY.payment;
+    if (v === "vip" || v === "guest_follow_up" || v === "guest_followup") return OPERATIONAL_CATEGORY.guest;
+    if (v === "tasks" || v === "inventory" || v === "deliveries" || v === "delivery" || v === "housekeeping") {
+      return OPERATIONAL_CATEGORY.task;
+    }
+    if (v === "events" || v === "general" || v === "lostproperty" || v === "lost_property" ||
+        v === "completed" || v === "info") {
+      return OPERATIONAL_CATEGORY.information;
+    }
+    if (v === "safety" || v === "critical") return OPERATIONAL_CATEGORY.urgent;
+    return OPERATIONAL_CATEGORY.unknown;
+  }
+
+  function normalizeOperationalSubject(value) {
+    return trimText(value)
+      .toLowerCase()
+      .replace(/[\s-]+/g, "_")
+      .replace(/[^a-z0-9_]/g, "");
+  }
+
+  /** Map Handover presentation section id → canonical category. */
+  function handoverSectionToCategory(section) {
+    return normalizeOperationalCategory(section);
+  }
+
+  /**
+   * Prefer existing section when it already matches the category (keeps vip vs guest cards).
+   */
+  function categoryToHandoverSection(category, preferredSection) {
+    var cat = normalizeOperationalCategory(category);
+    var preferred = trimText(preferredSection);
+    if (preferred && handoverSectionToCategory(preferred) === cat) return preferred;
+    if (cat === OPERATIONAL_CATEGORY.urgent) return "urgent";
+    if (cat === OPERATIONAL_CATEGORY.guest) return "guest";
+    if (cat === OPERATIONAL_CATEGORY.maintenance) return "maintenance";
+    if (cat === OPERATIONAL_CATEGORY.payment) return "payments";
+    if (cat === OPERATIONAL_CATEGORY.task) return "tasks";
+    if (cat === OPERATIONAL_CATEGORY.information) return preferred === "completed" ? "completed" : "general";
+    return preferred || "general";
+  }
+
+  function subjectToCategory(subject) {
+    var s = normalizeOperationalSubject(subject);
+    if (!s) return OPERATIONAL_CATEGORY.unknown;
+    if (s === "maintenance") return OPERATIONAL_CATEGORY.maintenance;
+    if (
+      s === "outstanding_balance" || s === "payment" || s === "invoice" || s === "bill" ||
+      s === "folio" || s === "account" || s === "charge" || s === "payment_balance"
+    ) {
+      return OPERATIONAL_CATEGORY.payment;
+    }
+    if (
+      s === "vip_arrival" || s === "reservation_info" || s === "guest_arrangement" ||
+      s === "room_move" || s === "late_checkout" || s === "guest_request" || s === "extension"
+    ) {
+      return OPERATIONAL_CATEGORY.guest;
+    }
+    if (s === "twin_setup" || s === "wake_up" || s === "delivery" || s === "inventory") {
+      return OPERATIONAL_CATEGORY.task;
+    }
+    if (s === "follow_up") return OPERATIONAL_CATEGORY.unknown;
+    if (s === "critical") return OPERATIONAL_CATEGORY.urgent;
+    return OPERATIONAL_CATEGORY.unknown;
+  }
+
+  /**
+   * Classify a structured operational / neutral fact using existing subject & hint rules only.
+   * Does not assign Handover card titles — use categoryToHandoverSection for presentation.
+   *
+   * @returns {{
+   *   category: string,
+   *   subject: string,
+   *   classificationSource: string,
+   *   confidence: string,
+   *   sourceFactId: string,
+   *   handoverSection: string
+   * }}
+   */
+  function classifyOperationalFact(fact, context) {
+    context = context || {};
+    fact = fact || {};
+    var subject = normalizeOperationalSubject(
+      fact.subject || fact.subjectType || context.subject || ""
+    );
+    var sourceType = normalizeSourceType(fact.sourceType || context.sourceType || "");
+    var sectionHint = trimText(fact.sectionHint || context.section || "");
+    var confidence = trimText(fact.confidence || context.confidence || "");
+    var sourceFactId = trimText(fact.id || context.sourceFactId || "");
+    var category = OPERATIONAL_CATEGORY.unknown;
+    var classificationSource = "unknown";
+
+    if (sourceType === SOURCE_TYPE.maintenance || subject === "maintenance") {
+      category = OPERATIONAL_CATEGORY.maintenance;
+      classificationSource = sourceType === SOURCE_TYPE.maintenance ? "maintenance_adapter" : "fact_subject";
+      if (!subject) subject = "maintenance";
+    } else {
+      var fromSubject = subjectToCategory(subject);
+      if (fromSubject !== OPERATIONAL_CATEGORY.unknown) {
+        category = fromSubject;
+        classificationSource = "fact_subject";
+      } else if (subject === "follow_up") {
+        var dept = trimText(fact.department || fact.ownerDept || context.ownerDept || "").toLowerCase();
+        if (dept.indexOf("maintenance") !== -1) {
+          category = OPERATIONAL_CATEGORY.maintenance;
+        } else if (dept.indexOf("housekeeping") !== -1) {
+          category = OPERATIONAL_CATEGORY.task;
+        } else {
+          category = OPERATIONAL_CATEGORY.task;
+        }
+        classificationSource = "follow_up_owner";
+      } else if (sectionHint) {
+        category = handoverSectionToCategory(sectionHint);
+        classificationSource = "section_hint";
+      } else if (context.isVip || context.section === "vip") {
+        category = OPERATIONAL_CATEGORY.guest;
+        classificationSource = "vip_flag";
+        if (!subject) subject = "vip_arrival";
+      } else if (
+        context.maintenancePriority === "Critical" ||
+        sectionHint === "urgent" ||
+        context.section === "urgent"
+      ) {
+        category = OPERATIONAL_CATEGORY.urgent;
+        classificationSource = "urgent_context";
+      } else {
+        category = OPERATIONAL_CATEGORY.information;
+        classificationSource = "default_information";
+      }
+    }
+
+    category = normalizeOperationalCategory(category);
+
+    return {
+      category: category,
+      subject: subject,
+      classificationSource: classificationSource,
+      confidence: confidence || "",
+      sourceFactId: sourceFactId,
+      handoverSection: categoryToHandoverSection(category, sectionHint || context.section || "")
+    };
+  }
+
+  function classifyOperationalFacts(facts, context) {
+    return (facts || []).map(function (fact) {
+      return classifyOperationalFact(fact, context);
+    });
+  }
+
+  /**
+   * Parity: engine category vs legacy Handover section.
+   * guest matches both vip and guest sections; task matches tasks/inventory/deliveries.
+   */
+  function compareClassificationParity(engineResult, legacySection) {
+    var eng = engineResult && engineResult.category
+      ? normalizeOperationalCategory(engineResult.category)
+      : OPERATIONAL_CATEGORY.unknown;
+    var legacyCat = handoverSectionToCategory(legacySection);
+    var match = eng === legacyCat;
+    return {
+      match: match,
+      engineCategory: eng,
+      legacySection: trimText(legacySection) || "",
+      legacyCategory: legacyCat,
+      engineSubject: engineResult && engineResult.subject ? engineResult.subject : "",
+      classificationSource: engineResult && engineResult.classificationSource
+        ? engineResult.classificationSource
+        : ""
+    };
+  }
+
+  /**
+   * Apply engine classification metadata onto a Handover analyzed note.
+   * Never changes note.section when parity fails — preserves rendered output.
+   * When parity matches, attaches operationalCategory for downstream consumers.
+   */
+  function applyEngineClassificationToNote(note, legacySection) {
+    if (!note) return null;
+    var section = legacySection || note.section || "general";
+    note.section = section;
+
+    if (!note.fact && note.sourceType !== "maintenance" && note._neutralSourceType !== "maintenance") {
+      note.operationalCategory = handoverSectionToCategory(section);
+      note.operationalSubject = "";
+      return note;
+    }
+
+    var fact = note.fact || {
+      subject: note.subjectType || (note._neutralSourceType === "maintenance" ? "maintenance" : ""),
+      subjectType: note.subjectType,
+      sourceType: note._neutralSourceType || note.sourceType || "handover",
+      id: note._neutralFactId || note.id || "",
+      sectionHint: section,
+      confidence: ""
+    };
+
+    var eng = classifyOperationalFact(fact, {
+      sourceText: note.original || "",
+      section: section,
+      isVip: !!note.isVip,
+      sourceType: note._neutralSourceType || note.sourceType || "",
+      maintenancePriority: note.maintenancePriority || null,
+      sourceFactId: note._neutralFactId || note.id || ""
+    });
+    var parity = compareClassificationParity(eng, section);
+    note._engineClassification = eng;
+    note._classificationParity = parity;
+
+    if (parity.match) {
+      note.operationalCategory = eng.category;
+      note.operationalSubject = eng.subject;
+      /* Keep legacy section id for presentation (e.g. vip vs guest). */
+    } else {
+      note.operationalCategory = parity.legacyCategory;
+      note.operationalSubject = eng.subject || (note.fact && note.fact.subject) || "";
+    }
+    return note;
   }
 
   function stableToken(value, maxLen) {
@@ -749,6 +1008,13 @@
         }
       }
     });
+    neutral.metadata.classification = classifyOperationalFact(neutral, {
+      section: note.section || "",
+      isVip: !!note.isVip,
+      sourceType: neutral.sourceType,
+      maintenancePriority: note.maintenancePriority || null,
+      sourceFactId: neutral.id
+    });
     return neutral;
   }
 
@@ -808,9 +1074,18 @@
         locationType: issue.locationType || issue.location_type || "",
         reportedByName: issue.reportedByName || issue.reported_by_name || "",
         resolutionNotes: issue.resolutionNotes || issue.resolution_notes || "",
-        issue: issue
+        issue: issue,
+        maintenanceDomainCategory: trimText(issue.category || "")
       }
     });
+    neutral.metadata.classification = classifyOperationalFact({
+      id: neutral.id,
+      sourceType: "maintenance",
+      subject: "maintenance",
+      subjectType: "maintenance",
+      status: neutral.status,
+      confidence: neutral.confidence
+    }, { sourceType: "maintenance", section: "maintenance", sourceFactId: neutral.id });
     return neutral;
   }
 
@@ -2314,6 +2589,17 @@
     hasActionableOpenFacts: hasActionableOpenFacts,
     isQuietShiftPhraseLines: isQuietShiftPhraseLines,
     evaluateQuietShiftState: evaluateQuietShiftState,
+    /* E3 — Operational classification */
+    OPERATIONAL_CATEGORY: OPERATIONAL_CATEGORY,
+    CLASSIFICATION_INVENTORY: CLASSIFICATION_INVENTORY,
+    normalizeOperationalCategory: normalizeOperationalCategory,
+    normalizeOperationalSubject: normalizeOperationalSubject,
+    handoverSectionToCategory: handoverSectionToCategory,
+    categoryToHandoverSection: categoryToHandoverSection,
+    classifyOperationalFact: classifyOperationalFact,
+    classifyOperationalFacts: classifyOperationalFacts,
+    compareClassificationParity: compareClassificationParity,
+    applyEngineClassificationToNote: applyEngineClassificationToNote,
     /* Phase 16B foundation surface */
     NEUTRAL_FACT_FIELDS: NEUTRAL_FACT_FIELDS,
     createEmptyNeutralFact: createEmptyNeutralFact,

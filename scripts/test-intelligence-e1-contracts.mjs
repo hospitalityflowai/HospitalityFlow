@@ -66,7 +66,7 @@ assert(SI.SOURCE_TYPE.guest === "guest", "source type guest reserved");
 const pipeline = SI.describeEnginePipeline();
 assert(Array.isArray(pipeline) && pipeline.length >= 7, "pipeline stages documented");
 assert(pipeline.some(function (s) { return s.id === "recommend" && s.status === "wired"; }), "recommend stage wired");
-assert(pipeline.some(function (s) { return s.id === "classify" && s.status === "partial"; }), "classify still partial");
+assert(pipeline.some(function (s) { return s.id === "classify" && (s.status === "wired" || s.status === "partial"); }), "classify stage present");
 
 console.log("\n-- Canonical status mapping --");
 assert(SI.toCanonicalStatus("open") === "open", "open → open");

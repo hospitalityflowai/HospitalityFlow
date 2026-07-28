@@ -289,8 +289,9 @@ Section layout for the UI may remain a Handover presentation mapping (`urgent` c
 | **Done: M4** | Maintenance facts merge into engine for Handover |
 | **Done: E1** | Canonical contracts, enums, compatibility helpers, responsibility docs — **no behaviour change** |
 | **Done: E2** | Shared canonical closure + metrics helpers; quiet-shift phrase + room normaliser shared; Brain fallback documented |
-| **E3 (next)** | Engine-owned classification behind parity tests; remove Brain fallback when safe |
-| **Later** | Conflicts / recurrence; Guest adapter |
+| **Done: E3** | Engine-owned operational classification + adapters; Handover/M4 parity fallback; Brain fallback retained |
+| **E4 (next)** | Canonical priority and risk scoring only |
+| **Later** | Conflicts / recurrence; Guest adapter; Brain fallback removal when load guarantees exist |
 | **Avoid** | Shared fact DB table until Guest Intelligence forces durable cross-tool history |
 
 ---
@@ -397,20 +398,99 @@ Legacy values are **not deleted**. Runtime still uses Phase 16B neutral prioriti
 - Maintenance store workflow `status === "completed"` transitions (ticket lifecycle, not intelligence)
 - Recommendation suppress on quiet shift remains **phrase-based** for parity (`suppressRecommendations`)
 - Handover **Hotel Brain context inline fallback** when `HotelProfileOperational.buildHotelBrainContext` missing (documented; remove in E3+ once load guarantees exist)
-- Full Handover `classifyAnalyzedNote` tree (E3)
+- Full Handover `classifyAnalyzedNote` tree → **E3 retained** as section authority with parity
 
 ### Hotel Brain fallback status
 
 - **Preferred:** `HotelProfileOperational.buildHotelBrainContext(profile)`
 - **Fallback:** inline builder in `handover.html` if operational module export absent
-- **Later:** delete fallback after all pages always load `hotel-profile-operational.js`
+- **E3 decision:** **Retained.** Shared builder loading is not guaranteed on every path; fallback tests and load guarantees not yet sufficient to delete. Knowledge retrieval remains separate from classification.
 
 ### Recommended E3 scope
 
-1. Begin engine-owned **category/section classification** behind parity tests (Handover maps categories → cards).
-2. Remove Handover Brain context fallback when safe.
-3. Optionally align quiet-shift recommendation suppress with `!hasActionableOpenFacts` behind a flag + fixtures.
-4. Still no Guest Intelligence; no shared fact table; no new recommendation product rules.
+~~1. Begin engine-owned category/section classification behind parity tests.~~ → **Done (E3)**  
+~~2. Remove Handover Brain context fallback when safe.~~ → **Deferred** (retained; see above)  
+3. Optionally align quiet-shift recommendation suppress with `!hasActionableOpenFacts` behind a flag + fixtures → still later  
+4. Still no Guest Intelligence; no shared fact table; no new recommendation product rules → holds
+
+---
+
+## 7C. E3 implementation record (operational classification)
+
+**Status:** Implemented.  
+**Behaviour / DB:** No intentional user-visible Handover/Maintenance output changes. No migrations. No new recommendation rules. No Guest Intelligence.
+
+### Canonical operational categories
+
+| Category | Meaning (from current behaviour) | Typical Handover sections |
+|----------|----------------------------------|---------------------------|
+| `urgent` | Safety / critical / emergency | `urgent` |
+| `guest` | VIP and guest follow-up | `vip`, `guest` |
+| `maintenance` | Maintenance faults / M4 imports | `maintenance` |
+| `payment` | Folio / balance / finance issues | `payments` |
+| `task` | Outstanding tasks / HK / inventory / deliveries | `tasks`, `inventory`, `deliveries` |
+| `information` | General ops, events, lost property, completed | `general`, `events`, `lostproperty`, `completed` |
+| `unknown` | Unmapped values | (parity falls back to legacy section) |
+
+Subjects remain flexible strings via `normalizeOperationalSubject`.
+
+### Classification helpers
+
+| Helper | Role |
+|--------|------|
+| `normalizeOperationalCategory` | Legacy section/subject aliases → canonical category |
+| `normalizeOperationalSubject` | Stable subject token |
+| `handoverSectionToCategory` / `categoryToHandoverSection` | Presentation adapters (preserve vip vs guest, inventory vs tasks) |
+| `classifyOperationalFact` / `classifyOperationalFacts` | Engine classifier (structured facts; not UI wording) |
+| `compareClassificationParity` | Legacy section vs engine category |
+| `applyEngineClassificationToNote` | Attach metadata; **never change section on mismatch** |
+
+Classification output includes: `category`, `subject`, `classificationSource`, `confidence` (only when already present), `sourceFactId`, `handoverSection`.
+
+### Ownership / inventory (`CLASSIFICATION_INVENTORY`)
+
+| Decision point | Status |
+|----------------|--------|
+| Handover `classifyAnalyzedNote` / `classifyLine` | **retained** — section assignment authority; parity-checked |
+| Writing subject extraction / `sectionFromFact` | **delegated** — extraction + hints; engine classifies from subject |
+| Writing summary topic | **presentation-only** |
+| Shift `recommendationFromFact` subject routing | **retained** — no E3 rewrite; may consume category in a later phase |
+| M4 maintenance import | **migrated** — `classifyOperationalFact`; section stays `maintenance` |
+| Hotel Brain context | **presentation-only** — not operational classification |
+
+### Runtime paths using engine classification
+
+- Handover `classifyNotes`: after legacy `classifyAnalyzedNote`, calls `applyEngineClassificationToNote`
+- M4 `integrateMaintenanceIssues`: stamps engine classification; section + imported badge unchanged
+- Neutral adapters (`factsFromHandoverAnalyzedNotes`, `factsFromMaintenanceIssues`) stamp `metadata.classification`
+- `toOperationalFactContract` exposes `classification`
+
+### Legacy paths intentionally retained
+
+- Full keyword/heuristic `classifyAnalyzedNote` tree (parity fallback)
+- Writing extraction subjects (not final category authority)
+- Recommendation subject/department routing (unchanged in E3)
+- Handover Hotel Brain inline context fallback (see above)
+
+### Parity strategy
+
+1. Legacy assigns `note.section` (user-visible placement).
+2. Engine classifies structured fact → canonical category.
+3. If categories match (including vip↔guest, tasks↔inventory↔deliveries), attach `operationalCategory` / `operationalSubject`.
+4. If mismatch: **keep legacy section**, set `operationalCategory` from legacy mapping, store `_classificationParity` for tests/diagnostics only (not shown to users).
+
+### Known mismatches
+
+None forced as product changes. Expected residual mismatches when keyword sectioning disagrees with Writing `fact.subject` (e.g. maintenance subject vs payments section) — **legacy wins** for rendered section.
+
+### Recommended E4 scope
+
+Focus **only** on canonical **priority and risk scoring**:
+
+1. Engine-owned `normalize` / `score` helpers for priority and risk using existing urgency/VIP/maintenance-priority signals.
+2. Adapters from Handover/Maintenance/Writing priority fields; parity with current recommendation urgency labels.
+3. Do **not** rewrite recommendation product rules, UI, or classification in E4.
+4. Still no Guest Intelligence; no shared fact table; Brain fallback removal only when load guarantees + tests allow.
 
 ---
 
