@@ -1,36 +1,184 @@
 /**
  * Hospitality Flow — Shift Intelligence Engine
+ * (= Hospitality Intelligence Engine runtime; E1 contracts live here)
+ *
  * Reusable intelligence layer between Hotel Brain and operational tools.
  * Rule-based v1 — modular surface for future LLM / agent backends.
  *
- * Phase 16B — Thin shared intelligence foundation:
- * - Runtime-only neutral operational facts (not persisted; no shared fact table)
- * - Handover compatibility adapter (legacy analyze input → neutral facts)
- * - Maintenance issue adapter (runtime only; not wired into Handover yet)
- * - analyzeFacts({ facts, brainContext, ... }) alongside legacy analyze(...)
- * - Optional recommendation traceability: sourceFactIds, sourceTypes, reasonCode
+ * ---------------------------------------------------------------------------
+ * Responsibility boundaries (E1)
+ * ---------------------------------------------------------------------------
+ * - Hospitality Intelligence Engine (this file): operational reasoning —
+ *   normalise, lifecycle, link/dedupe policy, rank, recommend, signals/checklist.
+ * - AI Writing Engine: extraction support, fact field parsing, wording and
+ *   presentation prose. Not a second recommendation system.
+ * - Handover / Maintenance: UI, input collection, persistence, rendering.
+ * - Hotel Brain: durable knowledge context (via HotelProfileOperational).
+ * - Modules must NOT create new independent recommendation systems.
+ *
+ * ---------------------------------------------------------------------------
+ * Intended engine pipeline (E1)
+ * ---------------------------------------------------------------------------
+ *   adapt input
+ *   → normalise facts
+ *   → classify
+ *   → determine lifecycle
+ *   → deduplicate / link
+ *   → rank
+ *   → recommend
+ *   → return IntelligenceResult
+ *
+ * Wired today (safely): adapt, normalise (neutral facts), lifecycle flags,
+ * M4 cross-dedupe when callers use it, rank, recommend, result shape.
+ * Not moved yet: Handover section classification, Writing same-source merge,
+ * full EntityReference graphs, conflict detection.
+ *
+ * Phase 16B — Thin shared intelligence foundation (runtime neutral facts).
+ * Phase M4 — Maintenance → Handover fact merge (callers).
+ * Phase E1 — Canonical contracts + compatibility helpers (no behaviour change).
+ *
+ * @typedef {Object} EntityReference
+ * @property {string} type - "room" | "guest" | "department" | "area" | string
+ * @property {string} [id] - Stable id when known (e.g. normalised room "24")
+ * @property {string} [label] - Display label (e.g. "Room 24")
+ * @property {string} [name] - Guest or entity name when applicable
+ *
+ * @typedef {Object} SourceReference
+ * @property {string} sourceType - Canonical SOURCE_TYPE value
+ * @property {string} sourceId - Originating record id
+ * @property {string} [identity] - "sourceType:sourceId"
+ * @property {string} [workspaceId]
+ *
+ * @typedef {Object} Recommendation
+ * @property {string} id
+ * @property {string} text
+ * @property {string} priority - Legacy recommendation scale: urgent|high|normal|low
+ * @property {string} [canonicalPriority] - E1: critical|high|normal|low
+ * @property {string} department
+ * @property {string} status - open | in_progress | …
+ * @property {string[]} [sourceFactIds]
+ * @property {string[]} [sourceTypes]
+ * @property {string} [reasonCode]
+ *
+ * @typedef {Object} OperationalFact
+ * @property {string} id
+ * @property {SourceReference|string} source - SourceReference or legacy sourceType string
+ * @property {string} [sourceType] - Legacy/compatibility alias
+ * @property {string} [sourceId]
+ * @property {string} [workspaceId]
+ * @property {string} [subject] - subjectType / operational subject
+ * @property {string} [subjectType]
+ * @property {string} [subjectId]
+ * @property {string} [category]
+ * @property {string} [status] - Module or canonical status (see toCanonicalStatus)
+ * @property {string} [priority] - Module or canonical priority
+ * @property {string} [canonicalStatus]
+ * @property {string} [canonicalPriority]
+ * @property {string|EntityReference} [room]
+ * @property {EntityReference[]} [rooms]
+ * @property {string|EntityReference} [guest]
+ * @property {string} [area]
+ * @property {string} [department] - owner department
+ * @property {string} [ownerDepartment]
+ * @property {string} [action]
+ * @property {string} [detail]
+ * @property {string} [occurredAt]
+ * @property {string} [dueAt]
+ * @property {boolean} [isResolved]
+ * @property {boolean} [includeInHandover]
+ * @property {string|number} [confidence]
+ * @property {string} [sourceText] - Evidence / source prose
+ * @property {string[]} [evidence]
+ * @property {string[]} [relatedFactIds]
+ * @property {Object} [metadata]
+ *
+ * @typedef {Object} IntelligenceInput
+ * @property {OperationalFact[]} [facts]
+ * @property {Object} [brainContext] - Hotel Brain runtime context (read-only)
+ * @property {Object} [hotelSnapshot]
+ * @property {string} [shiftCode]
+ * @property {string} [shiftDisplayName]
+ * @property {string[]} [departments]
+ * @property {string} [selectedDepartment]
+ * @property {string} [rawNotesText]
+ * @property {string} [workspaceId]
+ * @property {Object} [classified] - Legacy Handover input (compatibility)
+ * @property {Array} [analyzedNotes] - Legacy Handover notes (compatibility)
+ * @property {Function} [applyTextPreferences]
+ *
+ * @typedef {Object} IntelligenceResult
+ * @property {number} engineVersion
+ * @property {Object} signals
+ * @property {Recommendation[]} recommendations
+ * @property {Array} checklist
+ * @property {OperationalFact[]|Object[]} [facts]
+ * @property {string} [contractVersion] - e.g. "E1" when attached by helpers
  */
 (function (global) {
   "use strict";
 
   var ENGINE_VERSION = 1;
+  var CONTRACT_VERSION = "E1";
   var MAX_RECOMMENDATIONS = 6;
   var MAX_CHECKLIST_ITEMS = 16;
 
   var PRIORITY_RANK = { urgent: 0, high: 1, normal: 2, low: 3 };
 
   /**
-   * Neutral operational fact (runtime only).
+   * E1 canonical status vocabulary.
+   * Legacy module values are mapped via toCanonicalStatus — not deleted.
+   */
+  var CANONICAL_STATUS = {
+    open: "open",
+    in_progress: "in_progress",
+    resolved: "resolved",
+    cancelled: "cancelled",
+    unknown: "unknown"
+  };
+
+  /**
+   * E1 canonical priority vocabulary.
+   * Legacy scales (urgent/medium/Critical/…) map via toCanonicalPriority.
+   */
+  var CANONICAL_PRIORITY = {
+    critical: "critical",
+    high: "high",
+    normal: "normal",
+    low: "low"
+  };
+
+  /** E1 canonical source module types. */
+  var SOURCE_TYPE = {
+    handover: "handover",
+    maintenance: "maintenance",
+    hotel_brain: "hotel_brain",
+    guest: "guest",
+    manual: "manual",
+    system: "system"
+  };
+
+  /**
+   * Pipeline stages for the Hospitality Intelligence Engine.
+   * status: "wired" | "partial" | "planned"
+   */
+  var ENGINE_PIPELINE = [
+    { id: "adapt", label: "adapt input", status: "wired" },
+    { id: "normalise", label: "normalise facts", status: "wired" },
+    { id: "classify", label: "classify", status: "partial" },
+    { id: "lifecycle", label: "determine lifecycle", status: "wired" },
+    { id: "dedupe_link", label: "deduplicate/link", status: "partial" },
+    { id: "rank", label: "rank", status: "wired" },
+    { id: "recommend", label: "recommend", status: "wired" },
+    { id: "result", label: "return IntelligenceResult", status: "wired" }
+  ];
+
+  /**
+   * Neutral operational fact (runtime only — Phase 16B).
    * Adapters populate only fields they have; omit or leave empty otherwise.
+   * E1 OperationalFact is the documented superset; ensureNeutralFact remains
+   * the live runtime shape so current behaviour is unchanged.
    *
-   * {
-   *   id, sourceType, sourceId, workspaceId?,
-   *   subjectType, subjectId, room, area, guest, department, category,
-   *   action, detail, status, priority, occurredAt, dueAt,
-   *   isResolved, includeInHandover, confidence, sourceText, metadata
-   * }
-   *
-   * priority (neutral): urgent | high | medium | low
+   * priority (neutral runtime): urgent | high | medium | low
    *   (maps to recommendation priority: medium → normal)
    * sourceType examples: "handover" | "maintenance"
    */
@@ -76,6 +224,7 @@
   /**
    * Neutral priority: urgent | high | medium | low
    * Accepts handover Critical/High/Normal and engine normal.
+   * (Legacy runtime helper — unchanged for behaviour compatibility.)
    */
   function normalizePriority(value) {
     var v = trimText(value).toLowerCase();
@@ -119,6 +268,209 @@
   /** Stable source identity string: sourceType:sourceId */
   function createSourceIdentity(sourceType, sourceId) {
     return trimText(sourceType || "unknown") + ":" + trimText(sourceId || "");
+  }
+
+  /* ------------------------------------------------------------------ */
+  /*  E1 — Canonical contract compatibility helpers (pure, additive)     */
+  /* ------------------------------------------------------------------ */
+
+  function normalizeSourceType(value) {
+    var v = trimText(value).toLowerCase().replace(/[\s-]+/g, "_");
+    if (SOURCE_TYPE[v]) return SOURCE_TYPE[v];
+    if (v === "hotelbrain" || v === "brain") return SOURCE_TYPE.hotel_brain;
+    if (v === "handover_note" || v === "shift_handover") return SOURCE_TYPE.handover;
+    return v || SOURCE_TYPE.system;
+  }
+
+  /**
+   * Map any known status vocabulary → E1 CANONICAL_STATUS.
+   * Does not mutate module stores; for engine/contract consumers only.
+   *
+   * Handover/Writing: done|confirmed|complete → resolved
+   * Maintenance: completed → resolved
+   * cancelled|canceled → cancelled
+   * requested → open (still actionable)
+   */
+  function toCanonicalStatus(value) {
+    var s = trimText(value).toLowerCase().replace(/-/g, "_");
+    if (!s) return CANONICAL_STATUS.unknown;
+    if (s === "open" || s === "pending" || s === "requested") return CANONICAL_STATUS.open;
+    if (s === "in_progress" || s === "inprogress" || s === "waiting_parts" ||
+        s === "waiting_contractor" || s === "follow_up") {
+      return CANONICAL_STATUS.in_progress;
+    }
+    if (
+      s === "resolved" ||
+      s === "completed" ||
+      s === "complete" ||
+      s === "done" ||
+      s === "closed" ||
+      s === "confirmed"
+    ) {
+      return CANONICAL_STATUS.resolved;
+    }
+    if (s === "cancelled" || s === "canceled") return CANONICAL_STATUS.cancelled;
+    if (s === "unknown") return CANONICAL_STATUS.unknown;
+    if (isResolvedStatus(s)) return CANONICAL_STATUS.resolved;
+    return CANONICAL_STATUS.unknown;
+  }
+
+  /**
+   * Map any known priority vocabulary → E1 CANONICAL_PRIORITY.
+   * urgent|Critical → critical; medium → normal.
+   */
+  function toCanonicalPriority(value) {
+    var v = trimText(value).toLowerCase();
+    if (!v) return CANONICAL_PRIORITY.normal;
+    if (v === "critical" || v === "urgent") return CANONICAL_PRIORITY.critical;
+    if (v === "high") return CANONICAL_PRIORITY.high;
+    if (v === "low") return CANONICAL_PRIORITY.low;
+    if (v === "normal" || v === "medium") return CANONICAL_PRIORITY.normal;
+    return CANONICAL_PRIORITY.normal;
+  }
+
+  /** E1 canonical → legacy recommendation priority (urgent|high|normal|low). */
+  function toLegacyRecommendationPriority(canonicalPriority) {
+    var p = toCanonicalPriority(canonicalPriority);
+    if (p === CANONICAL_PRIORITY.critical) return "urgent";
+    return p;
+  }
+
+  /** E1 canonical → Phase 16B neutral priority (urgent|high|medium|low). */
+  function toLegacyNeutralPriority(canonicalPriority) {
+    var p = toCanonicalPriority(canonicalPriority);
+    if (p === CANONICAL_PRIORITY.critical) return "urgent";
+    if (p === CANONICAL_PRIORITY.normal) return "medium";
+    return p;
+  }
+
+  /** @returns {EntityReference|null} */
+  function roomEntityReference(value) {
+    if (value && typeof value === "object" && value.type === "room") {
+      var existingId = normalizeRoomNumber(value.id || value.label || "");
+      if (!existingId) return null;
+      return {
+        type: "room",
+        id: existingId,
+        label: value.label || ("Room " + existingId)
+      };
+    }
+    var id = normalizeRoomNumber(value);
+    if (!id) return null;
+    return { type: "room", id: id, label: "Room " + id };
+  }
+
+  /** @returns {EntityReference|null} */
+  function guestEntityReference(value) {
+    if (value && typeof value === "object") {
+      var name = trimText(value.name || value.label || value.id);
+      if (!name) return null;
+      return {
+        type: "guest",
+        id: trimText(value.id),
+        label: trimText(value.label) || name,
+        name: name
+      };
+    }
+    var n = trimText(value);
+    if (!n) return null;
+    return { type: "guest", id: "", label: n, name: n };
+  }
+
+  /** @returns {SourceReference} */
+  function sourceReference(sourceType, sourceId, workspaceId) {
+    var type = normalizeSourceType(sourceType);
+    var id = trimText(sourceId);
+    return {
+      sourceType: type,
+      sourceId: id,
+      identity: createSourceIdentity(type, id),
+      workspaceId: trimText(workspaceId)
+    };
+  }
+
+  /**
+   * Adapt a legacy recommendation object into the E1 Recommendation shape
+   * without dropping fields (text, department, status, traceability).
+   */
+  function adaptLegacyRecommendation(raw, fallbackDept) {
+    var base = normalizeRecommendation(raw, fallbackDept);
+    var out = {
+      id: base.id,
+      text: base.text,
+      priority: base.priority,
+      canonicalPriority: toCanonicalPriority(base.priority),
+      department: base.department,
+      status: base.status
+    };
+    if (base.sourceFactIds && base.sourceFactIds.length) {
+      out.sourceFactIds = base.sourceFactIds.slice();
+    }
+    if (base.sourceTypes && base.sourceTypes.length) {
+      out.sourceTypes = base.sourceTypes.slice();
+    }
+    if (base.reasonCode) out.reasonCode = base.reasonCode;
+    if (raw && typeof raw === "object") {
+      Object.keys(raw).forEach(function (key) {
+        if (out[key] === undefined && raw[key] !== undefined) out[key] = raw[key];
+      });
+    }
+    return out;
+  }
+
+  /**
+   * View-model: Phase 16B neutral fact → E1 OperationalFact fields.
+   * Pure; does not alter ensureNeutralFact runtime behaviour.
+   */
+  function toOperationalFactContract(neutral) {
+    var f = ensureNeutralFact(neutral);
+    var roomRef = roomEntityReference(f.room);
+    var guestRef = guestEntityReference(f.guest);
+    var source = sourceReference(f.sourceType, f.sourceId, f.workspaceId);
+    var evidence = [];
+    if (f.sourceText) evidence.push(f.sourceText);
+    return {
+      id: f.id,
+      source: source,
+      sourceType: source.sourceType,
+      sourceId: source.sourceId,
+      workspaceId: f.workspaceId || "",
+      subject: f.subjectType || "",
+      subjectType: f.subjectType || "",
+      subjectId: f.subjectId || "",
+      category: f.category || "",
+      status: f.status || "",
+      priority: f.priority || "",
+      canonicalStatus: toCanonicalStatus(f.status),
+      canonicalPriority: toCanonicalPriority(f.priority),
+      room: roomRef || f.room || "",
+      rooms: roomRef ? [roomRef] : [],
+      guest: guestRef || f.guest || "",
+      area: f.area || "",
+      department: f.department || "",
+      ownerDepartment: f.department || "",
+      action: f.action || "",
+      detail: f.detail || "",
+      occurredAt: f.occurredAt || "",
+      dueAt: f.dueAt || "",
+      isResolved: f.isResolved === true || toCanonicalStatus(f.status) === CANONICAL_STATUS.resolved,
+      includeInHandover: f.includeInHandover === true,
+      confidence: f.confidence || "high",
+      sourceText: f.sourceText || "",
+      evidence: evidence,
+      relatedFactIds: [],
+      metadata: f.metadata || {}
+    };
+  }
+
+  function describeEnginePipeline() {
+    return ENGINE_PIPELINE.map(function (step) {
+      return {
+        id: step.id,
+        label: step.label,
+        status: step.status
+      };
+    });
   }
 
   function stableToken(value, maxLen) {
@@ -1803,6 +2155,7 @@
 
   global.ShiftIntelligenceEngine = {
     VERSION: ENGINE_VERSION,
+    CONTRACT_VERSION: CONTRACT_VERSION,
     analyze: analyze,
     analyzeFacts: analyzeFacts,
     buildSignals: buildSignals,
@@ -1818,6 +2171,22 @@
     normalizeChecklistItem: normalizeChecklistItem,
     normalizeShiftType: normalizeShiftType,
     CHECKLIST_STATUS: CHECKLIST_STATUS,
+    /* E1 — Canonical contracts & compatibility */
+    CANONICAL_STATUS: CANONICAL_STATUS,
+    CANONICAL_PRIORITY: CANONICAL_PRIORITY,
+    SOURCE_TYPE: SOURCE_TYPE,
+    ENGINE_PIPELINE: ENGINE_PIPELINE,
+    describeEnginePipeline: describeEnginePipeline,
+    toCanonicalStatus: toCanonicalStatus,
+    toCanonicalPriority: toCanonicalPriority,
+    toLegacyRecommendationPriority: toLegacyRecommendationPriority,
+    toLegacyNeutralPriority: toLegacyNeutralPriority,
+    normalizeSourceType: normalizeSourceType,
+    roomEntityReference: roomEntityReference,
+    guestEntityReference: guestEntityReference,
+    sourceReference: sourceReference,
+    adaptLegacyRecommendation: adaptLegacyRecommendation,
+    toOperationalFactContract: toOperationalFactContract,
     /* Phase 16B foundation surface */
     NEUTRAL_FACT_FIELDS: NEUTRAL_FACT_FIELDS,
     createEmptyNeutralFact: createEmptyNeutralFact,
@@ -1838,6 +2207,12 @@
     maintenanceFactDuplicatesHandoverFact: maintenanceFactDuplicatesHandoverFact,
     neutralFactToAnalyzedNote: neutralFactToAnalyzedNote
   };
+
+  /**
+   * E1 alias — Hospitality Intelligence Engine entry point.
+   * Same object as ShiftIntelligenceEngine (no duplicate reasoning).
+   */
+  global.HospitalityIntelligenceEngine = global.ShiftIntelligenceEngine;
 
   /** @deprecated Use ShiftIntelligenceEngine.analyze — kept for backwards compatibility */
   global.HandoverRecommendationEngine = {

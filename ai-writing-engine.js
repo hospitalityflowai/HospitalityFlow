@@ -13,6 +13,13 @@
  * never invent information.
  *
  * Rule-based v1 — modular surface for a future LLM backend.
+ *
+ * E1 responsibility boundary:
+ * - Owns extraction support, structured operational-fact field parsing,
+ *   wording and presentation prose.
+ * - Does NOT own cross-module recommendations, ranking, or conflict reasoning.
+ * - Hospitality Intelligence Engine (shift-intelligence-engine.js) owns
+ *   operational reasoning. Modules must not add a second recommendation system.
  */
 (function (global) {
   "use strict";
