@@ -90,7 +90,8 @@
     }
     .nav-link:hover { color: var(--navy-800); background: var(--gray-50); border-color: var(--gray-200); }
     .nav-link:focus-visible, .btn:focus-visible, .issue-card:focus-visible,
-    .drawer-close:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+    .drawer-close:focus-visible, .search-clear:focus-visible,
+    input:focus-visible, select:focus-visible, textarea:focus-visible {
       outline: 2px solid var(--blue-400); outline-offset: 2px;
     }
     .page { max-width: var(--max-width); margin: 0 auto; padding: 32px 24px 72px; }
@@ -99,8 +100,8 @@
       color: var(--gray-400); margin-bottom: 8px;
     }
     .page-header {
-      display: flex; align-items: flex-start; justify-content: space-between; gap: 20px;
-      margin-bottom: 20px; flex-wrap: wrap;
+      display: flex; align-items: center; justify-content: space-between; gap: 20px;
+      margin-bottom: 22px; flex-wrap: wrap;
     }
     .page-title { font-size: clamp(1.4rem, 3.2vw, 1.8rem); font-weight: 700; letter-spacing: -.035em; line-height: 1.2; }
     .page-desc { color: var(--gray-500); font-size: .94rem; margin-top: 6px; max-width: 36rem; }
@@ -117,8 +118,9 @@
     }
     .btn-primary:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(74,143,196,.36); }
     .btn-report {
-      min-height: 48px; padding: 0 22px; font-size: .9rem;
-      box-shadow: 0 3px 12px rgba(74,143,196,.34);
+      min-height: 44px; padding: 0 20px; font-size: .88rem; flex-shrink: 0;
+      box-shadow: 0 2px 10px rgba(74,143,196,.32);
+      align-self: center;
     }
     .btn-secondary {
       color: var(--navy-800); background: var(--white); border: 1px solid var(--gray-200);
@@ -126,80 +128,128 @@
     .btn-secondary:hover:not(:disabled) { background: var(--gray-50); }
     .btn-text { color: var(--blue-600); min-height: 40px; padding: 0 10px; font-size: .82rem; }
     .metrics {
-      display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 20px;
+      display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 22px;
     }
     .metric-card {
       background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-card); padding: 18px 18px 16px; min-height: 96px;
+      box-shadow: var(--shadow-card); padding: 18px 18px 17px; min-height: 100px;
+      display: flex; flex-direction: column; justify-content: space-between;
     }
     .metric-card[data-metric="high"] { box-shadow: var(--shadow-card), inset 0 3px 0 0 var(--amber-500); }
     .metric-card[data-metric="open"],
     .metric-card[data-metric="progress"] { box-shadow: var(--shadow-card), inset 0 3px 0 0 var(--blue-500); }
     .metric-card[data-metric="today"] { box-shadow: var(--shadow-card), inset 0 3px 0 0 var(--navy-700); }
-    .metric-label { font-size: .74rem; font-weight: 600; color: var(--gray-500); letter-spacing: .02em; }
+    .metric-label { font-size: .74rem; font-weight: 600; color: var(--gray-500); letter-spacing: .03em; }
     .metric-value {
-      font-size: clamp(1.85rem, 3vw, 2.15rem); font-weight: 700; letter-spacing: -.04em;
-      margin-top: 8px; color: var(--navy-900); line-height: 1.1;
+      font-size: clamp(1.95rem, 3.2vw, 2.25rem); font-weight: 700; letter-spacing: -.045em;
+      margin-top: 10px; color: var(--navy-900); line-height: 1;
     }
     .metric-value.is-loading { color: var(--gray-300); }
     .toolbar {
-      display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
-      margin-bottom: 20px; padding: 12px; background: var(--white);
+      display: flex; flex-direction: column; gap: 12px;
+      margin-bottom: 22px; padding: 14px 14px 12px; background: var(--white);
       border: 1px solid var(--gray-200); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);
     }
-    .search-wrap { flex: 1 1 200px; min-width: 160px; }
-    .filters-desktop {
-      display: flex; flex-wrap: wrap; gap: 8px; align-items: center; flex: 3 1 520px;
+    .toolbar-top {
+      display: flex; align-items: center; gap: 10px; width: 100%;
     }
-    .filters-mobile-btn { display: none; }
-    .field, .search-wrap input, .filters-desktop select, .filters-desktop input,
+    .search-wrap {
+      position: relative; flex: 1 1 auto; min-width: 0; width: 100%;
+    }
+    .search-icon {
+      position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+      width: 18px; height: 18px; color: var(--gray-400); pointer-events: none;
+    }
+    .search-icon svg { width: 18px; height: 18px; display: block; }
+    .search-wrap input {
+      width: 100%; min-height: 44px; padding: 10px 40px 10px 40px;
+      border: 1px solid var(--gray-200); border-radius: var(--radius);
+      background: var(--white); color: var(--navy-900); font-size: .92rem;
+    }
+    .search-wrap input:focus { border-color: var(--blue-500); }
+    .search-clear {
+      position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+      width: 32px; height: 32px; min-width: 32px; min-height: 32px; border-radius: 8px;
+      color: var(--gray-400); display: inline-flex; align-items: center; justify-content: center;
+      font-size: 1.15rem; line-height: 1;
+    }
+    .search-clear:hover { background: var(--gray-50); color: var(--navy-800); }
+    .filters-desktop {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr)) auto;
+      gap: 8px;
+      align-items: center;
+      width: 100%;
+    }
+    .filters-mobile-btn { display: none; flex-shrink: 0; }
+    .field, .filters-desktop select, .filters-desktop input,
     .drawer-body input, .drawer-body select, .drawer-body textarea {
       width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid var(--gray-200);
       border-radius: var(--radius); background: var(--white); color: var(--navy-900); font-size: .9rem;
     }
     .drawer-body textarea { min-height: 96px; resize: vertical; line-height: 1.45; }
-    .field:focus, .search-wrap input:focus, select:focus, textarea:focus {
-      border-color: var(--blue-500);
-    }
-    .filters-desktop select, .filters-desktop input {
-      width: auto; min-width: 118px; max-width: 150px; flex: 0 1 auto;
-    }
-    .filters-desktop .btn-text { margin-left: auto; }
-    .issue-list { display: flex; flex-direction: column; gap: 12px; }
+    .field:focus, select:focus, textarea:focus { border-color: var(--blue-500); }
+    .filters-desktop select, .filters-desktop input { min-width: 0; width: 100%; }
+    .filters-desktop .btn-text { justify-self: end; white-space: nowrap; }
+    .issue-list { display: flex; flex-direction: column; gap: 14px; }
     .issue-card {
       width: 100%; text-align: left; background: var(--white); border: 1px solid var(--gray-200);
-      border-radius: var(--radius-lg); box-shadow: var(--shadow-card); padding: 16px 18px;
+      border-radius: var(--radius-lg); box-shadow: var(--shadow-card);
+      padding: 16px 18px 14px 20px;
+      position: relative; overflow: hidden;
       transition: box-shadow var(--transition), transform var(--transition), border-color var(--transition);
     }
+    .issue-card::before {
+      content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+      background: var(--blue-500);
+    }
+    .issue-card[data-priority="urgent"]::before { background: var(--red-500); }
+    .issue-card[data-priority="high"]::before { background: var(--amber-500); }
+    .issue-card[data-priority="medium"]::before { background: var(--blue-500); }
+    .issue-card[data-priority="low"]::before { background: var(--gray-300); }
+    .issue-card[data-status="completed"] {
+      background: #fcfdff; border-color: var(--gray-100);
+    }
+    .issue-card[data-status="completed"]::before { background: var(--gray-300); }
     .issue-card:hover { box-shadow: var(--shadow-card-hover); transform: translateY(-1px); }
     .issue-card.is-new { border-color: var(--blue-400); box-shadow: 0 0 0 2px var(--blue-50), var(--shadow-card); }
     .issue-location {
-      font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
-      color: var(--navy-700); margin-bottom: 4px;
+      font-size: .7rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+      color: var(--gray-400); margin-bottom: 6px;
     }
-    .issue-title { font-size: 1rem; font-weight: 700; letter-spacing: -.02em; margin-bottom: 4px; }
+    .issue-title {
+      font-size: 1.05rem; font-weight: 700; letter-spacing: -.025em; color: var(--navy-900);
+      margin-bottom: 6px; line-height: 1.3;
+    }
     .issue-desc {
-      color: var(--gray-500); font-size: .88rem; display: -webkit-box; -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 10px;
+      color: var(--gray-500); font-size: .88rem; line-height: 1.45;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      overflow: hidden; margin-bottom: 12px;
     }
-    .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+    .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
     .chip {
-      display: inline-flex; align-items: center; min-height: 26px; padding: 0 8px;
-      border-radius: 999px; font-size: .72rem; font-weight: 600; border: 1px solid var(--gray-200);
-      color: var(--navy-700); background: var(--gray-50);
+      display: inline-flex; align-items: center; min-height: 24px; padding: 0 9px;
+      border-radius: 999px; font-size: .7rem; font-weight: 600; border: 1px solid var(--gray-200);
+      color: var(--navy-700); background: var(--gray-50); letter-spacing: .01em;
     }
     .chip[data-priority="urgent"] { border-color: #f0b4b4; background: var(--red-50); color: #b42318; }
     .chip[data-priority="high"] { border-color: #f0d48a; background: var(--amber-50); color: #92400e; }
+    .chip[data-priority="medium"] { border-color: var(--blue-100); background: var(--blue-50); color: var(--blue-600); }
+    .chip[data-priority="low"] { color: var(--gray-500); background: var(--white); }
+    .chip[data-status="open"] { color: var(--navy-700); }
     .chip[data-status="in_progress"] { border-color: var(--blue-100); background: var(--blue-50); color: var(--blue-600); }
-    .chip[data-status="completed"] { color: var(--gray-500); }
+    .chip[data-status="waiting_parts"],
+    .chip[data-status="waiting_contractor"] { color: var(--gray-600); background: var(--gray-50); }
+    .chip[data-status="completed"] { color: var(--gray-500); background: var(--white); }
+    .chip-dept { background: var(--white); color: var(--gray-600); }
     .chip-handover { background: var(--blue-50); border-color: var(--blue-100); color: var(--blue-600); }
-    .issue-age { font-size: .78rem; color: var(--gray-400); }
+    .issue-age { font-size: .76rem; color: var(--gray-400); }
     .state-panel {
       background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-card); padding: 36px 24px; text-align: center;
+      box-shadow: var(--shadow-card); padding: 40px 28px; text-align: center;
     }
-    .state-panel h2 { font-size: 1.05rem; font-weight: 700; margin-bottom: 8px; }
-    .state-panel p { color: var(--gray-500); margin-bottom: 18px; max-width: 28rem; margin-left: auto; margin-right: auto; }
+    .state-panel h2 { font-size: 1.08rem; font-weight: 700; margin-bottom: 10px; letter-spacing: -.02em; }
+    .state-panel p { color: var(--gray-500); margin-bottom: 20px; max-width: 28rem; margin-left: auto; margin-right: auto; line-height: 1.5; }
     .banner {
       margin: 0 0 18px; padding: 14px 16px; border-radius: var(--radius-lg); font-size: .86rem;
       border: 1px solid var(--gray-200); background: var(--white); color: var(--navy-800);
@@ -226,16 +276,19 @@
     }
     .drawer-header {
       display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
-      padding: 20px 20px 14px; border-bottom: 1px solid var(--gray-100);
+      padding: 22px 22px 16px; border-bottom: 1px solid var(--gray-100);
     }
-    .drawer-header h2 { font-size: 1.1rem; font-weight: 700; letter-spacing: -.02em; }
-    .drawer-sub { font-size: .8rem; color: var(--gray-500); margin-top: 4px; }
+    .drawer-header h2 { font-size: 1.15rem; font-weight: 700; letter-spacing: -.02em; line-height: 1.3; }
+    .drawer-sub {
+      font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+      color: var(--gray-400); margin-bottom: 6px;
+    }
     .drawer-close {
       width: 44px; height: 44px; border-radius: var(--radius); color: var(--gray-500);
       display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
     .drawer-close:hover { background: var(--gray-50); color: var(--navy-800); }
-    .drawer-body { padding: 18px 20px; overflow: auto; flex: 1; }
+    .drawer-body { padding: 20px 22px 28px; overflow: auto; flex: 1; }
     .drawer-footer {
       padding: 14px 20px 18px; border-top: 1px solid var(--gray-100);
       display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap;
@@ -257,31 +310,52 @@
     }
     .check-row { display: flex; align-items: flex-start; gap: 10px; }
     .check-row input { width: 18px; height: 18px; margin-top: 2px; flex-shrink: 0; }
-    .detail-grid { display: grid; gap: 12px; margin: 16px 0; }
+    .detail-grid { display: grid; gap: 12px; margin: 4px 0 20px; }
     .detail-item dt { font-size: .72rem; font-weight: 600; color: var(--gray-400); text-transform: uppercase; letter-spacing: .04em; }
     .detail-item dd { font-size: .92rem; color: var(--navy-900); margin-top: 2px; }
     .timeline { list-style: none; margin: 12px 0 0; padding: 0; border-left: 2px solid var(--gray-100); }
     .timeline li { padding: 0 0 16px 16px; position: relative; }
+    .timeline li:last-child { padding-bottom: 0; }
     .timeline li::before {
       content: ""; position: absolute; left: -5px; top: 6px; width: 8px; height: 8px;
       border-radius: 50%; background: var(--blue-500);
     }
-    .timeline-time { font-size: .75rem; color: var(--gray-400); }
+    .timeline-time { font-size: .75rem; color: var(--gray-400); margin-bottom: 2px; }
     .timeline-action { font-size: .88rem; font-weight: 600; color: var(--navy-800); }
-    .timeline-note { font-size: .84rem; color: var(--gray-500); margin-top: 2px; }
-    .phase-note {
-      margin-top: 18px; padding: 12px 14px; border-radius: var(--radius); background: var(--gray-50);
-      border: 1px solid var(--gray-100); font-size: .84rem; color: var(--gray-500);
+    .timeline-note { font-size: .84rem; color: var(--gray-500); margin-top: 3px; line-height: 1.45; }
+    .details-description {
+      white-space: pre-wrap; margin: 0 0 16px; color: var(--navy-800); line-height: 1.5; font-size: .92rem;
+    }
+    .workflow-section {
+      margin: 0 0 16px; padding: 14px 14px 12px; background: var(--gray-50);
+      border: 1px solid var(--gray-100); border-radius: var(--radius-lg);
+    }
+    .workflow-section-title {
+      font-size: .7rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+      color: var(--gray-400); margin-bottom: 12px;
     }
     .workflow-grid {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0 8px;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 0;
     }
     .workflow-grid .form-group { margin-bottom: 0; }
+    .workflow-handover { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--gray-100); }
     .workflow-actions {
-      display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 18px;
+      display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 18px;
+    }
+    .workflow-actions .btn-primary { min-width: 148px; }
+    .progress-block {
+      margin: 0 0 22px; padding: 14px 14px 12px; background: var(--white);
+      border: 1px solid var(--gray-100); border-radius: var(--radius-lg);
+    }
+    .progress-block .form-group { margin-bottom: 0; }
+    .progress-block textarea { margin-top: 2px; width: 100%; }
+    .progress-block .workflow-actions { margin: 10px 0 0; }
+    .timeline-heading {
+      font-size: .7rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+      color: var(--gray-400); margin: 4px 0 0;
     }
     .workflow-offline {
-      margin-bottom: 12px;
+      margin-bottom: 14px;
     }
     .nav-link.is-active {
       color: var(--navy-900); background: var(--blue-50); border-color: var(--blue-100);
@@ -305,9 +379,6 @@
       text-transform: uppercase; background: var(--blue-50); color: var(--blue-600);
       border: 1px solid var(--blue-100); vertical-align: middle;
     }
-    @media (max-width: 639px) {
-      .workflow-grid { grid-template-columns: 1fr; }
-    }
     .toast-host {
       position: fixed; top: calc(var(--nav-height) + 12px); right: 16px; z-index: 500;
       display: flex; flex-direction: column; gap: 8px; max-width: min(360px, calc(100vw - 32px));
@@ -317,16 +388,31 @@
       border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); font-size: .84rem; font-weight: 600;
     }
     .toast[data-tone="error"] { border-color: #f0b4b4; background: var(--red-50); }
-    @media (max-width: 899px) {
+    @media (min-width: 768px) and (max-width: 899px) {
       .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .filters-desktop { display: none; }
-      .filters-mobile-btn { display: inline-flex; }
-      .drawer-panel { width: 100%; }
+      .filters-desktop {
+        grid-template-columns: 1fr 1fr;
+      }
+      .filters-desktop .btn-text {
+        grid-column: 1 / -1;
+        justify-self: end;
+      }
+      .filters-mobile-btn { display: none; }
     }
-    @media (max-width: 639px) {
+    @media (max-width: 767px) {
       .page { padding: 20px 16px 48px; }
       .topnav-inner { padding: 0 16px; }
       .nav-link { padding: 0 8px; font-size: .72rem; }
+      .page-header { align-items: flex-start; }
+      .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+      .metric-card { min-height: 88px; padding: 14px; }
+      .filters-desktop { display: none; }
+      .toolbar-top { flex-wrap: nowrap; }
+      .filters-mobile-btn { display: inline-flex; }
+      .drawer-panel { width: 100%; }
+      .workflow-grid { grid-template-columns: 1fr; }
+      .state-panel { padding: 32px 20px; }
+      .state-panel .btn { min-height: 44px; }
     }
   </style>
 </head>
@@ -382,9 +468,21 @@
     </section>
 
     <section class="toolbar" aria-label="Search and filters">
-      <div class="search-wrap">
-        <label class="sr-only" for="issue-search">Search</label>
-        <input type="search" id="issue-search" placeholder="Search room, area, title…" autocomplete="off">
+      <div class="toolbar-top">
+        <div class="search-wrap">
+          <span class="search-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="7"></circle>
+              <path d="M20 20l-3.5-3.5"></path>
+            </svg>
+          </span>
+          <label class="sr-only" for="issue-search">Search issues</label>
+          <input type="search" id="issue-search" placeholder="Search issues" autocomplete="off">
+          <button type="button" class="search-clear" id="search-clear-btn" aria-label="Clear search" hidden>×</button>
+        </div>
+        <button type="button" class="btn btn-secondary filters-mobile-btn" id="open-filters-btn" aria-haspopup="dialog">
+          Filters<span id="filter-count-badge"></span>
+        </button>
       </div>
       <div class="filters-desktop" id="filters-desktop">
         <label class="sr-only" for="filter-status">Status</label>
@@ -408,17 +506,14 @@
         <select id="filter-category">
           <option value="all">All categories</option>
         </select>
-        <label class="sr-only" for="filter-location">Room or area</label>
-        <input type="text" id="filter-location" placeholder="Room or area" autocomplete="off">
         <label class="sr-only" for="filter-department">Assigned department</label>
         <select id="filter-department">
           <option value="all">All departments</option>
         </select>
+        <label class="sr-only" for="filter-location">Room or area</label>
+        <input type="text" id="filter-location" placeholder="Room or area" autocomplete="off">
         <button type="button" class="btn btn-text" id="clear-filters-btn">Clear filters</button>
       </div>
-      <button type="button" class="btn btn-secondary filters-mobile-btn" id="open-filters-btn" aria-haspopup="dialog">
-        Filters<span id="filter-count-badge"></span>
-      </button>
     </section>
 
     <div id="list-region" aria-live="polite">
@@ -677,6 +772,7 @@
       metricProgress: $("metric-progress"),
       metricToday: $("metric-today"),
       search: $("issue-search"),
+      searchClear: $("search-clear-btn"),
       filterStatus: $("filter-status"),
       filterPriority: $("filter-priority"),
       filterCategory: $("filter-category"),
@@ -813,8 +909,19 @@
   }
 
   function syncFilterBadge() {
-    var count = activeFilterCount();
+    var count = 0;
+    if (pageState.filters.status !== "all") count += 1;
+    if (pageState.filters.priority !== "all") count += 1;
+    if (pageState.filters.category !== "all") count += 1;
+    if (pageState.filters.location) count += 1;
+    if (pageState.filters.department !== "all") count += 1;
     els.filterCountBadge.textContent = count ? " · " + count : "";
+  }
+
+  function syncSearchClear() {
+    if (!els.searchClear) return;
+    var hasText = !!(els.search.value || "").length;
+    els.searchClear.hidden = !hasText;
   }
 
   function readFiltersFromControls() {
@@ -826,6 +933,7 @@
     pageState.filters.department = els.filterDepartment.value || "all";
     pageState.filters.includeCompleted = pageState.filters.status === "completed";
     syncFilterBadge();
+    syncSearchClear();
   }
 
   function clearFilters() {
@@ -872,10 +980,10 @@
       '<span class="chip" data-status="' + escapeAttr(issue.status) + '">' + escapeHtml(issue.statusLabel) + "</span>"
     ];
     if (issue.assignedDepartment) {
-      parts.push('<span class="chip">' + escapeHtml(issue.assignedDepartment) + "</span>");
+      parts.push('<span class="chip chip-dept">' + escapeHtml(issue.assignedDepartment) + "</span>");
     }
     if (issue.includeInHandover) {
-      parts.push('<span class="chip chip-handover">Handover</span>');
+      parts.push('<span class="chip chip-handover">Next Handover</span>');
     }
     return parts.join("");
   }
@@ -968,7 +1076,10 @@
     els.issueList.innerHTML = issues.map(function (issue) {
       var highlight = pageState.highlightId === issue.id ? " is-new" : "";
       return (
-        '<button type="button" class="issue-card' + highlight + '" data-issue-id="' + escapeAttr(issue.id) + '">' +
+        '<button type="button" class="issue-card' + highlight +
+          '" data-issue-id="' + escapeAttr(issue.id) +
+          '" data-priority="' + escapeAttr(issue.priority) +
+          '" data-status="' + escapeAttr(issue.status) + '">' +
           '<div class="issue-location">' + escapeHtml(issue.locationLabel) + "</div>" +
           '<div class="issue-title">' + escapeHtml(issue.title) + "</div>" +
           '<div class="issue-desc">' + escapeHtml(issue.description) + "</div>" +
@@ -1232,7 +1343,7 @@
       (offline
         ? '<div class="banner workflow-offline" data-tone="warn"><div class="banner-title">Maintenance service unavailable</div><div class="banner-text">Workflow changes are blocked until the service reconnects.</div></div>'
         : "") +
-      '<p style="white-space:pre-wrap;margin-bottom:8px;">' + escapeHtml(issue.description) + "</p>" +
+      '<p class="details-description">' + escapeHtml(issue.description) + "</p>" +
       '<dl class="detail-grid">' +
         detailItem("Category", issue.categoryLabel) +
         detailItem("Location type", issue.locationTypeLabel) +
@@ -1242,25 +1353,28 @@
         (issue.completedAt ? detailItem("Completed", formatDateTime(issue.completedAt)) : "") +
         (issue.resolutionNotes ? detailItem("Resolution", issue.resolutionNotes) : "") +
       "</dl>" +
-      '<div class="workflow-grid">' +
-        '<div class="form-group"><label for="detail-status">Status</label>' +
-          '<select id="detail-status"' + (offline || completed ? " disabled" : "") + ">" + statusOptions + "</select></div>" +
-        '<div class="form-group"><label for="detail-priority">Priority</label>' +
-          '<select id="detail-priority"' + (offline ? " disabled" : "") + ">" + priorityOptions + "</select></div>" +
-        '<div class="form-group"><label for="detail-department">Assigned department</label>' +
-          '<select id="detail-department"' + (offline ? " disabled" : "") + ">" +
-            departmentOptionsHtml(issue.assignedDepartment || "Maintenance") +
-          "</select></div>" +
-        '<div class="form-group"><label for="detail-due-at">Due date</label>' +
-          '<input type="date" id="detail-due-at" value="' + escapeAttr(dueDateInputValue(issue.dueAt)) + '"' +
-          (offline ? " disabled" : "") + "></div>" +
-      "</div>" +
-      '<div class="form-group" style="margin-top:12px;">' +
-        '<div class="check-row">' +
-          '<input type="checkbox" id="detail-handover"' + (issue.includeInHandover ? " checked" : "") +
-          (offline ? " disabled" : "") + ">" +
-          "<div><label for=\"detail-handover\">Include in next handover</label>" +
-          '<p class="form-help">Marks this issue for future handover integration. It does not appear in a handover yet.</p></div>' +
+      '<div class="workflow-section">' +
+        '<div class="workflow-section-title">Workflow</div>' +
+        '<div class="workflow-grid">' +
+          '<div class="form-group"><label for="detail-status">Status</label>' +
+            '<select id="detail-status"' + (offline || completed ? " disabled" : "") + ">" + statusOptions + "</select></div>" +
+          '<div class="form-group"><label for="detail-priority">Priority</label>' +
+            '<select id="detail-priority"' + (offline ? " disabled" : "") + ">" + priorityOptions + "</select></div>" +
+          '<div class="form-group"><label for="detail-department">Assigned department</label>' +
+            '<select id="detail-department"' + (offline ? " disabled" : "") + ">" +
+              departmentOptionsHtml(issue.assignedDepartment || "Maintenance") +
+            "</select></div>" +
+          '<div class="form-group"><label for="detail-due-at">Due date</label>' +
+            '<input type="date" id="detail-due-at" value="' + escapeAttr(dueDateInputValue(issue.dueAt)) + '"' +
+            (offline ? " disabled" : "") + "></div>" +
+        "</div>" +
+        '<div class="form-group workflow-handover">' +
+          '<div class="check-row">' +
+            '<input type="checkbox" id="detail-handover"' + (issue.includeInHandover ? " checked" : "") +
+            (offline ? " disabled" : "") + ">" +
+            "<div><label for=\"detail-handover\">Include in next handover</label>" +
+            '<p class="form-help">Marks this issue for future handover integration. It does not appear in a handover yet.</p></div>' +
+          "</div>" +
         "</div>" +
       "</div>" +
       '<div class="workflow-actions" id="detail-workflow-actions">' +
@@ -1269,14 +1383,14 @@
           : '<button type="button" class="btn btn-primary" id="detail-complete-btn"' + (offline ? " disabled" : "") + ">Mark Completed</button>") +
       "</div>" +
       (!completed
-        ? '<div class="form-group"><label for="detail-progress-note">Add update</label>' +
+        ? '<div class="progress-block"><div class="form-group"><label for="detail-progress-note">Add update</label>' +
           '<textarea id="detail-progress-note" maxlength="2000" placeholder="e.g. Engineer booked for 10:00 tomorrow."' +
           (offline ? " disabled" : "") + "></textarea>" +
-          '<div class="workflow-actions" style="margin-top:8px;">' +
+          '<div class="workflow-actions">' +
             '<button type="button" class="btn btn-secondary" id="detail-add-update-btn"' + (offline ? " disabled" : "") + ">Add Update</button>" +
-          "</div></div>"
+          "</div></div></div>"
         : "") +
-      '<h3 style="font-size:.9rem;margin-top:8px;">Timeline</h3>' +
+      '<h3 class="timeline-heading">Timeline</h3>' +
       '<div id="details-timeline"><p class="drawer-sub">Loading timeline…</p></div>';
 
     bindDetailControls(issue);
@@ -1594,6 +1708,8 @@
   }
 
   function bindEvents() {
+    var searchTimer = null;
+
     els.reportBtn.addEventListener("click", function () { openReport(els.reportBtn); });
     els.reportFirstBtn.addEventListener("click", function () { openReport(els.reportFirstBtn); });
     $("retry-load-btn").addEventListener("click", loadPage);
@@ -1601,17 +1717,42 @@
     $("clear-filters-empty-btn").addEventListener("click", clearFilters);
     $("clear-filters-mobile-btn").addEventListener("click", clearFilters);
 
-    ["search", "filterStatus", "filterPriority", "filterCategory", "filterLocation", "filterDepartment"].forEach(function (key) {
+    function applyFiltersNow() {
+      readFiltersFromControls();
+      renderList();
+    }
+
+    els.search.addEventListener("input", function () {
+      syncSearchClear();
+      if (searchTimer) clearTimeout(searchTimer);
+      searchTimer = setTimeout(function () {
+        searchTimer = null;
+        applyFiltersNow();
+      }, 120);
+    });
+    els.search.addEventListener("change", applyFiltersNow);
+    els.search.addEventListener("keydown", function (event) {
+      if (event.key === "Escape" && els.search.value) {
+        els.search.value = "";
+        syncSearchClear();
+        applyFiltersNow();
+      }
+    });
+
+    if (els.searchClear) {
+      els.searchClear.addEventListener("click", function () {
+        els.search.value = "";
+        syncSearchClear();
+        applyFiltersNow();
+        els.search.focus();
+      });
+    }
+
+    ["filterStatus", "filterPriority", "filterCategory", "filterLocation", "filterDepartment"].forEach(function (key) {
       var el = els[key];
       if (!el) return;
-      el.addEventListener("input", function () {
-        readFiltersFromControls();
-        renderList();
-      });
-      el.addEventListener("change", function () {
-        readFiltersFromControls();
-        renderList();
-      });
+      el.addEventListener("input", applyFiltersNow);
+      el.addEventListener("change", applyFiltersNow);
     });
 
     els.openFiltersBtn.addEventListener("click", function () {
@@ -1707,6 +1848,8 @@
         els.confirmReopenBtn.disabled = false;
       });
     });
+
+    syncSearchClear();
   }
 
   function boot() {

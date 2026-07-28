@@ -242,11 +242,88 @@ function main() {
     ok = pass("Drawer and live-region accessibility attributes present") && ok;
   }
 
+  // --- M3.1 premium UI polish ---
+  if (/id=["']search-btn["']|>Search<\/button>|type=["']submit["'][^>]*>Search</i.test(html)) {
+    ok = fail("No separate Search button should be added") && ok;
+  } else {
+    ok = pass("No Search button was added") && ok;
+  }
+
+  if (!/search-icon/i.test(html) || !/placeholder=["']Search issues["']/i.test(html)) {
+    ok = fail("Search input must include icon treatment and 'Search issues' placeholder") && ok;
+  } else {
+    ok = pass("Search icon treatment and placeholder present") && ok;
+  }
+
+  if (!/id=["']search-clear-btn["']/i.test(html) || !/Clear search/i.test(html)) {
+    ok = fail("Search clear control missing") && ok;
+  } else {
+    ok = pass("Search clear control exists") && ok;
+  }
+
+  if (!/searchTimer|setTimeout\([\s\S]{0,80}applyFiltersNow|els\.search\.addEventListener\(["']input["']/i.test(html)) {
+    ok = fail("Live search filtering must remain present") && ok;
+  } else {
+    ok = pass("Live filtering remains present") && ok;
+  }
+
+  if (!/issue-card\[data-priority=["']urgent["']\]::before|\.issue-card\[data-priority="urgent"\]::before/i.test(html) ||
+      !/data-priority="high"/i.test(html) ||
+      !/data-priority="medium"/i.test(html) ||
+      !/data-priority="low"/i.test(html)) {
+    ok = fail("Priority accent classes must exist on issue cards") && ok;
+  } else {
+    ok = pass("Priority accent classes exist") && ok;
+  }
+
+  if (!/issue-location/i.test(html) || !/issue-title/i.test(html) ||
+      !/issue-desc/i.test(html) || !/chip-row/i.test(html) || !/issue-age/i.test(html)) {
+    ok = fail("Issue card must include location, title, description, chips and relative time") && ok;
+  } else {
+    ok = pass("Issue card hierarchy structure present") && ok;
+  }
+
+  if (!/Next Handover/i.test(html)) {
+    ok = fail('Handover chip label must be "Next Handover"') && ok;
+  } else if (/chip-handover">Handover</i.test(html)) {
+    ok = fail('Handover chip must not use bare "Handover" label') && ok;
+  } else {
+    ok = pass('Handover chip label is "Next Handover"') && ok;
+  }
+
+  if (!/workflow-section/i.test(html) || !/Mark Completed|Reopen Issue|Add Update/i.test(html)) {
+    ok = fail("Existing M3 workflow controls must remain present") && ok;
+  } else {
+    ok = pass("Existing M3 workflow controls remain present") && ok;
+  }
+
+  if (/AiWritingEngine|rewriteMaintenance|ai-writing-engine/i.test(html + store)) {
+    ok = fail("AI writing must not be integrated in M3.1") && ok;
+  } else {
+    ok = pass("No AI integration in Maintenance polish") && ok;
+  }
+
+  if (/importFromMaintenance|syncMaintenanceToHandover|HFMaintenanceStore|maintenance-store\.js/i.test(read("handover.html"))) {
+    ok = fail("No real Handover integration should be added") && ok;
+  } else {
+    ok = pass("No real Handover integration") && ok;
+  }
+
+  const phase15HashBefore = phase15.length;
+  if (!/CREATE TABLE IF NOT EXISTS public\.maintenance_issues/i.test(phase15)) {
+    ok = fail("phase15 migration unexpectedly altered") && ok;
+  } else if (/guest_impact/i.test(phase15)) {
+    ok = fail("Schema must not gain guest_impact") && ok;
+  } else {
+    ok = pass("No schema or migration feature expansion detected") && ok;
+  }
+  void phase15HashBefore;
+
   if (ok) {
-    console.log("\nAll Maintenance M2 UI checks passed.");
+    console.log("\nAll Maintenance M2 / M3.1 UI checks passed.");
     process.exit(0);
   }
-  console.error("\nMaintenance M2 UI checks failed.");
+  console.error("\nMaintenance M2 / M3.1 UI checks failed.");
   process.exit(1);
 }
 
