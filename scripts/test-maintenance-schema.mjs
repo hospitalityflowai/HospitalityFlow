@@ -388,11 +388,12 @@ function main() {
     }
   });
 
-  // --- Scope: no app/page wiring in this phase ---
+  // --- Scope: schema test does not require or forbid the product page ---
+  // M1 forbade maintenance.html; M2 introduces it. Schema checks stay migration-focused.
   if (fs.existsSync(path.join(ROOT, "maintenance.html"))) {
-    ok = fail("maintenance.html must not exist in M1") && ok;
+    ok = pass("maintenance.html present (expected from M2+)") && ok;
   } else {
-    ok = pass("maintenance.html not created") && ok;
+    ok = pass("maintenance.html not required for schema validation") && ok;
   }
 
   FORBIDDEN_APP_FILES.forEach((rel) => {
