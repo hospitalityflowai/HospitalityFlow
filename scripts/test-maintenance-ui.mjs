@@ -172,12 +172,22 @@ function main() {
     ok = pass("No AI-writing integration") && ok;
   }
 
-  if (/Mark completed|Change status|Add progress update|Reopen issue/i.test(html)) {
-    ok = fail("No M3 edit controls should be added") && ok;
+  if (/Mark completed|Change status|Add progress update|Reopen issue/i.test(html) &&
+      /Workflow updates will be available in the next phase/i.test(html)) {
+    ok = fail("M2 read-only phase note should not remain alongside M3 controls") && ok;
+  } else if (/Mark Completed|Reopen Issue|Add Update/i.test(html)) {
+    ok = pass("M3 workflow controls present in details drawer") && ok;
   } else if (/Workflow updates will be available in the next phase/i.test(html)) {
-    ok = pass("No M3 edit controls; read-only phase note present") && ok;
+    ok = pass("Issue details are read-only with phase note") && ok;
   } else {
-    ok = fail("Read-only details phase note missing") && ok;
+    ok = fail("Details drawer workflow or read-only note missing") && ok;
+  }
+
+  const account = read("account.html");
+  if (!/maintenance\.html/i.test(account)) {
+    ok = fail("account.html must link to Maintenance after M3") && ok;
+  } else {
+    ok = pass("account.html links to Maintenance") && ok;
   }
 
   if (/from\(ISSUES_TABLE\)[\s\S]{0,120}\.delete\(/i.test(store)) {
@@ -211,13 +221,6 @@ function main() {
     ok = fail("Partial-success timeline failure must be handled") && ok;
   } else {
     ok = pass("Partial-success timeline failure handled") && ok;
-  }
-
-  const account = read("account.html");
-  if (/maintenance\.html/i.test(account)) {
-    ok = fail("account.html must not be modified for Maintenance link in M2") && ok;
-  } else {
-    ok = pass("account.html unchanged for Maintenance navigation") && ok;
   }
 
   const phase15 = read("supabase/migrations/phase15_maintenance.sql");

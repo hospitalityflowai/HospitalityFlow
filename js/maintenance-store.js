@@ -125,7 +125,22 @@
       }
       if (error === "VALIDATION") return "Please check the highlighted fields and try again.";
       if (error === "TIMELINE_CREATE_FAILED") {
-        return "Issue was saved, but the timeline entry could not be created. Refresh to confirm the issue appears.";
+        return "The issue was updated, but its timeline entry could not be saved. Refresh and try adding a note.";
+      }
+      if (error === "BLANK_NOTE") {
+        return "Enter a progress update before saving.";
+      }
+      if (error === "RESOLUTION_REQUIRED") {
+        return "Add a short resolution note before completing this issue.";
+      }
+      if (error === "REOPEN_NOTE_REQUIRED") {
+        return "Add a short explanation before reopening this issue.";
+      }
+      if (error === "INVALID_STATUS") {
+        return "That status change is not allowed.";
+      }
+      if (error === "ISSUE_NOT_FOUND") {
+        return "That maintenance issue could not be found in your workspace.";
       }
       return error;
     }
@@ -655,6 +670,372 @@
     });
   }
 
+  var UNRESOLVED_STATUSES = {
+    open: true,
+    in_progress: true,
+    waiting_parts: true,
+    waiting_contractor: true
+  };
+
+  var MAX_NOTE_LENGTH = 2000;
+
+  function rejectCode(code, extra) {
+    var err = new Error(code);
+    err.code = code;
+    if (extra) {
+      Object.keys(extra).forEach(function (key) {
+        err[key] = extra[key];
+      });
+    }
+    return Promise.reject(err);
+  }
+
+  function replaceCachedIssue(issue) {
+    if (!issue) return;
+    var found = false;
+    cachedIssues = cachedIssues.map(function (item) {
+      if (String(item.id) === String(issue.id)) {
+        found = true;
+        return issue;
+      }
+      return item;
+    });
+    if (!found) cachedIssues = cachedIssues.concat([issue]);
+    if (cachedWorkspaceId) writeLocalCache(cachedWorkspaceId, cachedIssues);
+  }
+
+  function fetchIssueRow(client, workspaceId, issueId) {
+    return client
+      .from(ISSUES_TABLE)
+      .select("*")
+      .eq("id", issueId)
+      .eq("workspace_id", workspaceId)
+      .maybeSingle()
+      .then(function (result) {
+        if (result.error) return Promise.reject(result.error);
+        if (!result.data) return rejectCode("ISSUE_NOT_FOUND");
+        return rowToIssue(result.data);
+      });
+  }
+
+  /**
+   * Update issue then insert timeline. Not a DB transaction.
+   * If timeline insert fails after issue update, returns TIMELINE_CREATE_FAILED
+   * partial error. Client DELETE is blocked — no unsafe rollback.
+   * Future: optional SECURITY DEFINER RPC for atomic write.
+   */
+  function updateIssueWithTimeline(issueId, buildPatch, buildTimeline) {
+    if (!cloudAvailable) return Promise.reject("OFFLINE");
+    var id = trimText(issueId);
+    if (!id) return rejectCode("ISSUE_NOT_FOUND");
+
+    return requireAuthAndWorkspace().then(function (ctx) {
+      return ensureClient().then(function (client) {
+        return fetchIssueRow(client, ctx.workspaceId, id).then(function (current) {
+          var patchResult = buildPatch(current);
+          if (patchResult && patchResult.error) {
+            return rejectCode(patchResult.error);
+          }
+          if (patchResult && patchResult.noop) {
+            return { issue: current, noop: true };
+          }
+
+          var rowPatch = patchResult.row || {};
+          /* Never accept workspace_id from callers — scope only via ctx. */
+          delete rowPatch.workspace_id;
+          delete rowPatch.id;
+
+          return client
+            .from(ISSUES_TABLE)
+            .update(rowPatch)
+            .eq("id", id)
+            .eq("workspace_id", ctx.workspaceId)
+            .select("*")
+            .single()
+            .then(function (upd) {
+              if (upd.error) return Promise.reject(upd.error);
+              var issue = rowToIssue(upd.data);
+              replaceCachedIssue(issue);
+
+              var timeline = buildTimeline(current, issue) || {};
+              var timelineRow = {
+                issue_id: issue.id,
+                workspace_id: ctx.workspaceId,
+                update_type: timeline.update_type,
+                note: timeline.note || null,
+                previous_status: timeline.previous_status || null,
+                new_status: timeline.new_status || null,
+                previous_priority: timeline.previous_priority || null,
+                new_priority: timeline.new_priority || null
+              };
+
+              return client
+                .from(UPDATES_TABLE)
+                .insert(timelineRow)
+                .select("*")
+                .single()
+                .then(function (tRes) {
+                  if (tRes.error) {
+                    if (typeof console !== "undefined" && console.warn) {
+                      console.warn("[HFMaintenanceStore] Timeline insert failed", {
+                        issueId: issue.id,
+                        updateType: timeline.update_type
+                      });
+                    }
+                    return rejectCode("TIMELINE_CREATE_FAILED", {
+                      issue: issue,
+                      partial: true
+                    });
+                  }
+                  return {
+                    issue: issue,
+                    update: rowToUpdate(tRes.data)
+                  };
+                });
+            });
+        });
+      });
+    });
+  }
+
+  function normaliseNote(note, options) {
+    options = options || {};
+    var text = trimText(note);
+    if (!text) {
+      return { ok: false, error: options.requiredCode || "BLANK_NOTE" };
+    }
+    if (text.length > MAX_NOTE_LENGTH) text = text.slice(0, MAX_NOTE_LENGTH);
+    return { ok: true, text: text };
+  }
+
+  function addUpdate(issueId, note) {
+    var checked = normaliseNote(note);
+    if (!checked.ok) return rejectCode(checked.error);
+
+    return updateIssueWithTimeline(
+      issueId,
+      function (current) {
+        /* Touch row so updated_at refreshes for card age display. */
+        return {
+          row: {
+            assigned_department: current.assignedDepartment || "Maintenance"
+          }
+        };
+      },
+      function () {
+        return { update_type: "note", note: checked.text };
+      }
+    );
+  }
+
+  function updateStatus(issueId, newStatus, note) {
+    var status = trimText(newStatus);
+    if (!UNRESOLVED_STATUSES[status]) {
+      return rejectCode("INVALID_STATUS");
+    }
+    var optionalNote = trimText(note);
+    if (optionalNote.length > MAX_NOTE_LENGTH) optionalNote = optionalNote.slice(0, MAX_NOTE_LENGTH);
+
+    return updateIssueWithTimeline(
+      issueId,
+      function (current) {
+        if (current.status === "completed") {
+          return { error: "INVALID_STATUS" };
+        }
+        if (current.status === status) return { noop: true };
+        return { row: { status: status } };
+      },
+      function (before, after) {
+        return {
+          update_type: "status_changed",
+          previous_status: before.status,
+          new_status: after.status,
+          note: optionalNote || null
+        };
+      }
+    );
+  }
+
+  function updatePriority(issueId, newPriority, note) {
+    var priority = trimText(newPriority);
+    if (!PRIORITY_LABELS[priority]) return rejectCode("VALIDATION");
+    var optionalNote = trimText(note);
+    if (optionalNote.length > MAX_NOTE_LENGTH) optionalNote = optionalNote.slice(0, MAX_NOTE_LENGTH);
+
+    return updateIssueWithTimeline(
+      issueId,
+      function (current) {
+        if (current.priority === priority) return { noop: true };
+        return { row: { priority: priority } };
+      },
+      function (before, after) {
+        return {
+          update_type: "priority_changed",
+          previous_priority: before.priority,
+          new_priority: after.priority,
+          note: optionalNote || null
+        };
+      }
+    );
+  }
+
+  function updateAssignment(issueId, department, note) {
+    var dept = trimText(department);
+    if (!dept) return rejectCode("VALIDATION");
+    var optionalNote = trimText(note);
+    if (optionalNote.length > MAX_NOTE_LENGTH) optionalNote = optionalNote.slice(0, MAX_NOTE_LENGTH);
+
+    return updateIssueWithTimeline(
+      issueId,
+      function (current) {
+        if (trimText(current.assignedDepartment) === dept) return { noop: true };
+        return { row: { assigned_department: dept } };
+      },
+      function (before, after) {
+        var auto =
+          "Assigned department changed from " +
+          (before.assignedDepartment || "—") +
+          " to " +
+          (after.assignedDepartment || "—") +
+          ".";
+        return {
+          update_type: "assignment_changed",
+          note: optionalNote || auto
+        };
+      }
+    );
+  }
+
+  function updateDueDate(issueId, dueAt, note) {
+    var optionalNote = trimText(note);
+    if (optionalNote.length > MAX_NOTE_LENGTH) optionalNote = optionalNote.slice(0, MAX_NOTE_LENGTH);
+    var nextDue = dueAt ? dueAt : null;
+    if (nextDue && isNaN(Date.parse(nextDue))) return rejectCode("VALIDATION");
+
+    return updateIssueWithTimeline(
+      issueId,
+      function (current) {
+        var prev = current.dueAt || null;
+        var prevKey = prev ? Date.parse(prev) : null;
+        var nextKey = nextDue ? Date.parse(nextDue) : null;
+        if (prevKey === nextKey || (!prev && !nextDue)) return { noop: true };
+        return { row: { due_at: nextDue } };
+      },
+      function (before, after) {
+        function label(iso) {
+          if (!iso) return "none";
+          var d = new Date(iso);
+          if (isNaN(d.getTime())) return "none";
+          return d.toLocaleDateString("en-GB", {
+            day: "numeric",
+            month: "short",
+            year: "numeric"
+          });
+        }
+        var auto =
+          "Due date changed from " + label(before.dueAt) + " to " + label(after.dueAt) + ".";
+        return {
+          update_type: "note",
+          note: optionalNote || auto
+        };
+      }
+    );
+  }
+
+  function completeIssue(issueId, resolutionNote) {
+    var checked = normaliseNote(resolutionNote, { requiredCode: "RESOLUTION_REQUIRED" });
+    if (!checked.ok) return rejectCode(checked.error);
+
+    return updateIssueWithTimeline(
+      issueId,
+      function (current) {
+        if (current.status === "completed") return { noop: true };
+        return {
+          row: {
+            status: "completed",
+            resolution_notes: checked.text
+          }
+        };
+      },
+      function (before, after) {
+        return {
+          update_type: "resolution",
+          previous_status: before.status,
+          new_status: after.status,
+          note: checked.text
+        };
+      }
+    );
+  }
+
+  function reopenIssue(issueId, note) {
+    var checked = normaliseNote(note, { requiredCode: "REOPEN_NOTE_REQUIRED" });
+    if (!checked.ok) return rejectCode(checked.error);
+
+    return updateIssueWithTimeline(
+      issueId,
+      function (current) {
+        if (current.status !== "completed") return { error: "INVALID_STATUS" };
+        return {
+          row: {
+            status: "open"
+          }
+        };
+      },
+      function (before, after) {
+        return {
+          update_type: "reopened",
+          previous_status: before.status,
+          new_status: after.status,
+          note: checked.text
+        };
+      }
+    );
+  }
+
+  function setHandoverInclusion(issueId, include, note) {
+    var next = include === true;
+    var optionalNote = trimText(note);
+    if (optionalNote.length > MAX_NOTE_LENGTH) optionalNote = optionalNote.slice(0, MAX_NOTE_LENGTH);
+
+    return updateIssueWithTimeline(
+      issueId,
+      function (current) {
+        if (current.includeInHandover === next) return { noop: true };
+        return { row: { include_in_handover: next } };
+      },
+      function () {
+        return {
+          update_type: next ? "included_in_handover" : "hidden_from_handover",
+          note: optionalNote || null
+        };
+      }
+    );
+  }
+
+  function formatTimelineAction(update) {
+    if (!update) return "Update";
+    var type = update.updateType;
+    if (type === "created") return "Issue reported.";
+    if (type === "note") return "Progress update added.";
+    if (type === "status_changed") {
+      var fromS = STATUS_LABELS[update.previousStatus] || update.previousStatus || "—";
+      var toS = STATUS_LABELS[update.newStatus] || update.newStatus || "—";
+      return "Status changed from " + fromS + " to " + toS + ".";
+    }
+    if (type === "priority_changed") {
+      var fromP = PRIORITY_LABELS[update.previousPriority] || update.previousPriority || "—";
+      var toP = PRIORITY_LABELS[update.newPriority] || update.newPriority || "—";
+      return "Priority changed from " + fromP + " to " + toP + ".";
+    }
+    if (type === "assignment_changed") return "Assigned department changed.";
+    if (type === "resolution") return "Issue completed.";
+    if (type === "reopened") return "Issue reopened.";
+    if (type === "included_in_handover") return "Marked for inclusion in the next handover.";
+    if (type === "hidden_from_handover") return "Removed from handover inclusion.";
+    return UPDATE_TYPE_LABELS[type] || "Update";
+  }
+
   function resolveDepartments(profile) {
     var names = [];
     var seen = {};
@@ -718,6 +1099,8 @@
     CATEGORY_LABELS: CATEGORY_LABELS,
     LOCATION_TYPE_LABELS: LOCATION_TYPE_LABELS,
     UPDATE_TYPE_LABELS: UPDATE_TYPE_LABELS,
+    UNRESOLVED_STATUSES: Object.keys(UNRESOLVED_STATUSES),
+    MAX_NOTE_LENGTH: MAX_NOTE_LENGTH,
     init: init,
     refresh: refresh,
     getWorkspaceId: getWorkspaceId,
@@ -732,6 +1115,15 @@
     loadDepartments: loadDepartments,
     formatError: formatError,
     clearTenantCache: clearTenantCache,
-    validateCreatePayload: validateCreatePayload
+    validateCreatePayload: validateCreatePayload,
+    addUpdate: addUpdate,
+    updateStatus: updateStatus,
+    updatePriority: updatePriority,
+    updateAssignment: updateAssignment,
+    updateDueDate: updateDueDate,
+    completeIssue: completeIssue,
+    reopenIssue: reopenIssue,
+    setHandoverInclusion: setHandoverInclusion,
+    formatTimelineAction: formatTimelineAction
   };
 })(typeof window !== "undefined" ? window : globalThis);
