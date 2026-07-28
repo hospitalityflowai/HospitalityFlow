@@ -5490,7 +5490,14 @@
 
         var expanded = [];
         rawLines.forEach(function (line) {
-          splitOperationalTopics(line).forEach(function (part) {
+          var parts = [];
+          if (window.AiWritingEngine && window.AiWritingEngine.splitSourceIntoFactSegments) {
+            parts = window.AiWritingEngine.splitSourceIntoFactSegments(line);
+          }
+          if (!parts || parts.length < 2) {
+            parts = splitOperationalTopics(line);
+          }
+          parts.forEach(function (part) {
             if (part && expanded.indexOf(part) === -1) expanded.push(part);
           });
         });
@@ -5687,13 +5694,27 @@
 
       function isPaymentRelatedLine(line) {
         if (isInventoryChargeContext(line)) return false;
+        if (window.AiWritingEngine && window.AiWritingEngine.isReservationCommercialLanguage &&
+            window.AiWritingEngine.isReservationCommercialLanguage(line) &&
+            !(window.AiWritingEngine.isActualFinancialIssue &&
+              window.AiWritingEngine.isActualFinancialIssue(line))) {
+          return false;
+        }
+        if (window.AiWritingEngine && window.AiWritingEngine.isActualFinancialIssue) {
+          if (window.AiWritingEngine.isActualFinancialIssue(line)) return true;
+        }
         if (isOtaPaymentTaskLine(line)) return true;
         if (hasExplicitOutstandingBalance(line)) return true;
         if (noteContains(line, [
-          "payment", "pdq", "pos", "invoice", "billing",
-          "pm account", "accounts", "folio", "pre-auth", "preauth",
-          "settlement", "transaction", "refund", "no show charge"
+          "pdq", "pos", "billing",
+          "pm account", "accounts", "pre-auth", "preauth",
+          "settlement", "transaction", "refund", "no show charge",
+          "outstanding balance", "card declined", "payment failed"
         ])) {
+          return true;
+        }
+        if (noteContains(line, ["invoice", "folio", "payment", "bill"]) &&
+            noteContains(line, ["unpaid", "outstanding", "overdue", "declined", "dispute", "settle", "balance"])) {
           return true;
         }
         if (noteContains(line, ["minibar"]) &&
@@ -6044,9 +6065,19 @@
           return "guest";
         }
 
+        /* Marketing / complimentary / influencer arrangements — not Finance */
+        if (noteContains(line, ["instagram", "influencer", "deliverable", "grid post", "comp bed", "complimentary stay", "marketing stay", "partnership"])) {
+          return "guest";
+        }
+
         if (isPaymentRelatedLine(line)) {
           return isPaymentIssueLine(line) ? "payments" : "general";
         }
+
+        if (note.fact && note.fact.subject === "guest_arrangement") return "guest";
+        if (note.fact && note.fact.subject === "reservation_info") return "vip";
+        if (note.fact && note.fact.subject === "twin_setup") return "tasks";
+        if (note.fact && note.fact.subject === "room_move") return "guest";
 
         if (noteContains(line, ["package", "parcel", "delivery held", "held at reception", "courier"])) {
           return "deliveries";
