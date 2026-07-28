@@ -18,6 +18,8 @@
  * - Owns extraction support, structured operational-fact field parsing,
  *   wording and presentation prose.
  * - Does NOT own cross-module recommendations, ranking, or conflict reasoning.
+ * - Does NOT own final operational category classification (E3+ — Hospitality
+ *   Intelligence Engine classifyOperationalFact).
  * - Hospitality Intelligence Engine (shift-intelligence-engine.js) owns
  *   operational reasoning. Modules must not add a second recommendation system.
  */

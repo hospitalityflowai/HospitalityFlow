@@ -5210,10 +5210,16 @@
             note._neutralFactId = fact.id;
             note._neutralSourceType = "maintenance";
             if (fact.sourceId) note.sourceId = fact.sourceId;
+            if (typeof SI.applyEngineClassificationToNote === "function") {
+              SI.applyEngineClassificationToNote(note, "maintenance");
+            } else {
+              note.operationalCategory = "maintenance";
+              note.operationalSubject = "maintenance";
+            }
             classified._analyzed.push(note);
           }
 
-          classified.maintenance.push({
+          var importItem = {
             id: "maint-" + (fact.sourceId || createItemId()),
             text: formatMaintenanceImportItemText(issue || {}, fact),
             status: statusFromMaintenanceIssue(issue || { status: fact.status }),
@@ -5221,8 +5227,14 @@
             importedFromMaintenance: true,
             sourceType: "maintenance",
             sourceId: fact.sourceId || "",
-            fact: note && note.fact ? note.fact : null
-          });
+            fact: note && note.fact ? note.fact : null,
+            operationalCategory: "maintenance",
+            operationalSubject: (note && note.operationalSubject) || "maintenance"
+          };
+          if (note && note._engineClassification) {
+            importItem._engineClassification = note._engineClassification;
+          }
+          classified.maintenance.push(importItem);
         });
 
         if (typeof computeHandoverMetrics === "function") {
@@ -6639,7 +6651,16 @@
         });
         ensureNoteCoverage(analyzed);
         analyzed = consolidateAnalyzedNotes(analyzed);
-        analyzed.forEach(refreshNoteFact);
+        analyzed.forEach(function (note) {
+          refreshNoteFact(note);
+          /* E3: engine classification after final section + fact; never overrides section on mismatch. */
+          if (
+            window.ShiftIntelligenceEngine &&
+            typeof window.ShiftIntelligenceEngine.applyEngineClassificationToNote === "function"
+          ) {
+            window.ShiftIntelligenceEngine.applyEngineClassificationToNote(note, note.section);
+          }
+        });
 
         var classified = {};
         SECTIONS.forEach(function (section) {
