@@ -2,6 +2,13 @@
  * Hospitality Flow — Shift Intelligence Engine
  * Reusable intelligence layer between Hotel Brain and operational tools.
  * Rule-based v1 — modular surface for future LLM / agent backends.
+ *
+ * Phase 16B — Thin shared intelligence foundation:
+ * - Runtime-only neutral operational facts (not persisted; no shared fact table)
+ * - Handover compatibility adapter (legacy analyze input → neutral facts)
+ * - Maintenance issue adapter (runtime only; not wired into Handover yet)
+ * - analyzeFacts({ facts, brainContext, ... }) alongside legacy analyze(...)
+ * - Optional recommendation traceability: sourceFactIds, sourceTypes, reasonCode
  */
 (function (global) {
   "use strict";
@@ -11,6 +18,28 @@
   var MAX_CHECKLIST_ITEMS = 16;
 
   var PRIORITY_RANK = { urgent: 0, high: 1, normal: 2, low: 3 };
+
+  /**
+   * Neutral operational fact (runtime only).
+   * Adapters populate only fields they have; omit or leave empty otherwise.
+   *
+   * {
+   *   id, sourceType, sourceId, workspaceId?,
+   *   subjectType, subjectId, room, area, guest, department, category,
+   *   action, detail, status, priority, occurredAt, dueAt,
+   *   isResolved, includeInHandover, confidence, sourceText, metadata
+   * }
+   *
+   * priority (neutral): urgent | high | medium | low
+   *   (maps to recommendation priority: medium → normal)
+   * sourceType examples: "handover" | "maintenance"
+   */
+  var NEUTRAL_FACT_FIELDS = [
+    "id", "sourceType", "sourceId", "workspaceId",
+    "subjectType", "subjectId", "room", "area", "guest", "department", "category",
+    "action", "detail", "status", "priority", "occurredAt", "dueAt",
+    "isResolved", "includeInHandover", "confidence", "sourceText", "metadata"
+  ];
 
   var CHECKLIST_STATUS = {
     pending: "pending",
@@ -24,6 +53,370 @@
 
   function trimText(value) {
     return String(value || "").trim();
+  }
+
+  /* ------------------------------------------------------------------ */
+  /*  Phase 16B — normalisation helpers                                  */
+  /* ------------------------------------------------------------------ */
+
+  /**
+   * Canonical room token: "Room 24" / "24" / "room24" → "24" (uppercase suffix).
+   */
+  function normalizeRoomNumber(value) {
+    var s = trimText(value);
+    if (!s) return "";
+    var m = s.match(/(\d{1,4}[a-z]?)/i);
+    if (!m) return "";
+    var num = String(m[1]).toUpperCase();
+    var parsed = parseInt(num, 10);
+    if (isNaN(parsed) || parsed < 1 || parsed > 9999) return "";
+    return num;
+  }
+
+  /**
+   * Neutral priority: urgent | high | medium | low
+   * Accepts handover Critical/High/Normal and engine normal.
+   */
+  function normalizePriority(value) {
+    var v = trimText(value).toLowerCase();
+    if (!v) return "medium";
+    if (v === "critical" || v === "urgent") return "urgent";
+    if (v === "high") return "high";
+    if (v === "low") return "low";
+    if (v === "medium" || v === "normal") return "medium";
+    return "medium";
+  }
+
+  /** Map neutral priority onto recommendation PRIORITY_RANK keys. */
+  function toRecommendationPriority(neutralPriority) {
+    var p = normalizePriority(neutralPriority);
+    if (p === "medium") return "normal";
+    return p;
+  }
+
+  function priorityRankValue(priority) {
+    var rec = toRecommendationPriority(priority);
+    return PRIORITY_RANK[rec] != null ? PRIORITY_RANK[rec] : 9;
+  }
+
+  /**
+   * Resolved / closed detection for mixed vocabularies.
+   * Maintenance: completed. Facts: done / confirmed. Prose: resolved / closed / …
+   */
+  function isResolvedStatus(status) {
+    var s = trimText(status).toLowerCase().replace(/-/g, "_");
+    if (!s) return false;
+    return (
+      s === "completed" ||
+      s === "complete" ||
+      s === "resolved" ||
+      s === "done" ||
+      s === "closed" ||
+      s === "confirmed"
+    );
+  }
+
+  /** Stable source identity string: sourceType:sourceId */
+  function createSourceIdentity(sourceType, sourceId) {
+    return trimText(sourceType || "unknown") + ":" + trimText(sourceId || "");
+  }
+
+  function stableToken(value, maxLen) {
+    return trimText(value)
+      .toLowerCase()
+      .replace(/\s+/g, "_")
+      .replace(/[^a-z0-9_|:-]/g, "")
+      .slice(0, maxLen || 48);
+  }
+
+  function buildNeutralFactId(sourceType, sourceId, room, subjectType) {
+    return [
+      stableToken(sourceType || "unknown", 24),
+      stableToken(sourceId || "", 64),
+      stableToken(room || "", 12),
+      stableToken(subjectType || "", 32)
+    ].join(":");
+  }
+
+  function createEmptyNeutralFact() {
+    return {
+      id: "",
+      sourceType: "",
+      sourceId: "",
+      workspaceId: "",
+      subjectType: "",
+      subjectId: "",
+      room: "",
+      area: "",
+      guest: "",
+      department: "",
+      category: "",
+      action: "",
+      detail: "",
+      status: "",
+      priority: "medium",
+      occurredAt: "",
+      dueAt: "",
+      isResolved: false,
+      includeInHandover: false,
+      confidence: "high",
+      sourceText: "",
+      metadata: {}
+    };
+  }
+
+  function ensureNeutralFact(raw) {
+    var base = createEmptyNeutralFact();
+    if (!raw || typeof raw !== "object") return base;
+    NEUTRAL_FACT_FIELDS.forEach(function (key) {
+      if (raw[key] !== undefined && raw[key] !== null) base[key] = raw[key];
+    });
+    base.room = normalizeRoomNumber(base.room) || trimText(base.room);
+    base.priority = normalizePriority(base.priority);
+    base.isResolved = base.isResolved === true || isResolvedStatus(base.status);
+    base.includeInHandover = base.includeInHandover === true;
+    base.confidence = trimText(base.confidence) || (base.metadata && base.metadata.uncertainty ? "low" : "high");
+    if (!base.id) {
+      base.id = buildNeutralFactId(base.sourceType, base.sourceId, base.room, base.subjectType);
+    }
+    if (!base.metadata || typeof base.metadata !== "object") base.metadata = {};
+    return base;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /*  Phase 16B — adapters                                               */
+  /* ------------------------------------------------------------------ */
+
+  function handoverPriorityFromNote(note, fact) {
+    if (note && note.section === "urgent") return "urgent";
+    if (note && note.maintenancePriority === "Critical") return "urgent";
+    if (note && note.maintenancePriority === "High") return "high";
+    if (note && (note.isVip || (fact && fact.subject === "vip_arrival"))) return "high";
+    if (note && note.maintenancePriority === "Normal") return "medium";
+    return "medium";
+  }
+
+  /**
+   * Convert one Handover analyzed note (+ optional OperationalFact) → neutral fact.
+   */
+  function handoverNoteToNeutralFact(note, index, options) {
+    options = options || {};
+    if (!note || typeof note !== "object") return null;
+
+    var fact = note.fact || null;
+    if (!fact && global.AiWritingEngine && global.AiWritingEngine.extractOperationalFact) {
+      fact = global.AiWritingEngine.extractOperationalFact(note.original || "", {
+        rooms: note.rooms,
+        section: note.section,
+        isVip: note.isVip
+      });
+    }
+
+    var rooms = (fact && fact.rooms && fact.rooms.length)
+      ? fact.rooms
+      : (note.rooms || []);
+    var room = normalizeRoomNumber(rooms[0] || "");
+    var sourceText = trimText((fact && fact.sourceText) || note.original || "");
+    var subjectType = trimText((fact && fact.subject) || note.section || "note");
+    var status = trimText((fact && fact.status) || "");
+    var sourceId = trimText(note.id) || ("note-" + String(index) + "-" + stableToken(sourceText, 40));
+    var actionParts = [];
+    if (fact && fact.actionVerb) actionParts.push(fact.actionVerb);
+    if (fact && fact.actionTarget) actionParts.push(fact.actionTarget);
+    var detailParts = [];
+    if (fact && fact.details && fact.details.length) {
+      fact.details.forEach(function (d) {
+        if (d && d.value) detailParts.push(String(d.type ? d.type + ":" : "") + d.value);
+      });
+    }
+    var isResolved = false;
+    if (fact && global.AiWritingEngine && global.AiWritingEngine.isFactClosed) {
+      isResolved = global.AiWritingEngine.isFactClosed(fact);
+    } else {
+      isResolved = isResolvedStatus(status) || isResolvedNote(sourceText);
+    }
+
+    var neutral = ensureNeutralFact({
+      sourceType: "handover",
+      sourceId: sourceId,
+      workspaceId: options.workspaceId || "",
+      subjectType: subjectType,
+      subjectId: "",
+      room: room,
+      area: "",
+      guest: trimText(fact && fact.guestName),
+      department: trimText((fact && fact.ownerDept) || ""),
+      category: trimText((fact && (fact.category || fact.subject)) || note.section || ""),
+      action: actionParts.join(" "),
+      detail: detailParts.join("; ") || subjectType,
+      status: status || (isResolved ? "done" : "open"),
+      priority: handoverPriorityFromNote(note, fact),
+      occurredAt: "",
+      dueAt: "",
+      isResolved: isResolved,
+      includeInHandover: true,
+      confidence: fact && fact.uncertainty ? "low" : "high",
+      sourceText: sourceText,
+      metadata: {
+        section: note.section || "",
+        isVip: !!note.isVip,
+        maintenancePriority: note.maintenancePriority || null,
+        rooms: rooms.slice(),
+        uncertainty: !!(fact && fact.uncertainty),
+        ownerName: trimText(fact && fact.ownerName),
+        operationalFact: fact || null,
+        handoverNote: {
+          original: note.original || sourceText,
+          rooms: rooms.slice(),
+          section: note.section || null,
+          isVip: !!note.isVip,
+          maintenancePriority: note.maintenancePriority || null,
+          fact: fact || null
+        }
+      }
+    });
+    return neutral;
+  }
+
+  function factsFromHandoverAnalyzedNotes(analyzedNotes, options) {
+    return (analyzedNotes || []).map(function (note, index) {
+      return handoverNoteToNeutralFact(note, index, options || {});
+    }).filter(Boolean);
+  }
+
+  /**
+   * Runtime-only Maintenance adapter.
+   * Accepts HFMaintenanceStore issue objects (camelCase) or snake_case rows.
+   * Does not query the database. Not wired into Handover in Phase 16B.
+   */
+  function maintenanceIssueToNeutralFact(issue, options) {
+    options = options || {};
+    if (!issue || typeof issue !== "object") return null;
+
+    var sourceId = trimText(issue.id || issue.sourceId);
+    var room = normalizeRoomNumber(issue.roomNumber || issue.room_number || issue.room || "");
+    var area = trimText(issue.area || "");
+    var status = trimText(issue.status || "");
+    var priority = normalizePriority(issue.priority);
+    var title = trimText(issue.title || "");
+    var description = trimText(issue.description || "");
+    var detail = title;
+    if (description && description !== title) {
+      detail = title ? title + " — " + description : description;
+    }
+    var isResolved = status.toLowerCase() === "completed" || issue.completedAt || issue.completed_at
+      ? true
+      : isResolvedStatus(status);
+    if (issue.completedAt || issue.completed_at) isResolved = true;
+
+    var neutral = ensureNeutralFact({
+      sourceType: "maintenance",
+      sourceId: sourceId,
+      workspaceId: options.workspaceId || issue.workspaceId || issue.workspace_id || "",
+      subjectType: "maintenance",
+      subjectId: sourceId,
+      room: room,
+      area: area,
+      guest: "",
+      department: trimText(issue.assignedDepartment || issue.assigned_department || "Maintenance"),
+      category: trimText(issue.category || ""),
+      action: isResolved ? "resolved" : "follow_up",
+      detail: detail,
+      status: status || (isResolved ? "completed" : "open"),
+      priority: priority,
+      occurredAt: trimText(issue.updatedAt || issue.updated_at || issue.createdAt || issue.created_at || ""),
+      dueAt: trimText(issue.dueAt || issue.due_at || "") || "",
+      isResolved: isResolved,
+      includeInHandover: issue.includeInHandover === true || issue.include_in_handover === true,
+      confidence: "high",
+      sourceText: detail || description || title,
+      metadata: {
+        locationType: issue.locationType || issue.location_type || "",
+        reportedByName: issue.reportedByName || issue.reported_by_name || "",
+        resolutionNotes: issue.resolutionNotes || issue.resolution_notes || "",
+        issue: issue
+      }
+    });
+    return neutral;
+  }
+
+  function factsFromMaintenanceIssues(issues, options) {
+    return (issues || []).map(function (issue) {
+      return maintenanceIssueToNeutralFact(issue, options || {});
+    }).filter(Boolean);
+  }
+
+  /**
+   * Rebuild a Handover-shaped analyzed note from a neutral fact so existing
+   * recommendation rules can run unchanged.
+   */
+  function neutralFactToAnalyzedNote(fact) {
+    var f = ensureNeutralFact(fact);
+    if (f.metadata && f.metadata.handoverNote && typeof f.metadata.handoverNote === "object") {
+      var hn = f.metadata.handoverNote;
+      var cloned = {
+        original: hn.original || f.sourceText || "",
+        rooms: (hn.rooms && hn.rooms.length) ? hn.rooms.slice() : (f.room ? [f.room] : []),
+        section: hn.section != null ? hn.section : (f.subjectType === "maintenance" ? "maintenance" : null),
+        isVip: !!hn.isVip,
+        maintenancePriority: hn.maintenancePriority || null,
+        fact: hn.fact || f.metadata.operationalFact || null,
+        _neutralFactId: f.id,
+        _neutralSourceType: f.sourceType
+      };
+      return cloned;
+    }
+
+    var rooms = f.room ? [f.room] : [];
+    var section = "general";
+    if (f.sourceType === "maintenance" || f.subjectType === "maintenance") section = "maintenance";
+    else if (f.subjectType === "vip_arrival" || /vip/i.test(f.detail || "")) section = "guest";
+    else if (/payment|balance|folio/i.test(f.subjectType + " " + f.detail)) section = "payments";
+
+    var maintPri = null;
+    if (section === "maintenance") {
+      if (f.priority === "urgent") maintPri = "Critical";
+      else if (f.priority === "high") maintPri = "High";
+      else maintPri = "Normal";
+    }
+
+    var operationalFact = f.metadata && f.metadata.operationalFact
+      ? f.metadata.operationalFact
+      : {
+          sourceText: f.sourceText || f.detail || "",
+          sourceTexts: f.sourceText ? [f.sourceText] : [],
+          sourceHistory: [],
+          rooms: rooms.slice(),
+          subject: f.subjectType || (section === "maintenance" ? "maintenance" : ""),
+          status: f.isResolved ? "done" : (f.status || "open"),
+          ownerDept: f.department || "",
+          ownerName: "",
+          actionVerb: f.action || (section === "maintenance" ? "follow_up" : ""),
+          actionTarget: section === "maintenance" ? "maintenance" : "",
+          details: [],
+          sectionHint: section,
+          guestName: f.guest || "",
+          arrivalDate: "",
+          preferredLocation: "",
+          confirmationStatus: "",
+          paymentMethod: "",
+          package: "",
+          guarantee: "",
+          guestType: "",
+          category: f.category || "",
+          uncertainty: f.confidence === "low"
+        };
+
+    return {
+      original: f.sourceText || f.detail || "",
+      rooms: rooms,
+      section: section,
+      isVip: /vip/i.test(f.subjectType + " " + f.detail + " " + f.sourceText),
+      maintenancePriority: maintPri,
+      fact: operationalFact,
+      _neutralFactId: f.id,
+      _neutralSourceType: f.sourceType
+    };
   }
 
   function parseNotes(text) {
@@ -76,13 +469,18 @@
     }
     var status = raw.status || "open";
     if (status === "in-progress") status = "in_progress";
-    return {
+    var out = {
       id: raw.id || createId(),
       text: String(raw.text || ""),
       priority: raw.priority || "normal",
       department: raw.department || fallbackDept || "Reception",
       status: status
     };
+    /* Phase 16B optional traceability — ignored by older UI consumers */
+    if (raw.sourceFactIds && raw.sourceFactIds.length) out.sourceFactIds = raw.sourceFactIds.slice();
+    if (raw.sourceTypes && raw.sourceTypes.length) out.sourceTypes = raw.sourceTypes.slice();
+    if (raw.reasonCode) out.reasonCode = String(raw.reasonCode);
+    return out;
   }
 
   function normalizeChecklistItem(raw, fallbackDept) {
@@ -569,7 +967,7 @@
         verb === "settle") {
       if (!roomRef && !/\b(balance|payment|folio|invoice|bill)\b/i.test(src)) return null;
       return {
-        text: dept + " — Settle outstanding balance" + (roomRef ? " for " + roomRef : "") + " before departure.",
+        text: "Settle the outstanding balance" + (roomRef ? " for " + roomRef : "") + " before departure.",
         priority: priority === "urgent" ? "urgent" : "high",
         department: resolveDepartment([dept, "Reception", "Front Office"], "Reception", departments)
       };
@@ -582,7 +980,7 @@
         roomsLabel = "Rooms " + fact.rooms.join(", ").replace(/, ([^,]+)$/, " and $1");
       }
       return {
-        text: dept + " — Follow up the reported issues in " + (roomsLabel || roomRef) + ".",
+        text: "Follow up the reported maintenance issues in " + (roomsLabel || roomRef) + ".",
         priority: priority,
         department: resolveDepartment([dept, "Maintenance", "Engineering"], "Maintenance", departments)
       };
@@ -595,15 +993,17 @@
         if (d && d.type === "date") twinDate = d.value;
       });
       if (!twinDate && fact.arrivalDate) twinDate = fact.arrivalDate;
-      var twinText = dept + " — Configure " + roomRef + " as twin beds";
+      var twinText = "Prepare " + roomRef + " with twin beds";
       if (twinDate) {
-        twinText += " before the guest arrives on " + twinDate.replace(
+        twinText += " before arrival on " + twinDate.replace(
           /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/,
           function (_, d, m) {
             var months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
             return d + " " + (months[parseInt(m, 10) - 1] || m);
           }
         );
+      } else {
+        twinText += " before arrival";
       }
       twinText += ".";
       return {
@@ -616,8 +1016,7 @@
     if (subject === "vip_arrival" || (note.isVip && subject !== "reservation_info" && subject !== "guest_arrangement")) {
       if (!roomRef && !/\bvip\b/i.test(src)) return null;
       var pref = extractGuestPreference(src);
-      var vipText = dept + " — Prepare" + (roomRef ? " " + roomRef : "") +
-        " for VIP arrival";
+      var vipText = "Prepare" + (roomRef ? " " + roomRef : "") + " for VIP arrival";
       if (pref) vipText += " (" + pref + ")";
       vipText += ".";
       return {
@@ -636,7 +1035,7 @@
       /* Confirmed late COs are closed; requested ones need confirmation — only if still open/requested. */
       if (fact.status === "requested" || fact.status === "open" || fact.status === "unknown") {
         return {
-          text: dept + " — Confirm late check-out" + (roomRef ? " for " + roomRef : "") +
+          text: "Confirm the late check-out" + (roomRef ? " for " + roomRef : "") +
             " and advise Housekeeping of the release time.",
           priority: "high",
           department: resolveDepartment([dept, "Housekeeping", "Reception"], "Housekeeping", departments)
@@ -649,7 +1048,7 @@
       if (fact.status === "confirmed" || fact.status === "done") return null;
       var timeMatch = src.match(/\b(\d{1,2}[:.]\d{2})\b/);
       return {
-        text: dept + " — Confirm" + (timeMatch ? " " + timeMatch[1].replace(".", ":") : "") +
+        text: "Confirm that the" + (timeMatch ? " " + timeMatch[1].replace(".", ":") : "") +
           " wake-up call" + (roomRef ? " for " + roomRef : "") + " is loaded.",
         priority: "normal",
         department: resolveDepartment([dept, "Reception", "Front Office"], "Reception", departments)
@@ -658,8 +1057,7 @@
 
     if (subject === "guest_request" || verb === "arrange") {
       return {
-        text: dept + " — Arrange guest request" + (roomRef ? " for " + roomRef : "") +
-          " as recorded.",
+        text: "Arrange the guest request" + (roomRef ? " for " + roomRef : "") + " as recorded.",
         priority: "normal",
         department: resolveDepartment([dept, "Housekeeping", "Reception"], dept, departments)
       };
@@ -667,7 +1065,7 @@
 
     if (subject === "delivery" || verb === "contact") {
       return {
-        text: dept + " — Contact guest regarding held delivery" +
+        text: "Contact the guest regarding the held delivery" +
           (roomRef ? " for " + roomRef : "") + ".",
         priority: "normal",
         department: resolveDepartment([dept, "Reception"], "Reception", departments)
@@ -682,15 +1080,15 @@
       var floor = fact.preferredLocation || "";
       if (fact.uncertainty || fact.confirmationStatus === "not confirmed" || /maybe|possible/i.test(src)) {
         return {
-          text: dept + " — Confirm whether the " + (roomRef || "guest") +
-            " guest would like to move" +
+          text: "Confirm whether the guest" + (roomRef ? " in " + roomRef : "") +
+            " would like to move" +
             (floor ? " to the " + floor : (dest ? " to Room " + dest : "")) + ".",
           priority: "high",
           department: resolveDepartment([dept, "Reception", "Front Office"], "Reception", departments)
         };
       }
       return {
-        text: dept + " — Action room move request" +
+        text: "Action the room move request" +
           (roomRef ? " for " + roomRef : "") +
           (dest ? " to Room " + dest : (floor ? " to the " + floor : "")) + ".",
         priority: "high",
@@ -701,7 +1099,7 @@
     if (verb === "follow_up" && fact.actionTarget) {
       var target = fact.ownerDept || departmentFromTargetSafe(fact.actionTarget);
       return {
-        text: target + " — Follow up" + (roomRef ? " on " + roomRef : "") +
+        text: "Follow up" + (roomRef ? " on " + roomRef : "") +
           (subject && subject !== "follow_up" ? " regarding " + subject.replace(/_/g, " ") : "") + ".",
         priority: priority,
         department: resolveDepartment([target, dept], target || fallbackDept, departments)
@@ -772,6 +1170,11 @@
 
       var fromFact = recommendationFromFact(fact, note, departments, fallbackDept, shiftType);
       if (fromFact) {
+        if (note._neutralFactId) {
+          fromFact.sourceFactIds = [note._neutralFactId];
+          fromFact.sourceTypes = [note._neutralSourceType || "handover"];
+          fromFact.reasonCode = "fact_rule";
+        }
         addCandidate(fromFact);
         return;
       }
@@ -1224,8 +1627,15 @@
     });
   }
 
-  function analyze(input) {
-    input = input || {};
+  function stampNeutralIdsOnNotes(analyzed, facts) {
+    (analyzed || []).forEach(function (note, index) {
+      if (!note || !facts[index]) return;
+      note._neutralFactId = facts[index].id;
+      note._neutralSourceType = facts[index].sourceType || "handover";
+    });
+  }
+
+  function analyzeCore(input, facts) {
     var signals = buildSignals(input);
     var recommendations = generateRecommendations(input, signals);
     var checklist = generateChecklist(input, signals, recommendations);
@@ -1233,13 +1643,74 @@
       engineVersion: ENGINE_VERSION,
       signals: signals,
       recommendations: recommendations,
-      checklist: checklist
+      checklist: checklist,
+      facts: facts || []
     };
+  }
+
+  /**
+   * Neutral-fact entry point (Phase 16B).
+   * Accepts { facts, brainContext, shiftCode, departments, hotelSnapshot, rawNotesText, ... }.
+   * Converts facts to analyzed-note shape and reuses existing recommendation rules.
+   */
+  function analyzeFacts(input) {
+    input = input || {};
+    var facts = (input.facts || []).map(function (f) { return ensureNeutralFact(f); });
+    var notes = facts.map(neutralFactToAnalyzedNote);
+    stampNeutralIdsOnNotes(notes, facts);
+
+    var rawNotesText = input.rawNotesText;
+    if (!trimText(rawNotesText)) {
+      rawNotesText = facts.map(function (f) { return f.sourceText || f.detail || ""; })
+        .filter(Boolean)
+        .join("\n");
+    }
+
+    var legacyInput = {
+      shiftCode: input.shiftCode,
+      shiftDisplayName: input.shiftDisplayName,
+      rawNotesText: rawNotesText,
+      classified: Object.assign({}, input.classified || {}, { _analyzed: notes }),
+      analyzedNotes: notes,
+      metrics: input.metrics || (input.classified && input.classified._metrics) || {},
+      brainContext: input.brainContext || null,
+      departments: input.departments || [],
+      selectedDepartment: input.selectedDepartment,
+      hotelSnapshot: input.hotelSnapshot || {},
+      applyTextPreferences: input.applyTextPreferences,
+      workspaceId: input.workspaceId,
+      facts: facts
+    };
+
+    return analyzeCore(legacyInput, facts);
+  }
+
+  /**
+   * Primary public API — preserves Handover compatibility.
+   * Adapts analyzed notes → neutral facts internally, then runs existing logic.
+   * If only neutral facts are supplied (no analyzed notes), delegates to analyzeFacts.
+   */
+  function analyze(input) {
+    input = input || {};
+    var analyzed = (input.classified && input.classified._analyzed) || input.analyzedNotes || [];
+    var hasAnalyzed = analyzed && analyzed.length;
+    var hasFacts = input.facts && input.facts.length;
+
+    if (!hasAnalyzed && hasFacts) {
+      return analyzeFacts(input);
+    }
+
+    var facts = factsFromHandoverAnalyzedNotes(analyzed, {
+      workspaceId: input.workspaceId || ""
+    });
+    stampNeutralIdsOnNotes(analyzed, facts);
+    return analyzeCore(input, facts);
   }
 
   global.ShiftIntelligenceEngine = {
     VERSION: ENGINE_VERSION,
     analyze: analyze,
+    analyzeFacts: analyzeFacts,
     buildSignals: buildSignals,
     generateRecommendations: function (input) {
       var signals = buildSignals(input);
@@ -1252,7 +1723,23 @@
     },
     normalizeChecklistItem: normalizeChecklistItem,
     normalizeShiftType: normalizeShiftType,
-    CHECKLIST_STATUS: CHECKLIST_STATUS
+    CHECKLIST_STATUS: CHECKLIST_STATUS,
+    /* Phase 16B foundation surface */
+    NEUTRAL_FACT_FIELDS: NEUTRAL_FACT_FIELDS,
+    createEmptyNeutralFact: createEmptyNeutralFact,
+    ensureNeutralFact: ensureNeutralFact,
+    normalizePriority: normalizePriority,
+    normalizeRoomNumber: normalizeRoomNumber,
+    toRecommendationPriority: toRecommendationPriority,
+    priorityRankValue: priorityRankValue,
+    isResolvedStatus: isResolvedStatus,
+    createSourceIdentity: createSourceIdentity,
+    buildNeutralFactId: buildNeutralFactId,
+    factsFromHandoverAnalyzedNotes: factsFromHandoverAnalyzedNotes,
+    handoverNoteToNeutralFact: handoverNoteToNeutralFact,
+    factsFromMaintenanceIssues: factsFromMaintenanceIssues,
+    maintenanceIssueToNeutralFact: maintenanceIssueToNeutralFact,
+    neutralFactToAnalyzedNote: neutralFactToAnalyzedNote
   };
 
   /** @deprecated Use ShiftIntelligenceEngine.analyze — kept for backwards compatibility */
