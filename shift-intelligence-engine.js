@@ -576,28 +576,44 @@
     }
 
     if (subject === "maintenance" || (verb === "follow_up" && /maintenance/i.test(fact.actionTarget || dept))) {
-      if (!roomRef && !subject) return null;
-      var issueHint = "";
-      if (/leak|leaking/i.test(src)) issueHint = "shower leak";
-      else if (/pressure/i.test(src) && /shower/i.test(src)) issueHint = "shower pressure";
-      else if (/shower/i.test(src)) issueHint = "shower issue";
-      else if (/air con|a\/c|\bac\b|not cooling/i.test(src)) issueHint = "AC fault";
-      else if (/heating/i.test(src)) issueHint = "heating issue";
-      else if (/tv|remote/i.test(src)) issueHint = "TV/remote fault";
-      var maintNotInformed = /not yet informed|not informed|maintenance not|not yet notified/i.test(src);
-      var maintText = maintNotInformed
-        ? dept + " — Notify and inspect " + (roomRef || "the reported fault") +
-          (issueHint ? " (" + issueHint + ")" : "") + "."
-        : dept + " — Inspect " + (roomRef || "open fault") +
-          (issueHint ? " (" + issueHint + ")" : "") + ".";
+      if (!roomRef && !(fact.rooms && fact.rooms.length)) return null;
+      var roomsLabel = roomRef;
+      if (fact.rooms && fact.rooms.length > 1) {
+        roomsLabel = "Rooms " + fact.rooms.join(", ").replace(/, ([^,]+)$/, " and $1");
+      }
       return {
-        text: maintText,
+        text: dept + " — Follow up the reported issues in " + (roomsLabel || roomRef) + ".",
         priority: priority,
         department: resolveDepartment([dept, "Maintenance", "Engineering"], "Maintenance", departments)
       };
     }
 
-    if (subject === "vip_arrival" || note.isVip) {
+    if (subject === "twin_setup") {
+      if (!roomRef) return null;
+      var twinDate = "";
+      (fact.details || []).forEach(function (d) {
+        if (d && d.type === "date") twinDate = d.value;
+      });
+      if (!twinDate && fact.arrivalDate) twinDate = fact.arrivalDate;
+      var twinText = dept + " — Configure " + roomRef + " as twin beds";
+      if (twinDate) {
+        twinText += " before the guest arrives on " + twinDate.replace(
+          /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/,
+          function (_, d, m) {
+            var months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+            return d + " " + (months[parseInt(m, 10) - 1] || m);
+          }
+        );
+      }
+      twinText += ".";
+      return {
+        text: twinText,
+        priority: "high",
+        department: resolveDepartment([dept, "Housekeeping", "Reception"], "Housekeeping", departments)
+      };
+    }
+
+    if (subject === "vip_arrival" || (note.isVip && subject !== "reservation_info" && subject !== "guest_arrangement")) {
       if (!roomRef && !/\bvip\b/i.test(src)) return null;
       var pref = extractGuestPreference(src);
       var vipText = dept + " — Prepare" + (roomRef ? " " + roomRef : "") +
@@ -609,6 +625,11 @@
         priority: "high",
         department: resolveDepartment([dept, "Reception", "Front Office", "Duty Manager"], "Reception", departments)
       };
+    }
+
+    if (subject === "reservation_info" || subject === "guest_arrangement") {
+      /* Informational / confirmed arrangements — no chase recommendation */
+      return null;
     }
 
     if (subject === "late_checkout") {
@@ -653,15 +674,25 @@
       };
     }
 
-    if (subject === "room_move" && (fact.status === "requested" || verb)) {
+    if (subject === "room_move" && (fact.status === "requested" || fact.status === "open" || verb)) {
       var dest = "";
       (fact.details || []).forEach(function (d) {
         if (d && d.type === "destination_room") dest = d.value;
       });
+      var floor = fact.preferredLocation || "";
+      if (fact.uncertainty || fact.confirmationStatus === "not confirmed" || /maybe|possible/i.test(src)) {
+        return {
+          text: dept + " — Confirm whether the " + (roomRef || "guest") +
+            " guest would like to move" +
+            (floor ? " to the " + floor : (dest ? " to Room " + dest : "")) + ".",
+          priority: "high",
+          department: resolveDepartment([dept, "Reception", "Front Office"], "Reception", departments)
+        };
+      }
       return {
         text: dept + " — Action room move request" +
           (roomRef ? " for " + roomRef : "") +
-          (dest ? " to Room " + dest : "") + ".",
+          (dest ? " to Room " + dest : (floor ? " to the " + floor : "")) + ".",
         priority: "high",
         department: resolveDepartment([dept, "Reception", "Front Office"], "Reception", departments)
       };

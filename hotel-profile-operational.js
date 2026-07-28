@@ -1041,6 +1041,49 @@
       if (!check.pattern.test(notes)) return;
       var matching = roomsWith(check.key);
       if (!matching.length) return;
+
+      /*
+       * If notes already assign a specific room for this requirement, only list
+       * Hotel Brain alternatives when that room cannot fulfil it (or when the
+       * note explicitly asks for options/alternatives).
+       */
+      var assignedRooms = [];
+      var roomMentions = String(rawNotesText || "").match(/\broom\s*[#.]?\s*(\d{1,4}[a-z]?)\b/gi) || [];
+      roomMentions.forEach(function (hit) {
+        var num = String(hit).match(/(\d{1,4}[a-z]?)/i);
+        if (num) assignedRooms.push(String(num[1]));
+      });
+      /* Opera bare room: "Name 33 29/07" */
+      var bare = String(rawNotesText || "").match(
+        /\b[A-ZÀ-ÖØ-Þ][a-zà-öø-ÿ'’-]+(?:\s+[A-ZÀ-ÖØ-Þ][a-zà-öø-ÿ'’-]+)*\s+(\d{1,4}[a-z]?)\s+\d{1,2}[\/\-]\d{1,2}/
+      );
+      if (bare) assignedRooms.push(String(bare[1]));
+
+      var asksForAlternatives = /\b(?:alternative|options?|another room|different room|if not available)\b/i.test(notes);
+      if (assignedRooms.length && !asksForAlternatives) {
+        var assignedCanFulfil = assignedRooms.some(function (roomNo) {
+          return matching.some(function (room) {
+            return String(room.roomNo) === String(roomNo);
+          });
+        });
+        var assignedKnown = assignedRooms.some(function (roomNo) {
+          return facilities.some(function (room) {
+            return String(room.roomNo) === String(roomNo);
+          });
+        });
+        /* Assigned room supports the request, or unknown in Brain — do not spam all options */
+        if (assignedCanFulfil || !assignedKnown) return;
+        /* Assigned room known and cannot fulfil — suggest alternatives only */
+        reminders.push({
+          text: check.action + " — Hotel Brain alternatives (assigned room may not support this): " +
+            roomNumbers(matching.slice(0, 6)) + ".",
+          category: "Rooms",
+          department: "Reception",
+          priority: "normal"
+        });
+        return;
+      }
+
       reminders.push({
         text: check.action + " — Hotel Brain options: " + roomNumbers(matching) + ".",
         category: "Rooms",
