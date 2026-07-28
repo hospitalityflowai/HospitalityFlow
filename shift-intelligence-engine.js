@@ -473,6 +473,126 @@
     });
   }
 
+  /* ------------------------------------------------------------------ */
+  /*  E2 — Canonical lifecycle & shared metrics (pure)                   */
+  /* ------------------------------------------------------------------ */
+
+  /**
+   * Resolve canonical lifecycle status from a fact, issue, note, or status string.
+   * Uses E1 toCanonicalStatus — single mapping table.
+   */
+  function getCanonicalStatus(item) {
+    if (item == null || item === "") return CANONICAL_STATUS.unknown;
+    if (typeof item === "string") return toCanonicalStatus(item);
+
+    if (item.canonicalStatus) {
+      return toCanonicalStatus(item.canonicalStatus);
+    }
+    if (item.isResolved === true) return CANONICAL_STATUS.resolved;
+    if (item.completedAt || item.completed_at) return CANONICAL_STATUS.resolved;
+
+    if (item.status != null && String(item.status).trim() !== "") {
+      return toCanonicalStatus(item.status);
+    }
+
+    /* Writing OperationalFact with empty status → unknown (treated as open/actionable). */
+    if (item.isResolved === false) return CANONICAL_STATUS.open;
+    return CANONICAL_STATUS.unknown;
+  }
+
+  /**
+   * Closed for operational chase / open-work purposes.
+   * resolved | cancelled → closed. Matches Writing done|confirmed and Maintenance completed.
+   */
+  function isOperationalFactClosed(item) {
+    var status = getCanonicalStatus(item);
+    return status === CANONICAL_STATUS.resolved || status === CANONICAL_STATUS.cancelled;
+  }
+
+  /**
+   * Open / still actionable (open, in_progress, or unknown).
+   * Preserves Writing isFactUnresolved semantics for missing status.
+   */
+  function isOperationalFactOpen(item) {
+    if (item == null) return true;
+    return !isOperationalFactClosed(item);
+  }
+
+  function filterOpenFacts(list) {
+    return (list || []).filter(function (item) {
+      return item != null && isOperationalFactOpen(item);
+    });
+  }
+
+  function filterResolvedFacts(list) {
+    return (list || []).filter(function (item) {
+      return item != null && isOperationalFactClosed(item);
+    });
+  }
+
+  function countFactsByLifecycle(list) {
+    var counts = {
+      open: 0,
+      in_progress: 0,
+      resolved: 0,
+      cancelled: 0,
+      unknown: 0,
+      total: 0,
+      actionable: 0
+    };
+    (list || []).forEach(function (item) {
+      if (item == null) return;
+      counts.total += 1;
+      var status = getCanonicalStatus(item);
+      if (counts[status] != null) counts[status] += 1;
+      else counts.unknown += 1;
+      if (isOperationalFactOpen(item)) counts.actionable += 1;
+    });
+    return counts;
+  }
+
+  /**
+   * Factual quiet/actionable check — shared by Handover and Shift Intelligence.
+   * True when at least one fact/issue is still open for follow-up.
+   */
+  function hasActionableOpenFacts(list) {
+    return filterOpenFacts(list).length > 0;
+  }
+
+  /**
+   * Phrase-based quiet-shift detection (presentation input).
+   * Shared implementation; callers own final wording.
+   * Behaviour unchanged from legacy isQuietShiftLines.
+   */
+  function isQuietShiftPhraseLines(lines) {
+    if (!lines || !lines.length) return true;
+    return lines.every(function (line) {
+      return noteContains(line, [
+        "quiet shift", "all guests settled", "no outstanding issues", "no outstanding issue",
+        "nothing to report", "uneventful", "all quiet", "no issues", "no follow-up",
+        "no follow up", "smooth shift", "without incident"
+      ]);
+    });
+  }
+
+  /**
+   * Combine phrase quiet-shift with factual actionable check when facts are supplied.
+   * - No facts: phrase-only (legacy behaviour).
+   * - With facts: quiet only if phrases say quiet OR there are no actionable open facts
+   *   is NOT used to change generateRecommendations yet — see buildSignals.
+   * Prefer hasActionableOpenFacts for factual decisions; keep phrase helper for wording.
+   */
+  function evaluateQuietShiftState(lines, facts) {
+    var phraseQuiet = isQuietShiftPhraseLines(lines);
+    var actionable = facts && facts.length ? hasActionableOpenFacts(facts) : null;
+    return {
+      phraseQuiet: phraseQuiet,
+      hasActionableOpenFacts: actionable,
+      /* Legacy recommendation gate remains phrase-based for E2 behaviour parity */
+      suppressRecommendations: phraseQuiet
+    };
+  }
+
   function stableToken(value, maxLen) {
     return trimText(value)
       .toLowerCase()
@@ -525,7 +645,7 @@
     });
     base.room = normalizeRoomNumber(base.room) || trimText(base.room);
     base.priority = normalizePriority(base.priority);
-    base.isResolved = base.isResolved === true || isResolvedStatus(base.status);
+    base.isResolved = base.isResolved === true || isOperationalFactClosed(base);
     base.includeInHandover = base.includeInHandover === true;
     base.confidence = trimText(base.confidence) || (base.metadata && base.metadata.uncertainty ? "low" : "high");
     if (!base.id) {
@@ -582,8 +702,8 @@
       });
     }
     var isResolved = false;
-    if (fact && global.AiWritingEngine && global.AiWritingEngine.isFactClosed) {
-      isResolved = global.AiWritingEngine.isFactClosed(fact);
+    if (fact) {
+      isResolved = isOperationalFactClosed(fact);
     } else {
       isResolved = isResolvedStatus(status) || isResolvedNote(sourceText);
     }
@@ -660,7 +780,7 @@
     }
     var isResolved = status.toLowerCase() === "completed" || issue.completedAt || issue.completed_at
       ? true
-      : isResolvedStatus(status);
+      : isOperationalFactClosed({ status: status, completedAt: issue.completedAt || issue.completed_at });
     if (issue.completedAt || issue.completed_at) isResolved = true;
 
     var neutral = ensureNeutralFact({
@@ -710,7 +830,7 @@
       var included = issue.includeInHandover === true || issue.include_in_handover === true;
       if (!included) return false;
       var status = trimText(issue.status).toLowerCase();
-      if (status === "completed") return false;
+      if (status === "completed" || isOperationalFactClosed(issue)) return false;
       return true;
     });
   }
@@ -884,15 +1004,9 @@
     ]);
   }
 
+  /** @deprecated Use isQuietShiftPhraseLines — kept as alias for callers/tests */
   function isQuietShiftLines(lines) {
-    if (!lines.length) return true;
-    return lines.every(function (line) {
-      return noteContains(line, [
-        "quiet shift", "all guests settled", "no outstanding issues", "no outstanding issue",
-        "nothing to report", "uneventful", "all quiet", "no issues", "no follow-up",
-        "no follow up", "smooth shift", "without incident"
-      ]);
-    });
+    return isQuietShiftPhraseLines(lines);
   }
 
   function normalizeShiftType(shiftCode, shiftDisplayName) {
@@ -1092,9 +1206,16 @@
     var hasArrivalsInSnapshot = !!(snapshot.arrivals || snapshot.expectedArrivals);
     var hasDeparturesInSnapshot = !!(snapshot.departures || snapshot.checkouts);
 
+    var factList = input.facts && input.facts.length
+      ? input.facts
+      : analyzed.map(function (note) { return note && note.fact; }).filter(Boolean);
+    var quietState = evaluateQuietShiftState(lines, factList.length ? factList : null);
+
     return {
       shiftType: shiftType,
-      isQuietShift: isQuietShiftLines(lines),
+      isQuietShift: quietState.suppressRecommendations,
+      quietShift: quietState,
+      hasActionableOpenFacts: quietState.hasActionableOpenFacts,
       metrics: metrics,
       analyzedCount: analyzed.length,
       hasVipArrival: (metrics.vip || 0) > 0 || activeNote(function (note) {
@@ -1377,11 +1498,7 @@
   }
 
   function isFactClosedForRecs(fact) {
-    if (!fact) return false;
-    if (global.AiWritingEngine && global.AiWritingEngine.isFactClosed) {
-      return global.AiWritingEngine.isFactClosed(fact);
-    }
-    return fact.status === "done" || fact.status === "confirmed";
+    return isOperationalFactClosed(fact);
   }
 
   function roomRefFromFact(fact, note) {
@@ -2187,6 +2304,16 @@
     sourceReference: sourceReference,
     adaptLegacyRecommendation: adaptLegacyRecommendation,
     toOperationalFactContract: toOperationalFactContract,
+    /* E2 — Lifecycle & shared metrics */
+    getCanonicalStatus: getCanonicalStatus,
+    isOperationalFactClosed: isOperationalFactClosed,
+    isOperationalFactOpen: isOperationalFactOpen,
+    filterOpenFacts: filterOpenFacts,
+    filterResolvedFacts: filterResolvedFacts,
+    countFactsByLifecycle: countFactsByLifecycle,
+    hasActionableOpenFacts: hasActionableOpenFacts,
+    isQuietShiftPhraseLines: isQuietShiftPhraseLines,
+    evaluateQuietShiftState: evaluateQuietShiftState,
     /* Phase 16B foundation surface */
     NEUTRAL_FACT_FIELDS: NEUTRAL_FACT_FIELDS,
     createEmptyNeutralFact: createEmptyNeutralFact,

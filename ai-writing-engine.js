@@ -157,10 +157,15 @@
     var seen = {};
 
     function addRoom(num) {
-      num = String(num).toUpperCase();
+      if (global.ShiftIntelligenceEngine && global.ShiftIntelligenceEngine.normalizeRoomNumber) {
+        num = global.ShiftIntelligenceEngine.normalizeRoomNumber(num);
+        if (!num) return;
+      } else {
+        num = String(num).toUpperCase();
+        var parsed = parseInt(num, 10);
+        if (isNaN(parsed) || parsed < 1 || parsed > 9999) return;
+      }
       if (seen[num]) return;
-      var parsed = parseInt(num, 10);
-      if (isNaN(parsed) || parsed < 1 || parsed > 9999) return;
       seen[num] = true;
       rooms.push(num);
     }
@@ -1850,12 +1855,18 @@
 
   /** Open work that should appear in follow-up counts / recommendations. */
   function isFactUnresolved(fact) {
+    if (global.ShiftIntelligenceEngine && global.ShiftIntelligenceEngine.isOperationalFactOpen) {
+      return global.ShiftIntelligenceEngine.isOperationalFactOpen(fact);
+    }
     if (!fact || !fact.status) return true;
     return fact.status !== FACT_STATUS.done && fact.status !== FACT_STATUS.confirmed;
   }
 
-  /** Completed or confirmed — do not chase. */
+  /** Completed or confirmed — do not chase. Delegates to Hospitality Intelligence Engine when available (E2). */
   function isFactClosed(fact) {
+    if (global.ShiftIntelligenceEngine && global.ShiftIntelligenceEngine.isOperationalFactClosed) {
+      return global.ShiftIntelligenceEngine.isOperationalFactClosed(fact);
+    }
     if (!fact || !fact.status) return false;
     return fact.status === FACT_STATUS.done || fact.status === FACT_STATUS.confirmed;
   }

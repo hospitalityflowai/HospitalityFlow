@@ -288,8 +288,9 @@ Section layout for the UI may remain a Handover presentation mapping (`urgent` c
 | **Done: 16B** | Neutral facts, adapters, `analyzeFacts`, context extraction |
 | **Done: M4** | Maintenance facts merge into engine for Handover |
 | **Done: E1** | Canonical contracts, enums, compatibility helpers, responsibility docs — **no behaviour change** |
-| **E2 (next)** | Engine-owned classification / single closure path used by Handover callers; remove duplicate quiet-shift; start deleting Handover legacy fallbacks behind flags |
-| **Later** | Single room helper everywhere; conflicts / recurrence; Guest adapter |
+| **Done: E2** | Shared canonical closure + metrics helpers; quiet-shift phrase + room normaliser shared; Brain fallback documented |
+| **E3 (next)** | Engine-owned classification behind parity tests; remove Brain fallback when safe |
+| **Later** | Conflicts / recurrence; Guest adapter |
 | **Avoid** | Shared fact DB table until Guest Intelligence forces durable cross-tool history |
 
 ---
@@ -347,17 +348,69 @@ Legacy values are **not deleted**. Runtime still uses Phase 16B neutral prioriti
 
 ### What E2 should address
 
-1. Route Handover generate path to consume canonical status/priority helpers for **new** shared metrics without changing card copy until parity tests pass.
-2. Consolidate closure: one `isClosed` used by recommendations + metrics (Writing + engine).
-3. Remove or gate Handover duplicate quiet-shift / Brain context fallback once tests lock parity.
-4. Do **not** yet move full section classification or add Guest Intelligence.
+1. ~~Route Handover generate path to consume canonical status/priority helpers~~ → partial: shared closure + quiet phrase + room normaliser
+2. ~~Consolidate closure: one `isClosed`~~ → **Done (E2):** `isOperationalFactClosed` / `getCanonicalStatus`
+3. Remove or gate Handover Brain context fallback once tests lock parity → **Documented; fallback retained**
+4. Do **not** yet move full section classification or add Guest Intelligence → still deferred to E3+
 
-### Confirmation
+---
 
-- No behaviour change intended or required for E1 acceptance.
-- No database migrations.
-- No UI redesign.
-- No new recommendation rules.
+## 7B. E2 implementation record (lifecycle & normalisation)
+
+**Status:** Implemented.  
+**Behaviour / DB:** No intentional user-visible Handover/Maintenance output changes. No migrations.
+
+### Shared lifecycle helpers
+
+| Helper | Role |
+|--------|------|
+| `getCanonicalStatus(item)` | Status string / fact / issue → E1 canonical status |
+| `isOperationalFactClosed(item)` | `resolved` \| `cancelled` (covers done/confirmed/completed) |
+| `isOperationalFactOpen(item)` | Inverse; missing/unknown remain actionable |
+| `filterOpenFacts` / `filterResolvedFacts` | Pure list filters |
+| `countFactsByLifecycle` | Counts + `actionable` |
+| `hasActionableOpenFacts` | Shared factual quiet/actionable check |
+| `isQuietShiftPhraseLines` | Shared phrase quiet-shift (presentation input) |
+| `evaluateQuietShiftState` | Phrase + factual result; **recommendation suppress still phrase-based** |
+
+### Duplicate logic removed / delegated
+
+| Former check | Now |
+|--------------|-----|
+| `isFactClosedForRecs` local done/confirmed | → `isOperationalFactClosed` |
+| Writing `isFactClosed` / `isFactUnresolved` | → delegates to engine when loaded |
+| Handover `isActiveNote` fact branch | → `isOperationalFactClosed` |
+| Duplicate quiet-shift phrase bodies | → engine `isQuietShiftPhraseLines`; Handover delegates |
+| Room token validation in Writing extract / Handover fallback | → `normalizeRoomNumber` when engine present |
+| Neutral `isResolved` / M4 completed filter | → canonical closure helpers |
+
+### Runtime paths migrated
+
+- Shift Intelligence recommendations skip closed facts via shared helper
+- `ensureNeutralFact` / handover & maintenance adapters set `isResolved` via shared helper
+- M4 `filterMaintenanceIssuesForHandover` uses shared closure
+- `buildSignals` exposes `quietShift` + `hasActionableOpenFacts` (suppress still phrase-compatible)
+
+### Legacy paths intentionally retained
+
+- Handover **prose** `isCompletedActionNote` / `isResolvedNote` (text heuristics for sectioning)
+- Maintenance store workflow `status === "completed"` transitions (ticket lifecycle, not intelligence)
+- Recommendation suppress on quiet shift remains **phrase-based** for parity (`suppressRecommendations`)
+- Handover **Hotel Brain context inline fallback** when `HotelProfileOperational.buildHotelBrainContext` missing (documented; remove in E3+ once load guarantees exist)
+- Full Handover `classifyAnalyzedNote` tree (E3)
+
+### Hotel Brain fallback status
+
+- **Preferred:** `HotelProfileOperational.buildHotelBrainContext(profile)`
+- **Fallback:** inline builder in `handover.html` if operational module export absent
+- **Later:** delete fallback after all pages always load `hotel-profile-operational.js`
+
+### Recommended E3 scope
+
+1. Begin engine-owned **category/section classification** behind parity tests (Handover maps categories → cards).
+2. Remove Handover Brain context fallback when safe.
+3. Optionally align quiet-shift recommendation suppress with `!hasActionableOpenFacts` behind a flag + fixtures.
+4. Still no Guest Intelligence; no shared fact table; no new recommendation product rules.
 
 ---
 

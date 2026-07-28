@@ -4006,7 +4006,9 @@
       }
 
       function buildHotelBrainContext(profile) {
-        /* Phase 16B: shared builder lives on HotelProfileOperational; local helpers remain as fallback. */
+        /* Phase 16B / E2: preferred shared path is HotelProfileOperational.buildHotelBrainContext.
+           Legacy inline fallback below runs only when that export is missing (older caches / partial loads).
+           E3+ should remove the fallback once all entry points load hotel-profile-operational.js. */
         if (
           window.HotelProfileOperational &&
           typeof window.HotelProfileOperational.buildHotelBrainContext === "function"
@@ -5058,6 +5060,12 @@
       }
 
       function isQuietShiftLines(lines) {
+        if (
+          window.ShiftIntelligenceEngine &&
+          typeof window.ShiftIntelligenceEngine.isQuietShiftPhraseLines === "function"
+        ) {
+          return window.ShiftIntelligenceEngine.isQuietShiftPhraseLines(lines);
+        }
         if (!lines.length) return true;
         return lines.every(function (line) {
           return noteContains(line, [
@@ -6010,10 +6018,18 @@
         var seen = {};
 
         function addRoom(num) {
-          num = String(num).toUpperCase();
+          if (
+            window.ShiftIntelligenceEngine &&
+            typeof window.ShiftIntelligenceEngine.normalizeRoomNumber === "function"
+          ) {
+            num = window.ShiftIntelligenceEngine.normalizeRoomNumber(num);
+            if (!num) return;
+          } else {
+            num = String(num).toUpperCase();
+            var parsed = parseInt(num, 10);
+            if (isNaN(parsed) || parsed < 1 || parsed > 9999) return;
+          }
           if (seen[num]) return;
-          var parsed = parseInt(num, 10);
-          if (isNaN(parsed) || parsed < 1 || parsed > 9999) return;
           seen[num] = true;
           rooms.push(num);
         }
@@ -6662,11 +6678,19 @@
       }
 
       function isActiveNote(note) {
-        if (note && note.fact && window.AiWritingEngine && window.AiWritingEngine.isFactClosed) {
-          if (window.AiWritingEngine.isFactClosed(note.fact)) return false;
-        } else if (note && note.fact && (note.fact.status === "done" || note.fact.status === "confirmed")) {
-          return false;
+        if (note && note.fact) {
+          if (
+            window.ShiftIntelligenceEngine &&
+            typeof window.ShiftIntelligenceEngine.isOperationalFactClosed === "function"
+          ) {
+            if (window.ShiftIntelligenceEngine.isOperationalFactClosed(note.fact)) return false;
+          } else if (window.AiWritingEngine && window.AiWritingEngine.isFactClosed) {
+            if (window.AiWritingEngine.isFactClosed(note.fact)) return false;
+          } else if (note.fact.status === "done" || note.fact.status === "confirmed") {
+            return false;
+          }
         }
+        /* Prose closure heuristics remain Handover-local (E2 retained legacy). */
         return !isResolvedNote(note.original);
       }
 
