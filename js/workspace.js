@@ -289,6 +289,14 @@
     if (editPanel && !canEdit) {
       setWorkspacePanelVisible(editPanel, false);
     }
+
+    if (global.HFDemoMode && typeof global.HFDemoMode.mountAccountToggle === "function") {
+      var demoHost = document.getElementById("hfDemoModeHost");
+      if (demoHost) {
+        global.HFDemoMode.initPageChrome({ banner: true });
+        global.HFDemoMode.mountAccountToggle(demoHost);
+      }
+    }
   }
 
   function populateWorkspaceEditForm(workspace) {

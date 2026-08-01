@@ -25,7 +25,9 @@
     "hf_handover_draft_v1_",
     "hf_handover_last_backup_",
     "hospitalityFlowSopDraft_",
-    "hf-rota-generator-draft-v2_"
+    "hf-rota-generator-draft-v2_",
+    "hf_demo_mode_",
+    "hf_maintenance_issues_cache_"
   ];
 
   var LEGACY_SESSION_KEYS = [

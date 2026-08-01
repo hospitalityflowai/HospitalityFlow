@@ -829,6 +829,7 @@
       .progress-stats { grid-template-columns: 1fr 1fr; }
     }
   </style>
+  <link rel="stylesheet" href="css/demo-mode.css">
 </head>
 <body>
   <div class="page">
@@ -1824,6 +1825,20 @@
                   </div>
                 </div>
 
+                <div class="disclosure-card settings-field-group disclosure-card--collapsed" data-settings-group="demo" id="demoModePanel">
+                  <button type="button" class="disclosure-card-toggle" aria-expanded="false" aria-controls="settingsGroupDemo">
+                    <span class="tracker-group-label">Demo Mode</span>
+                    <span class="disclosure-card-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></span>
+                  </button>
+                  <div class="disclosure-card-body" id="settingsGroupDemo" hidden>
+                    <p class="section-intro">Explore The Oakwood Marylebone Interactive Demo — a fictional 24-room boutique hotel. Sample data is overlay-only and never saved to your workspace. Start or exit from Account.</p>
+                    <div class="settings-actions">
+                      <a class="btn-nav-secondary" href="account.html#hfDemoModeHost">Open Demo Mode on Account</a>
+                    </div>
+                    <p class="form-helper" id="demoModeProfileStatus" aria-live="polite"></p>
+                  </div>
+                </div>
+
                 <div class="disclosure-card settings-field-group disclosure-card--collapsed settings-panel--muted dev-sample-panel dev-only-panel" data-settings-group="sample" id="devSamplePanel" hidden>
                   <button type="button" class="disclosure-card-toggle" aria-expanded="false" aria-controls="settingsGroupSample">
                     <span class="tracker-group-label">Sample data (development)</span>
@@ -1906,6 +1921,8 @@
   <script src="hotel-profile-operational.js"></script>
   <script src="hotel-profile-zetter-sample.js"></script>
   <script src="hotel-profile-export.js"></script>
+  <script src="js/demo-sample-data.js"></script>
+  <script src="js/demo-mode.js"></script>
   <script>
     (function () {
       var LOGO_MAX_BYTES = 2 * 1024 * 1024;
@@ -4409,6 +4426,15 @@
 
         loadPromise.then(function (session) {
           if (!session) return null;
+          if (window.HFDemoMode) {
+            window.HFDemoMode.initPageChrome({ banner: true });
+            var demoStatus = document.getElementById('demoModeProfileStatus');
+            if (demoStatus) {
+              demoStatus.textContent = window.HFDemoMode.isEnabled()
+                ? 'Interactive Demo is on — Oakwood sample data is overlay-only.'
+                : 'Interactive Demo is off.';
+            }
+          }
           return window.HFHotelBrainStore.load();
         }).then(function (result) {
           result = result || {};

@@ -196,7 +196,7 @@
       width: 100%; text-align: left; background: var(--white); border: 1px solid var(--gray-200);
       border-radius: var(--radius-lg); box-shadow: var(--shadow-card);
       padding: 16px 18px 14px 20px;
-      position: relative; overflow: hidden;
+      position: relative; overflow: hidden; cursor: pointer;
       transition: box-shadow var(--transition), transform var(--transition), border-color var(--transition);
     }
     .issue-card::before {
@@ -415,6 +415,7 @@
       .state-panel .btn { min-height: 44px; }
     }
   </style>
+  <link rel="stylesheet" href="css/demo-mode.css">
 </head>
 <body>
   <a class="sr-only" href="#main-content">Skip to content</a>
@@ -733,6 +734,8 @@
   <script src="js/workspace.js"></script>
   <script src="js/hotel-brain-store.js"></script>
   <script src="js/maintenance-store.js"></script>
+  <script src="js/demo-sample-data.js"></script>
+  <script src="js/demo-mode.js"></script>
   <script>
 (function () {
   "use strict";
@@ -1079,7 +1082,8 @@
         '<button type="button" class="issue-card' + highlight +
           '" data-issue-id="' + escapeAttr(issue.id) +
           '" data-priority="' + escapeAttr(issue.priority) +
-          '" data-status="' + escapeAttr(issue.status) + '">' +
+          '" data-status="' + escapeAttr(issue.status) +
+          (issue.isDemoData ? '" data-demo="1' : '') + '">' +
           '<div class="issue-location">' + escapeHtml(issue.locationLabel) + "</div>" +
           '<div class="issue-title">' + escapeHtml(issue.title) + "</div>" +
           '<div class="issue-desc">' + escapeHtml(issue.description) + "</div>" +
@@ -1487,6 +1491,11 @@
 
   function runWorkflow(controlEl, actionFn, successMessage, onSuccess) {
     if (pageState.workflowBusy) return;
+    var current = store.getIssue(pageState.currentIssueId);
+    if (current && current.isDemoData) {
+      showToast("Sample demo issues are read-only. Exit Demo Mode to manage live maintenance.", "error");
+      return;
+    }
     if (!store.isCloudAvailable()) {
       showToast("Workflow changes are blocked until the service reconnects.", "error");
       return;
@@ -1539,6 +1548,11 @@
           '<div class="timeline-action">Issue reported.</div>' +
           (issue.reportedByName ? '<div class="timeline-note">by ' + escapeHtml(issue.reportedByName) + "</div>" : "") +
         "</li></ul>";
+    }
+
+    if (issue && issue.isDemoData) {
+      renderFallback();
+      return;
     }
 
     if (!store.isCloudAvailable()) {
@@ -1867,6 +1881,9 @@
 
     bootPromise.then(function (session) {
       if (!session) return;
+      if (window.HFDemoMode) {
+        window.HFDemoMode.initPageChrome({ banner: true });
+      }
       if (session.user && session.user.email && !els.reportedBy.value) {
         /* leave reported-by blank; email alone is not ideal as display name */
       }

@@ -3022,6 +3022,7 @@
       }
     }
   </style>
+  <link rel="stylesheet" href="css/demo-mode.css">
 </head>
 <body>
   <div class="page">
@@ -3352,6 +3353,8 @@
   <script src="ai-writing-engine.js"></script>
   <script src="shift-intelligence-engine.js"></script>
   <script src="handover-saved.js"></script>
+  <script src="js/demo-sample-data.js"></script>
+  <script src="js/demo-mode.js"></script>
   <script>
     (function () {
       "use strict";
@@ -9686,6 +9689,10 @@
 
       bootHandoverPage.then(function (session) {
         if (!session) return;
+
+        if (window.HFDemoMode) {
+          window.HFDemoMode.initPageChrome({ banner: true });
+        }
 
       initHotelBrainFromCloud(function () {
         if (window.HFHandoverStore) {

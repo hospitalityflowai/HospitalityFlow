@@ -1000,6 +1000,7 @@
     deleteHandover: deleteHandover,
     saveDraft: saveDraft,
     loadDraft: loadDraft,
+    getCachedDraft: getCachedDraft,
     clearDraft: clearDraft,
     uploadLocalHandovers: uploadLocalHandovers,
     getSyncStatus: getSyncStatus,

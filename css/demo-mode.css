@@ -1,0 +1,431 @@
+/**
+ * Hospitality Flow — Demo Mode transitions & chrome
+ */
+:root {
+  --hf-demo-accent: #5b9fd4;
+  --hf-demo-accent-soft: rgba(91, 159, 212, 0.16);
+  --hf-demo-gold: #c4a574;
+  --hf-demo-ink: #eef2f7;
+  --hf-demo-muted: #a8b4c4;
+  --hf-demo-panel: rgba(12, 24, 41, 0.92);
+  --hf-demo-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --hf-demo-banner-h: 0px;
+}
+
+html.hf-demo-active {
+  --hf-demo-banner-h: 58px;
+}
+
+html.hf-demo-transitioning,
+html.hf-demo-transitioning body {
+  overflow: hidden;
+}
+
+/* —— Enable / exit overlay —— */
+.hf-demo-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 20%, rgba(91, 159, 212, 0.22), transparent 55%),
+    radial-gradient(ellipse 70% 50% at 80% 90%, rgba(196, 165, 116, 0.12), transparent 50%),
+    rgba(7, 14, 26, 0.72);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  opacity: 0;
+  transition: opacity 0.32s var(--hf-demo-ease);
+  pointer-events: none;
+}
+
+.hf-demo-overlay.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.hf-demo-overlay-panel {
+  position: relative;
+  width: min(440px, 100%);
+  padding: 36px 32px 32px;
+  border-radius: 20px;
+  background: var(--hf-demo-panel);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+  transform: translateY(12px) scale(0.98);
+  opacity: 0;
+  transition: transform 0.4s var(--hf-demo-ease), opacity 0.4s var(--hf-demo-ease);
+  overflow: hidden;
+}
+
+.hf-demo-overlay.is-visible .hf-demo-overlay-panel {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+}
+
+.hf-demo-overlay-orb {
+  position: absolute;
+  top: -40px;
+  right: -30px;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(91, 159, 212, 0.35), transparent 70%);
+  animation: hfDemoOrb 4.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.hf-demo-overlay-kicker {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--hf-demo-gold);
+  margin-bottom: 10px;
+}
+
+.hf-demo-overlay-title {
+  font-size: 1.35rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--hf-demo-ink);
+  margin-bottom: 10px;
+}
+
+.hf-demo-overlay-step {
+  font-size: 0.9rem;
+  color: var(--hf-demo-muted);
+  margin-bottom: 22px;
+  min-height: 1.4em;
+  transition: opacity 0.25s var(--hf-demo-ease);
+}
+
+.hf-demo-overlay-steps {
+  list-style: none;
+  margin: 0 0 22px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hf-demo-overlay-steps li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.8rem;
+  color: rgba(168, 180, 196, 0.45);
+  transition: color 0.3s var(--hf-demo-ease), opacity 0.3s var(--hf-demo-ease);
+}
+
+.hf-demo-overlay-steps li.is-active {
+  color: var(--hf-demo-ink);
+}
+
+.hf-demo-overlay-steps li.is-done {
+  color: var(--hf-demo-muted);
+}
+
+.hf-demo-step-mark {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  flex-shrink: 0;
+  transition: background 0.3s var(--hf-demo-ease), box-shadow 0.3s var(--hf-demo-ease), transform 0.3s var(--hf-demo-ease);
+}
+
+.hf-demo-overlay-steps li.is-active .hf-demo-step-mark {
+  background: var(--hf-demo-accent);
+  box-shadow: 0 0 0 4px var(--hf-demo-accent-soft);
+  transform: scale(1.15);
+}
+
+.hf-demo-overlay-steps li.is-done .hf-demo-step-mark {
+  background: #6bc992;
+  box-shadow: none;
+}
+
+.hf-demo-overlay-bar {
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.hf-demo-overlay-bar span {
+  display: block;
+  height: 100%;
+  width: 0%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--hf-demo-accent), var(--hf-demo-gold));
+  transition: width 0.45s var(--hf-demo-ease);
+}
+
+@keyframes hfDemoOrb {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.85; }
+  50% { transform: translate(-12px, 8px) scale(1.08); opacity: 1; }
+}
+
+/* —— Persistent banner —— */
+.hf-demo-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1100;
+  transform: translateY(-100%);
+  opacity: 0;
+  transition: transform 0.4s var(--hf-demo-ease), opacity 0.35s var(--hf-demo-ease);
+  background:
+    linear-gradient(105deg, rgba(18, 34, 64, 0.97), rgba(12, 24, 41, 0.96)),
+    linear-gradient(90deg, rgba(91, 159, 212, 0.2), rgba(196, 165, 116, 0.12));
+  border-bottom: 1px solid rgba(91, 159, 212, 0.28);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28);
+}
+
+.hf-demo-banner.is-visible {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.hf-demo-banner-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.hf-demo-banner-copy {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.hf-demo-banner-badge {
+  flex-shrink: 0;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border-radius: 6px;
+  color: #1a1408;
+  background: linear-gradient(135deg, #d4b896, var(--hf-demo-gold));
+}
+
+.hf-demo-banner-text {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--hf-demo-muted);
+  line-height: 1.35;
+}
+
+.hf-demo-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.hf-demo-banner-link {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--hf-demo-accent);
+  text-decoration: none;
+  padding: 6px 10px;
+  border-radius: 8px;
+  transition: background 0.2s var(--hf-demo-ease), color 0.2s var(--hf-demo-ease);
+}
+
+.hf-demo-banner-link:hover,
+.hf-demo-banner-link:focus-visible {
+  background: var(--hf-demo-accent-soft);
+  color: #fff;
+  outline: none;
+}
+
+.hf-demo-banner-exit {
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--hf-demo-ink);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 6px 12px;
+  transition: background 0.2s var(--hf-demo-ease), border-color 0.2s var(--hf-demo-ease);
+}
+
+.hf-demo-banner-exit:hover,
+.hf-demo-banner-exit:focus-visible {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.22);
+  outline: none;
+}
+
+/* Offset fixed headers when demo banner is visible */
+html.hf-demo-active .header,
+html.hf-demo-active .app-header,
+html.hf-demo-active header.header,
+html.hf-demo-active .topnav,
+html.hf-demo-active nav.topnav {
+  top: var(--hf-demo-banner-h);
+  transition: top 0.4s var(--hf-demo-ease);
+}
+
+html.hf-demo-active body {
+  padding-top: var(--hf-demo-banner-h);
+  transition: padding-top 0.4s var(--hf-demo-ease);
+}
+
+/* Staggered content reveal after demo loads */
+html.hf-demo-reveal .hotel-card,
+html.hf-demo-reveal .input-card,
+html.hf-demo-reveal .output-section,
+html.hf-demo-reveal .maint-board,
+html.hf-demo-reveal .account-links a,
+html.hf-demo-reveal .hf-demo-account-card {
+  animation: hfDemoFadeUp 0.55s var(--hf-demo-ease) both;
+}
+
+html.hf-demo-reveal .input-card { animation-delay: 0.06s; }
+html.hf-demo-reveal .output-section { animation-delay: 0.12s; }
+html.hf-demo-reveal .maint-board { animation-delay: 0.08s; }
+html.hf-demo-reveal .account-links a:nth-child(1) { animation-delay: 0.04s; }
+html.hf-demo-reveal .account-links a:nth-child(2) { animation-delay: 0.08s; }
+html.hf-demo-reveal .account-links a:nth-child(3) { animation-delay: 0.12s; }
+
+@keyframes hfDemoFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* —— Account toggle card —— */
+.hf-demo-account-card {
+  margin-top: 20px;
+  padding: 18px 18px 16px;
+  border-radius: 14px;
+  background:
+    linear-gradient(145deg, rgba(91, 159, 212, 0.1), rgba(18, 34, 64, 0.6)),
+    rgba(18, 34, 64, 0.85);
+  border: 1px solid rgba(91, 159, 212, 0.28);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  transition: border-color 0.3s var(--hf-demo-ease), box-shadow 0.3s var(--hf-demo-ease);
+}
+
+.hf-demo-account-card.is-active {
+  border-color: rgba(196, 165, 116, 0.45);
+  box-shadow: 0 0 0 1px rgba(196, 165, 116, 0.12);
+}
+
+.hf-demo-account-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--hf-demo-gold);
+  margin-bottom: 6px;
+}
+
+.hf-demo-account-text {
+  font-size: 0.88rem;
+  color: var(--hf-demo-muted);
+  line-height: 1.45;
+  max-width: 36rem;
+  margin: 0;
+}
+
+.hf-demo-account-status {
+  margin: 8px 0 0;
+  font-size: 0.8rem;
+  color: #6bc992;
+  min-height: 1.2em;
+}
+
+.hf-demo-account-card .btn {
+  flex-shrink: 0;
+  align-self: center;
+}
+
+/* Demo issue badge */
+.issue-card[data-demo="1"]::after,
+.maint-card[data-demo="1"]::after {
+  content: "Demo";
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(74, 143, 196, 0.12);
+  color: #3a7ab0;
+  border: 1px solid rgba(74, 143, 196, 0.35);
+}
+
+@media (max-width: 720px) {
+  .hf-demo-banner-inner {
+    padding: 10px 16px;
+  }
+
+  .hf-demo-banner-text {
+    font-size: 0.75rem;
+  }
+
+  .hf-demo-overlay-panel {
+    padding: 28px 22px 24px;
+  }
+
+  html.hf-demo-active {
+    --hf-demo-banner-h: 96px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hf-demo-overlay,
+  .hf-demo-overlay-panel,
+  .hf-demo-banner,
+  .hf-demo-overlay-bar span,
+  .hf-demo-step-mark,
+  html.hf-demo-active .header,
+  html.hf-demo-active body {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .hf-demo-overlay-orb {
+    animation: none !important;
+  }
+
+  html.hf-demo-reveal .hotel-card,
+  html.hf-demo-reveal .input-card,
+  html.hf-demo-reveal .output-section,
+  html.hf-demo-reveal .maint-board,
+  html.hf-demo-reveal .account-links a,
+  html.hf-demo-reveal .hf-demo-account-card {
+    animation: none !important;
+  }
+}
