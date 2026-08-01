@@ -10,20 +10,14 @@
   "use strict";
 
   var FOUNDING_TOTAL = 10;
-  var FALLBACK_MESSAGE = "10 pilot places currently available.";
+  var FALLBACK_MESSAGE = "Applications are currently open.";
   var SUBMIT_FUNCTION_NAME = "submit-early-access-application";
 
   function formatAvailabilityMessage(remaining) {
     if (remaining <= 0) {
       return "Founding Pilot Programme is currently full.";
     }
-    if (remaining === 1) {
-      return "1 pilot place remaining.";
-    }
-    if (remaining >= FOUNDING_TOTAL) {
-      return FOUNDING_TOTAL + " pilot places currently available.";
-    }
-    return remaining + " pilot places remaining.";
+    return "Applications are currently open.";
   }
 
   function parseRemainingPlaces(data) {
