@@ -39,6 +39,31 @@
         <div id="operator-dashboard" class="hidden" hidden>
           <p class="auth-lead">Review Founding Pilot applications and send invitations. Decline and resend are not available in this release.</p>
 
+          <section class="auth-card operator-pilot-lab-card" id="operator-pilot-lab-card" aria-labelledby="operator-pilot-lab-title">
+            <p class="account-panel-label">Internal Workspace</p>
+            <h2 class="account-section-heading" id="operator-pilot-lab-title">Hospitality Flow Pilot Lab</h2>
+            <p class="account-note">Internal workspace for product testing, demo preparation and pilot support.</p>
+            <div id="operator-pilot-lab-alert" class="auth-alert" aria-live="polite"></div>
+
+            <div id="operator-pilot-lab-create-state" class="operator-pilot-lab-actions">
+              <button type="button" class="btn btn-primary" id="operator-pilot-lab-create-btn">
+                <span class="operator-pilot-lab-btn-label">Create Pilot Lab</span>
+                <span class="operator-pilot-lab-spinner hidden" hidden aria-hidden="true"></span>
+              </button>
+            </div>
+
+            <div id="operator-pilot-lab-active-state" class="operator-pilot-lab-actions hidden" hidden>
+              <p class="operator-pilot-lab-active-status" id="operator-pilot-lab-active-status">✓ Pilot Lab Active</p>
+              <a href="handover.html" class="btn btn-primary" id="operator-pilot-lab-open-btn">Open Pilot Lab</a>
+            </div>
+
+            <div id="operator-pilot-lab-blocked-state" class="operator-pilot-lab-actions hidden" hidden>
+              <p class="account-note" id="operator-pilot-lab-blocked-note">
+                This operator account already belongs to a different hotel workspace. Pilot Lab cannot be created on this login.
+              </p>
+            </div>
+          </section>
+
           <div class="operator-toolbar">
             <button type="button" class="btn btn-secondary operator-toolbar-btn" id="operator-refresh-btn">Refresh list</button>
             <a href="account.html" class="btn btn-secondary operator-toolbar-btn">Back to account</a>
@@ -110,6 +135,7 @@
   <script src="js/tenant-storage.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/platform-access.js"></script>
+  <script src="js/workspace.js"></script>
   <script src="js/operator-dashboard.js"></script>
   <script>HFOperatorDashboard.initOperatorPage();</script>
 </body>

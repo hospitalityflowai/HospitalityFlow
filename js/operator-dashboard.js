@@ -12,6 +12,8 @@
 
   var inviteBusy = false;
   var pendingInviteApp = null;
+  var pilotLabBusy = false;
+  var pilotLabBound = false;
 
   function escapeHtml(text) {
     var div = document.createElement("div");
@@ -138,6 +140,170 @@
     setVisible(contentEl, true);
     setVisible(deniedEl, false);
     setVisible(dashboardEl, true);
+  }
+
+  function showPilotLabAlert(type, message) {
+    var el = document.getElementById("operator-pilot-lab-alert");
+    if (!el) return;
+    if (global.HFAuth && global.HFAuth.showAlert) {
+      global.HFAuth.showAlert(el, type, message);
+      return;
+    }
+    el.textContent = message || "";
+    el.className = "auth-alert" + (type ? " auth-alert--" + type : "");
+  }
+
+  function hidePilotLabAlert() {
+    var el = document.getElementById("operator-pilot-lab-alert");
+    if (!el) return;
+    if (global.HFAuth && global.HFAuth.hideAlert) {
+      global.HFAuth.hideAlert(el);
+      return;
+    }
+    el.textContent = "";
+    el.className = "auth-alert";
+  }
+
+  function setPilotLabCreating(creating) {
+    pilotLabBusy = !!creating;
+    var btn = document.getElementById("operator-pilot-lab-create-btn");
+    var label = btn ? btn.querySelector(".operator-pilot-lab-btn-label") : null;
+    var spinner = btn ? btn.querySelector(".operator-pilot-lab-spinner") : null;
+
+    if (btn) {
+      btn.disabled = !!creating;
+      btn.setAttribute("aria-busy", creating ? "true" : "false");
+    }
+    if (label) {
+      label.textContent = creating ? "Creating…" : "Create Pilot Lab";
+    }
+    setVisible(spinner, !!creating);
+  }
+
+  function renderPilotLabState(state) {
+    var createEl = document.getElementById("operator-pilot-lab-create-state");
+    var activeEl = document.getElementById("operator-pilot-lab-active-state");
+    var blockedEl = document.getElementById("operator-pilot-lab-blocked-state");
+    var cardEl = document.getElementById("operator-pilot-lab-card");
+
+    setVisible(cardEl, true);
+    setVisible(createEl, state === "create");
+    setVisible(activeEl, state === "active");
+    setVisible(blockedEl, state === "blocked");
+
+    if (state !== "create") {
+      setPilotLabCreating(false);
+    }
+  }
+
+  /**
+   * Fail-closed Pilot Lab status for the signed-in operator.
+   * Only membership that is the Pilot Lab counts as active.
+   * A different hotel membership blocks creation (no multi-workspace).
+   */
+  function loadPilotLabState() {
+    if (!global.HFWorkspace ||
+        typeof global.HFWorkspace.getUserWorkspace !== "function" ||
+        typeof global.HFWorkspace.isPilotLabWorkspace !== "function") {
+      renderPilotLabState("create");
+      showPilotLabAlert(
+        "error",
+        "Pilot Lab checks are unavailable. Reload the page or contact support."
+      );
+      return Promise.resolve({ state: "unavailable" });
+    }
+
+    return global.HFWorkspace.getUserWorkspace()
+      .then(function (workspace) {
+        if (!workspace) {
+          renderPilotLabState("create");
+          return { state: "create", workspace: null };
+        }
+
+        if (global.HFWorkspace.isPilotLabWorkspace(workspace)) {
+          renderPilotLabState("active");
+          return { state: "active", workspace: workspace };
+        }
+
+        renderPilotLabState("blocked");
+        return { state: "blocked", workspace: workspace };
+      })
+      .catch(function (err) {
+        // Fail closed: never claim Pilot Lab is active when status is unknown.
+        renderPilotLabState("create");
+        showPilotLabAlert(
+          "error",
+          (err && err.message) || "Could not verify Pilot Lab status."
+        );
+        return { state: "error", error: err };
+      });
+  }
+
+  function handleCreatePilotLab() {
+    if (pilotLabBusy) return;
+
+    if (!global.HFWorkspace ||
+        typeof global.HFWorkspace.createOperatorPilotLab !== "function") {
+      showPilotLabAlert(
+        "error",
+        "Pilot Lab provisioning is unavailable. Reload the page or contact support."
+      );
+      return;
+    }
+
+    hidePilotLabAlert();
+    hideAlert();
+    setPilotLabCreating(true);
+
+    global.HFWorkspace.createOperatorPilotLab()
+      .then(function (workspace) {
+        if (!workspace || !global.HFWorkspace.isPilotLabWorkspace(workspace)) {
+          throw new Error("Pilot Lab workspace could not be confirmed after creation.");
+        }
+        // Reload operator Pilot Lab state after success.
+        return loadPilotLabState().then(function () {
+          showAlert("success", "Hospitality Flow Pilot Lab is ready.");
+        });
+      })
+      .catch(function (err) {
+        setPilotLabCreating(false);
+        var message = err && err.message ? String(err.message) : "";
+        if (/already belongs to a hotel workspace/i.test(message)) {
+          message = "You already belong to a hotel workspace.";
+        } else if (/only platform operators may provision/i.test(message)) {
+          message = "Only platform operators may create the Pilot Lab workspace.";
+        } else if (/create_operator_pilot_lab_workspace|function.*does not exist|42883/i.test(message)) {
+          message =
+            "Database setup incomplete. Run supabase/migrations/phase16_operator_pilot_lab.sql in Supabase.";
+        } else if (global.HFAuth && global.HFAuth.formatError) {
+          message = global.HFAuth.formatError(err);
+        }
+        showPilotLabAlert("error", message || "Could not create Pilot Lab.");
+        return loadPilotLabState();
+      });
+  }
+
+  function bindPilotLabEvents() {
+    if (pilotLabBound) return;
+    pilotLabBound = true;
+
+    var createBtn = document.getElementById("operator-pilot-lab-create-btn");
+    if (createBtn) {
+      createBtn.addEventListener("click", function () {
+        handleCreatePilotLab();
+      });
+    }
+  }
+
+  function refreshOperatorState(options) {
+    options = options || {};
+    return Promise.all([
+      loadPilotLabState(),
+      refreshApplications({
+        silent: options.silent === true,
+        successMessage: options.successMessage
+      })
+    ]);
   }
 
   function parseSuccessPayload(data) {
@@ -525,7 +691,8 @@
 
           showDashboard();
           bindEvents();
-          return refreshApplications({ silent: true });
+          bindPilotLabEvents();
+          return refreshOperatorState({ silent: true });
         });
       })
       .catch(function (err) {
@@ -537,6 +704,8 @@
     initOperatorPage: initOperatorPage,
     listApplications: listApplications,
     inviteApplication: inviteApplication,
+    loadPilotLabState: loadPilotLabState,
+    refreshOperatorState: refreshOperatorState,
     resolveDisplayStatus: resolveDisplayStatus,
     canInvite: canInvite,
     LIST_FUNCTION: LIST_FUNCTION,

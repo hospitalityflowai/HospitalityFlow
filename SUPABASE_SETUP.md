@@ -514,11 +514,15 @@ Full runbook: [`docs/OPERATOR_INVITE.md`](docs/OPERATOR_INVITE.md)
 
 ```powershell
 # Apply supabase/migrations/phase14_pilot_invite_operators.sql then
-# phase15_operator_capability_flag.sql in SQL Editor first,
+# phase15_operator_capability_flag.sql, then
+# phase16_operator_pilot_lab.sql in SQL Editor first,
 # insert your user into public.platform_operators, then:
 npx supabase functions deploy invite-pilot-applicant
 node scripts/test-pilot-invite-pipeline.mjs
+node scripts/test-operator-pilot-lab.mjs
 ```
+
+Operator Pilot Lab account setup: [`docs/operator/PILOT_LAB_ACCOUNT_SETUP.md`](docs/operator/PILOT_LAB_ACCOUNT_SETUP.md).
 
 ### Set Supabase secrets
 

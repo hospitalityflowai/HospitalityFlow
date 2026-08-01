@@ -171,10 +171,11 @@ function main() {
     ok = pass("Operator section appears for platform operators via isOperator") && ok;
   }
 
-  if (!/access\.isOperator && !access\.hasMembership/.test(workspaceJsBody)) {
-    ok = fail("Operators without hotel membership must not enter workspace-create") && ok;
+  if (!/access\.isOperator && !access\.hasMembership/.test(workspaceJsBody) ||
+      !/renderOperatorWithoutWorkspace/.test(workspaceJsBody)) {
+    ok = fail("Operators without hotel membership must not enter ordinary workspace-create") && ok;
   } else {
-    ok = pass("Operators without membership skip workspace-create flow") && ok;
+    ok = pass("Operators without membership skip ordinary workspace-create flow") && ok;
   }
 
   // Mixed-role: hotel membership + operator keeps workspace and shows Operator section
@@ -191,6 +192,12 @@ function main() {
     ok = fail("Mixed hotel-owner + platform-operator must keep active workspace and show Operator") && ok;
   } else {
     ok = pass("Mixed hotel-owner + platform-operator keeps workspace and shows Operator") && ok;
+  }
+
+  if (!/Platform Operator/.test(accountHtml) || !/id="operator-pilot-lab-create"/.test(accountHtml)) {
+    ok = fail("account.html must separate Platform Operator from Pilot Lab provision") && ok;
+  } else {
+    ok = pass("account.html separates Platform Operator and Pilot Lab provision") && ok;
   }
 
   const platformAccessJs = read("js/platform-access.js");
@@ -305,6 +312,80 @@ function main() {
     ok = fail("operator.html must not alter/include Demo Mode") && ok;
   } else {
     ok = pass("operator.html leaves Demo Mode unchanged") && ok;
+  }
+
+  // ── Pilot Lab provisioning UI on operator dashboard ──────────────────────
+
+  if (!/id="operator-pilot-lab-card"/.test(operatorHtml) ||
+      !/Internal Workspace/.test(operatorHtml) ||
+      !/Hospitality Flow Pilot Lab/.test(operatorHtml) ||
+      !/Create Pilot Lab/.test(operatorHtml) ||
+      !/Open Pilot Lab/.test(operatorHtml) ||
+      !/Pilot Lab Active/.test(operatorHtml)) {
+    ok = fail("operator.html must include Internal Workspace Pilot Lab card UI") && ok;
+  } else {
+    ok = pass("operator.html includes Internal Workspace Pilot Lab card") && ok;
+  }
+
+  const pilotCardIdx = operatorHtml.indexOf('id="operator-pilot-lab-card"');
+  const pendingIdx = operatorHtml.indexOf('id="operator-pending-list"');
+  if (pilotCardIdx < 0 || pendingIdx < 0 || !(pilotCardIdx < pendingIdx)) {
+    ok = fail("Pilot Lab card must appear above the applications list") && ok;
+  } else {
+    ok = pass("Pilot Lab card appears above applications list") && ok;
+  }
+
+  if (!/js\/workspace\.js/.test(operatorHtml)) {
+    ok = fail("operator.html must load workspace.js for Pilot Lab provisioning") && ok;
+  } else {
+    ok = pass("operator.html loads workspace.js for Pilot Lab RPC") && ok;
+  }
+
+  if (!/loadPilotLabState/.test(operatorJsBody) ||
+      !/createOperatorPilotLab/.test(operatorJsBody) ||
+      !/isPilotLabWorkspace/.test(operatorJsBody) ||
+      !/refreshOperatorState/.test(operatorJsBody)) {
+    ok = fail("operator-dashboard.js must check/create Pilot Lab and reload state") && ok;
+  } else {
+    ok = pass("operator-dashboard.js provisions Pilot Lab and reloads state") && ok;
+  }
+
+  if (!/setPilotLabCreating/.test(operatorJsBody) ||
+      !/operator-pilot-lab-spinner/.test(operatorHtml) ||
+      !/Creating…/.test(operatorJsBody)) {
+    ok = fail("Create Pilot Lab must disable button and show spinner/Creating state") && ok;
+  } else {
+    ok = pass("Create Pilot Lab disables button and shows creating state") && ok;
+  }
+
+  if (!/renderPilotLabState\("active"\)/.test(operatorJsBody) ||
+      !/renderPilotLabState\("create"\)/.test(operatorJsBody) ||
+      !/renderPilotLabState\("blocked"\)/.test(operatorJsBody)) {
+    ok = fail("Pilot Lab UI must support create, active, and blocked states") && ok;
+  } else {
+    ok = pass("Pilot Lab UI supports create, active, and blocked states") && ok;
+  }
+
+  // Fail closed: never claim active when workspace module/status unknown
+  if (!/Pilot Lab checks are unavailable|Could not verify Pilot Lab status/.test(operatorJsBody) ||
+      !/never claim Pilot Lab is active/i.test(read("js/operator-dashboard.js"))) {
+    ok = fail("Pilot Lab status must fail closed when unknown") && ok;
+  } else {
+    ok = pass("Pilot Lab status fails closed when unknown") && ok;
+  }
+
+  // Existing invite/list behaviour must remain
+  if (!/list-pilot-applications/.test(operatorJsBody) ||
+      !/invite-pilot-applicant/.test(operatorJsBody)) {
+    ok = fail("Existing operator invite/list functionality must remain") && ok;
+  } else {
+    ok = pass("Existing operator invite/list functionality unchanged") && ok;
+  }
+
+  if (/setActiveWorkspace|switchWorkspace|multi-workspace/i.test(operatorJsBody)) {
+    ok = fail("Operator Pilot Lab UI must not introduce multi-workspace switching") && ok;
+  } else {
+    ok = pass("No multi-workspace switcher on operator dashboard") && ok;
   }
 
   if (ok) {

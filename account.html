@@ -37,19 +37,29 @@
           <p class="account-note">If you believe this is an error, contact hello@hospitalityflow.co.uk.</p>
         </div>
 
-        <div id="operator-account" class="auth-card hidden" hidden>
-          <h2 class="account-section-heading">Operator</h2>
-          <p class="account-note">You have Hospitality Flow operator privileges. Review Founding Pilot applications and send invitations from the operator dashboard.</p>
+        <!-- Platform operator card — never shown to normal hotel members -->
+        <section id="operator-account" class="auth-card account-section-card hidden" hidden aria-labelledby="operator-section-heading">
+          <p class="account-panel-label" id="operator-section-kicker">Your account</p>
+          <h2 class="account-section-heading" id="operator-section-heading">Platform Operator</h2>
+          <p class="account-note">Review Founding Pilot applications and send invitations from the operator dashboard.</p>
           <div class="account-links">
-            <a href="operator.html" id="operator-dashboard-link">Open operator dashboard</a>
+            <a href="operator.html" class="btn btn-primary" id="operator-dashboard-link">Open Operator Dashboard</a>
           </div>
           <p class="account-note hf-demo-operator-note">
             <span id="hfOperatorDemoHost" class="hf-demo-operator-host"></span>
           </p>
-          <div class="account-actions hidden" id="operator-only-actions" hidden>
-            <button type="button" class="btn btn-secondary" id="operator-logout-btn">Sign out</button>
+        </section>
+
+        <!-- Operator Pilot Lab provision — only when operator has no hotel membership -->
+        <section id="operator-pilot-lab-create" class="auth-card account-section-card hidden" hidden aria-labelledby="pilot-lab-create-heading">
+          <p class="account-panel-label">Your workspace</p>
+          <h2 class="account-section-heading" id="pilot-lab-create-heading">Hospitality Flow Pilot Lab</h2>
+          <p class="account-note">Private internal workspace for HF product testing, demo preparation and pilot validation. This is not a hotel pilot workspace.</p>
+          <div id="pilot-lab-create-alert" class="auth-alert" aria-live="polite"></div>
+          <div class="account-actions">
+            <button type="button" class="btn btn-primary" id="pilot-lab-create-btn">Create Pilot Lab workspace</button>
           </div>
-        </div>
+        </section>
 
         <!-- Phase 3: one hotel per user; multi-property switcher comes in a later phase -->
         <div id="workspace-create" class="hidden" hidden>
@@ -90,12 +100,19 @@
           </div>
         </div>
 
-        <div id="workspace-dashboard" class="hidden auth-card" hidden>
+        <section id="workspace-dashboard" class="hidden auth-card account-section-card" hidden aria-labelledby="workspace-section-heading">
           <div class="account-panel">
-            <p class="account-panel-label">Your hotel</p>
-            <p id="workspace-hotel-name" class="account-panel-text">—</p>
+            <p class="account-panel-label" id="workspace-section-kicker">Your workspace</p>
+            <h2 class="account-section-heading" id="workspace-section-heading">
+              <span id="workspace-hotel-name">—</span>
+            </h2>
             <p id="workspace-hotel-meta" class="account-note"></p>
             <p id="workspace-user-role" class="account-note"></p>
+            <p id="workspace-purpose-note" class="account-note hidden" hidden></p>
+          </div>
+
+          <div class="account-links account-workspace-primary">
+            <a href="handover.html" class="btn btn-primary" id="workspace-open-link">Open Workspace</a>
           </div>
 
           <button type="button" class="btn btn-secondary account-edit-btn hidden" id="workspace-edit-btn" hidden>Edit hotel details</button>
@@ -118,6 +135,7 @@
                   <option value="serviced-apartment">Serviced apartment</option>
                   <option value="hotel-opening-soon">Hotel opening soon</option>
                   <option value="other">Other</option>
+                  <option value="Internal testing workspace">Internal testing workspace</option>
                 </select>
               </div>
               <div class="auth-form-group">
@@ -139,17 +157,17 @@
             </form>
           </div>
 
-          <p class="account-note">Hotel Brain syncs to your hotel workspace. Handover drafts remain on this device until a later phase.</p>
+          <p class="account-note" id="workspace-sync-note">Hotel Brain and handovers sync to this workspace only.</p>
 
-          <div class="account-links">
+          <div class="account-links" id="workspace-tool-links">
             <a href="handover.html">AI Shift Handover</a>
             <a href="maintenance.html">Maintenance <span class="badge-new" style="display:inline-flex;align-items:center;margin-left:8px;padding:2px 7px;border-radius:999px;font-size:.65rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;background:rgba(74,143,196,.18);color:#9ecef0;border:1px solid rgba(74,143,196,.35);">New</span><br><span style="display:block;margin-top:4px;font-size:.8rem;font-weight:400;color:var(--gray-400);">Report, track and resolve hotel maintenance issues.</span></a>
             <a href="hotel-profile.html">Hotel Brain profile</a>
           </div>
+        </section>
 
-          <div class="account-actions">
-            <button type="button" class="btn btn-secondary" id="logout-btn">Sign out</button>
-          </div>
+        <div class="account-actions account-signout-actions hidden" id="account-signout" hidden>
+          <button type="button" class="btn btn-secondary" id="logout-btn">Sign out</button>
         </div>
 
         <div id="password-recovery-section" class="auth-card account-password-section hidden" hidden>

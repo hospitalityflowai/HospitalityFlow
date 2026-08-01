@@ -16,7 +16,7 @@ Authorised operators (`platform_operators`) can review applications and invite f
 4. Review pending applications and click **Approve & Send Invite**.
 5. Confirm in the modal. The page calls `invite-pilot-applicant` with `{ applicationId }` using your session JWT.
 
-Hotel workspace access and operator privileges are **separate**. A hotel owner who is also in `platform_operators` keeps their workspace and also sees the Operator section.
+Hotel workspace access and operator privileges are **separate**. For the pre-pilot account model, use a dedicated HF operator account with **Hospitality Flow Pilot Lab** (see [`docs/operator/PILOT_LAB_ACCOUNT_SETUP.md`](operator/PILOT_LAB_ACCOUNT_SETUP.md)). Do not keep operator capability on the normal Zetter hotel login.
 
 The dashboard loads applications only through the read-only Edge Function `list-pilot-applications` (operator JWT required). Browser roles still cannot `SELECT` from `early_access_applications`.
 

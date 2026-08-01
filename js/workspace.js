@@ -5,6 +5,9 @@
 (function (global) {
   "use strict";
 
+  var PILOT_LAB_NAME = "Hospitality Flow Pilot Lab";
+  var PILOT_LAB_PROPERTY_TYPE = "Internal testing workspace";
+
   var PROPERTY_TYPES = [
     { value: "independent-hotel", label: "Independent hotel" },
     { value: "boutique-hotel", label: "Boutique hotel" },
@@ -12,7 +15,8 @@
     { value: "guest-house", label: "Guest house" },
     { value: "serviced-apartment", label: "Serviced apartment" },
     { value: "hotel-opening-soon", label: "Hotel opening soon" },
-    { value: "other", label: "Other" }
+    { value: "other", label: "Other" },
+    { value: PILOT_LAB_PROPERTY_TYPE, label: "Internal testing workspace" }
   ];
 
   var PROPERTY_TYPE_LABELS = PROPERTY_TYPES.reduce(function (acc, item) {
@@ -66,6 +70,12 @@
 
     if (/already belongs to a hotel workspace/i.test(msg)) {
       return "You already belong to a hotel workspace.";
+    }
+    if (/only platform operators may provision/i.test(msg)) {
+      return "Only platform operators may create the Pilot Lab workspace.";
+    }
+    if (/create_operator_pilot_lab_workspace|function.*does not exist|42883/i.test(msg)) {
+      return "Database setup incomplete. Run supabase/migrations/phase16_operator_pilot_lab.sql in Supabase.";
     }
     if (/not authenticated/i.test(msg)) {
       return "Your session has expired. Please sign in again.";
@@ -143,6 +153,28 @@
         if (response.error) {
           return Promise.reject(response.error);
         }
+        clearCachedWorkspace();
+        return getUserWorkspace();
+      });
+    });
+  }
+
+  function isPilotLabWorkspace(workspace) {
+    if (!workspace || !workspace.hotel) return false;
+    var name = workspace.hotel.name ? String(workspace.hotel.name).trim() : "";
+    var propertyType = workspace.hotel.property_type
+      ? String(workspace.hotel.property_type).trim()
+      : "";
+    return name === PILOT_LAB_NAME || propertyType === PILOT_LAB_PROPERTY_TYPE;
+  }
+
+  function createOperatorPilotLab() {
+    return ensureClient().then(function (client) {
+      return client.rpc("create_operator_pilot_lab_workspace").then(function (response) {
+        if (response.error) {
+          return Promise.reject(response.error);
+        }
+        clearCachedWorkspace();
         return getUserWorkspace();
       });
     });
@@ -252,36 +284,59 @@
 
   function renderWorkspaceDashboard(workspace) {
     var createEl = document.getElementById("workspace-create");
+    var pilotCreateEl = document.getElementById("operator-pilot-lab-create");
     var dashboardEl = document.getElementById("workspace-dashboard");
     var hotelNameEl = document.getElementById("workspace-hotel-name");
     var hotelMetaEl = document.getElementById("workspace-hotel-meta");
     var roleEl = document.getElementById("workspace-user-role");
+    var purposeEl = document.getElementById("workspace-purpose-note");
     var headingEl = document.getElementById("account-heading");
     var editBtn = document.getElementById("workspace-edit-btn");
     var editPanel = document.getElementById("workspace-edit");
+    var isLab = isPilotLabWorkspace(workspace);
 
     setWorkspacePanelVisible(createEl, false);
+    setWorkspacePanelVisible(pilotCreateEl, false);
     setWorkspacePanelVisible(dashboardEl, true);
-    if (headingEl) headingEl.textContent = "Your hotel workspace";
+    if (headingEl) {
+      headingEl.textContent = isLab ? "Your account" : "Your hotel workspace";
+    }
 
     var hotel = workspace.hotel;
     if (hotelNameEl) {
       hotelNameEl.textContent = hotel.name || "Your hotel";
     }
     if (hotelMetaEl) {
-      var parts = [
-        formatPropertyType(hotel.property_type),
-        hotel.number_of_rooms ? hotel.number_of_rooms + " rooms" : null,
-        hotel.city,
-        hotel.country
-      ].filter(Boolean);
-      hotelMetaEl.textContent = parts.join(" · ");
+      if (isLab) {
+        hotelMetaEl.textContent = PILOT_LAB_PROPERTY_TYPE;
+      } else {
+        var parts = [
+          formatPropertyType(hotel.property_type),
+          hotel.number_of_rooms ? hotel.number_of_rooms + " rooms" : null,
+          hotel.city,
+          hotel.country
+        ].filter(Boolean);
+        hotelMetaEl.textContent = parts.join(" · ");
+      }
     }
     if (roleEl) {
-      roleEl.textContent = "Your role: " + formatRole(workspace.role);
+      roleEl.textContent = isLab ? "" : "Your role: " + formatRole(workspace.role);
+      roleEl.hidden = isLab;
+      roleEl.classList.toggle("hidden", isLab);
+    }
+    if (purposeEl) {
+      if (isLab) {
+        purposeEl.textContent =
+          "Purpose: HF product testing, demo preparation and pilot validation.";
+        setWorkspacePanelVisible(purposeEl, true);
+      } else {
+        purposeEl.textContent = "";
+        setWorkspacePanelVisible(purposeEl, false);
+      }
     }
 
-    var canEdit = isOwnerRole(workspace.role);
+    // Keep Pilot Lab identity stable — hide edit for internal lab workspaces.
+    var canEdit = isOwnerRole(workspace.role) && !isLab;
     if (editBtn) {
       editBtn.classList.toggle("hidden", !canEdit);
       editBtn.hidden = !canEdit;
@@ -393,9 +448,11 @@
   function renderAccessPendingPanel(alertEl) {
     setWorkspacePanelVisible(document.getElementById("workspace-create"), false);
     setWorkspacePanelVisible(document.getElementById("workspace-dashboard"), false);
+    setWorkspacePanelVisible(document.getElementById("operator-pilot-lab-create"), false);
     setWorkspacePanelVisible(document.getElementById("password-section"), false);
     setWorkspacePanelVisible(document.getElementById("password-recovery-section"), false);
     setWorkspacePanelVisible(document.getElementById("operator-account"), false);
+    setWorkspacePanelVisible(document.getElementById("account-signout"), true);
 
     var pendingEl = document.getElementById("access-pending");
     if (pendingEl) {
@@ -414,39 +471,75 @@
     );
   }
 
-  function renderOperatorAccountPanel(alertEl, logoutBtn) {
+  /**
+   * Operator with no hotel membership: Operator card + Pilot Lab provision.
+   * Regular hotel workspace-create stays hidden (fail closed for operators).
+   */
+  function renderOperatorWithoutWorkspace(alertEl, logoutBtn) {
     setWorkspacePanelVisible(document.getElementById("workspace-create"), false);
     setWorkspacePanelVisible(document.getElementById("workspace-dashboard"), false);
     setWorkspacePanelVisible(document.getElementById("access-pending"), false);
     setWorkspacePanelVisible(document.getElementById("password-recovery-section"), false);
 
-    setOperatorSectionVisible(true, { operatorOnly: true });
+    setOperatorSectionVisible(true);
+    setWorkspacePanelVisible(document.getElementById("operator-pilot-lab-create"), true);
+    setWorkspacePanelVisible(document.getElementById("account-signout"), true);
     mountOperatorDemoAccess();
+    bindPilotLabCreateButton(alertEl);
 
-    // Operators may change password; workspace create stays hidden.
+    // Operators may change password; ordinary hotel create stays hidden.
     setWorkspacePanelVisible(document.getElementById("password-section"), true);
 
     var headingEl = document.getElementById("account-heading");
-    if (headingEl) headingEl.textContent = "Operator account";
+    if (headingEl) headingEl.textContent = "Your account";
 
     hideAlert(alertEl);
+    bindLogoutButton(logoutBtn, alertEl);
+  }
 
-    var operatorLogoutBtn = document.getElementById("operator-logout-btn");
-    bindLogoutButton(operatorLogoutBtn || logoutBtn, alertEl);
+  function bindPilotLabCreateButton(alertEl) {
+    var btn = document.getElementById("pilot-lab-create-btn");
+    var labAlertEl = document.getElementById("pilot-lab-create-alert");
+    if (!btn || btn.getAttribute("data-bound") === "1") return;
+    btn.setAttribute("data-bound", "1");
+
+    btn.addEventListener("click", function () {
+      hideAlert(labAlertEl);
+      hideAlert(alertEl);
+      btn.disabled = true;
+      var previous = btn.textContent;
+      btn.textContent = "Creating…";
+
+      createOperatorPilotLab()
+        .then(function (workspace) {
+          if (!workspace) {
+            throw new Error("Pilot Lab workspace could not be loaded.");
+          }
+          setWorkspacePanelVisible(document.getElementById("operator-pilot-lab-create"), false);
+          renderWorkspaceDashboard(workspace);
+          setWorkspacePanelVisible(document.getElementById("account-signout"), true);
+          showAlert(alertEl, "success", "Hospitality Flow Pilot Lab is ready.");
+          if (global.HFHotelBrainStore && global.HFHotelBrainStore.preload) {
+            global.HFHotelBrainStore.preload();
+          }
+        })
+        .catch(function (err) {
+          showAlert(labAlertEl || alertEl, "error", formatWorkspaceError(err));
+        })
+        .then(function () {
+          btn.disabled = false;
+          btn.textContent = previous || "Create Pilot Lab workspace";
+        });
+    });
   }
 
   /**
    * Operator privileges are independent of hotel workspace access.
-   * Mixed-role users keep the workspace and also see the Operator section.
+   * Operator card stays outside the hotel workspace card.
    */
-  function setOperatorSectionVisible(visible, options) {
-    options = options || {};
+  function setOperatorSectionVisible(visible) {
     var operatorEl = document.getElementById("operator-account");
     setWorkspacePanelVisible(operatorEl, !!visible);
-
-    var onlyActions = document.getElementById("operator-only-actions");
-    var showOnlyActions = !!visible && options.operatorOnly === true;
-    setWorkspacePanelVisible(onlyActions, showOnlyActions);
   }
 
   function initAccountPage() {
@@ -540,12 +633,12 @@
 
           global.HFAuth.initChangePasswordSection(activeSession);
 
-          // Operator-only accounts (no hotel membership) must not enter workspace-create.
-          // Mixed-role users keep hotel workspace and also see the Operator section.
+          // Operator-only accounts (no hotel membership): Operator card + Pilot Lab provision.
+          // Ordinary hotel workspace-create stays hidden for operators.
           if (access.isOperator && !access.hasMembership) {
             if (loadingEl) loadingEl.classList.add("hidden");
             if (contentEl) contentEl.classList.remove("hidden");
-            renderOperatorAccountPanel(alertEl, logoutBtn);
+            renderOperatorWithoutWorkspace(alertEl, logoutBtn);
             return;
           }
 
@@ -561,7 +654,10 @@
             form,
             submitBtn
           ).then(function () {
-            setOperatorSectionVisible(!!access.isOperator, { operatorOnly: false });
+            // Hotel members never see the Operator card unless they are platform operators.
+            setOperatorSectionVisible(!!access.isOperator);
+            setWorkspacePanelVisible(document.getElementById("operator-pilot-lab-create"), false);
+            setWorkspacePanelVisible(document.getElementById("account-signout"), true);
             if (access.isOperator) {
               mountOperatorDemoAccess();
             }
@@ -610,12 +706,18 @@
         if (loadingEl) loadingEl.classList.add("hidden");
         if (contentEl) contentEl.classList.remove("hidden");
 
+        setWorkspacePanelVisible(document.getElementById("operator-pilot-lab-create"), false);
+
         if (workspace) {
           renderWorkspaceDashboard(workspace);
-          initWorkspaceEdit(workspace, alertEl);
+          if (!isPilotLabWorkspace(workspace)) {
+            initWorkspaceEdit(workspace, alertEl);
+          }
         } else {
           renderWorkspaceCreateForm();
         }
+
+        setWorkspacePanelVisible(document.getElementById("account-signout"), true);
 
         // Creation form is only mounted for users without a hotel_members row (Phase 3).
         if (form && !workspace) {
@@ -649,10 +751,10 @@
               roomCount: roomCount,
               city: city,
               country: country
-            }).then(function (workspace) {
+            }).then(function (createdWorkspace) {
               showAlert(alertEl, "success", "Hotel workspace created successfully.");
-              renderWorkspaceDashboard(workspace);
-              initWorkspaceEdit(workspace, alertEl);
+              renderWorkspaceDashboard(createdWorkspace);
+              initWorkspaceEdit(createdWorkspace, alertEl);
               form.reset();
               setFormLoading(form, false, submitBtn, "Creating workspace…", "Create hotel workspace");
             }).catch(function (err) {
@@ -676,12 +778,16 @@
 
   global.HFWorkspace = {
     PROPERTY_TYPES: PROPERTY_TYPES,
+    PILOT_LAB_NAME: PILOT_LAB_NAME,
+    PILOT_LAB_PROPERTY_TYPE: PILOT_LAB_PROPERTY_TYPE,
     getUserWorkspace: getUserWorkspace,
     getCachedWorkspace: getCachedWorkspace,
     clearCachedWorkspace: clearCachedWorkspace,
     getWorkspaceHotelName: getWorkspaceHotelName,
     resolveDisplayHotelName: resolveDisplayHotelName,
+    isPilotLabWorkspace: isPilotLabWorkspace,
     createWorkspace: createWorkspace,
+    createOperatorPilotLab: createOperatorPilotLab,
     updateWorkspace: updateWorkspace,
     initAccountPage: initAccountPage
   };
