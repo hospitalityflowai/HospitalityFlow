@@ -88,6 +88,19 @@ console.log("\nPhase 5A — fact identity merge / dedupe\n");
   );
 })();
 
+(function sameRoomDistinctGuestRequestsSurvive() {
+  const analyzed = [
+    makeNote("Room 12 extra bed requested", "tasks"),
+    makeNote("Room 12 iron and ironing board needed", "tasks")
+  ];
+  const out = Engine.consolidateNotesByFacts(analyzed);
+  assert(out.length === 2, "same room + distinct guest request items → both survive");
+  const items = out.map(function (n) {
+    return (n.fact && (n.fact.requestItem || "")).toLowerCase();
+  }).join(" | ");
+  assert(/extra bed/i.test(items) && /iron/i.test(items), "request items retained separately");
+})();
+
 (function sameRoomTwoMaintenancePhrasingsMerge() {
   const analyzed = [
     makeNote("Room 35 shower leak", "maintenance"),

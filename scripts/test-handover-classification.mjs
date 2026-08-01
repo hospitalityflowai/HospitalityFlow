@@ -47,13 +47,13 @@ const SECTION_TITLES = {
   inventory: "Inventory",
   deliveries: "Deliveries",
   lostproperty: "Lost Property",
-  general: "General Operations",
+  general: "Operational Notes",
   completed: "Completed Actions"
 };
 
 function loadHandoverClassificationApi() {
   const html = fs.readFileSync(path.join(ROOT, "handover.html"), "utf8");
-  const scriptMatch = html.match(/<script src="handover-saved\.js"><\/script>\s*<script>([\s\S]*?)<\/script>\s*<\/body>/);
+  const scriptMatch = html.match(/<script src="handover-saved\.js"><\/script>(?:\s*<script src="[^"]+"><\/script>)*\s*<script>([\s\S]*?)<\/script>\s*<\/body>/);
   if (!scriptMatch) throw new Error("Could not extract handover inline script");
 
   let script = scriptMatch[1];

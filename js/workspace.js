@@ -289,14 +289,15 @@
     if (editPanel && !canEdit) {
       setWorkspacePanelVisible(editPanel, false);
     }
+  }
 
-    if (global.HFDemoMode && typeof global.HFDemoMode.mountAccountToggle === "function") {
-      var demoHost = document.getElementById("hfDemoModeHost");
-      if (demoHost) {
-        global.HFDemoMode.initPageChrome({ banner: true });
-        global.HFDemoMode.mountAccountToggle(demoHost);
-      }
+  function mountOperatorDemoAccess() {
+    if (!global.HFDemoMode || typeof global.HFDemoMode.mountOperatorDemoLink !== "function") {
+      return;
     }
+    var host = document.getElementById("hfOperatorDemoHost");
+    if (!host) return;
+    global.HFDemoMode.mountOperatorDemoLink(host);
   }
 
   function populateWorkspaceEditForm(workspace) {
@@ -420,6 +421,7 @@
     setWorkspacePanelVisible(document.getElementById("password-recovery-section"), false);
 
     setOperatorSectionVisible(true, { operatorOnly: true });
+    mountOperatorDemoAccess();
 
     // Operators may change password; workspace create stays hidden.
     setWorkspacePanelVisible(document.getElementById("password-section"), true);
@@ -560,6 +562,9 @@
             submitBtn
           ).then(function () {
             setOperatorSectionVisible(!!access.isOperator, { operatorOnly: false });
+            if (access.isOperator) {
+              mountOperatorDemoAccess();
+            }
           });
         });
       }

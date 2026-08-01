@@ -1,15 +1,16 @@
 /**
- * Hospitality Flow — Oakwood Marylebone Demo Mode sample pack
+ * Hospitality Flow — Oakwood Mayfair Demo Mode sample pack
  * Fully fictional boutique hotel. Canonical room inventory is the single source of truth.
  * Demo Mode only — never persisted to customer Supabase records.
  */
 (function (global) {
   "use strict";
 
-  var PACK_ID = "hf-oakwood-demo-v1";
-  var PACK_LABEL = "The Oakwood Marylebone Demo";
-  var HOTEL_NAME = "The Oakwood Marylebone";
+  var PACK_ID = "hf-oakwood-mayfair-demo-v1";
+  var PACK_LABEL = "The Oakwood Mayfair Demo";
+  var HOTEL_NAME = "The Oakwood Mayfair";
   var PREPARED_BY = "Sophie Chen · Night Manager";
+  var TOTAL_ROOMS = 80;
 
   function pad2(n) {
     return n < 10 ? "0" + n : String(n);
@@ -31,36 +32,68 @@
   }
 
   /**
-   * Canonical 24-room inventory for The Oakwood Marylebone.
-   * All demo guests, maintenance, payments and notes must use these room numbers only.
+   * Story rooms used in the demo handover narrative.
+   * All referenced rooms must exist in the 80-room Mayfair inventory.
+   */
+  function storyRoomOverrides() {
+    return {
+      "3": { roomType: "Classic Double", floor: "1", twinCapable: false, accessible: false, quiet: true, streetFacing: false, connectingRoom: "", notes: "Quiet courtyard; walk-in hold room" },
+      "4": { roomType: "Classic Double", floor: "1", twinCapable: false, accessible: false, quiet: true, streetFacing: false, connectingRoom: "", notes: "Quiet courtyard room" },
+      "5": { roomType: "Classic Double", floor: "1", twinCapable: false, accessible: false, quiet: false, streetFacing: false, connectingRoom: "", notes: "Courtyard side" },
+      "11": { roomType: "Deluxe King", floor: "1", twinCapable: false, accessible: false, quiet: false, streetFacing: true, connectingRoom: "", notes: "Street-facing deluxe; safe keypad intermittent" },
+      "12": { roomType: "Deluxe Twin", floor: "1", twinCapable: true, accessible: false, quiet: false, streetFacing: true, connectingRoom: "", notes: "Twin-capable deluxe; street-facing" },
+      "14": { roomType: "Deluxe King", floor: "1", twinCapable: false, accessible: false, quiet: true, streetFacing: false, connectingRoom: "15", notes: "Quiet; interconnects with 15" },
+      "15": { roomType: "Deluxe King", floor: "1", twinCapable: false, accessible: false, quiet: true, streetFacing: false, connectingRoom: "14", notes: "Quiet; interconnects with 14" },
+      "16": { roomType: "Deluxe King", floor: "1", twinCapable: false, accessible: false, quiet: false, streetFacing: false, connectingRoom: "", notes: "Away from lift" },
+      "21": { roomType: "Deluxe King", floor: "2", twinCapable: false, accessible: false, quiet: false, streetFacing: true, connectingRoom: "", notes: "Street-facing" },
+      "22": { roomType: "Deluxe King", floor: "2", twinCapable: false, accessible: false, quiet: false, streetFacing: true, connectingRoom: "", notes: "Street-facing; popular with regulars" },
+      "24": { roomType: "Deluxe King", floor: "2", twinCapable: false, accessible: false, quiet: false, streetFacing: false, connectingRoom: "25", notes: "Interconnects with 25" },
+      "25": { roomType: "Deluxe Twin", floor: "2", twinCapable: true, accessible: false, quiet: true, streetFacing: false, connectingRoom: "24", notes: "Quiet; twin-capable; interconnects with 24" },
+      "31": { roomType: "Deluxe King", floor: "3", twinCapable: false, accessible: false, quiet: false, streetFacing: true, connectingRoom: "", notes: "Street-facing" },
+      "42": { roomType: "Junior Suite", floor: "4", twinCapable: false, accessible: false, quiet: true, streetFacing: false, connectingRoom: "", notes: "Quiet upper-floor suite; away from lift — preferred for VIP" }
+    };
+  }
+
+  function defaultRoomForNumber(n) {
+    var floor = n <= 16 ? "1" : n <= 32 ? "2" : n <= 48 ? "3" : n <= 64 ? "4" : "5";
+    var twinCapable = n % 7 === 0 || n % 11 === 0;
+    var accessible = n === 23 || n === 33 || n === 53;
+    var quiet = n % 5 === 0 || n % 9 === 0;
+    var streetFacing = !quiet && n % 2 === 1;
+    var roomType = n >= 70
+      ? "Junior Suite"
+      : accessible
+        ? "Accessible King"
+        : twinCapable
+          ? "Deluxe Twin"
+          : n <= 10
+            ? "Classic Double"
+            : "Deluxe King";
+    return {
+      roomNo: String(n),
+      roomType: roomType,
+      floor: floor,
+      twinCapable: twinCapable || accessible,
+      accessible: accessible,
+      quiet: quiet,
+      streetFacing: streetFacing,
+      connectingRoom: "",
+      notes: quiet ? "Quieter allocation" : (streetFacing ? "Street-facing" : "")
+    };
+  }
+
+  /**
+   * Canonical 80-room inventory for The Oakwood Mayfair.
+   * All demo guests, payments and notes must use these room numbers only.
    */
   function buildRoomInventory() {
-    return [
-      { roomNo: "1", roomType: "Classic Double", floor: "Lower ground", twinCapable: false, accessible: false, quiet: false, streetFacing: true, connectingRoom: "", notes: "Street-facing lower-ground room" },
-      { roomNo: "2", roomType: "Classic Twin", floor: "Lower ground", twinCapable: true, accessible: false, quiet: false, streetFacing: true, connectingRoom: "", notes: "Twin-capable; street-facing" },
-      { roomNo: "3", roomType: "Classic Double", floor: "Lower ground", twinCapable: false, accessible: false, quiet: true, streetFacing: false, connectingRoom: "", notes: "Quiet lower-ground; away from lift" },
-      { roomNo: "4", roomType: "Classic Double", floor: "Lower ground", twinCapable: false, accessible: false, quiet: true, streetFacing: false, connectingRoom: "", notes: "Quiet lower-ground room" },
-      { roomNo: "5", roomType: "Classic Double", floor: "Lower ground", twinCapable: false, accessible: false, quiet: false, streetFacing: false, connectingRoom: "", notes: "Lower-ground garden side" },
-      { roomNo: "11", roomType: "Deluxe King", floor: "1", twinCapable: false, accessible: false, quiet: false, streetFacing: true, connectingRoom: "", notes: "Street-facing deluxe" },
-      { roomNo: "12", roomType: "Deluxe Twin", floor: "1", twinCapable: true, accessible: false, quiet: false, streetFacing: true, connectingRoom: "", notes: "Twin-capable deluxe; street-facing" },
-      { roomNo: "14", roomType: "Deluxe King", floor: "1", twinCapable: false, accessible: false, quiet: true, streetFacing: false, connectingRoom: "15", notes: "Quiet; interconnects with 15" },
-      { roomNo: "15", roomType: "Deluxe King", floor: "1", twinCapable: false, accessible: false, quiet: true, streetFacing: false, connectingRoom: "14", notes: "Quiet; interconnects with 14" },
-      { roomNo: "16", roomType: "Deluxe King", floor: "1", twinCapable: false, accessible: false, quiet: false, streetFacing: false, connectingRoom: "", notes: "Away from lift" },
-      { roomNo: "21", roomType: "Deluxe King", floor: "2", twinCapable: false, accessible: false, quiet: false, streetFacing: true, connectingRoom: "", notes: "Street-facing" },
-      { roomNo: "22", roomType: "Deluxe King", floor: "2", twinCapable: false, accessible: false, quiet: false, streetFacing: true, connectingRoom: "", notes: "Street-facing; popular with regulars" },
-      { roomNo: "23", roomType: "Accessible King", floor: "2", twinCapable: true, accessible: true, quiet: false, streetFacing: true, connectingRoom: "", notes: "Accessible; twin-capable" },
-      { roomNo: "24", roomType: "Deluxe King", floor: "2", twinCapable: false, accessible: false, quiet: false, streetFacing: false, connectingRoom: "25", notes: "Interconnects with 25" },
-      { roomNo: "25", roomType: "Deluxe Twin", floor: "2", twinCapable: true, accessible: false, quiet: true, streetFacing: false, connectingRoom: "24", notes: "Quiet; twin-capable; interconnects with 24" },
-      { roomNo: "31", roomType: "Deluxe King", floor: "3", twinCapable: false, accessible: false, quiet: false, streetFacing: true, connectingRoom: "", notes: "Street-facing" },
-      { roomNo: "32", roomType: "Deluxe King", floor: "3", twinCapable: false, accessible: false, quiet: false, streetFacing: true, connectingRoom: "", notes: "Street-facing" },
-      { roomNo: "33", roomType: "Accessible King", floor: "3", twinCapable: true, accessible: true, quiet: false, streetFacing: true, connectingRoom: "", notes: "Accessible; twin-capable" },
-      { roomNo: "34", roomType: "Deluxe King", floor: "3", twinCapable: false, accessible: false, quiet: true, streetFacing: false, connectingRoom: "35", notes: "Quiet; interconnects with 35" },
-      { roomNo: "35", roomType: "Deluxe Twin", floor: "3", twinCapable: true, accessible: false, quiet: true, streetFacing: false, connectingRoom: "34", notes: "Quiet; twin-capable; interconnects with 34" },
-      { roomNo: "41", roomType: "Junior Suite", floor: "4", twinCapable: false, accessible: false, quiet: false, streetFacing: true, connectingRoom: "", notes: "Street-facing junior suite" },
-      { roomNo: "42", roomType: "Junior Suite", floor: "4", twinCapable: false, accessible: false, quiet: true, streetFacing: false, connectingRoom: "", notes: "Quiet upper-floor suite; away from lift — preferred for VIP" },
-      { roomNo: "43", roomType: "Deluxe Twin", floor: "4", twinCapable: true, accessible: false, quiet: false, streetFacing: true, connectingRoom: "", notes: "Twin-capable; street-facing" },
-      { roomNo: "44", roomType: "Junior Suite", floor: "4", twinCapable: false, accessible: false, quiet: true, streetFacing: false, connectingRoom: "", notes: "Quiet upper-floor suite" }
-    ];
+    var overrides = storyRoomOverrides();
+    var rooms = [];
+    for (var n = 1; n <= TOTAL_ROOMS; n++) {
+      var key = String(n);
+      rooms.push(overrides[key] ? Object.assign({ roomNo: key }, overrides[key]) : defaultRoomForNumber(n));
+    }
+    return rooms;
   }
 
   function roomIndex(inventory) {
@@ -76,37 +109,42 @@
   }
 
   function buildSourceNotes() {
-    var tomorrow = tomorrowLabel();
     return [
-      "PM → Night handover — busy evening, please read carefully.",
+      "pm → night — busy pls read",
       "",
-      "VIP: Ms Eleanor Whitmore arriving tomorrow " + tomorrow + " at 11:00. Prefers a quiet upper-floor room away from the lift. Allocate Room 42 (Junior Suite). Champagne and handwritten welcome card required. Corporate rate — 15% discount must appear on final invoice.",
+      "24 ac broken maint aware fan guest",
       "",
-      "Mr James Okonkwo (regular guest) in Room 22 — checking out tomorrow morning. Prefers higher floors; left positive feedback about Room 22. Airport transfer confirmed for 10:15 (Addison Lee). Wake-up call scheduled for 06:30. Open minibar balance £42.50 still on folio — collect before departure.",
+      "vip eleanor whitmore due 11am quiet upper pls — rm42 if free",
+      "champagne + welcome card — 15% corp rate on invoice",
       "",
-      "Mrs Patel — late arrival expected around 23:45 into Room 16. Booking.com prepaid. Missing mobile number on profile — please obtain at check-in. Twin beds requested; currently allocated Deluxe King Room 16 — move to twin-capable Room 12 if available, otherwise Room 25.",
+      "okonkwo rm22 dep am — wake 0630 addison lee 1015",
+      "minibar 42.50 still open — collect b4 checkout",
       "",
-      "Room 24 — air conditioning not cooling properly. Guest reported at 19:20. Maintenance informed but has not attended yet. Guest offered portable fan. Include in morning handover until resolved.",
+      "patel late arr ~2345 rm16 b.com prepaid — no mobile on file",
+      "twin pls — move 12 or 25 if free",
       "",
-      "Room 31 — dripping shower mixer. Housekeeping noticed during turn-down. Not guest-impacting tonight but needs attention tomorrow. Priority medium.",
+      "shower drip rm31 hk reported medium",
       "",
-      "Lobby WC — hand dryer failed this evening. Public area — Maintenance aware. Temporary paper towels placed.",
+      "lobby wc hand dryer dead — paper towels out — maint aware",
       "",
-      "Room 11 — in-room safe keypad intermittent. Guest relocated to Room 21 temporarily; Room 11 on hold pending parts.",
+      "rm11 safe keypad intermittent — guest moved 21 — 11 on hold parts",
       "",
-      "Travel adapters still outstanding: Room 15 and Room 16. Confirm return at checkout or apply £20 charge.",
+      "adapter 15 +16",
       "",
-      "Room 4 — Expedia booking. Charging may complete after 05:00 on arrival day. Outstanding city tax £12.50 to collect.",
+      "expedia room4 city tax 12.50",
       "",
-      "Group of 4 (Henderson party) arriving tomorrow afternoon — interconnecting rooms 14 & 15 requested. Birthday package and balloons for Room 15 at 15:00. F&B informed.",
+      "henderson x4 interconnect 14+15 tmrw — bday balloons 15 @1500 fb informed",
       "",
-      "Remaining arrivals tonight: 2 (Patel Room 16, walk-in hold on Room 3 until 22:00).",
-      "Departures tomorrow: 6 including Okonkwo Room 22 and Chen Room 21 (late checkout approved until 13:00).",
-      "In-house: 18. Occupancy 75%. ADR £285. RevPAR £213.75.",
+      "late co rm21 chen approved 1pm",
       "",
-      "No-show: Mr Davies — Room 5 — Booking.com. Follow up per hotel policy; do not release until Night confirms.",
+      "arrivals left tonight: 2",
+      "deps tmrw: 6",
+      "inhouse 112 guests / adults 98 / children 14",
+      "rooms sold 60 / occ 75% / adr 285 / revpar 213.75",
       "",
-      "Lost property: gold cufflink found in Room 25 after departure (Mr Fraser). Stored in Duty Manager safe. Guest contacted via email."
+      "no show davies rm5 b.com — hold till night confirms",
+      "",
+      "lost prop gold cufflink rm25 fraser — dm safe — email sent"
     ].join("\n");
   }
 
@@ -114,52 +152,54 @@
     var tomorrow = tomorrowLabel();
     return {
       urgent: [
-        item("Room 24 — A/C not cooling; Maintenance informed at 19:20, not yet attended. Portable fan provided. Follow up urgently.")
+        item("Room 24 – AC not cooling. Guest provided with a fan. Maintenance informed. Follow up next shift.")
       ],
       vip: [
-        item("Ms Eleanor Whitmore arriving " + tomorrow + " 11:00 — quiet upper-floor Junior Suite Room 42. Champagne + welcome card. Confirm 15% corporate discount on invoice.")
+        item("Whitmore VIP – due " + tomorrow + " 11:00. Quiet upper suite Room 42. Champagne + welcome card. Confirm 15% corp rate on invoice.")
       ],
       guest: [
-        item("Mr James Okonkwo (Room 22, regular) — departure tomorrow; wake-up 06:30; Addison Lee transfer 10:15. Collect £42.50 minibar balance before checkout."),
-        item("Mrs Patel (Room 16) — late arrival ~23:45; Booking.com prepaid; obtain mobile number; twin preference — move to twin-capable Room 12 or Room 25 if available."),
-        item("Henderson party — interconnecting Rooms 14 & 15 tomorrow; birthday package + balloons Room 15 at 15:00 (F&B informed)."),
-        item("Room 21 Chen — late checkout approved until 13:00 (relocated from Room 11 while safe is repaired)."),
-        item("Adapters outstanding Rooms 15 and 16 — return or £20 charge at checkout.")
+        item("Room 22 Okonkwo – dep AM. Wake 06:30. Addison Lee 10:15. Collect £42.50 minibar before checkout."),
+        item("Room 16 Patel – late arr ~23:45. B.com prepaid. Get mobile at check-in. Twin pref → Room 12 or 25 if free."),
+        item("Henderson x4 – interconnect Rooms 14 & 15 tomorrow. Birthday balloons Room 15 at 15:00 (F&B informed)."),
+        item("Room 21 Chen – late CO approved 13:00.")
       ],
       maintenance: [
-        item("Room 24 — A/C cooling failure (guest impact). Include in handover until resolved."),
-        item("Room 31 — dripping shower mixer (noticed at turn-down). Medium priority for morning."),
-        item("Lobby WC — hand dryer failed; paper towels in place pending repair."),
-        item("Room 11 — safe keypad intermittent; room on hold; guest in Room 21. Waiting for parts.")
+        item("Room 24 – AC not cooling. Guest provided with a fan. Maintenance informed. Follow up next shift."),
+        item("Room 31 – Shower mixer dripping. HK reported. Medium priority."),
+        item("Lobby WC – Hand dryer failed. Paper towels placed. Maintenance informed."),
+        item("Room 11 – Safe keypad intermittent. On hold for parts. Guest relocated to Room 21.")
       ],
       payments: [
-        item("Room 22 — open minibar balance £42.50 before Okonkwo departure."),
-        item("Room 4 — Expedia; city tax £12.50 still to collect. Note post-05:00 charging window.")
+        item("Room 22 – Open minibar £42.50 before Okonkwo departure."),
+        item("Room 4 – Expedia city tax £12.50 still to collect.")
       ],
       events: [
-        item("Henderson birthday package — balloons and welcome set for Room 15 at 15:00 tomorrow.")
+        item("Room 15 – Henderson birthday set / balloons at 15:00 tomorrow.")
       ],
       tasks: [
-        item("Obtain Mrs Patel mobile number at check-in and update profile."),
-        item("Confirm Room 42 allocation for Whitmore VIP (quiet upper suite)."),
-        item("Whitmore VIP — verify 15% corporate discount applied to final invoice."),
-        item("Mr Davies no-show Room 5 — follow hotel no-show policy before releasing."),
-        item("Lost property: gold cufflink (Room 25 / Mr Fraser) in DM safe — guest emailed.")
+        item("Get Patel mobile at check-in and update profile."),
+        item("Confirm Room 42 for Whitmore VIP + amenities."),
+        item("Davies no-show Room 5 – hold until Night confirms."),
+        item("Adapter returns Rooms 15 + 16 – return or £20 charge.")
       ],
       inventory: [
-        item("Travel adapter stock — two still on loan (Rooms 15 and 16); monitor low-stock threshold.")
+        item("Adapters on loan – Rooms 15 and 16.")
       ],
       deliveries: [],
       lostproperty: [
-        item("Gold cufflink found Room 25 after Mr Fraser departure — DM safe; email sent.")
+        item("Gold cufflink – Room 25 (Fraser). In DM safe. Guest emailed.")
       ],
       general: [
-        item("Remaining arrivals tonight: 2. Departures tomorrow: 6. In-house 18 (75% occupancy). ADR £285. RevPAR £213.75.")
+        item("Back-office printer jamming – restart before AM rush."),
+        item("Night audit checklist still open until remaining arrivals clear."),
+        item("Walk-in hold on Room 3 until 22:00 – release if no show."),
+        item("Lobby Wi-Fi slow around 19:00 – IT ticket raised; guests advised."),
+        item("Staff meal keys left at Night desk – return to F&B in the morning.")
       ],
       completed: [
-        item("Airport transfer for Okonkwo confirmed with Addison Lee (10:15).", "completed"),
-        item("Wake-up call Room 22 loaded for 06:30.", "completed"),
-        item("Chen late checkout authorised until 13:00; temporary move to Room 21 completed.", "completed")
+        item("Room 22 transfer booked Addison Lee 10:15.", "completed"),
+        item("Room 22 wake-up loaded 06:30.", "completed"),
+        item("Room 21 late CO approved to 13:00.", "completed")
       ]
     };
   }
@@ -168,27 +208,52 @@
     return [
       {
         id: "demo-rec-ac",
-        title: "Escalate Room 24 A/C",
-        reason: "Guest-impacting cooling issue remains unresolved after evening report.",
+        text: "Follow up Room 24 AC next shift — guest still impacted; offer move if no Maintenance ETA.",
         priority: "high",
-        status: "pending",
-        actions: ["Confirm Maintenance ETA", "Offer room move if unresolved by morning"]
+        department: "Maintenance",
+        status: "pending"
       },
       {
         id: "demo-rec-vip",
-        title: "Prepare Whitmore VIP arrival",
-        reason: "Quiet upper-floor preference matches Room 42; amenities and invoice discount need confirmation before 11:00.",
+        text: "Prep Whitmore VIP — confirm Room 42, champagne/welcome card, and 15% corp rate on folio.",
         priority: "high",
-        status: "pending",
-        actions: ["Confirm Room 42", "Champagne & welcome card", "Verify 15% discount"]
+        department: "Reception",
+        status: "pending"
       },
       {
         id: "demo-rec-balance",
-        title: "Clear Room 22 open balance",
-        reason: "£42.50 minibar balance must be settled before Okonkwo departure and transfer.",
-        priority: "medium",
-        status: "pending",
-        actions: ["Present folio at wake-up / before 10:15 transfer"]
+        text: "Clear Room 22 £42.50 minibar before Okonkwo transfer at 10:15.",
+        priority: "high",
+        department: "Finance",
+        status: "pending"
+      },
+      {
+        id: "demo-rec-shower",
+        text: "Schedule Room 31 shower mixer for the AM engineering round and recheck after.",
+        priority: "normal",
+        department: "Housekeeping",
+        status: "pending"
+      },
+      {
+        id: "demo-rec-twin",
+        text: "Move Patel to twin-capable Room 12 or 25 if still free before late arrival.",
+        priority: "normal",
+        department: "Guest Services",
+        status: "pending"
+      },
+      {
+        id: "demo-rec-noshow",
+        text: "Hold Davies no-show Room 5 until Night confirms release.",
+        priority: "high",
+        department: "Duty Manager",
+        status: "pending"
+      },
+      {
+        id: "demo-rec-adapters",
+        text: "Chase adapter returns Rooms 15 + 16 during Night checkout checks.",
+        priority: "low",
+        department: "Night Team",
+        status: "pending"
       }
     ];
   }
@@ -380,7 +445,7 @@
   }
 
   function buildAiSummary() {
-    return "Night inherits one guest-impacting A/C issue in Room 24, a Whitmore VIP arrival tomorrow at 11:00 into quiet Junior Suite Room 42, and payment follow-ups including Room 22’s £42.50 minibar balance before the 10:15 transfer. Two arrivals remain tonight; adapters on Rooms 15 and 16 still need return or charge. Room 11 remains on hold for a safe keypad part.";
+    return "Busy Night handoff. Room 24 AC still open (fan given). Whitmore VIP due 11:00 into Room 42. Clear Room 22 £42.50 before 10:15 transfer. Two arrivals left tonight. Adapters 15 + 16 outstanding. Room 11 on hold for safe parts.";
   }
 
   function buildHotelBrainProfile() {
@@ -393,17 +458,17 @@
       general: {
         hotelName: HOTEL_NAME,
         hotelGroup: "",
-        hotelCode: "OAK-MLB",
+        hotelCode: "OAK-MAY",
         hotelType: "Independent boutique hotel",
         starRating: "4",
-        totalRooms: "24",
+        totalRooms: String(TOTAL_ROOMS),
         totalFloors: "5",
-        address: "Marylebone",
+        address: "Mayfair",
         city: "London",
         country: "United Kingdom",
         phone: "",
         email: "",
-        description: "A 24-room independent boutique hotel in Marylebone. Highly personalised service with strong shift-to-shift communication.",
+        description: "An 80-room independent boutique hotel in Mayfair. Hotel Brain is designed to grow as operational knowledge, guest preferences and shift activity are added over time.",
         brandColor: "",
         logo: "",
         timezone: "Europe/London",
@@ -412,11 +477,11 @@
         operatingNotes: "Boutique service. Pass unresolved issues with ownership. Never invent guest facts."
       },
       aiPrefs: {
-        tone: "professional",
-        detail: "standard",
+        tone: "concise",
+        detail: "brief",
         language: "British English",
         dateFormat: "DD/MM/YYYY (24-hour)",
-        instructions: "Use British English. Be concise but operationally complete. Prioritise unresolved and urgent matters. Include room numbers. Never invent facts."
+        instructions: "Use British English. Keep handovers short and operational — fix spelling/grammar, cut repetition, prefer scan-friendly lines over long paragraphs. Include room numbers. Never invent facts."
       },
       departments: [
         { name: "Reception", head: "", contact: "", email: "", instructions: "Front office and guest-facing operations." },
@@ -438,12 +503,11 @@
         ]
       },
       rooms: [
-        { code: "CD", type: "Classic Double", count: "4", floors: "Lower ground", maxGuests: "2" },
-        { code: "CT", type: "Classic Twin", count: "1", floors: "Lower ground", maxGuests: "2" },
-        { code: "DK", type: "Deluxe King", count: "10", floors: "1–3", maxGuests: "2" },
-        { code: "DT", type: "Deluxe Twin", count: "4", floors: "1–4", maxGuests: "2" },
-        { code: "AK", type: "Accessible King", count: "2", floors: "2–3", maxGuests: "2" },
-        { code: "JS", type: "Junior Suite", count: "3", floors: "4", maxGuests: "2" }
+        { code: "CD", type: "Classic Double", count: "10", floors: "1", maxGuests: "2" },
+        { code: "DK", type: "Deluxe King", count: "42", floors: "1–4", maxGuests: "2" },
+        { code: "DT", type: "Deluxe Twin", count: "14", floors: "1–4", maxGuests: "2" },
+        { code: "AK", type: "Accessible King", count: "3", floors: "2–4", maxGuests: "2" },
+        { code: "JS", type: "Junior Suite", count: "11", floors: "4–5", maxGuests: "2" }
       ],
       roomFacilities: inventory.map(function (room) {
         return {
@@ -476,12 +540,12 @@
         { term: "JS", meaning: "Junior Suite" }
       ],
       hotelKnowledge: {
-        generalNotes: "The Oakwood Marylebone is a 24-room independent boutique hotel in London. Service is highly personalised and shift communication is critical.",
+        generalNotes: "The Oakwood Mayfair is an 80-room independent boutique hotel in London. Hotel Brain holds the hotel’s growing operational memory — knowledge, preferences and patterns that make AI Shift Handover more useful over time.",
         hotelStandards: "Professional, warm, clear and concise. Pass operational issues with ownership and follow-up. Never invent guest information.",
         vipRules: "Review VIP notes before arrival. Confirm quiet upper-floor allocation where requested. Prepare welcome card and amenities. Confirm invoice discounts.",
         commonTerms: "CD = Classic Double\nDK = Deluxe King\nJS = Junior Suite\nAK = Accessible King",
-        operationalNotes: "Consolidate fragmented shift notes into one clear handover without replacing the PMS.",
-        localRecommendations: "Marylebone High Street and Regent's Park are within walking distance.",
+        operationalNotes: "Consolidate fragmented shift notes into one clear handover without replacing the PMS. Hotel Brain builds context as information is added.",
+        localRecommendations: "Mayfair and Green Park are within walking distance.",
         aiInstructions: "Use British English. Prioritise unresolved and urgent matters. Include room numbers. Never invent facts."
       },
       guestServices: {
@@ -548,8 +612,8 @@
   }
 
   function buildMetrics() {
-    var totalRooms = 24;
-    var roomsSold = 18;
+    var totalRooms = TOTAL_ROOMS;
+    var roomsSold = 60;
     var occupancyPct = (roomsSold / totalRooms) * 100;
     var adr = 285;
     var revpar = Math.round(adr * (occupancyPct / 100) * 100) / 100;
@@ -559,11 +623,15 @@
     });
     var openBalanceCount = 2;
 
+    var adults = 98;
+    var children = 14;
     return {
       totalRooms: totalRooms,
       arrivals: 8,
       departures: 6,
-      inHouse: roomsSold,
+      inHouse: adults + children,
+      adults: adults,
+      children: children,
       occupancy: String(occupancyPct) + "%",
       occupancyValue: occupancyPct,
       adr: String(adr),
@@ -588,14 +656,20 @@
     var metrics = buildMetrics();
     var inventory = buildRoomInventory();
     var maintenanceIssues = buildMaintenanceIssues(workspaceId);
+    var roomsAvailable = metrics.totalRooms - metrics.roomsSold;
+    var stayovers = Math.max(0, metrics.roomsSold - metrics.arrivals);
     var snapshot = {
       arrivals: metrics.arrivals,
       departures: metrics.departures,
+      stayovers: String(stayovers),
       inHouse: metrics.inHouse,
+      adults: metrics.adults,
+      children: metrics.children,
+      roomsSold: metrics.roomsSold,
+      roomsAvailable: String(roomsAvailable),
       occupancy: metrics.occupancy,
       adr: metrics.adr,
       revpar: metrics.revpar,
-      roomsSold: metrics.roomsSold,
       currency: metrics.currency
     };
 
@@ -664,6 +738,11 @@
     };
   }
 
+  /**
+   * Initial Demo Mode form state only.
+   * Prefills messy notes + snapshot — never restores organised/generated output.
+   * Visitors must click Generate to run the shared Intelligence Engine.
+   */
   function buildDraftPayload(pack) {
     pack = pack || buildPack();
     return {
@@ -674,13 +753,13 @@
       notes: pack.sourceNotes,
       hotelSnapshot: pack.hotelSnapshot,
       dashboardMetrics: pack.dashboardMetrics,
-      hasGeneratedOutput: true,
-      organisedHandover: pack.organisedHandover,
-      aiSummary: pack.aiSummary,
-      generatedTime: pack.generatedTime,
-      recommendations: pack.recommendations,
-      shiftIntelligenceChecklist: pack.shiftIntelligenceChecklist,
-      savedAt: new Date().toISOString(),
+      hasGeneratedOutput: false,
+      organisedHandover: {},
+      aiSummary: "",
+      generatedTime: "",
+      recommendations: [],
+      shiftIntelligenceChecklist: [],
+      savedAt: null,
       isDemoData: true,
       sampleDataId: PACK_ID + ":draft:night"
     };
@@ -727,8 +806,8 @@
     var metrics = pack.metrics || buildMetrics();
     var referenced = extractReferencedRooms(pack);
 
-    if (inventory.length !== 24) {
-      errors.push("Inventory must contain exactly 24 rooms (found " + inventory.length + ").");
+    if (inventory.length !== TOTAL_ROOMS) {
+      errors.push("Inventory must contain exactly " + TOTAL_ROOMS + " rooms (found " + inventory.length + ").");
     }
 
     referenced.forEach(function (roomNo) {
@@ -771,8 +850,9 @@
       errors.push("Payment section count must equal openBalances metric.");
     }
 
-    if (metrics.inHouse !== metrics.roomsSold) {
-      errors.push("inHouse must equal roomsSold.");
+    if (metrics.adults != null && metrics.children != null &&
+        metrics.inHouse !== (metrics.adults + metrics.children)) {
+      errors.push("inHouse guests must equal adults + children when both are set.");
     }
     if (metrics.occupancyValue !== (metrics.roomsSold / metrics.totalRooms) * 100) {
       errors.push("Occupancy percentage must equal roomsSold / totalRooms * 100.");
@@ -786,8 +866,15 @@
       errors.push("preparedBy must be Sophie Chen · Night Manager.");
     }
     if (pack.hotelName !== HOTEL_NAME) {
-      errors.push("hotelName must be The Oakwood Marylebone.");
+      errors.push("hotelName must be The Oakwood Mayfair.");
     }
+    var brainBlob = JSON.stringify(pack.hotelBrainProfile || {});
+    var banned = ["Mary" + "lebone", "Zet" + "ter"];
+    banned.forEach(function (token) {
+      if (brainBlob.indexOf(token) !== -1) {
+        errors.push("Demo Hotel Brain profile must not reference legacy sample hotel identities.");
+      }
+    });
 
     return { ok: errors.length === 0, errors: errors, referencedRooms: referenced };
   }
@@ -796,6 +883,7 @@
     PACK_ID: PACK_ID,
     PACK_LABEL: PACK_LABEL,
     HOTEL_NAME: HOTEL_NAME,
+    TOTAL_ROOMS: TOTAL_ROOMS,
     PREPARED_BY: PREPARED_BY,
     buildRoomInventory: buildRoomInventory,
     getRoom: getRoom,

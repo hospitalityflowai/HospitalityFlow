@@ -99,8 +99,13 @@ assertEqual(
 );
 assertEqual(
   Engine.rewriteNote("guest upset ac"),
-  "The guest has reported an air-conditioning issue and is unhappy with the situation.",
+  "AC issue reported. Guest unhappy.",
   "guest upset ac (no invented Maintenance chase)"
+);
+assertEqual(
+  Engine.rewriteNote("24 ac broken maint aware fan guest", { section: "urgent" }),
+  "Room 24 – AC not cooling. Guest provided with a fan. Maintenance informed. Follow up next shift.",
+  "messy AC note → operational intelligence"
 );
 
 console.log("\nPhase 3B — remaining templates stay factual (no invented Please chase)");
@@ -399,7 +404,7 @@ console.log("\nPhase 3B — remaining legacy templates must not invent actions")
   const acSrc = "Room 12 AC not cooling.";
   const ac = Engine.rewriteNote(acSrc, { section: "maintenance" });
   assertIncludes(ac, "12", "AC retains Room 12");
-  assert(/\bair conditioning is not cooling\b/i.test(ac), "AC factual not-cooling status");
+  assert(/\bAC not cooling\b/i.test(ac), "AC factual not-cooling status");
   assertNoUnsupportedActions(ac, acSrc, "AC issue");
 
   const extSrc = "Room 14 wants to extend for one night.";

@@ -293,8 +293,7 @@ html.hf-demo-reveal .hotel-card,
 html.hf-demo-reveal .input-card,
 html.hf-demo-reveal .output-section,
 html.hf-demo-reveal .maint-board,
-html.hf-demo-reveal .account-links a,
-html.hf-demo-reveal .hf-demo-account-card {
+html.hf-demo-reveal .account-links a {
   animation: hfDemoFadeUp 0.55s var(--hf-demo-ease) both;
 }
 
@@ -316,55 +315,41 @@ html.hf-demo-reveal .account-links a:nth-child(3) { animation-delay: 0.12s; }
   }
 }
 
-/* —— Account toggle card —— */
-.hf-demo-account-card {
-  margin-top: 20px;
-  padding: 18px 18px 16px;
-  border-radius: 14px;
-  background:
-    linear-gradient(145deg, rgba(91, 159, 212, 0.1), rgba(18, 34, 64, 0.6)),
-    rgba(18, 34, 64, 0.85);
-  border: 1px solid rgba(91, 159, 212, 0.28);
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-  transition: border-color 0.3s var(--hf-demo-ease), box-shadow 0.3s var(--hf-demo-ease);
+/* —— Operator QA link (Account → Operator section only) —— */
+.hf-demo-operator-note {
+  margin-top: -8px;
+  margin-bottom: 16px;
 }
 
-.hf-demo-account-card.is-active {
-  border-color: rgba(196, 165, 116, 0.45);
-  box-shadow: 0 0 0 1px rgba(196, 165, 116, 0.12);
+.hf-demo-operator-host {
+  display: inline-flex;
+  align-items: center;
 }
 
-.hf-demo-account-label {
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--hf-demo-gold);
-  margin-bottom: 6px;
-}
-
-.hf-demo-account-text {
-  font-size: 0.88rem;
-  color: var(--hf-demo-muted);
-  line-height: 1.45;
-  max-width: 36rem;
+.hf-demo-operator-link,
+.account-links .hf-demo-operator-link {
+  display: inline;
+  padding: 0;
   margin: 0;
+  background: none;
+  border: none;
+  border-radius: 0;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--gray-400, var(--hf-demo-muted));
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.2s var(--hf-demo-ease);
 }
 
-.hf-demo-account-status {
-  margin: 8px 0 0;
-  font-size: 0.8rem;
-  color: #6bc992;
-  min-height: 1.2em;
-}
-
-.hf-demo-account-card .btn {
-  flex-shrink: 0;
-  align-self: center;
+.hf-demo-operator-link:hover,
+.hf-demo-operator-link:focus-visible,
+.account-links .hf-demo-operator-link:hover,
+.account-links .hf-demo-operator-link:focus-visible {
+  background: none;
+  border: none;
+  color: var(--white, var(--hf-demo-ink));
+  outline: none;
 }
 
 /* Demo issue badge */
@@ -424,8 +409,7 @@ html.hf-demo-reveal .account-links a:nth-child(3) { animation-delay: 0.12s; }
   html.hf-demo-reveal .input-card,
   html.hf-demo-reveal .output-section,
   html.hf-demo-reveal .maint-board,
-  html.hf-demo-reveal .account-links a,
-  html.hf-demo-reveal .hf-demo-account-card {
+  html.hf-demo-reveal .account-links a {
     animation: none !important;
   }
 }

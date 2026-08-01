@@ -566,7 +566,7 @@
     }
 
     .secondary-actions {
-      display: grid;
+      display: none;
       gap: 10px;
       grid-template-columns: 1fr;
     }
@@ -578,11 +578,20 @@
     }
 
     .actions-clear {
-      display: flex;
+      display: none;
       justify-content: flex-end;
       align-items: center;
       flex-wrap: wrap;
       gap: 8px 12px;
+    }
+
+    /* Output actions only after a handover has been generated. */
+    .actions.has-handover-output .secondary-actions {
+      display: grid;
+    }
+
+    .actions.has-handover-output .actions-clear {
+      display: flex;
     }
 
     .actions-meta {
@@ -816,9 +825,42 @@
       gap: 10px;
     }
 
+    .hotel-snapshot-groups {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .hotel-snapshot-group-label {
+      font-size: 0.72rem;
+      font-weight: 650;
+      color: var(--gray-500);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin: 0 0 8px;
+    }
+
     .shift-glance-grid--snapshot {
       grid-template-columns: repeat(6, minmax(0, 1fr));
       align-items: stretch;
+    }
+
+    .hotel-snapshot-group[data-snapshot-group="operations"] .shift-glance-grid--snapshot {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+
+    .hotel-snapshot-group[data-snapshot-group="inventory"] .shift-glance-grid--snapshot {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .hotel-snapshot-group[data-snapshot-group="revenue"] .shift-glance-grid--snapshot {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      max-width: 420px;
+    }
+
+    .hotel-snapshot-groups .glance-snapshot {
+      min-height: 88px;
+      padding: 12px 10px 10px;
     }
 
     .shift-glance-grid--alerts {
@@ -1067,8 +1109,15 @@
     }
 
     @media (max-width: 1024px) {
+      .hotel-snapshot-group[data-snapshot-group="operations"] .shift-glance-grid--snapshot,
+      .hotel-snapshot-group[data-snapshot-group="inventory"] .shift-glance-grid--snapshot,
       .shift-glance-grid--snapshot {
         grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .hotel-snapshot-group[data-snapshot-group="revenue"] .shift-glance-grid--snapshot {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        max-width: none;
       }
 
       .shift-glance-grid--alerts {
@@ -1077,6 +1126,9 @@
     }
 
     @media (max-width: 600px) {
+      .hotel-snapshot-group[data-snapshot-group="operations"] .shift-glance-grid--snapshot,
+      .hotel-snapshot-group[data-snapshot-group="inventory"] .shift-glance-grid--snapshot,
+      .hotel-snapshot-group[data-snapshot-group="revenue"] .shift-glance-grid--snapshot,
       .shift-glance-grid--snapshot,
       .shift-glance-grid--alerts {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1788,8 +1840,8 @@
       flex-direction: column;
       align-items: stretch;
       text-align: center;
-      min-height: 102px;
-      padding: 16px 12px 12px;
+      min-height: 88px;
+      padding: 12px 10px 10px;
       gap: 6px;
       border: 1px solid rgba(7, 14, 26, 0.06);
       border-radius: var(--radius-lg);
@@ -2029,6 +2081,13 @@
       color: #9a7200;
       background: var(--amber-50);
     }
+
+    .recommendation-priority.priority-low {
+      background: rgba(122, 135, 153, 0.14);
+      color: var(--gray-500);
+    }
+
+    .recommendation-item.priority-low { border-left-color: var(--gray-400); }
 
     .recommendation-priority.priority-normal {
       color: var(--blue-600);
@@ -3106,7 +3165,7 @@
               <div class="hotel-snapshot-pre">
                 <h4 class="shift-glance-subheading">Hotel Snapshot</h4>
                 <p class="hotel-snapshot-pre-hint">Enter today's hotel figures, or leave them blank and AI will extract them from your shift notes.</p>
-                <div class="shift-glance-grid shift-glance-grid--snapshot" id="preHotelSnapshotGrid"></div>
+                <div class="hotel-snapshot-groups" id="preHotelSnapshotGrid"></div>
               </div>
             </div>
           </div>
@@ -3137,8 +3196,8 @@
             </div>
           </div>
 
-          <!-- Actions -->
-          <div class="actions">
+          <!-- Actions: secondary/output controls stay hidden until a handover is generated -->
+          <div class="actions" id="handoverActions">
             <button class="btn btn-primary" id="generateBtn" type="button">
               <span class="spinner" aria-hidden="true"></span>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -3146,7 +3205,7 @@
               </svg>
               <span class="btn-text" id="generateBtnText">Generate Handover</span>
             </button>
-            <div class="secondary-actions">
+            <div class="secondary-actions" id="handoverOutputActions" hidden>
               <button class="btn btn-secondary" id="copyBtn" type="button" disabled>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
@@ -3176,7 +3235,7 @@
               <span class="draft-status" id="draftStatus" hidden aria-live="polite"></span>
               <span class="draft-restored-hint" id="draftRestoredHint" hidden aria-live="polite">Previous draft restored.</span>
             </div>
-            <div class="actions-clear">
+            <div class="actions-clear" id="handoverClearActions" hidden>
               <button class="btn btn-new-handover" id="newHandoverBtn" type="button">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
@@ -3193,7 +3252,7 @@
           </div>
 
           <!-- Output -->
-          <section class="output-section" id="outputSection" aria-live="polite">
+          <section class="output-section" id="outputSection" aria-live="polite" hidden>
             <div class="output-panel">
               <div class="output-panel-header">
                 <h2 id="organisedOutputTitle">Organised Handover</h2>
@@ -3210,7 +3269,7 @@
                   </div>
                   <div class="shift-glance-group">
                     <h4 class="shift-glance-subheading">Hotel Snapshot</h4>
-                    <div class="shift-glance-grid shift-glance-grid--snapshot" id="shiftSnapshotGrid"></div>
+                    <div class="hotel-snapshot-groups" id="shiftSnapshotGrid"></div>
                   </div>
                   <div class="shift-glance-group" id="shiftAlertsGroup">
                     <h4 class="shift-glance-subheading">Shift Alerts</h4>
@@ -3243,7 +3302,7 @@
                     <div class="shift-intelligence-header">
                       <div class="shift-intelligence-header-text">
                         <h3>Shift Intelligence</h3>
-                        <p>Operational checks generated from the Hotel Brain and your current shift.</p>
+                        <p>Recommended next actions from Hotel Brain context and this shift.</p>
                       </div>
                       <span class="shift-intelligence-badge">Shift Intelligence Engine</span>
                     </div>
@@ -3478,8 +3537,8 @@
         {
           id: "general",
           emoji: "📝",
-          title: "General Operations",
-          category: "General Operations",
+          title: "Operational Notes",
+          category: "Operational Notes",
           keywords: [
             "update", "general", "note", "brief", "reminder", "staff", "operational",
             "pool", "temperature", "floor", "wifi", "wi-fi", "internet", "pms", "opera",
@@ -3510,6 +3569,9 @@
       var saveHandoverBtn = document.getElementById("saveHandoverBtn");
       var clearBtn = document.getElementById("clearBtn");
       var outputSection = document.getElementById("outputSection");
+      var handoverActions = document.getElementById("handoverActions");
+      var handoverOutputActions = document.getElementById("handoverOutputActions");
+      var handoverClearActions = document.getElementById("handoverClearActions");
       var sectionsGrid = document.getElementById("sectionsGrid");
       var shiftIntelligenceCard = document.getElementById("shiftIntelligenceCard");
       var recommendationsCard = shiftIntelligenceCard;
@@ -4253,20 +4315,31 @@
         var roomCount = getTotalRoomCount() || trimText(general.totalRooms);
         var hotelType = trimText(general.hotelType);
         var knowledgeCount = countLoadedKnowledgeSections(hotelBrainContext);
+        var demoActive = window.HFDemoMode && window.HFDemoMode.isEnabled && window.HFDemoMode.isEnabled();
 
         if (hotelBrainTitle) {
-          hotelBrainTitle.textContent = status === "partial"
-            ? "Hotel Brain Partially Configured"
-            : "Hotel Brain Connected";
+          hotelBrainTitle.textContent = demoActive
+            ? "Hotel Brain"
+            : (status === "partial"
+              ? "Hotel Brain Partially Configured"
+              : "Hotel Brain Connected");
         }
         if (hotelBrainMeta) {
-          var metaParts = [hotelName];
-          if (roomCount) metaParts.push(roomCount + (roomCount === "1" ? " room" : " rooms"));
-          else if (hotelType) metaParts.push(hotelType);
-          hotelBrainMeta.textContent = metaParts.join(" · ");
+          if (demoActive) {
+            hotelBrainMeta.textContent = "The operational memory of your hotel.";
+          } else {
+            var metaParts = [hotelName];
+            if (roomCount) metaParts.push(roomCount + (roomCount === "1" ? " room" : " rooms"));
+            else if (hotelType) metaParts.push(hotelType);
+            hotelBrainMeta.textContent = metaParts.join(" · ");
+          }
         }
         if (hotelBrainSub) {
-          if (status === "partial") {
+          if (demoActive) {
+            hotelBrainSub.textContent = hotelName
+              ? hotelName + " · Builds context as knowledge and shift activity are added."
+              : "Builds context as knowledge and shift activity are added.";
+          } else if (status === "partial") {
             hotelBrainSub.textContent = "Some Hotel Brain sections still need completing";
           } else {
             hotelBrainSub.textContent = knowledgeCount > 0 ? "Knowledge loaded" : "Preferences loaded";
@@ -4274,7 +4347,7 @@
           hotelBrainSub.hidden = false;
         }
         if (hotelBrainLink) {
-          hotelBrainLink.textContent = "Hotel Profile";
+          hotelBrainLink.textContent = demoActive ? "Open Hotel Brain" : "Hotel Profile";
           hotelBrainLink.setAttribute("href", "hotel-profile.html");
         }
       }
@@ -4883,10 +4956,11 @@
       var RECOMMENDATION_PRIORITIES = [
         { id: "urgent", label: "Urgent" },
         { id: "high", label: "High" },
-        { id: "normal", label: "Normal" }
+        { id: "normal", label: "Normal" },
+        { id: "low", label: "Low" }
       ];
 
-      var RECOMMENDATION_PRIORITY_RANK = { urgent: 0, high: 1, normal: 2 };
+      var RECOMMENDATION_PRIORITY_RANK = { urgent: 0, high: 1, normal: 2, low: 3 };
 
       function createItemId() {
         return Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 7);
@@ -5001,6 +5075,13 @@
         return normalizeItemStatus(status);
       }
 
+      function normalizeRecommendationPriority(priority) {
+        var value = String(priority || "normal").toLowerCase().trim();
+        if (value === "medium") return "normal";
+        if (value === "urgent" || value === "high" || value === "normal" || value === "low") return value;
+        return "normal";
+      }
+
       function normalizeRecommendation(raw) {
         if (!raw || typeof raw !== "object") {
           return {
@@ -5011,10 +5092,12 @@
             status: "pending"
           };
         }
+        var text = String(raw.text || raw.title || "").trim();
+        if (!text && raw.reason) text = String(raw.reason).trim();
         return {
           id: raw.id || createItemId(),
-          text: String(raw.text || ""),
-          priority: raw.priority || "normal",
+          text: text,
+          priority: normalizeRecommendationPriority(raw.priority),
           department: raw.department || getDefaultDepartment(),
           status: normalizeRecommendationStatus(raw.status || "pending")
         };
@@ -7386,23 +7469,23 @@
         },
         {
           id: "vip",
-          label: "VIP Arrivals",
+          label: "VIP Guests",
           icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>'
         },
         {
           id: "maintenance",
-          label: "Maintenance Tasks",
+          label: "Open Maintenance",
           icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>'
         },
         {
-          id: "payments",
-          label: "Payment Issues",
-          icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>'
+          id: "guest",
+          label: "Guest Requests",
+          icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M9 8h1"/><path d="M9 12h1"/><path d="M9 16h1"/><path d="M14 8h1"/><path d="M14 12h1"/><path d="M14 16h1"/><path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"/></svg>'
         },
         {
-          id: "events",
-          label: "Events",
-          icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>'
+          id: "payments",
+          label: "Open Payment Issues",
+          icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>'
         },
         {
           id: "tasks",
@@ -7411,36 +7494,78 @@
         }
       ];
 
+      var HOTEL_SNAPSHOT_GROUPS = [
+        { id: "operations", label: "Operations" },
+        { id: "inventory", label: "Inventory" },
+        { id: "revenue", label: "Revenue" }
+      ];
+
       var HOTEL_SNAPSHOT_STATS = [
         {
           id: "arrivals",
           label: "Arrivals",
+          group: "operations",
           icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M8 3H3v5"/><path d="M21 11V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v3"/><path d="M3 13v5a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5"/></svg>'
         },
         {
           id: "departures",
           label: "Departures",
+          group: "operations",
           icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21H3v-5"/><path d="M16 21h5v-5"/><path d="M3 11V8a2 2 0 0 1 1-1.73l7-4a2 2 0 0 1 2 0l7 4A2 2 0 0 1 21 8v3"/><path d="M21 13v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-5"/></svg>'
         },
         {
-          id: "inHouse",
-          label: "In-house Guests",
+          id: "stayovers",
+          label: "Stayovers",
+          group: "operations",
           icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>'
+        },
+        {
+          id: "inHouse",
+          label: "Guests In-house",
+          group: "operations",
+          icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>'
+        },
+        {
+          id: "adults",
+          label: "Adults",
+          group: "operations",
+          icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'
+        },
+        {
+          id: "children",
+          label: "Children",
+          group: "operations",
+          icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3"/><path d="M6 21v-1a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v1"/></svg>'
+        },
+        {
+          id: "roomsSold",
+          label: "Rooms Sold",
+          group: "inventory",
+          icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><path d="M9 9h1"/><path d="M9 13h1"/><path d="M9 17h1"/></svg>'
+        },
+        {
+          id: "roomsAvailable",
+          label: "Rooms Available",
+          group: "inventory",
+          icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M7 7V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/></svg>'
         },
         {
           id: "occupancy",
           label: "Occupancy",
+          group: "inventory",
           icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>'
         },
         {
           id: "adr",
           label: "ADR",
+          group: "revenue",
           icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>'
         },
         {
-          id: "roomsSold",
-          label: "Rooms Sold",
-          icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><path d="M9 9h1"/><path d="M9 13h1"/><path d="M9 17h1"/></svg>'
+          id: "revpar",
+          label: "RevPAR",
+          group: "revenue",
+          icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/><path d="M3 12h2"/><path d="M19 12h2"/></svg>'
         }
       ];
 
@@ -7451,10 +7576,15 @@
       var SNAPSHOT_PDF_LABELS = {
         arrivals: "Arrivals",
         departures: "Departures",
-        inHouse: "In-house Guests",
+        stayovers: "Stayovers",
+        inHouse: "Guests In-house",
+        adults: "Adults",
+        children: "Children",
+        roomsSold: "Rooms Sold",
+        roomsAvailable: "Rooms Available",
         occupancy: "Occupancy",
         adr: "ADR",
-        roomsSold: "Rooms Sold"
+        revpar: "RevPAR"
       };
 
       function getActiveHotelSnapshot() {
@@ -7498,6 +7628,7 @@
             return extractedOcc === null ? SNAPSHOT_EMPTY : formatOccupancyPercent(extractedOcc);
           }
           case "adr":
+          case "revpar":
             return formatAdrDisplay(value);
           default:
             return String(value);
@@ -7509,6 +7640,7 @@
 
         switch (statId) {
           case "adr":
+          case "revpar":
             return formatAdrDisplay(storedValue);
           case "occupancy": {
             var occNum = parseOccupancyNumber(storedValue);
@@ -7544,7 +7676,7 @@
           }
         });
 
-        return normalized;
+        return enrichHotelSnapshot(normalized);
       }
 
       function commitSnapshotState(notesText) {
@@ -7606,13 +7738,24 @@
           }
           case "arrivals":
           case "departures":
+          case "stayovers":
           case "inHouse":
-          case "roomsSold": {
+          case "adults":
+          case "children":
+          case "roomsSold":
+          case "roomsAvailable": {
             var intMatch = trimmed.replace(/,/g, "").match(/-?\d+/);
             if (!intMatch) return "";
             var intNum = parseInt(intMatch[0], 10);
             if (isNaN(intNum) || intNum < 0) return "";
             return String(intNum);
+          }
+          case "revpar": {
+            var revText = trimmed.replace(/^revpar\s*[:\-]?\s*/i, "").replace(/^[£$€]\s*/, "").replace(/,/g, "").trim();
+            if (!revText || !/\d/.test(revText)) return "";
+            var revNum = parseFloat(revText);
+            if (isNaN(revNum) || revNum < 0) return "";
+            return formatAdrDisplay(revNum);
           }
           default:
             return trimmed;
@@ -7852,25 +7995,64 @@
       }
 
       function buildHotelSnapshotPdfRows(snapshot) {
-        snapshot = snapshot || {};
-        return HOTEL_SNAPSHOT_STATS.map(function (stat) {
-          var displayValue = snapshot[stat.id] || SNAPSHOT_EMPTY;
-          return {
+        snapshot = enrichHotelSnapshot(snapshot || {});
+        var rows = [];
+        HOTEL_SNAPSHOT_STATS.forEach(function (stat) {
+          var displayValue = snapshot[stat.id];
+          if (!displayValue || displayValue === SNAPSHOT_EMPTY) return;
+          rows.push({
             label: SNAPSHOT_PDF_LABELS[stat.id] || stat.label,
             value: formatSnapshotPdfValue(stat.id, displayValue)
-          };
+          });
         });
+        return rows;
       }
 
       function buildHotelSnapshotForPdf() {
         return buildHotelSnapshotPdfRows(getCommittedSnapshot());
       }
 
-      function renderHotelSnapshotIntoGrid(gridEl, normalizedSnapshot) {
+      function renderHotelSnapshotIntoGrid(gridEl, normalizedSnapshot, options) {
+        options = options || {};
         if (!gridEl) return;
         gridEl.innerHTML = "";
-        HOTEL_SNAPSHOT_STATS.forEach(function (stat) {
-          gridEl.appendChild(renderSnapshotCard(stat, normalizedSnapshot || {}));
+        var snapshot = enrichHotelSnapshot(normalizedSnapshot || {});
+        var mode = options.mode || "display";
+
+        HOTEL_SNAPSHOT_GROUPS.forEach(function (group) {
+          var stats = HOTEL_SNAPSHOT_STATS.filter(function (stat) {
+            return stat.group === group.id;
+          });
+          var visibleStats = stats.filter(function (stat) {
+            if (mode === "input") return true;
+            var value = snapshot[stat.id];
+            if (options.hideEmpty && (!value || value === SNAPSHOT_EMPTY)) return false;
+            return true;
+          });
+          if (!visibleStats.length) return;
+
+          var groupEl = document.createElement("div");
+          groupEl.className = "hotel-snapshot-group";
+          groupEl.setAttribute("data-snapshot-group", group.id);
+
+          var heading = document.createElement("h5");
+          heading.className = "hotel-snapshot-group-label";
+          heading.textContent = group.label;
+
+          var grid = document.createElement("div");
+          grid.className = "shift-glance-grid shift-glance-grid--snapshot";
+
+          visibleStats.forEach(function (stat) {
+            if (mode === "input") {
+              grid.appendChild(renderPreSnapshotInputCard(stat));
+            } else {
+              grid.appendChild(renderSnapshotCard(stat, snapshot));
+            }
+          });
+
+          groupEl.appendChild(heading);
+          groupEl.appendChild(grid);
+          gridEl.appendChild(groupEl);
         });
       }
 
@@ -7948,20 +8130,29 @@
       }
 
       function renderPreHandoverSnapshot() {
-        if (!preHotelSnapshotGrid) return;
-        preHotelSnapshotGrid.innerHTML = "";
-        HOTEL_SNAPSHOT_STATS.forEach(function (stat) {
-          preHotelSnapshotGrid.appendChild(renderPreSnapshotInputCard(stat));
+        renderHotelSnapshotIntoGrid(preHotelSnapshotGrid, lastNormalizedSnapshot || {}, {
+          mode: "input",
+          hideEmpty: false
         });
       }
 
       function buildHotelSnapshotTextLines() {
         var snapshot = getCommittedSnapshot();
-        return HOTEL_SNAPSHOT_STATS.map(function (stat) {
-          var label = SNAPSHOT_PDF_LABELS[stat.id] || stat.label;
-          var value = snapshot[stat.id] || SNAPSHOT_EMPTY;
-          return label + ": " + value;
+        var lines = [];
+        HOTEL_SNAPSHOT_GROUPS.forEach(function (group) {
+          var groupLines = [];
+          HOTEL_SNAPSHOT_STATS.forEach(function (stat) {
+            if (stat.group !== group.id) return;
+            var value = snapshot[stat.id];
+            if (!value || value === SNAPSHOT_EMPTY) return;
+            var label = SNAPSHOT_PDF_LABELS[stat.id] || stat.label;
+            groupLines.push(label + ": " + value);
+          });
+          if (!groupLines.length) return;
+          lines.push(group.label.toUpperCase());
+          groupLines.forEach(function (line) { lines.push(line); });
         });
+        return lines;
       }
 
       function firstPatternMatch(text, patterns) {
@@ -7993,7 +8184,21 @@
         var inHouseMatch = firstPatternMatch(normalized, [
           /(\d+)\s+in[\s-]?house\s+guests?/i,
           /in[\s-]?house\s+guests?\s*[:\-]?\s*(\d+)/i,
-          /(\d+)\s+guests?\s+in[\s-]?house/i
+          /(\d+)\s+guests?\s+in[\s-]?house/i,
+          /guests?\s+in[\s-]?house\s*[:\-]?\s*(\d+)/i,
+          /inhouse\s*[:\-]?\s*(\d+)/i
+        ]);
+
+        var adultsMatch = firstPatternMatch(normalized, [
+          /(\d+)\s+adults?/i,
+          /adults?\s*[:\-]?\s*(\d+)/i
+        ]);
+
+        var childrenMatch = firstPatternMatch(normalized, [
+          /(\d+)\s+children\b/i,
+          /(\d+)\s+child\b/i,
+          /children\s*[:\-]?\s*(\d+)/i,
+          /child(?:ren)?\s*[:\-]?\s*(\d+)/i
         ]);
 
         var occupancyMatch = firstPatternMatch(normalized, [
@@ -8021,13 +8226,40 @@
           /rooms?\s+sold\s*[:\-]?\s*(\d+)/i
         ]);
 
+        var revparMatch = firstPatternMatch(normalized, [
+          /revpar\s*[:\-]?\s*([£$€])?\s*(\d+(?:\.\d+)?)/i,
+          /([£$€])\s*(\d+(?:\.\d+)?)\s+revpar/i
+        ]);
+        var revpar = null;
+        if (revparMatch) {
+          revpar = {
+            currency: revparMatch[2] ? (revparMatch[1] || "£") : "£",
+            value: revparMatch[2] || revparMatch[1]
+          };
+        }
+
+        var stayoversMatch = firstPatternMatch(normalized, [
+          /(\d+)\s+stayovers?/i,
+          /stayovers?\s*[:\-]?\s*(\d+)/i
+        ]);
+
+        var roomsAvailableMatch = firstPatternMatch(normalized, [
+          /(\d+)\s+rooms?\s+available/i,
+          /rooms?\s+available\s*[:\-]?\s*(\d+)/i
+        ]);
+
         return {
           arrivals: arrivalsMatch ? arrivalsMatch[1] : null,
           departures: departuresMatch ? departuresMatch[1] : null,
           inHouse: inHouseMatch ? inHouseMatch[1] : null,
+          adults: adultsMatch ? adultsMatch[1] : null,
+          children: childrenMatch ? childrenMatch[1] : null,
           occupancy: occupancyMatch ? occupancyMatch[1] : null,
           adr: adr,
-          roomsSold: roomsSoldMatch ? roomsSoldMatch[1] : null
+          revpar: revpar,
+          roomsSold: roomsSoldMatch ? roomsSoldMatch[1] : null,
+          roomsAvailable: roomsAvailableMatch ? roomsAvailableMatch[1] : null,
+          stayovers: stayoversMatch ? stayoversMatch[1] : null
         };
       }
 
@@ -8280,10 +8512,10 @@
 
       var GLANCE_TO_SECTION = {
         urgent: "urgent",
-        vip: "guest",
+        vip: "vip",
         maintenance: "maintenance",
+        guest: "guest",
         payments: "payments",
-        events: "events",
         tasks: "tasks"
       };
 
@@ -8330,14 +8562,65 @@
 
       function calculateShiftStats(classified) {
         var metrics = getHandoverMetrics(classified);
+        var display = metrics.display || {};
         return {
-          urgent: metrics.urgent,
-          vip: metrics.vip,
-          maintenance: metrics.maintenance,
-          payments: metrics.payments,
-          events: metrics.events,
-          tasks: metrics.tasks
+          urgent: metrics.urgent || display.urgent || 0,
+          vip: metrics.vip || 0,
+          maintenance: metrics.maintenance || display.maintenance || 0,
+          guest: display.guest || 0,
+          payments: metrics.payments || display.payments || 0,
+          tasks: metrics.tasks || display.tasks || 0
         };
+      }
+
+      function parseSnapshotInteger(value) {
+        if (value === null || value === undefined || value === "" || value === SNAPSHOT_EMPTY) return null;
+        var match = String(value).replace(/,/g, "").match(/-?\d+/);
+        if (!match) return null;
+        var num = parseInt(match[0], 10);
+        return isNaN(num) ? null : num;
+      }
+
+      function parseSnapshotMoney(value) {
+        if (value === null || value === undefined || value === "" || value === SNAPSHOT_EMPTY) return null;
+        if (typeof value === "object" && value.value != null) return parseSnapshotMoney(value.value);
+        var match = String(value).replace(/,/g, "").match(/(\d+(?:\.\d+)?)/);
+        if (!match) return null;
+        var num = parseFloat(match[1]);
+        return isNaN(num) ? null : num;
+      }
+
+      function enrichHotelSnapshot(snapshot) {
+        var next = Object.assign({}, snapshot || {});
+        var roomsSold = parseSnapshotInteger(next.roomsSold);
+        var arrivals = parseSnapshotInteger(next.arrivals);
+        var occupancy = parseOccupancyNumber(next.occupancy);
+        var adr = parseSnapshotMoney(next.adr);
+        var totalRooms = parseSnapshotInteger(getTotalRoomCount());
+        var adults = parseSnapshotInteger(next.adults);
+        var children = parseSnapshotInteger(next.children);
+
+        if ((next.revpar == null || next.revpar === "" || next.revpar === SNAPSHOT_EMPTY) &&
+            adr != null && occupancy != null) {
+          next.revpar = formatAdrDisplay(Math.round(adr * (occupancy / 100) * 100) / 100);
+        }
+
+        if ((next.roomsAvailable == null || next.roomsAvailable === "" || next.roomsAvailable === SNAPSHOT_EMPTY) &&
+            totalRooms != null && roomsSold != null && totalRooms >= roomsSold) {
+          next.roomsAvailable = String(totalRooms - roomsSold);
+        }
+
+        if ((next.stayovers == null || next.stayovers === "" || next.stayovers === SNAPSHOT_EMPTY) &&
+            roomsSold != null && arrivals != null && roomsSold >= arrivals) {
+          next.stayovers = String(roomsSold - arrivals);
+        }
+
+        if ((next.inHouse == null || next.inHouse === "" || next.inHouse === SNAPSHOT_EMPTY) &&
+            adults != null && children != null) {
+          next.inHouse = String(adults + children);
+        }
+
+        return next;
       }
 
       function renderShiftAtAGlance(classified) {
@@ -8346,12 +8629,13 @@
         shiftSnapshotGrid.innerHTML = "";
         shiftAlertsGrid.innerHTML = "";
 
-        renderHotelSnapshotIntoGrid(shiftSnapshotGrid, lastNormalizedSnapshot || {});
+        lastNormalizedSnapshot = enrichHotelSnapshot(lastNormalizedSnapshot || {});
+        renderHotelSnapshotIntoGrid(shiftSnapshotGrid, lastNormalizedSnapshot, { hideEmpty: true });
 
         var alertCount = 0;
         GLANCE_STATS.forEach(function (stat) {
           var count = stats[stat.id] || 0;
-          if (count === 0 && stat.id !== "events") return;
+          if (count === 0) return;
 
           alertCount += 1;
 
@@ -8609,8 +8893,18 @@
         });
       }
 
+      function isDemoModeActive() {
+        return !!(window.HFDemoMode && window.HFDemoMode.isEnabled && window.HFDemoMode.isEnabled());
+      }
+
       function updateDraftStatusUI(savedAt) {
         if (!draftStatus) return;
+        /* Demo Mode is ephemeral — never show draft-save status chrome. */
+        if (isDemoModeActive()) {
+          draftStatus.hidden = true;
+          draftStatus.textContent = "";
+          return;
+        }
         if (!savedAt) {
           draftStatus.hidden = true;
           draftStatus.textContent = "";
@@ -8627,6 +8921,11 @@
 
       function showDraftRestoredHint() {
         if (!draftRestoredHint) return;
+        /* Prefilling the demo pack is not a restored user draft. */
+        if (isDemoModeActive()) {
+          draftRestoredHint.hidden = true;
+          return;
+        }
         draftRestoredHint.hidden = false;
       }
 
@@ -8755,11 +9054,7 @@
           renderShiftIntelligence();
           showSummaryCard();
           lastHandoverText = formatHandoverText(lastClassified);
-          outputSection.classList.add("visible");
-          copyBtn.disabled = false;
-          exportPdfBtn.disabled = false;
-          printHandoverBtn.disabled = false;
-          saveHandoverBtn.disabled = false;
+          setHandoverOutputChrome(true);
         } else {
           lastSummaryText = "";
           lastClassified = null;
@@ -8768,7 +9063,6 @@
           lastHandoverText = "";
           activeHandoverEditId = null;
           activeRecommendationEditId = null;
-          outputSection.classList.remove("visible");
           handoverMetaGrid.innerHTML = "";
           handoverMeta.classList.remove("is-visible");
           sectionsGrid.innerHTML = "";
@@ -8782,10 +9076,7 @@
           summaryCard.classList.remove("is-visible");
           hideRecommendationsPanel();
           renderPreHandoverSnapshot();
-          copyBtn.disabled = true;
-          exportPdfBtn.disabled = true;
-          printHandoverBtn.disabled = true;
-          saveHandoverBtn.disabled = true;
+          setHandoverOutputChrome(false);
         }
       }
 
@@ -8806,8 +9097,37 @@
         updateDraftStatusUI(null);
       }
 
+      /**
+       * Pre-generate: only details, snapshot, notes, and Generate.
+       * Post-generate: reveal Organised Handover + Copy/Save/PDF/Print/New/Clear.
+       * Shared by public Interactive Demo and real hotel workspaces.
+       */
+      function setHandoverOutputChrome(hasOutput) {
+        var show = !!hasOutput;
+        if (handoverActions) {
+          handoverActions.classList.toggle("has-handover-output", show);
+        }
+        if (handoverOutputActions) {
+          handoverOutputActions.hidden = !show;
+        }
+        if (handoverClearActions) {
+          handoverClearActions.hidden = !show;
+        }
+        if (outputSection) {
+          outputSection.classList.toggle("visible", show);
+          outputSection.hidden = !show;
+        }
+        if (copyBtn) copyBtn.disabled = !show;
+        if (exportPdfBtn) exportPdfBtn.disabled = !show;
+        if (printHandoverBtn) printHandoverBtn.disabled = !show;
+        if (saveHandoverBtn) saveHandoverBtn.disabled = !show;
+        if (!show && copyBtn) {
+          copyBtn.classList.remove("copied");
+          restoreCopyButtonHtml();
+        }
+      }
+
       function clearHandoverOutputState() {
-        outputSection.classList.remove("visible");
         handoverMetaGrid.innerHTML = "";
         handoverMeta.classList.remove("is-visible");
         sectionsGrid.innerHTML = "";
@@ -8831,12 +9151,7 @@
         editingSavedHandoverId = null;
         isEditingExistingSavedHandover = false;
         hideShiftIntelligencePanel();
-        copyBtn.disabled = true;
-        exportPdfBtn.disabled = true;
-        printHandoverBtn.disabled = true;
-        saveHandoverBtn.disabled = true;
-        copyBtn.classList.remove("copied");
-        restoreCopyButtonHtml();
+        setHandoverOutputChrome(false);
       }
 
       function resetHandoverForm() {
@@ -9149,11 +9464,7 @@
         showSummaryCard();
 
         lastHandoverText = formatHandoverText(lastClassified);
-        outputSection.classList.add("visible");
-        copyBtn.disabled = false;
-        exportPdfBtn.disabled = false;
-        printHandoverBtn.disabled = false;
-        saveHandoverBtn.disabled = false;
+        setHandoverOutputChrome(true);
 
         skipDraftSave = false;
         saveDraftNow();
@@ -9242,11 +9553,36 @@
         card.querySelector(".section-toggle").setAttribute("aria-expanded", !isOpen);
       }
 
+      function isUsefulOperationalNote(item) {
+        var text = typeof item === "string" ? item : (item && item.text) || "";
+        text = String(text || "").replace(/\s+/g, " ").trim();
+        if (!text || text.length < 12) return false;
+        if (/^(and|or|the|notes?|update)\.?$/i.test(text)) return false;
+        if (/^room\s+\d+\s*[–\-—:]\s*room\s+\d+\.?$/i.test(text)) return false;
+        if (/^rooms?\s+\d+\s*[–\-—:]\s*(and|&)\.?$/i.test(text)) return false;
+        if (/^(lobby|public area|back of house)\.?$/i.test(text)) return false;
+        /* Fragments that are not meaningful handover notes on their own. */
+        if (/^(maint(?:enance)?|hk|reception|engineer)\s*(aware|informed)\.?$/i.test(text)) return false;
+        if (/^not attended(?:\s+yet)?(?:\s*[–\-—,]?\s*follow(?:\s*up)?\s*(?:am|next\s+shift)?)?\.?$/i.test(text)) return false;
+        if (/^follow(?:\s*up)?\s*(?:am|next\s+shift)\.?$/i.test(text)) return false;
+        if (/^(fan|guest)\s+(fan|guest)\.?$/i.test(text)) return false;
+        /* Snapshot/KPI lines belong in Hotel Snapshot, not Operational Notes. */
+        if (/^\d+\s+(arrivals?|departures?|deps?)\b/i.test(text)) return false;
+        if (/^(arrivals?|departures?)\s*(left|still|due|tomorrow|tmrw)?\s*:?\s*\d+/i.test(text)) return false;
+        if (/\b(in[\s-]?house|occupancy|adr|revpar)\b/i.test(text) && /\d/.test(text) && text.length < 80) {
+          return false;
+        }
+        return true;
+      }
+
       function renderSections(classified) {
         sectionsGrid.innerHTML = "";
 
         SECTIONS.forEach(function (section, index) {
           var items = classified[section.id] || [];
+          if (section.id === "general") {
+            items = items.filter(isUsefulOperationalNote);
+          }
           if (items.length === 0) return;
 
           var sectionCount = items.length;
@@ -9348,11 +9684,7 @@
 
               lastHandoverText = formatHandoverText(classified);
               lastClassified = classified;
-              outputSection.classList.add("visible");
-              copyBtn.disabled = false;
-              exportPdfBtn.disabled = false;
-              printHandoverBtn.disabled = false;
-              saveHandoverBtn.disabled = false;
+              setHandoverOutputChrome(true);
 
               showToast(uiLabels.handover + " generated successfully!");
               scheduleDraftSave();
@@ -9662,17 +9994,20 @@
 
       function finishHandoverPageInit(preferredDraft) {
         wireShiftSelectorOnce();
+        setHandoverOutputChrome(false);
         var draftWasRestored = false;
         try {
           draftWasRestored = restoreDraftFromStorage(preferredDraft);
         } catch (err) {
           console.error("[Handover] Draft restore failed:", err);
+          setHandoverOutputChrome(false);
         }
 
         if (draftWasRestored) {
           showDraftRestoredHint();
         } else {
           initDate();
+          setHandoverOutputChrome(false);
         }
         applyBrainPrefillToForm({ preserveExisting: true });
         updateCharCount();
@@ -9683,14 +10018,20 @@
         renderHotelBrainPanel();
       }
 
-      var bootHandoverPage = window.HFPlatformAccess && window.HFPlatformAccess.requireApprovedAccess
-        ? window.HFPlatformAccess.requireApprovedAccess({ redirect: "account.html?access=pending" })
-        : (window.HFAuth && window.HFAuth.requireAuth ? window.HFAuth.requireAuth() : Promise.resolve(null));
+      var bootHandoverPage = (window.HFDemoMode && window.HFDemoMode.resolveGuestSession
+        ? window.HFDemoMode.resolveGuestSession({ banner: true })
+        : Promise.resolve(null)
+      ).then(function (demoSession) {
+        if (demoSession) return demoSession;
+        return window.HFPlatformAccess && window.HFPlatformAccess.requireApprovedAccess
+          ? window.HFPlatformAccess.requireApprovedAccess({ redirect: "account.html?access=pending" })
+          : (window.HFAuth && window.HFAuth.requireAuth ? window.HFAuth.requireAuth() : Promise.resolve(null));
+      });
 
       bootHandoverPage.then(function (session) {
         if (!session) return;
 
-        if (window.HFDemoMode) {
+        if (window.HFDemoMode && !session.demoGuest) {
           window.HFDemoMode.initPageChrome({ banner: true });
         }
 

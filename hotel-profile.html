@@ -864,12 +864,12 @@
           <div class="profile-hero-top">
             <div>
               <h1 class="page-title">Hotel Brain</h1>
-              <p class="page-subtitle">The intelligence behind every Hospitality Flow AI tool.</p>
+              <p class="page-subtitle" id="hotelBrainPageSubtitle">The intelligence behind every Hospitality Flow AI tool.</p>
             </div>
           </div>
           <div class="setup-intro">
             <h2 class="setup-intro-title">Hotel Brain Setup</h2>
-            <p class="setup-intro-text">Complete the essential information first. Expand your Hotel Brain over time by adding operational knowledge, policies and guest preferences.</p>
+            <p class="setup-intro-text" id="hotelBrainSetupIntro">Complete the essential information first. Expand your Hotel Brain over time by adding operational knowledge, policies and guest preferences.</p>
           </div>
           <div class="essential-progress-panel" id="essentialProgressPanel" aria-live="polite">
             <div class="essential-progress-top">
@@ -1831,9 +1831,9 @@
                     <span class="disclosure-card-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></span>
                   </button>
                   <div class="disclosure-card-body" id="settingsGroupDemo" hidden>
-                    <p class="section-intro">Explore The Oakwood Marylebone Interactive Demo — a fictional 24-room boutique hotel. Sample data is overlay-only and never saved to your workspace. Start or exit from Account.</p>
+                    <p class="section-intro">Explore The Oakwood Mayfair Interactive Demo — a fictional 80-room boutique hotel. Hotel Brain is the hotel’s growing operational memory; sample data is overlay-only and never saved. Start from the public landing page (or Exit Demo from the banner).</p>
                     <div class="settings-actions">
-                      <a class="btn-nav-secondary" href="account.html#hfDemoModeHost">Open Demo Mode on Account</a>
+                      <a class="btn-nav-secondary" href="index.html#interactive-demo">Open Demo on landing page</a>
                     </div>
                     <p class="form-helper" id="demoModeProfileStatus" aria-live="polite"></p>
                   </div>
@@ -4418,21 +4418,39 @@
           window.HFHotelBrainStore.clearTenantCache();
         }
 
-        var loadPromise = window.HFPlatformAccess && window.HFPlatformAccess.requireApprovedAccess
-          ? window.HFPlatformAccess.requireApprovedAccess({ redirect: "account.html?access=pending" })
-          : (window.HFAuth && window.HFAuth.requireAuth
-            ? window.HFAuth.requireAuth()
-            : Promise.resolve(null));
+        var loadPromise = (window.HFDemoMode && window.HFDemoMode.resolveGuestSession
+          ? window.HFDemoMode.resolveGuestSession({ banner: true })
+          : Promise.resolve(null)
+        ).then(function (demoSession) {
+          if (demoSession) return demoSession;
+          return window.HFPlatformAccess && window.HFPlatformAccess.requireApprovedAccess
+            ? window.HFPlatformAccess.requireApprovedAccess({ redirect: "account.html?access=pending" })
+            : (window.HFAuth && window.HFAuth.requireAuth
+              ? window.HFAuth.requireAuth()
+              : Promise.resolve(null));
+        });
 
         loadPromise.then(function (session) {
           if (!session) return null;
           if (window.HFDemoMode) {
-            window.HFDemoMode.initPageChrome({ banner: true });
+            if (!session.demoGuest) {
+              window.HFDemoMode.initPageChrome({ banner: true });
+            }
             var demoStatus = document.getElementById('demoModeProfileStatus');
             if (demoStatus) {
               demoStatus.textContent = window.HFDemoMode.isEnabled()
-                ? 'Interactive Demo is on — Oakwood sample data is overlay-only.'
+                ? 'Interactive Demo is on — Oakwood Mayfair Hotel Brain is overlay-only and never saved.'
                 : 'Interactive Demo is off.';
+            }
+            if (window.HFDemoMode.isEnabled()) {
+              var subtitle = document.getElementById('hotelBrainPageSubtitle');
+              var setupIntro = document.getElementById('hotelBrainSetupIntro');
+              if (subtitle) {
+                subtitle.textContent = 'The operational memory of your hotel.';
+              }
+              if (setupIntro) {
+                setupIntro.textContent = 'It combines hotel knowledge, recurring issues, guest preferences, shift activity and operational patterns, becoming more useful over time as information is added.';
+              }
             }
           }
           return window.HFHotelBrainStore.load();

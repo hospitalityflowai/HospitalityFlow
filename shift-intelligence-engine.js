@@ -766,13 +766,24 @@
 
     category = normalizeOperationalCategory(category);
 
+    var guestImpact = trimText(fact.guestImpact || context.guestImpact || "");
+    var priority = trimText(fact.priority || context.priority || "");
+    var ownerDepartment = trimText(
+      fact.ownerDept || fact.department || fact.ownerDepartment || context.ownerDept || ""
+    );
+
     return {
       category: category,
       subject: subject,
       classificationSource: classificationSource,
       confidence: confidence || "",
       sourceFactId: sourceFactId,
-      handoverSection: categoryToHandoverSection(category, sectionHint || context.section || "")
+      handoverSection: categoryToHandoverSection(category, sectionHint || context.section || ""),
+      department: ownerDepartment,
+      ownerDepartment: ownerDepartment,
+      priority: priority,
+      guestImpact: guestImpact,
+      status: trimText(fact.status || context.status || "")
     };
   }
 
@@ -1412,17 +1423,18 @@
         (roomRef ? " for " + roomRef : "") + " before posting.";
     }
     if (noteContains(line, ["deposit"]) && !hasExplicitOutstandingBalance(line)) {
-      return "Reception – Action deposit note" + (roomRef ? " for " + roomRef : "") +
-        " as recorded.";
+      return "Reception – Confirm deposit handling" + (roomRef ? " for " + roomRef : "") +
+        " before departure — deposit note remains open.";
     }
     if (hasExplicitOutstandingBalance(line) || noteContains(line, ["declined"])) {
       if (roomRef) {
-        return "Reception – Contact " + roomRef + " regarding outstanding balance before departure.";
+        return "Reception – Contact " + roomRef +
+          " regarding outstanding balance before departure — balance remains unsettled.";
       }
-      return "Reception – Settle outstanding balance before departure.";
+      return "Reception – Settle outstanding balance before departure — balance remains unsettled.";
     }
-    return "Reception – Action payment note" + (roomRef ? " for " + roomRef : "") +
-      " as recorded.";
+    /* Insufficient payment detail — omit rather than invent a vague chase. */
+    return "";
   }
 
   function resolveDepartment(candidates, fallback, configuredDepartments) {
@@ -1782,11 +1794,72 @@
     return roomPhrase(note);
   }
 
+  function factDetailValue(fact, type) {
+    var found = "";
+    (fact && fact.details || []).forEach(function (detail) {
+      if (detail && detail.type === type && detail.value != null && detail.value !== "") {
+        found = String(detail.value);
+      }
+    });
+    return found;
+  }
+
+  function maintenanceIssueLabel(fact, note) {
+    var fault = fact.faultType || factDetailValue(fact, "fault_type");
+    if (fault === "AC") return "AC fault";
+    if (fault === "shower/leak") return "shower/leak";
+    if (fault === "TV remote") return "TV remote fault";
+    if (fault === "safe") return "safe fault";
+    if (fault === "heating") return "heating fault";
+    if (fault === "hand dryer") return "hand dryer fault";
+    if (fault === "room access") return "room access issue";
+    if (fault) return fault;
+    return actionIssueLabel(note || { original: fact.sourceText || "" });
+  }
+
+  function guestRequestItemLabel(fact, src) {
+    return fact.requestItem || factDetailValue(fact, "request_item") ||
+      (global.AiWritingEngine && global.AiWritingEngine.extractRequestItem
+        ? global.AiWritingEngine.extractRequestItem(src)
+        : "");
+  }
+
+  function recommendationReason(fact, subject) {
+    var impact = String(fact.guestImpact || "").toLowerCase();
+    if (subject === "outstanding_balance" || subject === "payment" || subject === "invoice" ||
+        subject === "bill" || subject === "folio" || subject === "account" || subject === "charge") {
+      return "balance remains unsettled before departure";
+    }
+    if (subject === "maintenance") {
+      return (impact === "high" || impact === "critical")
+        ? "guest-impacting issue remains open"
+        : "maintenance issue remains open";
+    }
+    if (subject === "vip_arrival") return "VIP arrival still needs preparation";
+    if (subject === "guest_request") return "guest request remains outstanding";
+    if (subject === "delivery") return "held delivery still needs guest contact";
+    if (subject === "late_checkout") return "late check-out still needs confirmation";
+    if (subject === "wake_up") return "wake-up call not yet confirmed as loaded";
+    if (subject === "room_move") return "room move request remains open";
+    if (subject === "twin_setup") return "twin setup still required before arrival";
+    if (impact === "high" || impact === "critical") return "guest-impacting item remains open";
+    return "follow-up still required this shift";
+  }
+
+  function withReason(actionText, reason) {
+    var action = String(actionText || "").replace(/\s+/g, " ").replace(/\.+$/, "").trim();
+    var why = String(reason || "").replace(/\s+/g, " ").replace(/\.+$/, "").trim();
+    if (!action) return "";
+    if (!why) return action + ".";
+    if (action.toLowerCase().indexOf(why.toLowerCase()) !== -1) return action + ".";
+    return action + " — " + why + ".";
+  }
+
   /**
    * Build a recommendation strictly from structured fact fields + original sourceText.
    * Returns null when facts are insufficient (omit rather than invent).
    */
-  function recommendationFromFact(fact, note, departments, fallbackDept, shiftType) {
+  function recommendationFromFact(fact, note, departments, fallbackDept, shiftType, brainContext) {
     if (!fact || isFactClosedForRecs(fact)) return null;
 
     var src = fact.sourceText || note.original || "";
@@ -1796,18 +1869,31 @@
     var roomRef = roomRefFromFact(fact, note);
     var subject = fact.subject || "";
     var verb = fact.actionVerb || "";
-    var priority = note.section === "urgent" || note.maintenancePriority === "Critical"
+    var priority = note.section === "urgent" || note.maintenancePriority === "Critical" || fact.priority === "urgent"
       ? "urgent"
-      : (note.maintenancePriority === "High" || note.isVip || subject === "vip_arrival" ? "high" : "normal");
+      : (note.maintenancePriority === "High" || note.isVip || subject === "vip_arrival" ||
+         fact.priority === "high" || fact.guestImpact === "high" || fact.guestImpact === "critical"
+        ? "high"
+        : (fact.priority === "low" ? "low" : "normal"));
+    var reason = recommendationReason(fact, subject);
 
     if (subject === "outstanding_balance" || subject === "payment" || subject === "invoice" ||
         subject === "bill" || subject === "folio" || subject === "account" || subject === "charge" ||
         verb === "settle") {
       if (!roomRef && !/\b(balance|payment|folio|invoice|bill)\b/i.test(src)) return null;
+      var payText = paymentActionText(note, shiftType);
+      if (!payText) {
+        payText = withReason(
+          "Settle the outstanding balance" + (roomRef ? " for " + roomRef : "") + " before departure",
+          reason
+        );
+      } else if (payText.indexOf(" — ") === -1) {
+        payText = withReason(payText.replace(/\.+$/, ""), reason);
+      }
       return {
-        text: "Settle the outstanding balance" + (roomRef ? " for " + roomRef : "") + " before departure.",
+        text: payText,
         priority: priority === "urgent" ? "urgent" : "high",
-        department: resolveDepartment([dept, "Reception", "Front Office"], "Reception", departments)
+        department: resolveDepartment([dept, "Reception", "Front Office", "Finance"], "Reception", departments)
       };
     }
 
@@ -1817,8 +1903,19 @@
       if (fact.rooms && fact.rooms.length > 1) {
         roomsLabel = "Rooms " + fact.rooms.join(", ").replace(/, ([^,]+)$/, " and $1");
       }
+      var issueLabel = maintenanceIssueLabel(fact, note);
+      if (!issueLabel || issueLabel === "open issue") {
+        /* Preserve meaning without inventing a vague maintenance chase. */
+        if (!/\b(maintenance|ac|a\/c|leak|broken|faulty|repair|heating|safe|dryer)\b/i.test(src)) {
+          return null;
+        }
+        issueLabel = "reported fault";
+      }
       return {
-        text: "Follow up the reported maintenance issues in " + (roomsLabel || roomRef) + ".",
+        text: withReason(
+          "Follow up " + (roomsLabel || roomRef) + " " + issueLabel + " with Maintenance",
+          reason
+        ),
         priority: priority,
         department: resolveDepartment([dept, "Maintenance", "Engineering"], "Maintenance", departments)
       };
@@ -1843,9 +1940,8 @@
       } else {
         twinText += " before arrival";
       }
-      twinText += ".";
       return {
-        text: twinText,
+        text: withReason(twinText, reason),
         priority: "high",
         department: resolveDepartment([dept, "Housekeeping", "Reception"], "Housekeeping", departments)
       };
@@ -1853,10 +1949,13 @@
 
     if (subject === "vip_arrival" || (note.isVip && subject !== "reservation_info" && subject !== "guest_arrangement")) {
       if (!roomRef && !/\bvip\b/i.test(src)) return null;
-      var pref = extractGuestPreference(src);
-      var vipText = "Prepare" + (roomRef ? " " + roomRef : "") + " for VIP arrival";
-      if (pref) vipText += " (" + pref + ")";
-      vipText += ".";
+      var vipText = vipActionText(note, shiftType, brainContext);
+      if (!vipText) {
+        var pref = extractGuestPreference(src);
+        vipText = "Prepare" + (roomRef ? " " + roomRef : "") + " for VIP arrival";
+        if (pref) vipText += " (" + pref + ")";
+        vipText = withReason(vipText, reason);
+      }
       return {
         text: vipText,
         priority: "high",
@@ -1873,8 +1972,11 @@
       /* Confirmed late COs are closed; requested ones need confirmation — only if still open/requested. */
       if (fact.status === "requested" || fact.status === "open" || fact.status === "unknown") {
         return {
-          text: "Confirm the late check-out" + (roomRef ? " for " + roomRef : "") +
-            " and advise Housekeeping of the release time.",
+          text: withReason(
+            "Confirm the late check-out" + (roomRef ? " for " + roomRef : "") +
+              " and advise Housekeeping of the release time",
+            reason
+          ),
           priority: "high",
           department: resolveDepartment([dept, "Housekeeping", "Reception"], "Housekeeping", departments)
         };
@@ -1886,27 +1988,46 @@
       if (fact.status === "confirmed" || fact.status === "done") return null;
       var timeMatch = src.match(/\b(\d{1,2}[:.]\d{2})\b/);
       return {
-        text: "Confirm that the" + (timeMatch ? " " + timeMatch[1].replace(".", ":") : "") +
-          " wake-up call" + (roomRef ? " for " + roomRef : "") + " is loaded.",
+        text: withReason(
+          "Confirm that the" + (timeMatch ? " " + timeMatch[1].replace(".", ":") : "") +
+            " wake-up call" + (roomRef ? " for " + roomRef : "") + " is loaded",
+          reason
+        ),
         priority: "normal",
-        department: resolveDepartment([dept, "Reception", "Front Office"], "Reception", departments)
+        department: resolveDepartment([dept, "Reception", "Front Office", "Night Team"], "Reception", departments)
       };
     }
 
     if (subject === "guest_request" || verb === "arrange") {
+      var requestItem = guestRequestItemLabel(fact, src);
+      if (!requestItem || !roomRef) {
+        /* Never invent a vague "arrange the guest request as recorded". */
+        return null;
+      }
+      var requestDept = resolveDepartment(
+        [dept, /pillow|towel|bed|linen|iron/i.test(requestItem) ? "Housekeeping" : "Guest Services", "Reception"],
+        dept || "Housekeeping",
+        departments
+      );
       return {
-        text: "Arrange the guest request" + (roomRef ? " for " + roomRef : "") + " as recorded.",
+        text: withReason(
+          requestDept + " – Arrange " + requestItem + " for " + roomRef,
+          reason
+        ),
         priority: "normal",
-        department: resolveDepartment([dept, "Housekeeping", "Reception"], dept, departments)
+        department: requestDept
       };
     }
 
     if (subject === "delivery" || verb === "contact") {
+      if (!roomRef && !/\b(package|parcel|delivery)\b/i.test(src)) return null;
       return {
-        text: "Contact the guest regarding the held delivery" +
-          (roomRef ? " for " + roomRef : "") + ".",
+        text: withReason(
+          "Contact the guest regarding the held delivery" + (roomRef ? " for " + roomRef : ""),
+          reason
+        ),
         priority: "normal",
-        department: resolveDepartment([dept, "Reception"], "Reception", departments)
+        department: resolveDepartment([dept, "Reception", "Guest Services"], "Reception", departments)
       };
     }
 
@@ -1918,27 +2039,42 @@
       var floor = fact.preferredLocation || "";
       if (fact.uncertainty || fact.confirmationStatus === "not confirmed" || /maybe|possible/i.test(src)) {
         return {
-          text: "Confirm whether the guest" + (roomRef ? " in " + roomRef : "") +
-            " would like to move" +
-            (floor ? " to the " + floor : (dest ? " to Room " + dest : "")) + ".",
+          text: withReason(
+            "Confirm whether the guest" + (roomRef ? " in " + roomRef : "") +
+              " would like to move" +
+              (floor ? " to the " + floor : (dest ? " to Room " + dest : "")),
+            reason
+          ),
           priority: "high",
-          department: resolveDepartment([dept, "Reception", "Front Office"], "Reception", departments)
+          department: resolveDepartment([dept, "Reception", "Front Office", "Guest Services"], "Reception", departments)
         };
       }
       return {
-        text: "Action the room move request" +
-          (roomRef ? " for " + roomRef : "") +
-          (dest ? " to Room " + dest : (floor ? " to the " + floor : "")) + ".",
+        text: withReason(
+          "Action the room move request" +
+            (roomRef ? " for " + roomRef : "") +
+            (dest ? " to Room " + dest : (floor ? " to the " + floor : "")),
+          reason
+        ),
         priority: "high",
-        department: resolveDepartment([dept, "Reception", "Front Office"], "Reception", departments)
+        department: resolveDepartment([dept, "Reception", "Front Office", "Guest Services"], "Reception", departments)
       };
     }
 
     if (verb === "follow_up" && fact.actionTarget) {
       var target = fact.ownerDept || departmentFromTargetSafe(fact.actionTarget);
+      var followLabel = maintenanceIssueLabel(fact, note);
+      if (followLabel === "open issue" && subject && subject !== "follow_up") {
+        followLabel = subject.replace(/_/g, " ");
+      }
+      if (followLabel === "open issue" && !roomRef) return null;
       return {
-        text: "Follow up" + (roomRef ? " on " + roomRef : "") +
-          (subject && subject !== "follow_up" ? " regarding " + subject.replace(/_/g, " ") : "") + ".",
+        text: withReason(
+          "Follow up" + (roomRef ? " on " + roomRef : "") +
+            (followLabel && followLabel !== "open issue" ? " regarding " + followLabel : "") +
+            " with " + (target || "the team"),
+          reason
+        ),
         priority: priority,
         department: resolveDepartment([target, dept], target || fallbackDept, departments)
       };
@@ -1994,7 +2130,10 @@
       if (!rec || !rec.text) return;
       var signature = recommendationSignature(rec.text);
       if (seen[signature]) return;
-      var issueSig = signature.replace(/\b(confirm|settle|attend|action|prepare|prioritise|review|notify)\b/g, "").trim();
+      var issueSig = signature.replace(
+        /\b(confirm|settle|attend|action|prepare|prioritise|review|notify|arrange|follow\s*up|contact|chase)\b/g,
+        ""
+      ).trim();
       if (issueSig && seenIssue[issueSig]) return;
       seen[signature] = true;
       if (issueSig) seenIssue[issueSig] = true;
@@ -2006,7 +2145,7 @@
       var fact = ensureNoteFact(note);
       if (fact && isFactClosedForRecs(fact)) return;
 
-      var fromFact = recommendationFromFact(fact, note, departments, fallbackDept, shiftType);
+      var fromFact = recommendationFromFact(fact, note, departments, fallbackDept, shiftType, brainContext);
       if (fromFact) {
         if (note._neutralFactId) {
           fromFact.sourceFactIds = [note._neutralFactId];
@@ -2028,8 +2167,15 @@
       );
       (okMatched.matchedActions || []).forEach(function (action) {
         if (!action || !action.followUpInstruction) return;
-        if (/vip/i.test(action.category || "") || /vip/i.test(action.title || "")) return;
+        /* VIP Brain actions enrich vipActionText on the fact path — skip duplicate generic VIP chases. */
+        if (/vip/i.test(action.category || "") || /vip/i.test(action.title || "")) {
+          var alreadyHasVip = candidates.some(function (rec) {
+            return /vip/i.test(rec.text || "");
+          });
+          if (alreadyHasVip) return;
+        }
         var actionText = action.actionText || action.followUpInstruction;
+        if (/as recorded/i.test(actionText) || /^arrange the guest request/i.test(actionText)) return;
         /* Skip brain actions that chase closed financial/settlement facts. */
         var contradictsClosed = analyzed.some(function (note) {
           var fact = note.fact;
@@ -2376,6 +2522,33 @@
     });
   }
 
+  function isChecklistCoveredByRecommendations(defId, signals, recommendations) {
+    var recs = recommendations || [];
+    function recMatches(re) {
+      return recs.some(function (rec) { return re.test(String(rec.text || "")); });
+    }
+    if (defId === "vip_arrivals_reviewed" || defId === "welcome_cards_vip") {
+      return recMatches(/\bvip\b/i);
+    }
+    if (defId === "todays_arrivals" || defId === "remaining_arrivals") {
+      /* Snapshot already shows arrivals; skip generic checklist when specific arrival/VIP actions exist. */
+      return !!(signals && signals.hasArrivals && recMatches(/\barriv|vip\b/i));
+    }
+    if (defId === "guest_requests") {
+      return recMatches(/\b(extra bed|pillow|adapter|iron|guest request|arrange)\b/i);
+    }
+    if (defId === "maintenance_followups") {
+      return recMatches(/\bmaintenance|ac fault|shower|leak|tv remote\b/i);
+    }
+    if (defId === "outstanding_balances" || defId === "payment_followups") {
+      return recMatches(/\bbalance|payment|settle|folio\b/i);
+    }
+    if (defId === "late_checkouts") {
+      return recMatches(/\blate check-?out\b/i);
+    }
+    return false;
+  }
+
   function generateChecklist(input, signals, recommendations) {
     var brainContext = input.brainContext || null;
     var departments = applyBrainDepartmentDefaults(brainContext, input.departments || []);
@@ -2426,6 +2599,7 @@
       var itemText = def.text;
       if (!registerText(itemText)) return;
       if (isDuplicatedByRecommendation(itemText, recommendations)) return;
+      if (isChecklistCoveredByRecommendations(def.id, signals, recommendations)) return;
 
       scored.push({
         def: def,

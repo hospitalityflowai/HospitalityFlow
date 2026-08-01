@@ -131,7 +131,8 @@ console.log("\nPhase 2A — recommendations from facts\n");
     "Room 305 shower pressure low - maintenance not yet informed",
     "Room 18 late checkout approved until 2pm",
     "Room 9 wake-up call booked for 06:30",
-    "Room 22 VIP arrival tomorrow - twin setup requested, guest prefers to avoid accessibility rooms"
+    "Room 22 VIP arrival tomorrow - twin setup requested, guest prefers to avoid accessibility rooms",
+    "Room 7 extra bed requested"
   ];
   const analyzed = makeAnalyzed(notes);
   const result = Shift.analyze({
@@ -162,8 +163,12 @@ console.log("\nPhase 2A — recommendations from facts\n");
   }), "open balance Room 14 still gets payment recommendation");
 
   assert(recs.some(function (r) {
-    return /305/i.test(r.text) && /maintenance|inspect|shower|pressure/i.test(r.text);
+    return /305/i.test(r.text) && /maintenance|inspect|shower|pressure|fault/i.test(r.text);
   }), "maintenance remains actionable Pending recommendation");
+
+  assert(recs.some(function (r) {
+    return /305/i.test(r.text) && /—|because|remains open|guest-impacting/i.test(r.text);
+  }), "maintenance recommendation explains why follow-up is needed");
 
   assert(!recs.some(function (r) {
     return /late check/i.test(r.text) && /Room 18/i.test(r.text);
@@ -180,6 +185,14 @@ console.log("\nPhase 2A — recommendations from facts\n");
   assert(!recs.some(function (r) {
     return /^review vip notes\.?$/i.test(String(r.text).trim());
   }), "no generic Review VIP notes recommendation");
+
+  assert(!recs.some(function (r) {
+    return /arrange the guest request/i.test(r.text) || /as recorded/i.test(r.text);
+  }), "no vague arrange-as-recorded recommendations");
+
+  assert(recs.some(function (r) {
+    return /Room 7/i.test(r.text) && /extra bed/i.test(r.text);
+  }), "guest request recommendation names the item");
 })();
 
 console.log("\nPhase 2A — no contradiction across surfaces\n");

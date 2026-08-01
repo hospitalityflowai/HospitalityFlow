@@ -785,25 +785,33 @@
   }
 
   function buildAcBody(normalized) {
-    /* Phase 3B: AC status only — no invented Maintenance chase or guest follow-up. */
+    /* Interpret messy AC notes into short operational status — no invented chase actions. */
     var status;
     if (detectComplaint(normalized)) {
       if (noteContains(normalized, ["not cooling", "broken", "not working", "faulty"])) {
-        status = "Air conditioning is not cooling and the guest is unhappy with the situation";
+        status = "AC not cooling. Guest unhappy";
       } else {
-        status = "The guest has reported an air-conditioning issue and is unhappy with the situation";
+        status = "AC issue reported. Guest unhappy";
       }
     } else if (noteContains(normalized, ["not cooling", "broken", "not working", "faulty"])) {
-      status = "Air conditioning is not cooling";
+      status = "AC not cooling";
     } else {
-      status = "An air-conditioning issue has been reported";
+      status = "AC issue reported";
     }
-    if (noteContains(normalized, ["maintenance", "engineer"]) &&
-        noteContains(normalized, ["informed", "notified", "advised"])) {
-      status += ". Maintenance has been informed";
-      if (noteContains(normalized, ["not attended", "not yet", "awaiting", "eta"])) {
-        status += " but attendance is still outstanding";
-      }
+    if (noteContains(normalized, ["fan", "portable fan"])) {
+      status += ". Guest provided with a fan";
+    }
+    var maintAware = noteContains(normalized, ["maintenance", "engineer", "maint"]) &&
+      noteContains(normalized, ["informed", "notified", "advised", "aware"]);
+    if (maintAware) {
+      status += ". Maintenance informed";
+    }
+    /* Unresolved guest-impacting AC still needs the next shift — operational, not a chase script. */
+    if (
+      maintAware ||
+      noteContains(normalized, ["not attended", "not yet", "awaiting", "eta", "follow am", "follow up am", "follow next"])
+    ) {
+      status += ". Follow up next shift";
     }
     return status;
   }
@@ -918,24 +926,34 @@
   function buildMaintenanceBody(normalized, section) {
     if (detectAcIssue(normalized)) return buildAcBody(normalized);
     /* Phase 3A: factual maintenance status only — no invented Reception/safe/chase actions. */
-    if (noteContains(normalized, ["leak", "leaking", "shower", "bathroom"])) {
-      var leakStatus = noteContains(normalized, ["leak", "leaking"])
-        ? "A leak remains open"
-        : "A shower issue remains open";
-      if (noteContains(normalized, ["shower"]) && noteContains(normalized, ["leak", "leaking"])) {
-        leakStatus = "A shower leak remains open";
+    if (noteContains(normalized, ["leak", "leaking", "shower", "bathroom", "drip", "dripping", "mixer"])) {
+      var leakStatus;
+      if (noteContains(normalized, ["shower"]) && noteContains(normalized, ["drip", "dripping", "mixer"])) {
+        leakStatus = "Shower mixer dripping";
+      } else if (noteContains(normalized, ["shower"]) && noteContains(normalized, ["leak", "leaking"])) {
+        leakStatus = "Shower leak open";
       } else if (noteContains(normalized, ["bathroom"]) && noteContains(normalized, ["leak", "leaking"])) {
-        leakStatus = "A bathroom leak remains open";
+        leakStatus = "Bathroom leak open";
+      } else if (noteContains(normalized, ["leak", "leaking", "drip", "dripping"])) {
+        leakStatus = "Leak open";
+      } else {
+        leakStatus = "Shower issue open";
+      }
+      if (noteContains(normalized, ["hk", "housekeeping"]) &&
+          noteContains(normalized, ["reported", "noticed", "found"])) {
+        leakStatus += ". HK reported";
+      }
+      if (noteContains(normalized, ["medium", "normal"])) {
+        leakStatus += ". Medium priority";
+      } else if (noteContains(normalized, ["urgent", "asap", "high"])) {
+        leakStatus += ". High priority";
       }
       if (noteContains(normalized, ["previous shift", "still", "carried"])) {
-        leakStatus += " from the previous shift";
+        leakStatus += ". From previous shift";
       }
-      if (noteContains(normalized, ["urgent", "asap"])) {
-        leakStatus += " and requires priority attention";
-      }
-      if (noteContains(normalized, ["maintenance", "engineer"]) &&
-          noteContains(normalized, ["informed", "notified", "advised"])) {
-        leakStatus += ". Maintenance has been informed";
+      if (noteContains(normalized, ["maintenance", "engineer", "maint"]) &&
+          noteContains(normalized, ["informed", "notified", "advised", "aware"])) {
+        leakStatus += ". Maintenance informed";
       }
       return leakStatus;
     }
@@ -1081,8 +1099,71 @@
       guarantee: "",
       guestType: "",
       category: "",
-      uncertainty: false
+      uncertainty: false,
+      /* Operational classification helpers */
+      guestImpact: "",
+      priority: "",
+      faultType: "",
+      requestItem: ""
     };
+  }
+
+  function extractRequestItem(text) {
+    var src = String(text || "");
+    if (/\bextra\s+bed\b|\brollaway\b/i.test(src)) return "extra bed";
+    if (/\bpillows?\b/i.test(src)) return "extra pillows";
+    if (/\biron(?:ing)?\s+board\b|\biron\b/i.test(src)) return "iron and ironing board";
+    if (/\badapters?\b/i.test(src)) return "travel adapter";
+    if (/\btowels?\b/i.test(src)) return "towels";
+    if (/\bchampagne\b/i.test(src)) return "champagne amenity";
+    if (/\bamenit(?:y|ies)\b/i.test(src)) return "welcome amenities";
+    return "";
+  }
+
+  function extractFaultType(text) {
+    var src = String(text || "");
+    if (/\bair\s*con(?:ditioning)?\b|\ba\/c\b|\bac\b|\bnot\s+cooling\b|\bhvac\b/i.test(src)) return "AC";
+    if (/\bshower\b|\bleak(?:ing)?\b|\bdrip(?:ping)?\b|\bmixer\b|\bbathroom\b/i.test(src)) return "shower/leak";
+    if (/\btv\b|\bremote\b/i.test(src)) return "TV remote";
+    if (/\bsafe\b|\bkeypad\b/i.test(src)) return "safe";
+    if (/\bheating\b|\bno\s+heat\b/i.test(src)) return "heating";
+    if (/\bhand\s*dryer\b|\bdryer\b/i.test(src)) return "hand dryer";
+    if (/\block\b|\bkey\s*card\b|\bcannot\s+enter\b/i.test(src)) return "room access";
+    return "";
+  }
+
+  function classifyGuestImpact(text, subject) {
+    var src = String(text || "");
+    if (/\bflood|fire|evacuat|unsafe|injury|critical\b/i.test(src)) return "critical";
+    if (/\bnot\s+cooling\b|\bac\s+broken\b|\bleak(?:ing)?\b|\bunhappy\b|\bcomplaint\b|\bdeclined\b|\boutstanding\s+balance\b|\bvip\b/i.test(src)) {
+      return "high";
+    }
+    if (subject === "maintenance" && /\bguest\b|\bfan\b|\broom\s+\d/i.test(src)) return "high";
+    if (subject === "vip_arrival" || subject === "outstanding_balance" || subject === "payment") return "high";
+    if (subject === "guest_request" || subject === "delivery" || subject === "late_checkout" || subject === "room_move") {
+      return "medium";
+    }
+    if (/\bplant\s+room\b|\bback\s+of\s+house\b|\broutine\b/i.test(src)) return "low";
+    if (subject === "maintenance") return "medium";
+    return "low";
+  }
+
+  function classifyFactPriority(text, subject, guestImpact) {
+    if (guestImpact === "critical" || /\burgent|asap|critical\b/i.test(text)) return "urgent";
+    if (guestImpact === "high" || subject === "vip_arrival" || subject === "outstanding_balance") return "high";
+    if (subject === "guest_request" || subject === "delivery" || subject === "wake_up") return "normal";
+    if (guestImpact === "low") return "low";
+    return "normal";
+  }
+
+  function detailValueFromFact(fact, type) {
+    var found = "";
+    (fact && fact.details || []).forEach(function (detail) {
+      if (detail && detail.type === type && detail.value != null && detail.value !== "") {
+        found = String(detail.value);
+      }
+    });
+    return found;
   }
 
   /**
@@ -1811,6 +1892,31 @@
       if (!fact.actionVerb && fact.status === FACT_STATUS.requested) fact.actionVerb = "arrange";
     }
 
+    var requestItem = extractRequestItem(sourceText);
+    if (requestItem) {
+      fact.requestItem = requestItem;
+      if (!detailValueFromFact(fact, "request_item")) {
+        fact.details.push({ type: "request_item", value: requestItem });
+      }
+      if (!fact.subject || fact.subject === "follow_up") {
+        if (!/\bvip\b/i.test(sourceText)) fact.subject = "guest_request";
+      }
+    }
+
+    var faultType = extractFaultType(sourceText);
+    if (faultType && (fact.subject === "maintenance" || !fact.subject ||
+        /\b(?:air\s*con|a\/c|\bac\b|leak|broken|faulty|repair|not cooling|heating|safe|dryer)\b/i.test(sourceText))) {
+      fact.faultType = faultType;
+      if (!fact.subject) {
+        fact.subject = "maintenance";
+        if (!fact.ownerDept) fact.ownerDept = "Maintenance";
+        if (!fact.actionVerb) fact.actionVerb = "follow_up";
+      }
+      if (!detailValueFromFact(fact, "fault_type")) {
+        fact.details.push({ type: "fault_type", value: faultType });
+      }
+    }
+
     if (/\b(?:package|parcel|delivery|courier)\b/i.test(sourceText) && !fact.subject) {
       fact.subject = "delivery";
       if (!fact.ownerDept) fact.ownerDept = "Reception";
@@ -1843,6 +1949,10 @@
     });
 
     enrichOperationalFactFields(fact, options);
+    if (!fact.requestItem) fact.requestItem = detailValueFromFact(fact, "request_item") || extractRequestItem(sourceText);
+    if (!fact.faultType) fact.faultType = detailValueFromFact(fact, "fault_type") || extractFaultType(sourceText);
+    fact.guestImpact = classifyGuestImpact(sourceText, fact.subject);
+    fact.priority = classifyFactPriority(sourceText, fact.subject, fact.guestImpact);
     return fact;
   }
 
@@ -2540,13 +2650,16 @@
     var verb = String(fact.actionVerb || "").toLowerCase();
     var target = String(fact.actionTarget || "").toLowerCase();
     var status = String(fact.status || FACT_STATUS.unknown);
+    var requestItem = String(fact.requestItem || detailValueFromFact(fact, "request_item") || "").toLowerCase();
+    var faultType = String(fact.faultType || detailValueFromFact(fact, "fault_type") || "").toLowerCase();
 
     if (options.family) {
-      /* Same-room / same-subject family for status resolution (status omitted). */
-      return ["fam", rooms, subject, target, section].join("|");
+      /* Same-room / same-subject family for status resolution (status omitted).
+         Keep distinct guest requests / fault types separate. */
+      return ["fam", rooms, subject, target, section, requestItem, faultType].join("|");
     }
 
-    return ["id", rooms, subject, status, verb, target, section].join("|");
+    return ["id", rooms, subject, status, verb, target, section, requestItem, faultType].join("|");
   }
 
   function factMergeFamilyKey(fact) {
@@ -2612,6 +2725,15 @@
       if (d && d.type === "destination_room") destB = String(d.value);
     });
     if (destA && destB && destA !== destB) return false;
+
+    var requestA = String(factA.requestItem || detailValueFromFact(factA, "request_item") || "").toLowerCase();
+    var requestB = String(factB.requestItem || detailValueFromFact(factB, "request_item") || "").toLowerCase();
+    if (requestA && requestB && requestA !== requestB) return false;
+
+    var faultA = String(factA.faultType || detailValueFromFact(factA, "fault_type") || "").toLowerCase();
+    var faultB = String(factB.faultType || detailValueFromFact(factB, "fault_type") || "").toLowerCase();
+    if (faultA && faultB && faultA !== faultB) return false;
+
     return true;
   }
 
@@ -2875,6 +2997,14 @@
   function finishFactRender(lead, body) {
     var cleaned = stripTrailingDanglingPreposition(tidyPhrase(body));
     if (!cleaned) return "";
+    if (lead) {
+      var leadRoom = String(lead).replace(/^rooms?\s+/i, "").trim();
+      cleaned = cleaned
+        .replace(new RegExp("^rooms?\\s+" + escapeRegExp(leadRoom) + "\\s*[–\\-—:]\\s*", "i"), "")
+        .replace(new RegExp("^rooms?\\s+" + escapeRegExp(leadRoom) + "\\b\\s*", "i"), "")
+        .trim();
+    }
+    if (!cleaned) return lead ? ensureSentence(lead) : "";
     var result = lead ? lead + " – " + capitalize(cleaned) : capitalize(cleaned);
     result = ensureSentence(result);
     if (endsWithDanglingPreposition(result)) {
@@ -3074,7 +3204,12 @@
 
     var result;
     if (lead) {
-      result = lead + " – " + capitalize(body);
+      var leadRoomNo = room || String(lead).replace(/^rooms?\s+/i, "").trim();
+      body = body
+        .replace(new RegExp("^rooms?\\s+" + escapeRegExp(leadRoomNo) + "\\s*[–\\-—:]\\s*", "i"), "")
+        .replace(new RegExp("^rooms?\\s+" + escapeRegExp(leadRoomNo) + "\\b\\s*", "i"), "")
+        .trim();
+      result = body ? lead + " – " + capitalize(body) : ensureSentence(lead);
     } else {
       result = capitalize(body);
     }
@@ -4025,6 +4160,9 @@
     FACT_STATUS: FACT_STATUS,
     extractOperationalFact: extractOperationalFact,
     extractOperationalFacts: extractOperationalFacts,
+    extractRequestItem: extractRequestItem,
+    extractFaultType: extractFaultType,
+    classifyGuestImpact: classifyGuestImpact,
     splitSourceIntoFactSegments: splitSourceIntoFactSegments,
     renderOperationalFactDisplay: renderOperationalFactDisplay,
     isActualFinancialIssue: isActualFinancialIssue,

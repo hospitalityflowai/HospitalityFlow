@@ -1,7 +1,8 @@
 /**
  * Hospitality Flow — Demo Mode (isolated overlay)
  *
- * Interactive Demo for The Oakwood Marylebone.
+ * Interactive Demo for The Oakwood Mayfair.
+ * Public demo focuses on AI Shift Handover + Hotel Brain only.
  * Sample data lives only in memory + a minimal localStorage flag.
  * Never writes Hotel Brain, handover drafts/saved reports, or maintenance
  * issues into Supabase or over the user's real local draft.
@@ -11,13 +12,18 @@
 
   var STORAGE_KEY = "hf_demo_mode";
   var EVENT_NAME = "hf-demo-mode-change";
+  /** Flag scope when no signed-in tenant context exists (public landing visitors). */
+  var PUBLIC_SCOPE = "public";
+  /** sessionStorage key for where Exit Demo should return. */
+  var RETURN_KEY = "hf_demo_return";
+  var DEFAULT_RETURN_TO = "index.html";
 
   var ENABLE_STEPS = [
     { key: "brain", label: "Loading Oakwood Hotel Brain…" },
     { key: "guests", label: "Staging VIP arrivals and guest follow-ups…" },
-    { key: "maintenance", label: "Adding realistic maintenance issues…" },
+    { key: "context", label: "Building operational context…" },
     { key: "payments", label: "Preparing open balances and payment checks…" },
-    { key: "handover", label: "Preparing AI shift handover…" },
+    { key: "handover", label: "Preparing AI Shift Handover…" },
     { key: "finish", label: "Opening Interactive Demo…" }
   ];
 
@@ -51,13 +57,46 @@
     return ts ? ts.resolveScopeId() : null;
   }
 
+  /** Tenant scope when signed in; otherwise the public visitor scope. */
+  function resolveDemoScope() {
+    return resolveScope() || PUBLIC_SCOPE;
+  }
+
   function clone(value) {
     return value == null ? value : JSON.parse(JSON.stringify(value));
   }
 
+  function setReturnTo(url) {
+    var target = String(url || DEFAULT_RETURN_TO).trim() || DEFAULT_RETURN_TO;
+    try {
+      global.sessionStorage.setItem(RETURN_KEY, target);
+    } catch (err) {
+      /* ignore */
+    }
+    return target;
+  }
+
+  function getReturnTo() {
+    try {
+      var saved = global.sessionStorage.getItem(RETURN_KEY);
+      if (saved && typeof saved === "string" && saved.trim()) return saved.trim();
+    } catch (err) {
+      /* ignore */
+    }
+    return DEFAULT_RETURN_TO;
+  }
+
+  function clearReturnTo() {
+    try {
+      global.sessionStorage.removeItem(RETURN_KEY);
+    } catch (err) {
+      /* ignore */
+    }
+  }
+
   function readFlag() {
     var ts = tenantStorage();
-    var scope = resolveScope();
+    var scope = resolveDemoScope();
     if (!ts || !scope) return null;
     try {
       var raw = ts.getRaw(STORAGE_KEY, scope);
@@ -71,7 +110,7 @@
 
   function writeFlag(next) {
     var ts = tenantStorage();
-    var scope = resolveScope();
+    var scope = resolveDemoScope();
     if (!ts || !scope) return false;
     state.enabled = !!(next && next.enabled);
     state.packId = next && next.packId ? next.packId : null;
@@ -89,7 +128,7 @@
 
   function clearFlag() {
     var ts = tenantStorage();
-    var scope = resolveScope();
+    var scope = resolveDemoScope();
     if (ts && scope) ts.remove(STORAGE_KEY, scope);
     state.enabled = false;
     state.packId = null;
@@ -217,16 +256,11 @@
 
     store.load = function (options) {
       if (!isEnabled()) return originalBrain.load.call(store, options);
-      return originalBrain.load.call(store, options).then(function (result) {
-        /* Keep real cache untouched; callers that use returned.profile see Oakwood. */
-        return {
-          profile: getDemoBrain(),
-          hotelId: result && result.hotelId ? result.hotelId : null,
-          demoOverlay: true,
-          error: result && result.error ? result.error : null
-        };
-      }).catch(function () {
-        return { profile: getDemoBrain(), hotelId: null, demoOverlay: true };
+      /* Never load or surface a real hotel profile while Demo Mode overlays are active. */
+      return Promise.resolve({
+        profile: getDemoBrain(),
+        hotelId: null,
+        demoOverlay: true
       });
     };
 
@@ -274,9 +308,19 @@
 
     store.saveDraft = function (payload, workspaceIdOverride) {
       if (isEnabled()) {
-        /* Preserve the user's real draft — demo edits stay in the DOM only. */
+        /* Preserve the user's real draft — demo edits stay in memory only.
+           Never keep generated handover output across Demo reloads/re-entry. */
         if (payload && payload.isDemoData) {
-          activeDraft = clone(payload);
+          var next = clone(payload);
+          next.hasGeneratedOutput = false;
+          next.organisedHandover = {};
+          next.aiSummary = "";
+          next.generatedTime = "";
+          next.recommendations = [];
+          next.shiftIntelligenceChecklist = [];
+          next.savedAt = null;
+          next.isDemoData = true;
+          activeDraft = next;
         }
         return Promise.resolve({
           cloud: false,
@@ -467,7 +511,7 @@
       '<div class="hf-demo-overlay-panel">' +
         '<div class="hf-demo-overlay-orb" aria-hidden="true"></div>' +
         '<p class="hf-demo-overlay-kicker">Interactive Demo</p>' +
-        '<h2 class="hf-demo-overlay-title" id="hfDemoOverlayTitle">Preparing The Oakwood Marylebone</h2>' +
+        '<h2 class="hf-demo-overlay-title" id="hfDemoOverlayTitle">Preparing The Oakwood Mayfair</h2>' +
         '<p class="hf-demo-overlay-step" id="hfDemoOverlayStep"></p>' +
         '<ol class="hf-demo-overlay-steps" id="hfDemoOverlaySteps"></ol>' +
         '<div class="hf-demo-overlay-bar" aria-hidden="true"><span id="hfDemoOverlayBar"></span></div>' +
@@ -536,11 +580,11 @@
       '<div class="hf-demo-banner-inner">' +
         '<div class="hf-demo-banner-copy">' +
           '<span class="hf-demo-banner-badge">Demo Mode</span>' +
-          '<p class="hf-demo-banner-text">Interactive Demo — The Oakwood Marylebone sample data (not saved to your workspace).</p>' +
+          '<p class="hf-demo-banner-text">Interactive Demo — The Oakwood Mayfair · AI Shift Handover &amp; Hotel Brain (sample data is never saved).</p>' +
         "</div>" +
         '<div class="hf-demo-banner-actions">' +
-          '<a class="hf-demo-banner-link" href="handover.html">Open handover</a>' +
-          '<a class="hf-demo-banner-link" href="maintenance.html">Open maintenance</a>' +
+          '<a class="hf-demo-banner-link" href="handover.html">AI Shift Handover</a>' +
+          '<a class="hf-demo-banner-link" href="hotel-profile.html">Hotel Brain</a>' +
           '<button type="button" class="hf-demo-banner-exit" id="hfDemoBannerExit">Exit Demo</button>' +
         "</div>" +
       "</div>";
@@ -548,7 +592,7 @@
     var exitBtn = bannerEl.querySelector("#hfDemoBannerExit");
     if (exitBtn) {
       exitBtn.addEventListener("click", function () {
-        disable({ confirm: true, reload: true });
+        disable({ confirm: true, redirectTo: getReturnTo() });
       });
     }
     return bannerEl;
@@ -583,8 +627,20 @@
       return Promise.resolve({ ok: false, error: "Sample pack unavailable." });
     }
 
+    if (options.returnTo) {
+      setReturnTo(options.returnTo);
+    } else {
+      try {
+        if (!global.sessionStorage.getItem(RETURN_KEY)) {
+          setReturnTo(DEFAULT_RETURN_TO);
+        }
+      } catch (err) {
+        setReturnTo(DEFAULT_RETURN_TO);
+      }
+    }
+
     state.transitioning = true;
-    showOverlay("Preparing The Oakwood Marylebone");
+    showOverlay("Preparing The Oakwood Mayfair");
     setOverlayProgress(0);
 
     return delay(240)
@@ -654,6 +710,10 @@
       if (!ok) return Promise.resolve({ ok: false, reason: "cancelled" });
     }
 
+    var exitTarget = options.redirectTo != null
+      ? options.redirectTo
+      : (options.reload ? null : getReturnTo());
+
     state.transitioning = true;
     showOverlay("Exiting Demo Mode");
     setOverlayProgress(5, "Removing sample overlay…");
@@ -663,6 +723,7 @@
         uninstallOverlays();
         clearMemoryPack();
         clearFlag();
+        clearReturnTo();
         state.enabled = false;
         return delay(240);
       })
@@ -671,10 +732,12 @@
         return hideOverlay().then(function () {
           syncBanner();
           dispatchChange();
-          if (options.reload) {
+          if (exitTarget) {
+            global.location.href = exitTarget;
+          } else if (options.reload) {
             global.location.reload();
           }
-          return { ok: true };
+          return { ok: true, redirectedTo: exitTarget || null };
         });
       })
       .catch(function (err) {
@@ -682,6 +745,7 @@
         uninstallOverlays();
         clearMemoryPack();
         clearFlag();
+        clearReturnTo();
         state.enabled = false;
         return hideOverlay().then(function () {
           syncBanner();
@@ -691,67 +755,116 @@
       });
   }
 
-  function mountAccountToggle(container) {
+  /**
+   * Operator QA entry — small text link only (not a hotel workspace card).
+   */
+  function mountOperatorDemoLink(container) {
     if (!container) return null;
-    var existing = document.getElementById("hfDemoModeCard");
-    if (existing) {
-      syncAccountToggle(existing);
-      return existing;
-    }
+    var existing = document.getElementById("hfOperatorDemoLink");
+    if (existing) return existing;
 
-    var card = document.createElement("div");
-    card.id = "hfDemoModeCard";
-    card.className = "hf-demo-account-card";
-    card.innerHTML =
-      '<div class="hf-demo-account-copy">' +
-        '<p class="hf-demo-account-label">Interactive Demo</p>' +
-        '<p class="hf-demo-account-text">Explore The Oakwood Marylebone — a fictional 24-room boutique hotel with guests, maintenance, payments and an AI shift handover. Sample data is never saved to your workspace.</p>' +
-        '<p class="hf-demo-account-status" id="hfDemoAccountStatus" aria-live="polite"></p>' +
-      "</div>" +
-      '<button type="button" class="btn btn-primary" id="hfDemoAccountToggle">Enter Demo Mode</button>';
-
-    container.appendChild(card);
-    syncAccountToggle(card);
-
-    var btn = card.querySelector("#hfDemoAccountToggle");
-    if (btn) {
-      btn.addEventListener("click", function () {
-        if (isEnabled()) {
-          disable({ confirm: true, reload: true }).then(function () {
-            syncAccountToggle(card);
-          });
-        } else {
-          btn.disabled = true;
-          enable({ redirectTo: "handover.html" }).then(function (result) {
-            btn.disabled = false;
-            syncAccountToggle(card);
-            if (!result || !result.ok) {
-              var status = card.querySelector("#hfDemoAccountStatus");
-              if (status) status.textContent = "Could not start Demo Mode. Please try again.";
-            }
-          });
+    var link = document.createElement("a");
+    link.id = "hfOperatorDemoLink";
+    link.href = "handover.html?demo=1";
+    link.className = "hf-demo-operator-link";
+    link.textContent = "Open Demo Mode";
+    link.addEventListener("click", function (event) {
+      event.preventDefault();
+      enable({
+        redirectTo: "handover.html",
+        returnTo: "account.html"
+      }).then(function (result) {
+        if (!result || !result.ok) {
+          link.textContent = "Open Demo Mode (retry)";
         }
       });
-    }
-    return card;
+    });
+    container.appendChild(link);
+    return link;
   }
 
-  function syncAccountToggle(card) {
-    card = card || document.getElementById("hfDemoModeCard");
-    if (!card) return;
-    var btn = card.querySelector("#hfDemoAccountToggle");
-    var status = card.querySelector("#hfDemoAccountStatus");
-    card.classList.toggle("is-active", isEnabled());
-    if (btn) {
-      btn.textContent = isEnabled() ? "Exit Demo Mode" : "Enter Demo Mode";
-      btn.classList.toggle("btn-primary", !isEnabled());
-      btn.classList.toggle("btn-secondary", isEnabled());
+  /**
+   * Landing-page CTA — enters isolated Demo Mode and lands on the demo handover.
+   */
+  function bindPublicEntryControl(control) {
+    if (!control || control.getAttribute("data-hf-demo-bound") === "1") return control;
+    control.setAttribute("data-hf-demo-bound", "1");
+    control.addEventListener("click", function (event) {
+      event.preventDefault();
+      if (control.disabled) return;
+      control.disabled = true;
+      var originalLabel = control.textContent;
+      control.textContent = "Opening demo…";
+      enable({
+        redirectTo: "handover.html",
+        returnTo: "index.html"
+      }).then(function (result) {
+        if (!result || !result.ok) {
+          control.disabled = false;
+          control.textContent = originalLabel || "Try Interactive Demo";
+        }
+      }).catch(function () {
+        control.disabled = false;
+        control.textContent = originalLabel || "Try Interactive Demo";
+      });
+    });
+    return control;
+  }
+
+  function stripDemoQueryParam() {
+    try {
+      if (!global.history || !global.history.replaceState || !global.location) return;
+      var url = new URL(global.location.href);
+      if (!url.searchParams.has("demo")) return;
+      url.searchParams.delete("demo");
+      var next = url.pathname + (url.searchParams.toString() ? "?" + url.searchParams.toString() : "") + url.hash;
+      global.history.replaceState({}, "", next);
+    } catch (err) {
+      /* ignore */
     }
-    if (status) {
-      status.textContent = isEnabled()
-        ? "Demo Mode is on — Oakwood sample data is overlay-only and not saved to your workspace."
-        : "";
+  }
+
+  function consumeDemoQueryEntry(options) {
+    options = options || {};
+    try {
+      var params = new URLSearchParams(global.location.search || "");
+      if (params.get("demo") !== "1") return Promise.resolve(null);
+    } catch (err) {
+      return Promise.resolve(null);
     }
+
+    return enable({
+      returnTo: options.returnTo || DEFAULT_RETURN_TO,
+      redirectTo: null
+    }).then(function (result) {
+      stripDemoQueryParam();
+      if (!result || !result.ok) return null;
+      initPageChrome({ banner: options.banner !== false });
+      return { demoGuest: true };
+    });
+  }
+
+  /**
+   * Protected pages call this before auth. When Demo Mode is active (or ?demo=1),
+   * returns a guest session so the page can boot without login.
+   */
+  function resolveGuestSession(options) {
+    options = options || {};
+    hydrate();
+    if (isEnabled()) {
+      initPageChrome({ banner: options.banner !== false });
+      return Promise.resolve({ demoGuest: true });
+    }
+    return consumeDemoQueryEntry(options);
+  }
+
+  /** @deprecated Hotel workspace demo card removed — operators use mountOperatorDemoLink. */
+  function mountAccountToggle(container) {
+    return mountOperatorDemoLink(container);
+  }
+
+  function syncAccountToggle() {
+    /* no-op: hotel Interactive Demo card removed */
   }
 
   function initPageChrome(options) {
@@ -782,14 +895,24 @@
   global.HFDemoMode = {
     STORAGE_KEY: STORAGE_KEY,
     EVENT_NAME: EVENT_NAME,
+    PUBLIC_SCOPE: PUBLIC_SCOPE,
+    RETURN_KEY: RETURN_KEY,
+    DEFAULT_RETURN_TO: DEFAULT_RETURN_TO,
     hydrate: hydrate,
     isEnabled: isEnabled,
     getState: getState,
     enable: enable,
     disable: disable,
     initPageChrome: initPageChrome,
+    resolveGuestSession: resolveGuestSession,
+    mountOperatorDemoLink: mountOperatorDemoLink,
+    bindPublicEntryControl: bindPublicEntryControl,
     mountAccountToggle: mountAccountToggle,
     syncAccountToggle: syncAccountToggle,
+    setReturnTo: setReturnTo,
+    getReturnTo: getReturnTo,
+    clearReturnTo: clearReturnTo,
+    resolveDemoScope: resolveDemoScope,
     syncBanner: syncBanner,
     getDemoIssues: getDemoIssues,
     getDemoDraft: getDemoDraft,
