@@ -4,14 +4,32 @@ This is the **only supported** way to invite a Founding Pilot hotel after they a
 
 Public users cannot create accounts. Operators must never put the **service_role** key in browser code, scripts shared with hotels, or frontend repos.
 
+## Operator Dashboard (preferred)
+
+Authorised operators (`platform_operators`) can review applications and invite from:
+
+`operator.html`
+
+1. Sign in with an operator account.
+2. Open **Account** — an **Operator** section appears whenever `get_my_platform_access` returns `is_operator: true` (including users who are also hotel members with `access_status: "active"`).
+3. Open the operator dashboard.
+4. Review pending applications and click **Approve & Send Invite**.
+5. Confirm in the modal. The page calls `invite-pilot-applicant` with `{ applicationId }` using your session JWT.
+
+Hotel workspace access and operator privileges are **separate**. A hotel owner who is also in `platform_operators` keeps their workspace and also sees the Operator section.
+
+The dashboard loads applications only through the read-only Edge Function `list-pilot-applications` (operator JWT required). Browser roles still cannot `SELECT` from `early_access_applications`.
+
+**Not in this release:** Decline button, resend invitation.
+
 ## Flow (end-to-end)
 
 1. Hotel submits the Founding Pilot form on `index.html`.
 2. Row is saved in `early_access_applications` with `founding_status = pending`.
 3. `platform_access` is created/updated to `pending_application`.
 4. Applicant confirmation + owner alert emails are sent (Resend).
-5. **You** review the application in Supabase Table Editor.
-6. **You** call the `invite-pilot-applicant` Edge Function (operator JWT required).
+5. **You** review the application in the Operator Dashboard (or Supabase Table Editor).
+6. **You** approve via the dashboard (or call `invite-pilot-applicant` directly).
 7. Function sends a **Supabase Auth invitation email** via Admin API.
 8. Only after that succeeds, `platform_access.access_status` becomes `invited` and `founding_status` becomes `accepted`.
 9. Applicant opens the invite link, sets a password on `account.html`, then signs in.
@@ -23,11 +41,12 @@ Invitation expiry and one-time use follow **Supabase Auth** email-link settings 
 
 ## One-time setup
 
-### 1. Apply migration
+### 1. Apply migrations
 
-Supabase → **SQL Editor** → run:
+Supabase → **SQL Editor** → run in order:
 
-[`supabase/migrations/phase14_pilot_invite_operators.sql`](../supabase/migrations/phase14_pilot_invite_operators.sql)
+1. [`supabase/migrations/phase14_pilot_invite_operators.sql`](../supabase/migrations/phase14_pilot_invite_operators.sql) (if not already applied)
+2. [`supabase/migrations/phase15_operator_capability_flag.sql`](../supabase/migrations/phase15_operator_capability_flag.sql) — required for mixed hotel+operator accounts
 
 ### 2. Create your operator Auth user (if needed)
 
@@ -55,10 +74,11 @@ Confirm:
 SELECT * FROM public.platform_operators;
 ```
 
-### 4. Deploy the Edge Function
+### 4. Deploy the Edge Functions
 
 ```powershell
 npx supabase functions deploy invite-pilot-applicant
+npx supabase functions deploy list-pilot-applications
 ```
 
 Optional redirect override (defaults to `https://hospitalityflow.co.uk/account.html`):
@@ -76,6 +96,12 @@ Public email signup must remain disabled (`auth.enable_signup = false`). Admin `
 ---
 
 ## Approve and invite (each applicant)
+
+### Preferred: Operator Dashboard
+
+Use `operator.html` as described above. The dashboard handles confirmation, duplicate-invite safety (`alreadyInvited`), and list refresh.
+
+### Alternative: manual Table Editor + REST
 
 ### A. Review the application
 
@@ -147,6 +173,13 @@ Expect: `founding_status = accepted`, `access_status = invited`.
 
 ---
 
+## Deferred (intentional)
+
+- **Decline** from the dashboard — no secure decline Edge Function/RPC yet; use SQL/Table Editor if needed.
+- **Resend invitation** — `invite-pilot-applicant` returns `alreadyInvited` without resending. Use Supabase Auth admin tools if a resend is required.
+
+---
+
 ## What the hotel does next
 
 1. Open the Auth invitation email and set a password (lands on `account.html`).
@@ -161,7 +194,8 @@ Expect: `founding_status = accepted`, `access_status = invited`.
 - [ ] Operator row exists only for Hospitality Flow staff
 - [ ] No `service_role` key in browser, Vercel public env, or hotel-facing docs
 - [ ] No public signup enabled
-- [ ] Invite function rejects non-operators (`403`)
+- [ ] Invite / list functions reject non-operators (`403`)
+- [ ] Browser cannot `SELECT` all `early_access_applications`
 - [ ] Failed invite leaves `pending_application` / `pending`
 - [ ] Workspace RLS still membership-scoped
 
@@ -171,5 +205,6 @@ Expect: `founding_status = accepted`, `access_status = invited`.
 
 ```powershell
 node scripts/test-pilot-invite-pipeline.mjs
+node scripts/test-operator-dashboard.mjs
 node scripts/test-platform-access-invitation-only.mjs
 ```

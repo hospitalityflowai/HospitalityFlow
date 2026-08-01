@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <meta name="description" content="Hospitality Flow operator dashboard for Founding Pilot applications.">
+  <title>Operator | Hospitality Flow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/auth.css">
+</head>
+<body>
+
+  <header class="header" role="banner">
+    <div class="container header-inner">
+      <a href="index.html" class="logo" aria-label="Hospitality Flow home">Hospitality <span>Flow</span></a>
+      <a href="account.html" class="header-link">Account</a>
+    </div>
+  </header>
+
+  <main>
+    <div class="container auth-layout auth-layout--operator">
+      <div id="auth-loading" class="auth-loading" aria-live="polite">Verifying operator access…</div>
+
+      <div id="auth-content" class="auth-content hidden" hidden>
+        <h1 class="auth-heading">Operator dashboard</h1>
+        <p id="account-email" class="account-email">Signed in as …</p>
+
+        <div id="auth-alert" class="auth-alert" aria-live="polite"></div>
+
+        <div id="operator-denied" class="auth-card hidden" hidden>
+          <h2 class="account-section-heading">Access denied</h2>
+          <p class="account-note">This page is only available to authorised Hospitality Flow operators.</p>
+          <a href="account.html" class="btn btn-secondary">Back to account</a>
+        </div>
+
+        <div id="operator-dashboard" class="hidden" hidden>
+          <p class="auth-lead">Review Founding Pilot applications and send invitations. Decline and resend are not available in this release.</p>
+
+          <div class="operator-toolbar">
+            <button type="button" class="btn btn-secondary operator-toolbar-btn" id="operator-refresh-btn">Refresh list</button>
+            <a href="account.html" class="btn btn-secondary operator-toolbar-btn">Back to account</a>
+          </div>
+
+          <section class="operator-section" aria-labelledby="operator-pending-heading">
+            <div class="operator-section-header">
+              <h2 class="account-section-heading" id="operator-pending-heading">Pending</h2>
+              <span class="operator-count" id="operator-pending-list-count">0</span>
+            </div>
+            <div id="operator-pending-list" class="operator-app-list"></div>
+          </section>
+
+          <section class="operator-section" aria-labelledby="operator-invited-heading">
+            <div class="operator-section-header">
+              <h2 class="account-section-heading" id="operator-invited-heading">Invited</h2>
+              <span class="operator-count" id="operator-invited-list-count">0</span>
+            </div>
+            <div id="operator-invited-list" class="operator-app-list"></div>
+          </section>
+
+          <section class="operator-section" aria-labelledby="operator-active-heading">
+            <div class="operator-section-header">
+              <h2 class="account-section-heading" id="operator-active-heading">Active</h2>
+              <span class="operator-count" id="operator-active-list-count">0</span>
+            </div>
+            <div id="operator-active-list" class="operator-app-list"></div>
+          </section>
+
+          <section class="operator-section hidden" id="operator-suspended-section" hidden aria-labelledby="operator-suspended-heading">
+            <div class="operator-section-header">
+              <h2 class="account-section-heading" id="operator-suspended-heading">Suspended</h2>
+              <span class="operator-count" id="operator-suspended-list-count">0</span>
+            </div>
+            <div id="operator-suspended-list" class="operator-app-list"></div>
+          </section>
+
+          <section class="operator-section" aria-labelledby="operator-declined-heading">
+            <div class="operator-section-header">
+              <h2 class="account-section-heading" id="operator-declined-heading">Declined</h2>
+              <span class="operator-count" id="operator-declined-list-count">0</span>
+            </div>
+            <div id="operator-declined-list" class="operator-app-list"></div>
+          </section>
+
+          <div class="account-actions operator-signout">
+            <button type="button" class="btn btn-secondary" id="logout-btn">Sign out</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div class="modal-root hidden" id="invite-confirm-modal" hidden>
+    <div class="modal-backdrop" data-close-modal="invite"></div>
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="invite-confirm-title">
+      <h2 id="invite-confirm-title">Send invitation</h2>
+      <p id="invite-confirm-text">Send a Hospitality Flow invitation?</p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" id="invite-cancel-btn" data-close-modal="invite">Cancel</button>
+        <button type="button" class="btn btn-primary" id="invite-confirm-btn">Approve &amp; Send Invite</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/tenant-storage.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/platform-access.js"></script>
+  <script src="js/operator-dashboard.js"></script>
+  <script>HFOperatorDashboard.initOperatorPage();</script>
+</body>
+</html>

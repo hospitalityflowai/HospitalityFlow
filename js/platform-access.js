@@ -13,6 +13,7 @@
       allowed: false,
       accessStatus: null,
       hasMembership: false,
+      isOperator: false,
       reason: reason || "ACCESS_CHECK_FAILED"
     };
   }
@@ -27,6 +28,8 @@
       allowed: data.allowed === true,
       accessStatus: data.access_status || null,
       hasMembership: data.has_membership === true,
+      // Independent of access_status — hotel members who are also operators keep "active".
+      isOperator: data.is_operator === true,
       reason: data.reason || null
     };
   }

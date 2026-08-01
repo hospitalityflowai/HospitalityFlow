@@ -27,6 +27,10 @@ verify_jwt = false
 [functions.invite-pilot-applicant]
 verify_jwt = true
 
+# Operator list: JWT required + platform_operators row check inside the function.
+[functions.list-pilot-applications]
+verify_jwt = true
+
 # Internal-only email dispatch secret (never expose to browser):
 #   supabase secrets set EARLY_ACCESS_EMAILS_INTERNAL_SECRET=<long-random-string>
 # Required by send-early-access-emails and submit-early-access-application.

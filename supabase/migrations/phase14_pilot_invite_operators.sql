@@ -36,6 +36,8 @@ COMMENT ON COLUMN public.platform_access.invited_by IS
 
 -- Operators may sign in (for the invite JWT flow) without hotel membership or
 -- platform_access invited/active. Workspace create remains gated to invited|active.
+-- Hotel membership and operator privileges are separate capabilities: membership
+-- still yields access_status 'active', while is_operator is reported independently.
 CREATE OR REPLACE FUNCTION public.get_my_platform_access()
 RETURNS json
 LANGUAGE plpgsql
@@ -46,10 +48,12 @@ DECLARE
   v_user_id uuid := auth.uid();
   v_email text;
   v_status text;
+  v_is_operator boolean := false;
 BEGIN
   IF v_user_id IS NULL THEN
     RETURN json_build_object(
       'allowed', false,
+      'is_operator', false,
       'reason', 'NOT_AUTHENTICATED'
     );
   END IF;
@@ -58,23 +62,27 @@ BEGIN
   FROM auth.users
   WHERE id = v_user_id;
 
+  v_is_operator := EXISTS (
+    SELECT 1
+    FROM public.platform_operators po
+    WHERE po.user_id = v_user_id
+  );
+
   IF EXISTS (SELECT 1 FROM public.hotel_members WHERE user_id = v_user_id) THEN
     RETURN json_build_object(
       'allowed', true,
       'access_status', 'active',
-      'has_membership', true
+      'has_membership', true,
+      'is_operator', v_is_operator
     );
   END IF;
 
-  IF EXISTS (
-    SELECT 1
-    FROM public.platform_operators po
-    WHERE po.user_id = v_user_id
-  ) THEN
+  IF v_is_operator THEN
     RETURN json_build_object(
       'allowed', true,
       'access_status', 'operator',
-      'has_membership', false
+      'has_membership', false,
+      'is_operator', true
     );
   END IF;
 
@@ -90,13 +98,15 @@ BEGIN
     RETURN json_build_object(
       'allowed', true,
       'access_status', v_status,
-      'has_membership', false
+      'has_membership', false,
+      'is_operator', false
     );
   END IF;
 
   RETURN json_build_object(
     'allowed', false,
     'access_status', coalesce(v_status, 'none'),
+    'is_operator', false,
     'reason', 'NOT_APPROVED'
   );
 END;

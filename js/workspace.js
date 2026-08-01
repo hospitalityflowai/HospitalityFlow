@@ -394,6 +394,7 @@
     setWorkspacePanelVisible(document.getElementById("workspace-dashboard"), false);
     setWorkspacePanelVisible(document.getElementById("password-section"), false);
     setWorkspacePanelVisible(document.getElementById("password-recovery-section"), false);
+    setWorkspacePanelVisible(document.getElementById("operator-account"), false);
 
     var pendingEl = document.getElementById("access-pending");
     if (pendingEl) {
@@ -410,6 +411,40 @@
         ? global.HFPlatformAccess.NOT_APPROVED_MESSAGE
         : "Your Hospitality Flow access has not been approved yet."
     );
+  }
+
+  function renderOperatorAccountPanel(alertEl, logoutBtn) {
+    setWorkspacePanelVisible(document.getElementById("workspace-create"), false);
+    setWorkspacePanelVisible(document.getElementById("workspace-dashboard"), false);
+    setWorkspacePanelVisible(document.getElementById("access-pending"), false);
+    setWorkspacePanelVisible(document.getElementById("password-recovery-section"), false);
+
+    setOperatorSectionVisible(true, { operatorOnly: true });
+
+    // Operators may change password; workspace create stays hidden.
+    setWorkspacePanelVisible(document.getElementById("password-section"), true);
+
+    var headingEl = document.getElementById("account-heading");
+    if (headingEl) headingEl.textContent = "Operator account";
+
+    hideAlert(alertEl);
+
+    var operatorLogoutBtn = document.getElementById("operator-logout-btn");
+    bindLogoutButton(operatorLogoutBtn || logoutBtn, alertEl);
+  }
+
+  /**
+   * Operator privileges are independent of hotel workspace access.
+   * Mixed-role users keep the workspace and also see the Operator section.
+   */
+  function setOperatorSectionVisible(visible, options) {
+    options = options || {};
+    var operatorEl = document.getElementById("operator-account");
+    setWorkspacePanelVisible(operatorEl, !!visible);
+
+    var onlyActions = document.getElementById("operator-only-actions");
+    var showOnlyActions = !!visible && options.operatorOnly === true;
+    setWorkspacePanelVisible(onlyActions, showOnlyActions);
   }
 
   function initAccountPage() {
@@ -503,6 +538,15 @@
 
           global.HFAuth.initChangePasswordSection(activeSession);
 
+          // Operator-only accounts (no hotel membership) must not enter workspace-create.
+          // Mixed-role users keep hotel workspace and also see the Operator section.
+          if (access.isOperator && !access.hasMembership) {
+            if (loadingEl) loadingEl.classList.add("hidden");
+            if (contentEl) contentEl.classList.remove("hidden");
+            renderOperatorAccountPanel(alertEl, logoutBtn);
+            return;
+          }
+
           if (global.HFHotelBrainStore) {
             global.HFHotelBrainStore.preload();
           }
@@ -514,7 +558,9 @@
             contentEl,
             form,
             submitBtn
-          );
+          ).then(function () {
+            setOperatorSectionVisible(!!access.isOperator, { operatorOnly: false });
+          });
         });
       }
 

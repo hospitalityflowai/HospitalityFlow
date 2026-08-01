@@ -39,6 +39,7 @@ function main() {
   let ok = true;
 
   const migration = read("supabase/migrations/phase14_pilot_invite_operators.sql");
+  const phase15 = read("supabase/migrations/phase15_operator_capability_flag.sql");
   const inviteFn = read("supabase/functions/invite-pilot-applicant/index.ts");
   const operatorAuth = read("supabase/functions/_shared/operator-auth.ts");
   const configToml = read("supabase/config.toml");
@@ -51,10 +52,12 @@ function main() {
     "js/auth.js",
     "js/platform-access.js",
     "js/workspace.js",
+    "js/operator-dashboard.js",
     "index.html",
     "login.html",
     "signup.html",
-    "account.html"
+    "account.html",
+    "operator.html"
   ];
 
   if (!/CREATE TABLE IF NOT EXISTS public\.platform_operators/i.test(migration)) {
@@ -119,6 +122,12 @@ function main() {
     ok = pass("invite-pilot-applicant requires JWT verification") && ok;
   }
 
+  if (!/\[functions\.list-pilot-applications\][\s\S]*verify_jwt\s*=\s*true/.test(configToml)) {
+    ok = fail("config.toml must require JWT for list-pilot-applications") && ok;
+  } else {
+    ok = pass("list-pilot-applications requires JWT verification") && ok;
+  }
+
   if (!/hashType === "invite"|queryType === "invite"/.test(authJs)) {
     ok = fail("auth.js must treat Auth invite links as password-setup") && ok;
   } else {
@@ -157,9 +166,11 @@ function main() {
   }
 
   const operatorAccessOk =
-    /IF EXISTS \(\s*SELECT 1\s*FROM public\.platform_operators/i.test(migration) &&
-    /'operator'/.test(migration) &&
-    /'has_membership',\s*false/.test(migration);
+    /v_is_operator/.test(migration) &&
+    /IF v_is_operator THEN/.test(migration) &&
+    /'access_status',\s*'operator'/.test(migration) &&
+    /'has_membership',\s*false/.test(migration) &&
+    /'is_operator',\s*true/.test(migration);
 
   if (!operatorAccessOk) {
     ok = fail("get_my_platform_access must allow platform_operators as access_status operator without membership") && ok;
@@ -167,9 +178,24 @@ function main() {
     ok = pass("Operators allowed via get_my_platform_access without hotel membership") && ok;
   }
 
-  // Operator status must not be added to workspace-create allow-list in phase14.
+  const mixedCapabilityOk =
+    /v_is_operator/.test(phase15) &&
+    /'is_operator',\s*v_is_operator/.test(phase15) &&
+    /'access_status',\s*'active'/.test(phase15) &&
+    /'has_membership',\s*true/.test(phase15) &&
+    /hotel_members/.test(phase15);
+
+  if (!mixedCapabilityOk) {
+    ok = fail("Phase 15 must report is_operator independently while hotel members stay access_status active") && ok;
+  } else {
+    ok = pass("Phase 15 keeps hotel access active and reports is_operator independently") && ok;
+  }
+
+  // Operator status must not be added to workspace-create allow-list in phase14/15.
   if (/NOT IN \('active', 'invited', 'operator'\)/.test(migration) ||
-      /IN \('active', 'invited', 'operator'\)/.test(migration)) {
+      /IN \('active', 'invited', 'operator'\)/.test(migration) ||
+      /NOT IN \('active', 'invited', 'operator'\)/.test(phase15) ||
+      /IN \('active', 'invited', 'operator'\)/.test(phase15)) {
     ok = fail("Operator status must not grant create_hotel_workspace access") && ok;
   } else {
     ok = pass("Operator status does not widen workspace-create allow-list") && ok;
