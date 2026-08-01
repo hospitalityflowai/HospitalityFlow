@@ -3499,6 +3499,9 @@
                 Print
               </button>
             </div>
+            <p class="hf-demo-restricted-note" id="hfDemoRestrictedNote" hidden>
+              Saving, history, copying and exports are available in private hotel workspaces.
+            </p>
             <div class="actions-meta">
               <span class="draft-status" id="draftStatus" hidden aria-live="polite"></span>
               <span class="draft-restored-hint" id="draftRestoredHint" hidden aria-live="polite">Previous draft restored.</span>
@@ -3623,6 +3626,17 @@
             </div>
           </section>
 
+          <aside class="hf-demo-conversion-card" id="hfDemoConversionCard" hidden aria-label="Continue with Hospitality Flow">
+            <h3 class="hf-demo-conversion-title">Use Hospitality Flow with your own hotel</h3>
+            <p class="hf-demo-conversion-text">
+              Create a private workspace to save handovers, use your Hotel Brain, track history and export reports.
+            </p>
+            <div class="hf-demo-conversion-actions">
+              <a class="btn btn-primary" id="hfDemoPilotCta" href="index.html#waitlist">Apply for pilot</a>
+              <button type="button" class="btn btn-secondary" id="hfDemoRestartCta">Restart demo</button>
+            </div>
+          </aside>
+
           <!-- Previous Handovers -->
           <section class="saved-handovers-section" id="savedHandoversSection" aria-label="Previous handovers">
             <div class="saved-handovers-panel">
@@ -3690,6 +3704,7 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="js/handover-generated-view.js"></script>
   <script src="handover-report.js"></script>
   <script src="handover-pdf.js"></script>
   <script src="js/supabase-config.js"></script>
@@ -3885,6 +3900,7 @@
       var timelineBody = document.getElementById("timelineBody");
       var timelineGroups = document.getElementById("timelineGroups");
       var lastIntelligenceExperience = null;
+      var lastGeneratedView = null;
       var summaryStats = document.getElementById("summaryStats");
       var summaryCard = document.getElementById("summaryCard");
       var shiftGlance = document.getElementById("shiftGlance");
@@ -4350,6 +4366,13 @@
         var connected = isHotelBrainConnected();
         var name = getPrefillHotelName();
 
+        /* Public Demo keeps Oakwood sample fields locked — never unlock via Brain prefill. */
+        if (isDemoModeActive()) {
+          applyDemoReadOnlyState();
+          hotelName.classList.remove("form-input--brain-sourced");
+          return;
+        }
+
         if (name && (!preserveExisting || !hotelName.value.trim())) {
           hotelName.value = name;
         }
@@ -4626,7 +4649,8 @@
         }
         if (hotelBrainMeta) {
           if (demoActive) {
-            hotelBrainMeta.textContent = "The operational memory of your hotel.";
+            hotelBrainMeta.textContent =
+              "Powered by the Hotel Brain — hotel knowledge helps Hospitality Flow understand policies, rooms, payments and guest requirements.";
           } else {
             var metaParts = [hotelName];
             if (roomCount) metaParts.push(roomCount + (roomCount === "1" ? " room" : " rooms"));
@@ -4637,8 +4661,8 @@
         if (hotelBrainSub) {
           if (demoActive) {
             hotelBrainSub.textContent = hotelName
-              ? hotelName + " · Builds context as knowledge and shift activity are added."
-              : "Builds context as knowledge and shift activity are added.";
+              ? hotelName + " sample knowledge · used when you Generate a handover."
+              : "Sample knowledge · used when you Generate a handover.";
           } else if (status === "partial") {
             hotelBrainSub.textContent = "Some Hotel Brain sections still need completing";
           } else {
@@ -4647,7 +4671,7 @@
           hotelBrainSub.hidden = false;
         }
         if (hotelBrainLink) {
-          hotelBrainLink.textContent = demoActive ? "Open Hotel Brain" : "Hotel Profile";
+          hotelBrainLink.textContent = demoActive ? "Explore Hotel Brain" : "Hotel Profile";
           hotelBrainLink.setAttribute("href", "hotel-profile.html");
         }
       }
@@ -5006,6 +5030,7 @@
 
       function setSelectedShift(shift, options) {
         options = options || {};
+        if (options.fromUser && isDemoModeActive()) return;
         if (options.respectUserSelection && shiftTouchedByUser) return;
         selectedShift = normalizeShiftCode(shift);
         if (options.fromUser) {
@@ -5051,6 +5076,7 @@
           shiftSelector.appendChild(btn);
         });
         shiftButtons = document.querySelectorAll(".shift-btn");
+        if (isDemoModeActive()) applyDemoReadOnlyState();
       }
 
       function wireShiftButtons() {
@@ -5364,10 +5390,338 @@
         return null;
       }
 
+      function getOrganisedSectionDefsForView() {
+        return getOrganisedSectionDefs().map(function (def) {
+          return { id: def.id, title: def.title };
+        });
+      }
+
+      function buildCanonicalGeneratedView(classified, options) {
+        options = options || {};
+        if (!window.HandoverGeneratedView) return null;
+        var experience = options.experience;
+        if (!experience) {
+          experience = getHandoverIntelligenceExperience(classified) || lastIntelligenceExperience;
+        }
+        captureHotelSnapshotInputs();
+        commitSnapshotState();
+        return HandoverGeneratedView.build({
+          meta: options.meta || getPdfMeta(),
+          generatedAt: options.generatedAt || lastGeneratedTime || formatTimestamp(new Date()),
+          snapshot: buildHotelSnapshotForPdfFromData(options.snapshot || getCommittedSnapshot()),
+          experience: experience || {},
+          classified: classified || {},
+          sectionDefs: getOrganisedSectionDefsForView(),
+          recommendations: options.recommendations || lastRecommendations || [],
+          normalizeItem: function (item, sectionId) {
+            return normalizeHandoverItem(item, sectionId);
+          },
+          getItemText: getItemText,
+          formatItemText: formatItemForExport,
+          formatRecommendation: formatRecommendationForExport,
+          filterSectionItems: function (sectionId, items) {
+            if (sectionId === "general") {
+              return items.filter(isUsefulOperationalNote);
+            }
+            return items;
+          }
+        });
+      }
+
+      function refreshCanonicalGeneratedView() {
+        if (!lastClassified) {
+          lastGeneratedView = null;
+          lastHandoverText = "";
+          return null;
+        }
+        lastGeneratedView = buildCanonicalGeneratedView(lastClassified, {
+          experience: lastIntelligenceExperience
+        });
+        if (lastGeneratedView && window.HandoverGeneratedView) {
+          lastHandoverText = HandoverGeneratedView.formatText(lastGeneratedView, {
+            title: (uiLabels.organised || "Organised Handover").toUpperCase() + " — Hospitality Flow"
+          });
+          if (lastGeneratedView.briefing && lastGeneratedView.briefing.paragraphs) {
+            lastSummaryText = lastGeneratedView.briefing.paragraphs.join("\n\n");
+          }
+        }
+        return lastGeneratedView;
+      }
+
       function syncHandoverExports() {
         if (!lastClassified) return;
-        lastHandoverText = formatHandoverText(lastClassified);
+        if (isDemoModeActive()) {
+          /* Demo: rebuild export text only — never persist. */
+          refreshCanonicalGeneratedView();
+          return;
+        }
+        refreshCanonicalGeneratedView();
         scheduleDraftSave();
+      }
+
+      var DEMO_HOTEL_NAME = "The Oakwood Mayfair";
+      var DEMO_PREPARED_BY = "Sophie Chen · Night Manager";
+      var DEMO_PILOT_HREF = "index.html#waitlist";
+      var DEMO_SAMPLE_FIELD_TITLE = "Sample hotel — fixed in Demo Mode";
+      var DEMO_SNAPSHOT_HINT =
+        "Sample figures for The Oakwood Mayfair. Only the notes below are editable in Demo Mode.";
+      var demoDateGuardWired = false;
+
+      function getDemoSampleDraft() {
+        if (!window.HFDemoMode || !HFDemoMode.getDemoDraft) return null;
+        try {
+          return HFDemoMode.getDemoDraft();
+        } catch (err) {
+          return null;
+        }
+      }
+
+      /**
+       * Lock/unlock a single control for Public Demo.
+       * Uses readOnly + styling (not disabled) so fields read as fixed sample values.
+       */
+      function setDemoLockedField(el, lock, options) {
+        options = options || {};
+        if (!el) return;
+        if (lock) {
+          if (options.value != null && options.value !== "") {
+            el.value = options.value;
+          }
+          if ("readOnly" in el) el.readOnly = true;
+          el.setAttribute("aria-readonly", "true");
+          el.classList.add("hf-demo-locked-field");
+          el.classList.add("form-input--demo-locked");
+          el.title = options.title || DEMO_SAMPLE_FIELD_TITLE;
+          if (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT") {
+            el.setAttribute("tabindex", "-1");
+          }
+        } else {
+          if ("readOnly" in el) el.readOnly = false;
+          el.removeAttribute("aria-readonly");
+          el.classList.remove("hf-demo-locked-field");
+          el.classList.remove("form-input--demo-locked");
+          el.removeAttribute("title");
+          el.removeAttribute("tabindex");
+        }
+      }
+
+      function wireDemoDateGuardOnce() {
+        if (demoDateGuardWired || !handoverDate) return;
+        demoDateGuardWired = true;
+        handoverDate.addEventListener("change", function () {
+          if (!isDemoModeActive()) return;
+          var draft = getDemoSampleDraft();
+          if (draft && draft.date) handoverDate.value = draft.date;
+        });
+        handoverDate.addEventListener("keydown", function (event) {
+          if (!isDemoModeActive()) return;
+          event.preventDefault();
+        });
+      }
+
+      /**
+       * Single entry-point for Public Demo read-only sample fields.
+       * Future Snapshot metrics inherit locking via #preHotelSnapshotGrid selectors.
+       * No-ops for Pilot Lab / real workspaces unless Demo Mode is active.
+       */
+      function applyDemoReadOnlyState() {
+        var demo = isDemoModeActive();
+        var draft = demo ? getDemoSampleDraft() : null;
+
+        setDemoLockedField(hotelName, demo, {
+          value: demo ? DEMO_HOTEL_NAME : null,
+          title: DEMO_SAMPLE_FIELD_TITLE
+        });
+        setDemoLockedField(preparedBy, demo, {
+          value: demo ? DEMO_PREPARED_BY : null,
+          title: DEMO_SAMPLE_FIELD_TITLE
+        });
+
+        var departmentEl =
+          document.getElementById("department") ||
+          document.getElementById("handoverDepartment") ||
+          document.querySelector('[name="department"]');
+        setDemoLockedField(departmentEl, demo, {
+          value: demo ? ((draft && draft.department) || "Reception") : null,
+          title: DEMO_SAMPLE_FIELD_TITLE
+        });
+
+        if (handoverDate) {
+          wireDemoDateGuardOnce();
+          setDemoLockedField(handoverDate, demo, {
+            value: demo && draft && draft.date ? draft.date : null,
+            title: DEMO_SAMPLE_FIELD_TITLE
+          });
+        }
+
+        if (shiftSelector) {
+          shiftSelector.classList.toggle("hf-demo-locked-shift", demo);
+          shiftSelector.setAttribute("aria-disabled", demo ? "true" : "false");
+          if (demo) {
+            var demoShift = (draft && draft.shift) || "Night";
+            setSelectedShift(demoShift, { fromUser: false });
+            shiftTouchedByUser = false;
+          }
+          document.querySelectorAll("#shiftSelector .shift-btn, .shift-selector .shift-btn").forEach(function (btn) {
+            if (!btn) return;
+            if (demo) {
+              btn.setAttribute("aria-disabled", "true");
+              btn.setAttribute("tabindex", "-1");
+              btn.title = DEMO_SAMPLE_FIELD_TITLE;
+              btn.classList.add("hf-demo-locked-field");
+            } else {
+              btn.removeAttribute("aria-disabled");
+              btn.removeAttribute("tabindex");
+              btn.removeAttribute("title");
+              btn.classList.remove("hf-demo-locked-field");
+            }
+          });
+        }
+
+        if (demo && draft && draft.hotelSnapshot) {
+          Object.keys(draft.hotelSnapshot).forEach(function (key) {
+            if (key === "currency") return;
+            var val = draft.hotelSnapshot[key];
+            if (val == null || String(val).trim() === "") return;
+            lastHotelSnapshotOverrides[key] = String(val);
+          });
+        }
+
+        document.querySelectorAll(
+          "#preHotelSnapshotGrid .snapshot-field-input, " +
+          "#preHotelSnapshotGrid input, " +
+          "#preHotelSnapshotGrid select, " +
+          "#preHotelSnapshotGrid textarea"
+        ).forEach(function (input) {
+          if (demo && draft && draft.hotelSnapshot) {
+            var statId = input.getAttribute("data-snapshot-input");
+            if (statId && draft.hotelSnapshot[statId] != null && draft.hotelSnapshot[statId] !== "") {
+              input.value = String(draft.hotelSnapshot[statId]);
+              input.setAttribute("data-snapshot-committed", input.value);
+            }
+          }
+          setDemoLockedField(input, demo, {
+            title: "Sample hotel figures — fixed in Demo Mode"
+          });
+        });
+
+        document.querySelectorAll(
+          "#preHotelSnapshotGrid .glance-snapshot, #shiftSnapshotGrid .glance-snapshot"
+        ).forEach(function (card) {
+          if (!card) return;
+          card.classList.toggle("hf-demo-locked-snapshot", demo);
+          if (demo) {
+            card.setAttribute("title", "Sample hotel figures — fixed in Demo Mode");
+            card.removeAttribute("role");
+            card.removeAttribute("tabindex");
+            card.classList.remove("is-interactive");
+          } else if (card.classList.contains("is-interactive")) {
+            card.setAttribute("title", "Click to edit");
+          } else {
+            card.removeAttribute("title");
+          }
+        });
+
+        if (hotelSnapshotHint) {
+          hotelSnapshotHint.textContent = demo
+            ? DEMO_SNAPSHOT_HINT
+            : (typeof HOTEL_SNAPSHOT_HINT_TEXT !== "undefined"
+              ? HOTEL_SNAPSHOT_HINT_TEXT
+              : "Enter today's hotel figures, or leave them blank and AI will extract them from your shift notes.");
+        }
+
+        var detailsDesc = document.getElementById("detailsCardDesc");
+        if (detailsDesc) {
+          if (demo) {
+            if (!detailsDesc.getAttribute("data-demo-original")) {
+              detailsDesc.setAttribute("data-demo-original", detailsDesc.textContent || "");
+            }
+            detailsDesc.textContent =
+              "This is a sample hotel — The Oakwood Mayfair. Only operational notes are editable.";
+          } else if (detailsDesc.getAttribute("data-demo-original") != null) {
+            detailsDesc.textContent = detailsDesc.getAttribute("data-demo-original");
+            detailsDesc.removeAttribute("data-demo-original");
+          }
+        }
+      }
+
+      function syncDemoConversionCard(hasGeneratedOutput) {
+        var card = document.getElementById("hfDemoConversionCard");
+        if (!card) return;
+        var show = isDemoModeActive() && !!hasGeneratedOutput;
+        card.hidden = !show;
+        var pilot = document.getElementById("hfDemoPilotCta");
+        if (pilot) pilot.setAttribute("href", DEMO_PILOT_HREF);
+      }
+
+      function applyDemoWorkspaceChrome() {
+        var demo = isDemoModeActive();
+        document.documentElement.classList.toggle("hf-demo-workspace", demo);
+
+        var cue = document.getElementById("hfDemoFirstActionCue");
+        if (demo && !cue && notesInput && notesInput.parentNode) {
+          cue = document.createElement("p");
+          cue.id = "hfDemoFirstActionCue";
+          cue.className = "hf-demo-first-action-cue";
+          cue.textContent = "Edit the sample notes or click Generate to see Hospitality Flow organise the shift.";
+          notesInput.parentNode.insertBefore(cue, notesInput);
+        }
+        if (cue) cue.hidden = !demo;
+
+        applyDemoReadOnlyState();
+
+        var restrictedNote = document.getElementById("hfDemoRestrictedNote");
+        if (restrictedNote) restrictedNote.hidden = !demo;
+
+        /* Public Demo: hide export / save / history tooling entirely (CSS + attributes). */
+        [copyBtn, saveHandoverBtn, exportPdfBtn, printHandoverBtn].forEach(function (btn) {
+          if (!btn) return;
+          if (demo) {
+            btn.hidden = true;
+            btn.disabled = true;
+            btn.setAttribute("aria-hidden", "true");
+          } else {
+            btn.hidden = false;
+            btn.removeAttribute("aria-hidden");
+          }
+        });
+        if (handoverOutputActions) {
+          handoverOutputActions.hidden = demo ? true : handoverOutputActions.hidden;
+          if (demo) handoverOutputActions.setAttribute("aria-hidden", "true");
+          else handoverOutputActions.removeAttribute("aria-hidden");
+        }
+        if (newHandoverBtn) {
+          newHandoverBtn.hidden = demo;
+          if (demo) newHandoverBtn.disabled = true;
+        }
+
+        var savedSection = document.getElementById("savedHandoversSection");
+        if (savedSection) savedSection.hidden = demo;
+        var advanced = document.getElementById("advancedDataOptions");
+        if (advanced) advanced.hidden = demo;
+        if (draftStatus) {
+          draftStatus.hidden = true;
+          draftStatus.textContent = "";
+        }
+
+        syncDemoConversionCard(!!(lastClassified || lastGeneratedView));
+
+        document.querySelectorAll(".handover-item-edit-btn, .handover-item-status-select, .recommendation-item-edit-btn, .recommendation-item-delete-btn, .recommendation-item-status-select").forEach(function (el) {
+          if (!el) return;
+          if (demo) {
+            el.disabled = true;
+            el.setAttribute("aria-disabled", "true");
+            el.title = "Editing is disabled in Demo Mode";
+            el.classList.add("is-demo-disabled");
+          } else {
+            el.removeAttribute("aria-disabled");
+            el.classList.remove("is-demo-disabled");
+            if (!el.classList.contains("handover-item-status-select") &&
+                !el.classList.contains("recommendation-item-status-select")) {
+              el.disabled = false;
+            }
+          }
+        });
       }
 
       function normalizeRecommendationStatus(status) {
@@ -5507,6 +5861,8 @@
       }
 
       function loadMaintenanceIssuesForHandover() {
+        /* Public Demo: standalone Maintenance board is out of scope — notes still classify maintenance facts. */
+        if (isDemoModeActive()) return Promise.resolve([]);
         if (!window.HFMaintenanceStore) return Promise.resolve([]);
         var store = window.HFMaintenanceStore;
         var boot = typeof store.init === "function"
@@ -5753,51 +6109,54 @@
         main.appendChild(meta);
         li.appendChild(main);
 
-        var toolbar = document.createElement("div");
-        toolbar.className = "recommendation-item-toolbar";
+        if (!isDemoModeActive()) {
+          var toolbar = document.createElement("div");
+          toolbar.className = "recommendation-item-toolbar";
 
-        var editBtn = document.createElement("button");
-        editBtn.type = "button";
-        editBtn.className = "handover-item-edit-btn";
-        editBtn.setAttribute("aria-label", "Edit recommendation");
-        editBtn.innerHTML = EDIT_ICON;
-        editBtn.addEventListener("click", function (event) {
-          event.stopPropagation();
-          openRecommendationEditor(li, normalized);
-        });
+          var editBtn = document.createElement("button");
+          editBtn.type = "button";
+          editBtn.className = "handover-item-edit-btn";
+          editBtn.setAttribute("aria-label", "Edit recommendation");
+          editBtn.innerHTML = EDIT_ICON;
+          editBtn.addEventListener("click", function (event) {
+            event.stopPropagation();
+            openRecommendationEditor(li, normalized);
+          });
 
-        var deleteBtn = document.createElement("button");
-        deleteBtn.type = "button";
-        deleteBtn.className = "recommendation-item-delete-btn";
-        deleteBtn.setAttribute("aria-label", "Delete recommendation");
-        deleteBtn.innerHTML = DELETE_ICON;
-        deleteBtn.addEventListener("click", function (event) {
-          event.stopPropagation();
-          deleteRecommendation(normalized.id);
-        });
+          var deleteBtn = document.createElement("button");
+          deleteBtn.type = "button";
+          deleteBtn.className = "recommendation-item-delete-btn";
+          deleteBtn.setAttribute("aria-label", "Delete recommendation");
+          deleteBtn.innerHTML = DELETE_ICON;
+          deleteBtn.addEventListener("click", function (event) {
+            event.stopPropagation();
+            deleteRecommendation(normalized.id);
+          });
 
-        var statusSelect = document.createElement("select");
-        statusSelect.className = "handover-item-status-select status-" + normalized.status.replace(/_/g, "-");
-        statusSelect.setAttribute("aria-label", "Recommendation status");
-        ITEM_STATUSES.forEach(function (entry) {
-          var option = document.createElement("option");
-          option.value = entry.id;
-          option.textContent = entry.label;
-          if (entry.id === normalized.status) option.selected = true;
-          statusSelect.appendChild(option);
-        });
-        statusSelect.addEventListener("change", function () {
-          setRecommendationStatus(normalized.id, statusSelect.value);
-        });
+          var statusSelect = document.createElement("select");
+          statusSelect.className = "handover-item-status-select status-" + normalized.status.replace(/_/g, "-");
+          statusSelect.setAttribute("aria-label", "Recommendation status");
+          ITEM_STATUSES.forEach(function (entry) {
+            var option = document.createElement("option");
+            option.value = entry.id;
+            option.textContent = entry.label;
+            if (entry.id === normalized.status) option.selected = true;
+            statusSelect.appendChild(option);
+          });
+          statusSelect.addEventListener("change", function () {
+            setRecommendationStatus(normalized.id, statusSelect.value);
+          });
 
-        toolbar.appendChild(editBtn);
-        toolbar.appendChild(deleteBtn);
-        toolbar.appendChild(statusSelect);
-        li.appendChild(toolbar);
+          toolbar.appendChild(editBtn);
+          toolbar.appendChild(deleteBtn);
+          toolbar.appendChild(statusSelect);
+          li.appendChild(toolbar);
+        }
         return li;
       }
 
       function openRecommendationEditor(li, item) {
+        if (isDemoModeActive()) return;
         if (activeRecommendationEditId && activeRecommendationEditId !== item.id) {
           renderRecommendations();
         }
@@ -5847,6 +6206,10 @@
       }
 
       function saveRecommendationEdit(id, newText) {
+        if (isDemoModeActive()) {
+          showToast("Editing is disabled in Demo Mode.");
+          return;
+        }
         var trimmed = String(newText || "").trim();
         if (!trimmed) {
           showToast("Recommendation text cannot be empty.");
@@ -5863,6 +6226,7 @@
       }
 
       function setRecommendationStatus(id, status) {
+        if (isDemoModeActive()) return;
         var found = findRecommendationById(id);
         if (!found) return;
         found.item.status = normalizeRecommendationStatus(status);
@@ -5872,6 +6236,10 @@
       }
 
       function deleteRecommendation(id) {
+        if (isDemoModeActive()) {
+          showToast("Editing is disabled in Demo Mode.");
+          return;
+        }
         lastRecommendations = lastRecommendations.filter(function (rec) { return rec.id !== id; });
         activeRecommendationEditId = null;
         renderRecommendations();
@@ -5895,6 +6263,10 @@
       }
 
       function saveHandoverItemEdit(itemId, newText) {
+        if (isDemoModeActive()) {
+          showToast("Editing is disabled in Demo Mode.");
+          return;
+        }
         if (!lastClassified) return;
         var trimmed = String(newText || "").trim();
         if (!trimmed) {
@@ -5914,6 +6286,7 @@
       }
 
       function setHandoverItemStatus(itemId, status) {
+        if (isDemoModeActive()) return;
         if (!lastClassified) return;
 
         var found = findItemInClassified(lastClassified, itemId);
@@ -5952,45 +6325,48 @@
         }
         li.appendChild(main);
 
-        var toolbar = document.createElement("div");
-        toolbar.className = "handover-item-toolbar";
+        if (!isDemoModeActive()) {
+          var toolbar = document.createElement("div");
+          toolbar.className = "handover-item-toolbar";
 
-        var editBtn = document.createElement("button");
-        editBtn.type = "button";
-        editBtn.className = "handover-item-edit-btn";
-        editBtn.setAttribute("aria-label", "Edit item");
-        editBtn.innerHTML = EDIT_ICON;
-        editBtn.addEventListener("click", function (event) {
-          event.stopPropagation();
-          openHandoverItemEditor(li, normalized);
-        });
-        toolbar.appendChild(editBtn);
-
-        if (isActionableSection(sectionId)) {
-          var statusSelect = document.createElement("select");
-          statusSelect.className = "handover-item-status-select status-" + normalized.status.replace(/_/g, "-");
-          if (sectionId === "urgent") statusSelect.classList.add("status-context-urgent");
-          statusSelect.setAttribute("aria-label", "Item status");
-
-          ITEM_STATUSES.forEach(function (entry) {
-            var option = document.createElement("option");
-            option.value = entry.id;
-            option.textContent = entry.label;
-            if (entry.id === normalized.status) option.selected = true;
-            statusSelect.appendChild(option);
+          var editBtn = document.createElement("button");
+          editBtn.type = "button";
+          editBtn.className = "handover-item-edit-btn";
+          editBtn.setAttribute("aria-label", "Edit item");
+          editBtn.innerHTML = EDIT_ICON;
+          editBtn.addEventListener("click", function (event) {
+            event.stopPropagation();
+            openHandoverItemEditor(li, normalized);
           });
+          toolbar.appendChild(editBtn);
 
-          statusSelect.addEventListener("change", function () {
-            setHandoverItemStatus(normalized.id, statusSelect.value);
-          });
-          toolbar.appendChild(statusSelect);
+          if (isActionableSection(sectionId)) {
+            var statusSelect = document.createElement("select");
+            statusSelect.className = "handover-item-status-select status-" + normalized.status.replace(/_/g, "-");
+            if (sectionId === "urgent") statusSelect.classList.add("status-context-urgent");
+            statusSelect.setAttribute("aria-label", "Item status");
+
+            ITEM_STATUSES.forEach(function (entry) {
+              var option = document.createElement("option");
+              option.value = entry.id;
+              option.textContent = entry.label;
+              if (entry.id === normalized.status) option.selected = true;
+              statusSelect.appendChild(option);
+            });
+
+            statusSelect.addEventListener("change", function () {
+              setHandoverItemStatus(normalized.id, statusSelect.value);
+            });
+            toolbar.appendChild(statusSelect);
+          }
+
+          li.appendChild(toolbar);
         }
-
-        li.appendChild(toolbar);
         return li;
       }
 
       function openHandoverItemEditor(li, item) {
+        if (isDemoModeActive()) return;
         if (activeHandoverEditId && activeHandoverEditId !== item.id) {
           renderSections(lastClassified);
         }
@@ -8162,6 +8538,7 @@
       }
 
       function confirmPreSnapshotField(input, statId) {
+        if (isDemoModeActive()) return;
         syncSnapshotOverrideFromInput(statId, input.value);
         if (statId === "occupancy") {
           var occ = parseOccupancyNumber(input.value);
@@ -8197,6 +8574,7 @@
       }
 
       function bindPreSnapshotKeyboard(input, stat) {
+        if (isDemoModeActive()) return;
         input.addEventListener("focus", function () {
           input.setAttribute("data-snapshot-committed", input.value);
         });
@@ -8413,12 +8791,14 @@
         }
 
         input.addEventListener("input", function () {
+          if (isDemoModeActive()) return;
           syncSnapshotOverrideFromInput(stat.id, input.value);
           syncGeneratedSnapshotFromForm();
           scheduleDraftSave();
         });
 
         input.addEventListener("blur", function () {
+          if (isDemoModeActive()) return;
           confirmPreSnapshotField(input, stat.id);
         });
 
@@ -8436,6 +8816,7 @@
         card.appendChild(iconWrap);
 
         card.addEventListener("click", function (event) {
+          if (isDemoModeActive()) return;
           if (event.target === input || input.contains(event.target)) return;
           input.focus();
         });
@@ -8448,6 +8829,7 @@
           mode: "input",
           hideEmpty: false
         });
+        if (isDemoModeActive()) applyDemoReadOnlyState();
       }
 
       function buildHotelSnapshotTextLines() {
@@ -8617,6 +8999,12 @@
       function bindSnapshotEdit(card, stat) {
         var valueEl = card.querySelector(".glance-snapshot-value");
         if (!valueEl) return;
+
+        if (isDemoModeActive()) {
+          card.classList.add("hf-demo-locked-snapshot");
+          card.setAttribute("title", "Sample hotel figures — fixed in Demo Mode");
+          return;
+        }
 
         card.classList.add("is-interactive");
         card.setAttribute("title", "Click to edit");
@@ -9504,27 +9892,51 @@
        */
       function setHandoverOutputChrome(hasOutput) {
         var show = !!hasOutput;
+        var demo = isDemoModeActive();
         if (handoverActions) {
           handoverActions.classList.toggle("has-handover-output", show);
         }
         if (handoverOutputActions) {
-          handoverOutputActions.hidden = !show;
+          /* Public Demo never exposes Copy / Save / PDF / Print. */
+          handoverOutputActions.hidden = demo || !show;
         }
         if (handoverClearActions) {
+          /* Keep Clear Notes available in demo; hide New Handover via chrome. */
           handoverClearActions.hidden = !show;
         }
         if (outputSection) {
           outputSection.classList.toggle("visible", show);
           outputSection.hidden = !show;
         }
-        if (copyBtn) copyBtn.disabled = !show;
-        if (exportPdfBtn) exportPdfBtn.disabled = !show;
-        if (printHandoverBtn) printHandoverBtn.disabled = !show;
-        if (saveHandoverBtn) saveHandoverBtn.disabled = !show;
+        if (demo) {
+          [copyBtn, saveHandoverBtn, exportPdfBtn, printHandoverBtn].forEach(function (btn) {
+            if (!btn) return;
+            btn.hidden = true;
+            btn.disabled = true;
+          });
+        } else {
+          if (copyBtn) {
+            copyBtn.hidden = false;
+            copyBtn.disabled = !show;
+          }
+          if (exportPdfBtn) {
+            exportPdfBtn.hidden = false;
+            exportPdfBtn.disabled = !show;
+          }
+          if (printHandoverBtn) {
+            printHandoverBtn.hidden = false;
+            printHandoverBtn.disabled = !show;
+          }
+          if (saveHandoverBtn) {
+            saveHandoverBtn.hidden = false;
+            saveHandoverBtn.disabled = !show;
+          }
+        }
         if (!show && copyBtn) {
           copyBtn.classList.remove("copied");
           restoreCopyButtonHtml();
         }
+        syncDemoConversionCard(show && demo);
       }
 
       function clearHandoverOutputState() {
@@ -9542,6 +9954,8 @@
         lastSummaryText = "";
         lastGeneratedTime = "";
         lastClassified = null;
+        lastGeneratedView = null;
+        lastIntelligenceExperience = null;
         lastRecommendations = [];
         lastHotelSnapshotOverrides = {};
         lastNormalizedSnapshot = null;
@@ -9892,58 +10306,18 @@
       }
 
       function formatHandoverText(classified) {
-        var parts = [];
-        var meta = getHotelMeta();
-        var now = new Date();
-        var timeStr = now.toLocaleTimeString(dateLocale.locale, {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: dateLocale.hour12
-        });
-
-        parts.push(uiLabels.organised.toUpperCase() + " — Hospitality Flow");
-        parts.push("════════════════════════════════");
-        parts.push("Hotel:       " + meta.hotel);
-        parts.push("Shift:       " + meta.shift);
-        parts.push("Date:        " + meta.date);
-        parts.push("Prepared by: " + meta.preparedBy);
-        parts.push("Generated:   " + timeStr);
-        parts.push("");
-        parts.push("HOTEL SNAPSHOT");
-        buildHotelSnapshotTextLines().forEach(function (line) {
-          parts.push(line);
-        });
-        parts.push("");
-        parts.push(uiLabels.aiSummary.toUpperCase());
-        parts.push(lastSummaryText);
-        parts.push("");
-
-        SECTIONS.forEach(function (section) {
-          var items = classified[section.id];
-          if (!items || items.length === 0) return;
-          parts.push(section.emoji + " " + section.title.toUpperCase());
-          items.forEach(function (item) {
-            parts.push("• " + formatItemForExport(normalizeHandoverItem(item, section.id)));
+        var view = lastGeneratedView;
+        if (!view || !view.briefing) {
+          view = buildCanonicalGeneratedView(classified || lastClassified, {
+            experience: lastIntelligenceExperience
           });
-          parts.push("");
-        });
-
-        if (lastRecommendations.length) {
-          parts.push("SHIFT INTELLIGENCE");
-          parts.push("Operational checks from the Hotel Brain and your current shift.");
-          parts.push("");
         }
-
-        if (lastRecommendations.length) {
-          parts.push("AI RECOMMENDATIONS");
-          parts.push("What should the next shift do?");
-          lastRecommendations.forEach(function (rec) {
-            parts.push("• " + formatRecommendationForExport(rec));
+        if (view && window.HandoverGeneratedView) {
+          return HandoverGeneratedView.formatText(view, {
+            title: (uiLabels.organised || "Organised Handover").toUpperCase() + " — Hospitality Flow"
           });
-          parts.push("");
         }
-
-        return parts.join("\n").trim();
+        return lastSummaryText || "";
       }
 
       function toggleSection(card) {
@@ -10081,12 +10455,14 @@
               renderSummaryStats(classified);
               showSummaryCard();
 
-              lastHandoverText = formatHandoverText(classified);
               lastClassified = classified;
+              lastIntelligenceExperience = getHandoverIntelligenceExperience(classified);
+              refreshCanonicalGeneratedView();
               setHandoverOutputChrome(true);
+              applyDemoWorkspaceChrome();
 
               showToast(uiLabels.handover + " generated successfully!");
-              scheduleDraftSave();
+              if (!isDemoModeActive()) scheduleDraftSave();
 
               var scrollTarget = shiftGlance && shiftGlance.classList.contains("is-visible")
                 ? shiftGlance
@@ -10164,41 +10540,82 @@
 
       function buildHandoverReportPayload(classified, options) {
         options = options || {};
-        captureHotelSnapshotInputs();
-        commitSnapshotState();
-
-        var generatedAt = options.generatedAt;
-        if (!generatedAt) {
-          generatedAt = formatTimestamp(new Date());
+        var view = options.view || lastGeneratedView;
+        if (!view) {
+          view = buildCanonicalGeneratedView(classified || lastClassified, {
+            experience: options.experience || lastIntelligenceExperience,
+            meta: options.meta,
+            generatedAt: options.generatedAt,
+            snapshot: options.snapshot,
+            recommendations: options.recommendations
+          });
         }
-
+        if (view && window.HandoverGeneratedView) {
+          return HandoverGeneratedView.toReportPayload(view);
+        }
+        /* Minimal fallback — briefing only, no legacy detail rows */
         return {
           meta: options.meta || getPdfMeta(),
-          generatedAt: generatedAt,
-          hotelSnapshot: buildHotelSnapshotForPdfFromData(
-            options.snapshot || getCommittedSnapshot()
-          ),
-          summary: buildPdfSummaryPayload(classified),
-          sections: buildPdfSections(classified),
+          generatedAt: options.generatedAt || formatTimestamp(new Date()),
+          hotelSnapshot: buildHotelSnapshotForPdfFromData(options.snapshot || getCommittedSnapshot()),
+          briefing: { paragraphs: lastSummaryText ? [lastSummaryText] : [] },
+          hotelStatus: [],
+          timeline: { groups: [] },
+          sections: buildPdfSections(classified || lastClassified || {}),
           recommendations: (options.recommendations || lastRecommendations).map(function (rec) {
             return formatRecommendationForExport(normalizeRecommendation(rec));
-          })
+          }),
+          summary: null,
+          hasCanonicalView: false
         };
       }
 
       function buildHandoverReportPayloadFromSaved(saved) {
+        if (saved && saved.generatedView && window.HandoverGeneratedView) {
+          return HandoverGeneratedView.toReportPayload(saved.generatedView);
+        }
         var classified = restoreClassifiedFromSaved(saved);
+        var experience = null;
+        if (saved && saved.originalNotes && window.AiWritingEngine) {
+          try {
+            var lines = parseNotes(saved.originalNotes);
+            var live = classifyNotes(lines);
+            experience = getHandoverIntelligenceExperience(live);
+            if (live && live._analyzed) classified._analyzed = live._analyzed;
+          } catch (err) {
+            experience = null;
+          }
+        }
+        var view = buildCanonicalGeneratedView(classified, {
+          experience: experience,
+          meta: buildPdfMetaFromSaved(saved),
+          generatedAt: saved.timestamp
+            ? formatTimestamp(new Date(saved.timestamp))
+            : "Saved handover",
+          snapshot: saved.hotelSnapshot || {},
+          recommendations: saved.recommendations || []
+        });
+        if (view && window.HandoverGeneratedView) {
+          if (!view.briefing.paragraphs.length && saved.aiSummary) {
+            view.briefing.paragraphs = [saved.aiSummary];
+          }
+          return HandoverGeneratedView.toReportPayload(view);
+        }
         return {
           meta: buildPdfMetaFromSaved(saved),
           generatedAt: saved.timestamp
             ? formatTimestamp(new Date(saved.timestamp))
             : "Saved handover",
           hotelSnapshot: buildHotelSnapshotForPdfFromData(saved.hotelSnapshot || {}),
-          summary: buildPdfSummaryPayload(classified),
+          briefing: { paragraphs: saved.aiSummary ? [saved.aiSummary] : [] },
+          hotelStatus: [],
+          timeline: { groups: [] },
           sections: buildPdfSections(classified),
           recommendations: (saved.recommendations || []).map(function (rec) {
             return formatRecommendationForExport(normalizeRecommendation(rec));
-          })
+          }),
+          summary: null,
+          hasCanonicalView: false
         };
       }
 
@@ -10221,7 +10638,11 @@
       }
 
       function printHandover() {
-        if (!lastClassified) {
+        if (isDemoModeActive()) {
+          showToast("Printing is available in private hotel workspaces.");
+          return;
+        }
+        if (!lastClassified && !lastGeneratedView) {
           showToast("Generate a handover before printing.");
           return;
         }
@@ -10231,14 +10652,19 @@
         }
 
         try {
-          HandoverReport.print(buildHandoverReportPayload(lastClassified));
+          refreshCanonicalGeneratedView();
+          HandoverReport.print(buildHandoverReportPayload(lastClassified, { view: lastGeneratedView }));
         } catch (err) {
           showToast("Unable to print. Please try again.");
         }
       }
 
       function exportHandoverPdf() {
-        if (!lastClassified) {
+        if (isDemoModeActive()) {
+          showToast("PDF export is available in private hotel workspaces.");
+          return;
+        }
+        if (!lastClassified && !lastGeneratedView) {
           showToast("Generate a handover first.");
           return;
         }
@@ -10248,7 +10674,8 @@
         }
 
         try {
-          HandoverPdfExporter.export(buildHandoverReportPayload(lastClassified));
+          refreshCanonicalGeneratedView();
+          HandoverPdfExporter.export(buildHandoverReportPayload(lastClassified, { view: lastGeneratedView }));
           showToast("PDF downloaded successfully.");
         } catch (err) {
           showToast("Unable to export PDF. Please try again.");
@@ -10256,7 +10683,11 @@
       }
 
       function copyHandover() {
-        if (!lastHandoverText) {
+        if (isDemoModeActive()) {
+          showToast("Copy is available in private hotel workspaces.");
+          return;
+        }
+        if (!lastClassified && !lastGeneratedView) {
           showToast("Generate a handover first.");
           return;
         }
@@ -10264,7 +10695,12 @@
         captureHotelSnapshotInputs();
         if (lastClassified) {
           commitSnapshotState();
+          refreshCanonicalGeneratedView();
           lastHandoverText = formatHandoverText(lastClassified);
+        }
+        if (!lastHandoverText) {
+          showToast("Generate a handover first.");
+          return;
         }
 
         var doCopy = function () {
@@ -10328,28 +10764,53 @@
       exportPdfBtn.addEventListener("click", exportHandoverPdf);
       printHandoverBtn.addEventListener("click", printHandover);
       saveHandoverBtn.addEventListener("click", function () {
+        if (isDemoModeActive()) {
+          showToast("Demo Mode does not save handovers.");
+          return;
+        }
         if (window.HandoverSaved) HandoverSaved.handleSaveClick();
       });
       clearBtn.addEventListener("click", clearNotes);
       if (newHandoverBtn) newHandoverBtn.addEventListener("click", startNewHandover);
-      if (exportBackupBtn) exportBackupBtn.addEventListener("click", exportBackup);
+      if (exportBackupBtn) {
+        exportBackupBtn.addEventListener("click", function () {
+          if (isDemoModeActive()) {
+            showToast("Advanced Data is unavailable in Demo Mode.");
+            return;
+          }
+          exportBackup();
+        });
+      }
       if (importBackupBtn && importBackupInput) {
         importBackupBtn.addEventListener("click", function () {
+          if (isDemoModeActive()) {
+            showToast("Advanced Data is unavailable in Demo Mode.");
+            return;
+          }
           importBackupInput.value = "";
           importBackupInput.click();
         });
         importBackupInput.addEventListener("change", function () {
+          if (isDemoModeActive()) return;
           var file = importBackupInput.files && importBackupInput.files[0];
           handleImportBackupFile(file);
         });
       }
       if (clearAllHistoryBtn && window.HandoverSaved) {
         clearAllHistoryBtn.addEventListener("click", function () {
+          if (isDemoModeActive()) {
+            showToast("History is unavailable in Demo Mode.");
+            return;
+          }
           HandoverSaved.clearAllHistory();
         });
       }
       if (uploadLocalHandoversBtn && window.HFHandoverStore) {
         uploadLocalHandoversBtn.addEventListener("click", function () {
+          if (isDemoModeActive()) {
+            showToast("Advanced Data is unavailable in Demo Mode.");
+            return;
+          }
           uploadLocalHandoversBtn.disabled = true;
           HFHandoverStore.uploadLocalHandovers()
             .then(function (result) {
@@ -10363,6 +10824,38 @@
             .finally(function () {
               uploadLocalHandoversBtn.disabled = false;
             });
+        });
+      }
+
+      window.addEventListener("hf-demo-mode-reset", function () {
+        clearHandoverOutputState();
+        var draft = window.HFDemoMode && HFDemoMode.getDemoDraft ? HFDemoMode.getDemoDraft() : null;
+        if (draft) restoreDraftFromStorage(draft);
+        else if (window.HFDemoMode && HFDemoMode.getDemoDraft) {
+          /* pack may rebuild asynchronously */
+          setTimeout(function () {
+            var next = HFDemoMode.getDemoDraft();
+            if (next) restoreDraftFromStorage(next);
+            applyDemoWorkspaceChrome();
+          }, 0);
+        }
+        applyDemoWorkspaceChrome();
+        showToast("Demo reset — sample notes restored.");
+      });
+      window.addEventListener("hf-demo-mode-change", function () {
+        applyDemoWorkspaceChrome();
+        setHandoverOutputChrome(!!(lastClassified || lastGeneratedView));
+      });
+
+      var demoRestartCta = document.getElementById("hfDemoRestartCta");
+      if (demoRestartCta) {
+        demoRestartCta.addEventListener("click", function () {
+          if (!window.HFDemoMode || !HFDemoMode.resetDemo) return;
+          HFDemoMode.resetDemo({ confirm: false }).then(function (result) {
+            if (result && result.ok) {
+              /* hf-demo-mode-reset handler restores sample notes + chrome */
+            }
+          });
         });
       }
 
@@ -10424,6 +10917,7 @@
         }
         updateStorageStatusUI();
         renderHotelBrainPanel();
+        applyDemoWorkspaceChrome();
       }
 
       var bootHandoverPage = (window.HFDemoMode && window.HFDemoMode.resolveGuestSession

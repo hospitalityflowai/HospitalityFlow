@@ -1875,6 +1875,12 @@
     setMetricsLoading();
     els.loadingState.hidden = false;
 
+    /* Fast path: ?demo=1 never boots the Maintenance module. */
+    if (/[?&]demo=1(?:&|$)/.test(String(window.location.search || ""))) {
+      window.location.replace("handover.html?demo=1");
+      return;
+    }
+
     var bootPromise = (window.HFDemoMode && window.HFDemoMode.resolveGuestSession
       ? window.HFDemoMode.resolveGuestSession({ banner: true })
       : Promise.resolve(null)
@@ -1887,10 +1893,11 @@
 
     bootPromise.then(function (session) {
       if (!session) return;
+      if (session.redirected) return;
 
       /* Public Demo Mode focuses on Handover + Hotel Brain only. */
       if (window.HFDemoMode && window.HFDemoMode.isEnabled && window.HFDemoMode.isEnabled()) {
-        window.location.replace("handover.html");
+        window.location.replace("handover.html?demo=1");
         return;
       }
 

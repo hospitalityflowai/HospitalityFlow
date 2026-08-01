@@ -342,109 +342,151 @@
     this.y += LAYOUT.sectionGap;
   };
 
-  PdfDocument.prototype.buildSummaryLayout = function (summary) {
-    var doc = this.doc;
-    var width = contentWidth();
-    var padding = LAYOUT.summaryPadding;
-    var textWidth = width - padding * 2;
-    var overview = "";
-    var rows = [];
-
-    if (typeof summary === "string") {
-      overview = summary;
-    } else if (summary && typeof summary === "object") {
-      overview = summary.overview || "";
-      rows = summary.rows || [];
+  PdfDocument.prototype.drawBriefing = function (briefing) {
+    if (!briefing) return;
+    var paragraphs = Array.isArray(briefing.paragraphs) ? briefing.paragraphs.filter(Boolean) : [];
+    if (!paragraphs.length && typeof briefing === "string" && briefing) {
+      paragraphs = [briefing];
     }
-
-    return {
-      overviewLines: overview
-        ? measureWrappedLines(doc, overview, textWidth, LAYOUT.summaryOverviewSize)
-        : [],
-      rowBlocks: rows.filter(function (row) { return row && row.text; }).map(function (row) {
-        return {
-          heading: row.heading || "Summary",
-          textLines: measureWrappedLines(doc, row.text, textWidth, LAYOUT.summarySubTextSize)
-        };
-      })
-    };
-  };
-
-  PdfDocument.prototype.measureSummaryHeight = function (layout) {
-    var height = LAYOUT.summaryPadding * 2;
-    if (layout.overviewLines.length) {
-      height += blockHeight(layout.overviewLines.length, LAYOUT.summaryLineHeight, 2);
-    }
-    if (layout.overviewLines.length && layout.rowBlocks.length) {
-      height += 4;
-    }
-    layout.rowBlocks.forEach(function (block, index) {
-      height += 3.2 + blockHeight(block.textLines.length, LAYOUT.summaryLineHeight, 0);
-      if (index < layout.rowBlocks.length - 1) height += LAYOUT.summarySubGap;
-    });
-    return height;
-  };
-
-  PdfDocument.prototype.drawSummary = function (summary) {
-    if (!summary) return;
+    if (!paragraphs.length) return;
 
     var doc = this.doc;
     var width = contentWidth();
     var padding = LAYOUT.summaryPadding;
     var textX = LAYOUT.marginX + padding;
     var textWidth = width - padding * 2;
-    var layout = this.buildSummaryLayout(summary);
+    var allLines = [];
+    paragraphs.forEach(function (para, index) {
+      var lines = measureWrappedLines(doc, String(para).replace(/\n/g, " · "), textWidth, LAYOUT.summaryOverviewSize);
+      allLines.push({ lines: lines, gapAfter: index < paragraphs.length - 1 });
+    });
 
-    if (!layout.overviewLines.length && !layout.rowBlocks.length) return;
+    var boxHeight = LAYOUT.summaryPadding * 2;
+    allLines.forEach(function (block) {
+      boxHeight += blockHeight(block.lines.length, LAYOUT.summaryLineHeight, block.gapAfter ? 3 : 0);
+    });
 
-    var firstChunk = layout.overviewLines.length
-      ? blockHeight(Math.min(layout.overviewLines.length, 2), LAYOUT.summaryLineHeight, 2) + padding
-      : 3.2 + blockHeight(layout.rowBlocks[0].textLines.length, LAYOUT.summaryLineHeight, 0) + padding;
-    var boxHeight = this.measureSummaryHeight(layout);
-
-    this.drawSectionTitle("AI Summary", firstChunk);
-    this.ensureSpace(boxHeight + 2);
+    this.drawSectionTitle("Today's Briefing", Math.min(boxHeight, 24));
+    this.ensureSpace(Math.min(boxHeight, 40) + 2);
 
     setFill(doc, COLORS.blue50);
     setDraw(doc, COLORS.blue500);
     doc.setLineWidth(0.22);
     var boxTop = this.y;
     doc.roundedRect(LAYOUT.marginX, boxTop, width, boxHeight, LAYOUT.cardRadius, LAYOUT.cardRadius, "FD");
-
     this.y = boxTop + padding;
 
-    if (layout.overviewLines.length) {
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(LAYOUT.summaryOverviewSize);
-      setText(doc, COLORS.gray600);
-      layout.overviewLines.forEach(function (line) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(LAYOUT.summaryOverviewSize);
+    setText(doc, COLORS.gray600);
+    allLines.forEach(function (block) {
+      block.lines.forEach(function (line) {
+        this.ensureSpace(LAYOUT.summaryLineHeight + 1);
         doc.text(line, textX, this.y);
         this.y += LAYOUT.summaryLineHeight;
       }, this);
-      this.y += 2;
-    }
-
-    layout.rowBlocks.forEach(function (block, index) {
-      if (index > 0 || layout.overviewLines.length) this.y += 1.5;
-
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(LAYOUT.summarySubHeadingSize);
-      setText(doc, COLORS.navy700);
-      doc.text(block.heading.toUpperCase(), textX, this.y);
-      this.y += 3.4;
-
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(LAYOUT.summarySubTextSize);
-      setText(doc, COLORS.gray600);
-      block.textLines.forEach(function (line) {
-        doc.text(line, textX, this.y);
-        this.y += LAYOUT.summaryLineHeight;
-      }, this);
-
-      if (index < layout.rowBlocks.length - 1) this.y += LAYOUT.summarySubGap;
+      if (block.gapAfter) this.y += 3;
     }, this);
 
-    this.y = boxTop + boxHeight + LAYOUT.sectionGap;
+    this.y = Math.max(this.y, boxTop + boxHeight) + LAYOUT.sectionGap;
+  };
+
+  PdfDocument.prototype.drawHotelStatus = function (areas) {
+    if (!areas || !areas.length) return;
+    var doc = this.doc;
+    var width = contentWidth();
+    var cols = Math.min(5, areas.length);
+    var gap = 3;
+    var cardWidth = (width - gap * (cols - 1)) / cols;
+    var cardHeight = 28;
+
+    this.drawSectionTitle("Hotel Status", cardHeight + 2);
+
+    var STATUS_COLORS = {
+      critical: COLORS.red500,
+      attention: COLORS.amber500,
+      normal: COLORS.green500,
+      unknown: COLORS.gray500
+    };
+
+    areas.forEach(function (area, index) {
+      var col = index % cols;
+      if (col === 0 && index > 0) {
+        this.y += cardHeight + 3;
+        this.ensureSpace(cardHeight + 2);
+      }
+      var x = LAYOUT.marginX + col * (cardWidth + gap);
+      var y = this.y;
+      var level = String(area.level || "unknown").toLowerCase();
+      var accent = STATUS_COLORS[level] || COLORS.gray500;
+
+      setFill(doc, COLORS.white);
+      setDraw(doc, COLORS.gray200);
+      doc.setLineWidth(0.2);
+      doc.roundedRect(x, y, cardWidth, cardHeight, LAYOUT.cardRadius, LAYOUT.cardRadius, "FD");
+      setFill(doc, accent);
+      doc.circle(x + 4, y + 5, 1.2, "F");
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(6.2);
+      setText(doc, COLORS.navy700);
+      var labelLines = wrapText(doc, String(area.label || "").toUpperCase(), cardWidth - 10);
+      doc.text(labelLines.slice(0, 2), x + 7.5, y + 5.5);
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7.5);
+      setText(doc, COLORS.navy900);
+      doc.text(level.charAt(0).toUpperCase() + level.slice(1), x + 3.5, y + 12);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(6.8);
+      setText(doc, COLORS.gray500);
+      var summaryLines = wrapText(doc, area.summary || "", cardWidth - 6);
+      doc.text(summaryLines.slice(0, 2), x + 3.5, y + 17.5);
+    }, this);
+
+    this.y += cardHeight + LAYOUT.sectionGap;
+  };
+
+  PdfDocument.prototype.drawTimeline = function (timeline) {
+    var groups = timeline && timeline.groups ? timeline.groups : [];
+    if (!groups.length) return;
+    var doc = this.doc;
+    var width = contentWidth();
+
+    this.drawSectionTitle("Today's Timeline", 14);
+
+    groups.forEach(function (group) {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7.2);
+      setText(doc, COLORS.gray500);
+      this.ensureSpace(10);
+      doc.text(String(group.label || group.key || "").toUpperCase(), LAYOUT.marginX, this.y);
+      this.y += 5;
+
+      (group.items || []).forEach(function (item) {
+        var when = item.time || item.deadlineLabel || "—";
+        var line = (item.icon ? item.icon + " " : "") + when + "  " + (item.action || "");
+        var lines = measureWrappedLines(doc, line, width - 4, LAYOUT.bodyFontSize);
+        var height = blockHeight(lines.length, LAYOUT.lineHeight, 1.5);
+        this.ensureSpace(height + 1);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(LAYOUT.bodyFontSize);
+        setText(doc, COLORS.gray600);
+        doc.text(lines, LAYOUT.marginX, this.y);
+        this.y += height;
+      }, this);
+      this.y += 2;
+    }, this);
+
+    this.y += LAYOUT.sectionGap - 2;
+  };
+
+  /** @deprecated Use drawBriefing — kept for older payloads without briefing */
+  PdfDocument.prototype.drawSummary = function (summary) {
+    if (!summary) return;
+    var overview = typeof summary === "string" ? summary : (summary.overview || "");
+    if (overview) this.drawBriefing({ paragraphs: [overview] });
   };
 
   PdfDocument.prototype.measureNoteBlock = function (item, textWidth) {
@@ -549,7 +591,10 @@
 
   PdfDocument.prototype.drawRecommendations = function (recommendations) {
     if (!recommendations || !recommendations.length) return;
-    this.drawBulletList("Shift Intelligence", "Recommendations for the incoming shift", recommendations);
+    var texts = recommendations.map(function (item) {
+      return typeof item === "string" ? item : (item && item.text) || "";
+    }).filter(Boolean);
+    this.drawBulletList("AI Recommendations", "Recommendations for the incoming shift", texts);
   };
 
   PdfDocument.prototype.drawIntelligenceChecklist = function (checklistItems) {
@@ -607,8 +652,14 @@
     var generatedAt = payload.generatedAt || new Date().toLocaleString("en-GB");
 
     pdf.drawHeader(payload.meta, generatedAt);
-    pdf.drawHotelSnapshot(payload.hotelSnapshot);
-    pdf.drawSummary(payload.summary);
+    pdf.drawHotelSnapshot(payload.hotelSnapshot || payload.snapshot);
+    if (payload.briefing && payload.briefing.paragraphs && payload.briefing.paragraphs.length) {
+      pdf.drawBriefing(payload.briefing);
+    } else if (payload.summary) {
+      pdf.drawSummary(payload.summary);
+    }
+    pdf.drawHotelStatus(payload.hotelStatus);
+    pdf.drawTimeline(payload.timeline);
     pdf.drawHandoverSections(payload.sections);
     pdf.drawRecommendations(payload.recommendations);
     pdf.drawIntelligenceChecklist(payload.intelligenceChecklist);

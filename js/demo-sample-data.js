@@ -190,16 +190,14 @@
         item("Gold cufflink – Room 25 (Fraser). In DM safe. Guest emailed.")
       ],
       general: [
-        item("Back-office printer jamming – restart before AM rush."),
-        item("Night audit checklist still open until remaining arrivals clear."),
-        item("Walk-in hold on Room 3 until 22:00 – release if no show."),
-        item("Lobby Wi-Fi slow around 19:00 – IT ticket raised; guests advised."),
-        item("Staff meal keys left at Night desk – return to F&B in the morning.")
+        item("PM shift reported unusually high operational workload. Review remaining operational notes before continuing the shift."),
+        item("Arrivals remaining tonight: 2."),
+        item("Departures tomorrow: 6."),
+        item("In-house 112 guests (98 adults / 14 children). Rooms sold 60 — occupancy 75%."),
+        item("No-show Davies Room 5 — keep reservation on hold until Night Team confirms.")
       ],
       completed: [
-        item("Room 22 transfer booked Addison Lee 10:15.", "completed"),
-        item("Room 22 wake-up loaded 06:30.", "completed"),
-        item("Room 21 late CO approved to 13:00.", "completed")
+        item("Room 21 Chen – late check-out approved until 13:00.", "completed")
       ]
     };
   }

@@ -867,9 +867,15 @@
               <p class="page-subtitle" id="hotelBrainPageSubtitle">The intelligence behind every Hospitality Flow AI tool.</p>
             </div>
           </div>
-          <div class="setup-intro">
-            <h2 class="setup-intro-title">Hotel Brain Setup</h2>
+          <div class="setup-intro" id="hotelBrainSetupCard">
+            <h2 class="setup-intro-title" id="hotelBrainSetupTitle">Hotel Brain Setup</h2>
             <p class="setup-intro-text" id="hotelBrainSetupIntro">Complete the essential information first. Expand your Hotel Brain over time by adding operational knowledge, policies and guest preferences.</p>
+            <p class="hf-demo-brain-note" id="hfDemoBrainReadOnlyNote" hidden>
+              Demo Mode — sample knowledge is read-only and nothing is saved.
+            </p>
+            <div class="hf-demo-brain-setup-actions" id="hfDemoBrainSetupActions" hidden>
+              <a class="btn-nav-secondary" id="hfDemoBrainOpenHandoverLink" href="handover.html?demo=1">Open AI Shift Handover</a>
+            </div>
           </div>
           <div class="essential-progress-panel" id="essentialProgressPanel" aria-live="polite">
             <div class="essential-progress-top">
@@ -2828,6 +2834,10 @@
       }
 
       function exportProfileJson() {
+        if (isDemoBrainActive()) {
+          showSaveError('Export is unavailable in Demo Mode.');
+          return;
+        }
         var data = collectProfileData();
         var hotelSlug = (getInputValue('hotelName') || 'hotel-profile').trim()
           .replace(/[^\w\-]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').toLowerCase() || 'hotel-profile';
@@ -2843,6 +2853,10 @@
       }
 
       function importProfileJson(file) {
+        if (isDemoBrainActive()) {
+          showSaveError('Import is unavailable in Demo Mode.');
+          return;
+        }
         if (!file) return;
         var reader = new FileReader();
         reader.onload = function () {
@@ -2915,6 +2929,10 @@
       }
 
       function handleLogoFile(file) {
+        if (isDemoBrainActive()) {
+          showLogoError('Logo upload is unavailable in Demo Mode.');
+          return;
+        }
         if (!file) return;
         if (!isAllowedLogoFile(file)) {
           showLogoError('Please choose a PNG, JPG, JPEG, WEBP, or SVG file.');
@@ -3374,6 +3392,12 @@
 
       function syncImproveWritingButtonState(btn) {
         if (!btn || btn.classList.contains('is-loading')) return;
+        if (isDemoBrainActive()) {
+          btn.hidden = true;
+          btn.disabled = true;
+          btn.setAttribute('aria-disabled', 'true');
+          return;
+        }
         if (improveWritingState.busy && improveWritingState.button === btn) return;
         var field = resolveImproveWritingField(btn);
         var eligible = field ? isImproveWritingEligible(field.value) : false;
@@ -3508,6 +3532,10 @@
       }
 
       function runImproveWriting(button) {
+        if (isDemoBrainActive()) {
+          showSaveError('Improve Writing is unavailable in Demo Mode.');
+          return;
+        }
         if (!button || improveWritingState.busy) return;
         var field = resolveImproveWritingField(button);
         if (!field) return;
@@ -4384,7 +4412,341 @@
         if (HPK && HPK.updateCompletionUI) HPK.updateCompletionUI();
       }
 
+      function isDemoBrainActive() {
+        return !!(window.HFDemoMode && window.HFDemoMode.isEnabled && window.HFDemoMode.isEnabled());
+      }
+
+      /**
+       * Single resolver for Hotel Brain → Handover navigation.
+       * Demo Mode keeps the public demo session via ?demo=1.
+       */
+      function getHandoverUrl() {
+        if (window.HFDemoMode && typeof window.HFDemoMode.hydrate === 'function') {
+          try { window.HFDemoMode.hydrate(); } catch (err) { /* ignore */ }
+        }
+        return isDemoBrainActive() ? 'handover.html?demo=1' : 'handover.html';
+      }
+
+      function getHotelBrainHandoverNavLinks() {
+        return Array.prototype.slice.call(
+          document.querySelectorAll('a.nav-back-handover, #hfDemoBrainOpenHandoverLink')
+        );
+      }
+
+      function syncHotelBrainHandoverLinks() {
+        var url = getHandoverUrl();
+        getHotelBrainHandoverNavLinks().forEach(function (link) {
+          if (!link) return;
+          link.setAttribute('href', url);
+        });
+        return url;
+      }
+
+      function wireHotelBrainHandoverLinksOnce() {
+        getHotelBrainHandoverNavLinks().forEach(function (link) {
+          if (!link || link.getAttribute('data-hf-handover-nav-wired') === '1') return;
+          link.setAttribute('data-hf-handover-nav-wired', '1');
+          function ensureDemoHandoverHref(event) {
+            var url = syncHotelBrainHandoverLinks();
+            if (link.getAttribute('href') !== url) {
+              event.preventDefault();
+              window.location.assign(url);
+            }
+          }
+          link.addEventListener('pointerdown', function () {
+            syncHotelBrainHandoverLinks();
+          });
+          link.addEventListener('click', ensureDemoHandoverHref);
+        });
+        syncHotelBrainHandoverLinks();
+      }
+
+      var DEMO_BRAIN_SETUP_TITLE = 'Oakwood Mayfair knowledge';
+      var DEMO_BRAIN_SETUP_TEXT =
+        'Read-only sample Hotel Brain. Browse the sections to see the hotel knowledge used by AI Shift Handover.';
+      var DEMO_BRAIN_SUBTITLE =
+        'Browse The Oakwood Mayfair sample knowledge used by AI Shift Handover.';
+      var DEMO_BRAIN_FIELD_TITLE = 'Sample hotel knowledge — fixed in Demo Mode';
+      var DEMO_BRAIN_HANDOVER_HREF = 'handover.html?demo=1';
+      var demoBrainMutationObserver = null;
+      var demoBrainObserverTimer = null;
+      var demoBrainApplying = false;
+
+      var DEMO_BRAIN_MUTATION_SELECTOR = [
+        '#saveBtn',
+        '#exportProfileBtn',
+        '#importProfileBtn',
+        '#importProfileInput',
+        '#logoUpload',
+        '#logoInput',
+        '#logoDelete',
+        '#logoRemove',
+        '#removeLogoBtn',
+        '#loadZetterSampleBtn',
+        '#addRoom',
+        '#addDept',
+        '#addShiftRow',
+        '#addTerm',
+        '#addCustomFacility',
+        '#addSupply',
+        '#okAddSource',
+        '#okAddKnowledge',
+        '#okAddStep-night',
+        '#okAddStep-am',
+        '#okAddStep-pm',
+        '#okAddStep-middle',
+        '#addEmailRecipient',
+        '#demoModePanel',
+        '#devSamplePanel',
+        '#improveWritingModal',
+        '.improve-writing-btn',
+        '.ai-polish-btn',
+        '.add-row-btn',
+        '.facility-add-row',
+        '.facility-remove',
+        '.logo-delete-btn',
+        '.logo-remove-btn',
+        '.remove-row',
+        '.remove-dept',
+        '.remove-term',
+        '.remove-inventory',
+        '.remove-room-facility',
+        '.remove-supply',
+        '.remove-guest-loan',
+        '.remove-guest-supplier',
+        '.remove-email-recipient',
+        '.icon-btn.remove-row',
+        '.rooms-table .btn-text',
+        '.col-actions',
+        '.dev-only-panel',
+        '[data-improve-writing]',
+        '[data-ai-polish]',
+        '[data-ai-polish-target]',
+        'button[aria-label*="Remove"]',
+        'button[aria-label*="Delete"]',
+        'button[aria-label*="Add "]',
+        'button[aria-label*="Upload"]',
+        'button[aria-label*="Import"]',
+        'button[aria-label*="Export"]',
+        'button[aria-label*="Improve Writing"]',
+        'button[aria-label*="Polish"]'
+      ].join(', ');
+
+      function isDemoBrainNavControl(el) {
+        if (!el || !el.closest) return false;
+        if (el.closest('#hfDemoBrainSetupActions')) return true;
+        if (el.closest('.nav-back-handover')) return true;
+        if (el.closest('.profile-sidebar')) return true;
+        if (el.closest('.sidebar')) return true;
+        if (el.closest('.section-nav')) return true;
+        if (el.hasAttribute && el.hasAttribute('data-profile-nav')) return true;
+        if (el.classList && el.classList.contains('disclosure-card-toggle')) return true;
+        if (el.classList && el.classList.contains('supply-item-toggle')) return true;
+        return false;
+      }
+
+      function setDemoBrainControlHidden(el, hide) {
+        if (!el || isDemoBrainNavControl(el)) return;
+        if (hide) {
+          if (!el.hasAttribute('data-demo-brain-was-hidden')) {
+            el.setAttribute('data-demo-brain-was-hidden', el.hidden ? '1' : '0');
+          }
+          el.hidden = true;
+          if ('disabled' in el) el.disabled = true;
+          el.setAttribute('aria-hidden', 'true');
+          el.setAttribute('aria-disabled', 'true');
+          el.classList.add('hf-demo-brain-mutation-hidden');
+        } else if (el.hasAttribute('data-demo-brain-was-hidden')) {
+          el.hidden = el.getAttribute('data-demo-brain-was-hidden') === '1';
+          el.removeAttribute('data-demo-brain-was-hidden');
+          if ('disabled' in el) el.disabled = false;
+          el.removeAttribute('aria-hidden');
+          el.removeAttribute('aria-disabled');
+          el.classList.remove('hf-demo-brain-mutation-hidden');
+        }
+      }
+
+      function lockDemoBrainField(el, lock) {
+        if (!el || el.closest('#hfDemoBrainSetupActions')) return;
+        if (lock) {
+          if ('readOnly' in el && el.type !== 'checkbox' && el.type !== 'radio' && el.type !== 'file') {
+            el.readOnly = true;
+          }
+          if (el.isContentEditable) {
+            el.setAttribute('contenteditable', 'false');
+            el.setAttribute('data-demo-brain-contenteditable', '1');
+          }
+          if (el.type === 'checkbox' || el.type === 'radio' || el.tagName === 'SELECT' || el.type === 'file') {
+            el.setAttribute('aria-disabled', 'true');
+          } else {
+            el.setAttribute('aria-readonly', 'true');
+          }
+          el.setAttribute('tabindex', '-1');
+          el.classList.add('hf-demo-locked-field');
+          el.title = DEMO_BRAIN_FIELD_TITLE;
+        } else {
+          if ('readOnly' in el) el.readOnly = false;
+          if (el.getAttribute('data-demo-brain-contenteditable') === '1') {
+            el.setAttribute('contenteditable', 'true');
+            el.removeAttribute('data-demo-brain-contenteditable');
+          }
+          el.removeAttribute('aria-readonly');
+          el.removeAttribute('aria-disabled');
+          el.removeAttribute('tabindex');
+          el.classList.remove('hf-demo-locked-field');
+          el.removeAttribute('title');
+        }
+      }
+
+      function scheduleHotelBrainDemoReadOnlyRefresh() {
+        if (demoBrainObserverTimer) clearTimeout(demoBrainObserverTimer);
+        demoBrainObserverTimer = setTimeout(function () {
+          demoBrainObserverTimer = null;
+          if (isDemoBrainActive()) applyHotelBrainDemoReadOnlyState();
+        }, 40);
+      }
+
+      function ensureHotelBrainDemoObserver(demo) {
+        if (!demo) {
+          if (demoBrainMutationObserver) {
+            demoBrainMutationObserver.disconnect();
+            demoBrainMutationObserver = null;
+          }
+          return;
+        }
+        if (demoBrainMutationObserver || !document.querySelector('main')) return;
+        demoBrainMutationObserver = new MutationObserver(function () {
+          if (demoBrainApplying || !isDemoBrainActive()) return;
+          scheduleHotelBrainDemoReadOnlyRefresh();
+        });
+        demoBrainMutationObserver.observe(document.querySelector('main'), {
+          childList: true,
+          subtree: true
+        });
+      }
+
+      /**
+       * Public Demo: Hotel Brain is browse-only Oakwood sample knowledge.
+       * Safe to call repeatedly. Does not affect Pilot Lab / real workspaces.
+       */
+      function applyHotelBrainDemoReadOnlyState() {
+        if (demoBrainApplying) return;
+        demoBrainApplying = true;
+        try {
+          var demo = isDemoBrainActive();
+          document.documentElement.classList.toggle('hf-demo-workspace', demo);
+          document.documentElement.classList.toggle('hf-demo-brain-readonly', demo);
+
+          var setupTitle = document.getElementById('hotelBrainSetupTitle') ||
+            document.querySelector('.setup-intro-title');
+          var setupIntro = document.getElementById('hotelBrainSetupIntro');
+          var subtitle = document.getElementById('hotelBrainPageSubtitle');
+          var readOnlyNote = document.getElementById('hfDemoBrainReadOnlyNote');
+          var setupActions = document.getElementById('hfDemoBrainSetupActions');
+
+          syncHotelBrainHandoverLinks();
+          if (readOnlyNote) readOnlyNote.hidden = !demo;
+          if (setupActions) setupActions.hidden = !demo;
+
+          if (demo) {
+            if (subtitle) {
+              if (!subtitle.getAttribute('data-demo-original')) {
+                subtitle.setAttribute('data-demo-original', subtitle.textContent || '');
+              }
+              subtitle.textContent = DEMO_BRAIN_SUBTITLE;
+            }
+            if (setupTitle) {
+              if (!setupTitle.getAttribute('data-demo-original')) {
+                setupTitle.setAttribute('data-demo-original', setupTitle.textContent || '');
+              }
+              setupTitle.textContent = DEMO_BRAIN_SETUP_TITLE;
+            }
+            if (setupIntro) {
+              if (!setupIntro.getAttribute('data-demo-original')) {
+                setupIntro.setAttribute('data-demo-original', setupIntro.textContent || '');
+              }
+              setupIntro.textContent = DEMO_BRAIN_SETUP_TEXT;
+            }
+          } else {
+            if (subtitle && subtitle.getAttribute('data-demo-original') != null) {
+              subtitle.textContent = subtitle.getAttribute('data-demo-original');
+              subtitle.removeAttribute('data-demo-original');
+            }
+            if (setupTitle && setupTitle.getAttribute('data-demo-original') != null) {
+              setupTitle.textContent = setupTitle.getAttribute('data-demo-original');
+              setupTitle.removeAttribute('data-demo-original');
+            }
+            if (setupIntro && setupIntro.getAttribute('data-demo-original') != null) {
+              setupIntro.textContent = setupIntro.getAttribute('data-demo-original');
+              setupIntro.removeAttribute('data-demo-original');
+            }
+          }
+
+          if (saveBtn) {
+            if (demo) {
+              saveBtn.hidden = true;
+              saveBtn.disabled = true;
+              saveBtn.setAttribute('aria-disabled', 'true');
+              saveBtn.title = 'Saving is unavailable in Demo Mode';
+              if (saveBtnLabel) saveBtnLabel.textContent = 'Save disabled in Demo';
+            } else {
+              saveBtn.hidden = false;
+              saveBtn.disabled = false;
+              saveBtn.removeAttribute('aria-disabled');
+              saveBtn.removeAttribute('title');
+              if (saveBtnLabel) saveBtnLabel.textContent = saveBtnDefaultLabel;
+            }
+          }
+
+          document.querySelectorAll(
+            'main input:not([type="hidden"]), main textarea, main select, main [contenteditable="true"]'
+          ).forEach(function (el) {
+            lockDemoBrainField(el, demo);
+          });
+
+          document.querySelectorAll(DEMO_BRAIN_MUTATION_SELECTOR).forEach(function (el) {
+            setDemoBrainControlHidden(el, demo);
+          });
+
+          /* Catch remaining mutation-looking controls without breaking sidebar/disclosure nav. */
+          document.querySelectorAll('main button, main [role="button"]').forEach(function (el) {
+            if (!demo) {
+              if (el.classList.contains('hf-demo-brain-mutation-hidden')) {
+                setDemoBrainControlHidden(el, false);
+              }
+              return;
+            }
+            if (isDemoBrainNavControl(el)) return;
+            var label = String(
+              (el.getAttribute('aria-label') || '') + ' ' + (el.textContent || '')
+            ).toLowerCase();
+            if (
+              /\b(save|delete|remove|add|upload|import|export|reset|improve|polish|rewrite|edit)\b/.test(label) ||
+              el.classList.contains('add-row-btn') ||
+              el.classList.contains('improve-writing-btn') ||
+              el.classList.contains('ai-polish-btn') ||
+              el.classList.contains('icon-btn')
+            ) {
+              setDemoBrainControlHidden(el, true);
+            }
+          });
+
+          ensureHotelBrainDemoObserver(demo);
+        } finally {
+          demoBrainApplying = false;
+        }
+      }
+
+      /** @deprecated alias — use applyHotelBrainDemoReadOnlyState */
+      function applyDemoBrainReadOnlyState() {
+        applyHotelBrainDemoReadOnlyState();
+      }
+
       function saveProfile(isAuto, sectionId) {
+        if (isDemoBrainActive()) {
+          showSaveError('Demo Mode — Hotel Brain changes are temporary and nothing is saved.');
+          return;
+        }
         if (!profileReady || isSaving) return;
         isSaving = true;
         setSaving();
@@ -4411,6 +4773,8 @@
 
       function loadProfile() {
         profileReady = false;
+        wireHotelBrainHandoverLinksOnce();
+        syncHotelBrainHandoverLinks();
 
         if (window.HFHotelBrainStore && window.HFHotelBrainStore.invalidateLoads) {
           window.HFHotelBrainStore.invalidateLoads();
@@ -4422,6 +4786,7 @@
           ? window.HFDemoMode.resolveGuestSession({ banner: true })
           : Promise.resolve(null)
         ).then(function (demoSession) {
+          syncHotelBrainHandoverLinks();
           if (demoSession) return demoSession;
           return window.HFPlatformAccess && window.HFPlatformAccess.requireApprovedAccess
             ? window.HFPlatformAccess.requireApprovedAccess({ redirect: "account.html?access=pending" })
@@ -4442,16 +4807,8 @@
                 ? 'Interactive Demo is on — Oakwood Mayfair Hotel Brain is overlay-only and never saved.'
                 : 'Interactive Demo is off.';
             }
-            if (window.HFDemoMode.isEnabled()) {
-              var subtitle = document.getElementById('hotelBrainPageSubtitle');
-              var setupIntro = document.getElementById('hotelBrainSetupIntro');
-              if (subtitle) {
-                subtitle.textContent = 'The operational memory of your hotel.';
-              }
-              if (setupIntro) {
-                setupIntro.textContent = 'It combines hotel knowledge, recurring issues, guest preferences, shift activity and operational patterns, becoming more useful over time as information is added.';
-              }
-            }
+            syncHotelBrainHandoverLinks();
+            applyDemoBrainReadOnlyState();
           }
           return window.HFHotelBrainStore.load();
         }).then(function (result) {
@@ -4461,6 +4818,7 @@
             seedFreshProfileUI();
             profileReady = true;
             if (HPK) HPK.updateCompletionUI();
+            applyDemoBrainReadOnlyState();
             return;
           }
           if (result.error === 'NOT_APPROVED') {
@@ -4470,6 +4828,7 @@
             seedFreshProfileUI();
             profileReady = true;
             if (HPK) HPK.updateCompletionUI();
+            applyDemoBrainReadOnlyState();
             return;
           }
           if (result.error === 'NO_WORKSPACE') {
@@ -4477,6 +4836,7 @@
             seedFreshProfileUI();
             profileReady = true;
             if (HPK) HPK.updateCompletionUI();
+            applyDemoBrainReadOnlyState();
             return;
           }
 
@@ -4484,6 +4844,7 @@
             seedFreshProfileUI();
             profileReady = true;
             if (HPK) HPK.updateCompletionUI();
+            applyDemoBrainReadOnlyState();
             return;
           }
 
@@ -4492,14 +4853,17 @@
             showSaveError('Could not load saved profile — unrecognised format.');
             seedFreshProfileUI();
             profileReady = true;
+            applyDemoBrainReadOnlyState();
             return;
           }
           restoreProfileData(migrated);
           profileReady = true;
+          applyDemoBrainReadOnlyState();
         }).catch(function (err) {
           showSaveError(window.HFHotelBrainStore.formatError(err));
           seedFreshProfileUI();
           profileReady = true;
+          applyDemoBrainReadOnlyState();
         });
       }
 
@@ -4507,6 +4871,7 @@
         HPK.initSidebarNav({});
       }
 
+      wireHotelBrainHandoverLinksOnce();
       loadProfile();
       initGeneralFieldGroups();
       initSettingsFieldGroups();
@@ -4528,7 +4893,48 @@
 
       if (HPO && HPO.bindOperationalKnowledgeEvents) HPO.bindOperationalKnowledgeEvents();
       document.addEventListener('profile-change', function () {
+        if (isDemoBrainActive()) return;
         if (!isRestoring) markUnsaved();
+      });
+
+      /* Block select/checkbox/file mutations while Demo Brain is read-only. */
+      document.addEventListener('change', function (event) {
+        if (!isDemoBrainActive()) return;
+        var t = event.target;
+        if (!t || !t.closest || !t.closest('main')) return;
+        if (t.closest('#hfDemoBrainSetupActions')) return;
+        if (t.matches('select, input[type="checkbox"], input[type="radio"], input[type="file"]')) {
+          event.preventDefault();
+          event.stopPropagation();
+          applyHotelBrainDemoReadOnlyState();
+        }
+      }, true);
+
+      document.addEventListener('input', function (event) {
+        if (!isDemoBrainActive()) return;
+        var t = event.target;
+        if (!t || !t.closest || !t.closest('main')) return;
+        if (t.matches('input, textarea') && t.readOnly) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+      }, true);
+
+      document.addEventListener('keydown', function (event) {
+        if (!isDemoBrainActive()) return;
+        var t = event.target;
+        if (!t || !t.closest || !t.closest('main')) return;
+        if (t.matches('input, textarea, select') && !isDemoBrainNavControl(t)) {
+          var key = event.key || '';
+          if (key.length === 1 || key === 'Backspace' || key === 'Delete' || key === 'Enter') {
+            event.preventDefault();
+          }
+        }
+      }, true);
+
+      window.addEventListener('hf-demo-mode-change', function () {
+        syncHotelBrainHandoverLinks();
+        applyHotelBrainDemoReadOnlyState();
       });
 
       var loadZetterSampleBtn = document.getElementById('loadZetterSampleBtn');

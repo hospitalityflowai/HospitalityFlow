@@ -253,7 +253,8 @@ html.hf-demo-transitioning body {
   outline: none;
 }
 
-.hf-demo-banner-exit {
+.hf-demo-banner-exit,
+.hf-demo-banner-reset {
   font: inherit;
   font-size: 0.78rem;
   font-weight: 600;
@@ -266,11 +267,261 @@ html.hf-demo-transitioning body {
   transition: background 0.2s var(--hf-demo-ease), border-color 0.2s var(--hf-demo-ease);
 }
 
+.hf-demo-banner-reset {
+  color: #dce9f5;
+  border-color: rgba(91, 159, 212, 0.45);
+  background: rgba(91, 159, 212, 0.14);
+}
+
 .hf-demo-banner-exit:hover,
-.hf-demo-banner-exit:focus-visible {
+.hf-demo-banner-exit:focus-visible,
+.hf-demo-banner-reset:hover,
+.hf-demo-banner-reset:focus-visible {
   background: rgba(255, 255, 255, 0.1);
   border-color: rgba(255, 255, 255, 0.22);
   outline: none;
+}
+
+.hf-demo-banner-reset:hover,
+.hf-demo-banner-reset:focus-visible {
+  background: rgba(91, 159, 212, 0.28);
+  border-color: rgba(91, 159, 212, 0.7);
+}
+
+.hf-demo-first-action-cue {
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(74, 143, 196, 0.28);
+  background: rgba(238, 246, 252, 0.95);
+  color: #1a3055;
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
+/* Public Demo only — never apply outside html.hf-demo-workspace */
+html.hf-demo-workspace #copyBtn,
+html.hf-demo-workspace #saveHandoverBtn,
+html.hf-demo-workspace #exportPdfBtn,
+html.hf-demo-workspace #printHandoverBtn,
+html.hf-demo-workspace #handoverOutputActions,
+html.hf-demo-workspace #newHandoverBtn,
+html.hf-demo-workspace #savedHandoversSection,
+html.hf-demo-workspace #advancedDataOptions {
+  display: none !important;
+}
+
+/* Locked sample fields — fixed values, not “broken disabled” greys */
+html.hf-demo-workspace .hf-demo-locked-field,
+html.hf-demo-workspace .form-input--demo-locked,
+html.hf-demo-workspace #hotelName[readonly],
+html.hf-demo-workspace #preparedBy[readonly],
+html.hf-demo-workspace #handoverDate[readonly] {
+  cursor: default;
+  caret-color: transparent;
+  user-select: none;
+  opacity: 1;
+  color: #24364f;
+  background: rgba(245, 248, 252, 0.98);
+  border-color: rgba(74, 143, 196, 0.22);
+  box-shadow: none;
+}
+
+html.hf-demo-workspace .hf-demo-locked-field:focus,
+html.hf-demo-workspace .form-input--demo-locked:focus,
+html.hf-demo-workspace #handoverDate.hf-demo-locked-field:focus {
+  outline: none;
+  border-color: rgba(74, 143, 196, 0.28);
+  box-shadow: none;
+}
+
+html.hf-demo-workspace #handoverDate.hf-demo-locked-field::-webkit-calendar-picker-indicator {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+html.hf-demo-workspace .hf-demo-locked-shift {
+  position: relative;
+}
+
+html.hf-demo-workspace .hf-demo-locked-shift .shift-btn {
+  cursor: default;
+  pointer-events: none;
+  box-shadow: none;
+}
+
+html.hf-demo-workspace .hf-demo-locked-shift .shift-btn:not(.active) {
+  opacity: 0.58;
+  background: rgba(245, 248, 252, 0.9);
+}
+
+html.hf-demo-workspace .hf-demo-locked-shift .shift-btn.active {
+  opacity: 1;
+}
+
+html.hf-demo-workspace .snapshot-field-input.hf-demo-locked-field {
+  pointer-events: none;
+}
+
+html.hf-demo-workspace .glance-snapshot.hf-demo-locked-snapshot,
+html.hf-demo-workspace .glance-snapshot.hf-demo-locked-snapshot:hover,
+html.hf-demo-workspace .glance-snapshot.hf-demo-locked-snapshot:focus-visible {
+  cursor: default;
+  transform: none;
+  box-shadow: none;
+}
+
+html.hf-demo-workspace .hotel-snapshot-pre-hint {
+  color: #3d5a78;
+}
+
+/* —— Hotel Brain Demo (read-only sample knowledge) —— */
+.hf-demo-brain-note {
+  display: none;
+  margin: 10px 0 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: #3d5a78;
+}
+
+html.hf-demo-brain-readonly .hf-demo-brain-note:not([hidden]) {
+  display: block;
+}
+
+.hf-demo-brain-setup-actions {
+  display: none;
+  margin-top: 12px;
+}
+
+html.hf-demo-brain-readonly .hf-demo-brain-setup-actions:not([hidden]) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+html.hf-demo-brain-readonly #saveBtn,
+html.hf-demo-brain-readonly .improve-writing-btn,
+html.hf-demo-brain-readonly .ai-polish-btn,
+html.hf-demo-brain-readonly .add-row-btn,
+html.hf-demo-brain-readonly .facility-remove,
+html.hf-demo-brain-readonly .logo-delete-btn,
+html.hf-demo-brain-readonly .logo-remove-btn,
+html.hf-demo-brain-readonly .remove-row,
+html.hf-demo-brain-readonly .remove-dept,
+html.hf-demo-brain-readonly .remove-term,
+html.hf-demo-brain-readonly .remove-inventory,
+html.hf-demo-brain-readonly .remove-room-facility,
+html.hf-demo-brain-readonly .remove-supply,
+html.hf-demo-brain-readonly .remove-guest-loan,
+html.hf-demo-brain-readonly .remove-guest-supplier,
+html.hf-demo-brain-readonly .remove-email-recipient,
+html.hf-demo-brain-readonly .icon-btn,
+html.hf-demo-brain-readonly #exportProfileBtn,
+html.hf-demo-brain-readonly #importProfileBtn,
+html.hf-demo-brain-readonly #logoUpload,
+html.hf-demo-brain-readonly #logoInput,
+html.hf-demo-brain-readonly #logoDelete,
+html.hf-demo-brain-readonly #logoRemove,
+html.hf-demo-brain-readonly #removeLogoBtn,
+html.hf-demo-brain-readonly #loadZetterSampleBtn,
+html.hf-demo-brain-readonly #demoModePanel,
+html.hf-demo-brain-readonly #devSamplePanel,
+html.hf-demo-brain-readonly .dev-only-panel,
+html.hf-demo-brain-readonly .col-actions,
+html.hf-demo-brain-readonly .rooms-table .btn-text,
+html.hf-demo-brain-readonly #improveWritingModal,
+html.hf-demo-brain-readonly .hf-demo-brain-mutation-hidden {
+  display: none !important;
+}
+
+html.hf-demo-brain-readonly main input:not([type="hidden"]),
+html.hf-demo-brain-readonly main textarea,
+html.hf-demo-brain-readonly main select,
+html.hf-demo-brain-readonly main .hf-demo-locked-field {
+  cursor: default;
+  caret-color: transparent;
+  user-select: none;
+  pointer-events: none;
+  background: rgba(245, 248, 252, 0.98);
+  border-color: rgba(74, 143, 196, 0.18);
+  color: #24364f;
+  box-shadow: none;
+  opacity: 1;
+}
+
+html.hf-demo-brain-readonly main input:focus,
+html.hf-demo-brain-readonly main textarea:focus,
+html.hf-demo-brain-readonly main select:focus {
+  outline: none;
+  box-shadow: none;
+  border-color: rgba(74, 143, 196, 0.22);
+}
+
+/* Sidebar / disclosure toggles stay interactive for browsing */
+html.hf-demo-brain-readonly .profile-sidebar button,
+html.hf-demo-brain-readonly .sidebar button,
+html.hf-demo-brain-readonly .disclosure-card-toggle,
+html.hf-demo-brain-readonly .supply-item-toggle,
+html.hf-demo-brain-readonly .section-nav button,
+html.hf-demo-brain-readonly [data-profile-nav],
+html.hf-demo-brain-readonly #hfDemoBrainSetupActions a,
+html.hf-demo-brain-readonly .nav-back-handover {
+  pointer-events: auto;
+  cursor: pointer;
+  user-select: auto;
+  display: revert;
+}
+
+.hf-demo-restricted-note {
+  display: none;
+  margin: 10px 0 0;
+  padding: 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: #5a6b80;
+}
+
+html.hf-demo-workspace .hf-demo-restricted-note:not([hidden]) {
+  display: block;
+}
+
+.hf-demo-conversion-card {
+  display: none;
+  margin: 20px 0 8px;
+  padding: 22px 22px 20px;
+  border-radius: 14px;
+  border: 1px solid rgba(74, 143, 196, 0.28);
+  background:
+    linear-gradient(135deg, rgba(238, 246, 252, 0.98), rgba(250, 248, 244, 0.96));
+  box-shadow: 0 10px 28px rgba(20, 40, 70, 0.06);
+}
+
+html.hf-demo-workspace .hf-demo-conversion-card:not([hidden]) {
+  display: block;
+}
+
+.hf-demo-conversion-title {
+  margin: 0 0 8px;
+  font-size: 1.15rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: #15243a;
+}
+
+.hf-demo-conversion-text {
+  margin: 0 0 16px;
+  font-size: 0.94rem;
+  line-height: 1.5;
+  color: #3d4f66;
+  max-width: 38rem;
+}
+
+.hf-demo-conversion-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
 }
 
 /* Offset fixed headers when demo banner is visible */

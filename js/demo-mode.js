@@ -272,8 +272,8 @@
     };
 
     store.setCache = function (hotelId, profile, userId) {
-      if (isEnabled() && profile && profile.isDemoData) {
-        /* Never seed real cache with demo profile. */
+      if (isEnabled()) {
+        /* Never write Brain cache (demo or import) while Demo Mode is active. */
         return;
       }
       return originalBrain.setCache.call(store, hotelId, profile, userId);
@@ -291,7 +291,12 @@
       clearDraft: store.clearDraft,
       getSavedHandovers: store.getSavedHandovers,
       saveHandover: store.saveHandover,
-      deleteHandover: store.deleteHandover
+      deleteHandover: store.deleteHandover,
+      saveAllLocal: store.saveAllLocal,
+      saveAll: store.saveAll,
+      uploadLocalHandovers: store.uploadLocalHandovers,
+      writeLastBackupAt: store.writeLastBackupAt,
+      writeLastBackup: store.writeLastBackup
     };
 
     store.getCachedDraft = function () {
@@ -345,16 +350,66 @@
     };
 
     store.getSavedHandovers = function () {
-      var real = originalHandover.getSavedHandovers
+      if (isEnabled()) {
+        /* Public Demo never surfaces real history or curated archive as a second truth. */
+        return [];
+      }
+      return originalHandover.getSavedHandovers
         ? originalHandover.getSavedHandovers.call(store)
         : [];
-      if (!isEnabled()) return real;
-      var demo = getDemoHandover();
-      var filtered = (real || []).filter(function (item) {
-        return !item || !item.isDemoData;
-      });
-      return [demo].concat(filtered);
     };
+
+    function blockLocalHistoryWrite() {
+      return {
+        cloud: false,
+        local: false,
+        blocked: true,
+        reason: "DEMO_MODE_READ_ONLY",
+        message: "Demo Mode does not change saved history."
+      };
+    }
+
+    if (typeof store.saveAllLocal === "function") {
+      store.saveAllLocal = function () {
+        if (isEnabled()) return blockLocalHistoryWrite();
+        return originalHandover.saveAllLocal.apply(store, arguments);
+      };
+    }
+
+    if (typeof store.saveAll === "function") {
+      store.saveAll = function () {
+        if (isEnabled()) return Promise.resolve(blockLocalHistoryWrite());
+        return originalHandover.saveAll.apply(store, arguments);
+      };
+    }
+
+    if (typeof store.uploadLocalHandovers === "function") {
+      store.uploadLocalHandovers = function () {
+        if (isEnabled()) {
+          return Promise.resolve({
+            uploaded: 0,
+            blocked: true,
+            reason: "DEMO_MODE_READ_ONLY",
+            message: "Demo Mode does not upload handovers."
+          });
+        }
+        return originalHandover.uploadLocalHandovers.apply(store, arguments);
+      };
+    }
+
+    if (typeof store.writeLastBackupAt === "function") {
+      store.writeLastBackupAt = function () {
+        if (isEnabled()) return;
+        return originalHandover.writeLastBackupAt.apply(store, arguments);
+      };
+    }
+
+    if (typeof store.writeLastBackup === "function") {
+      store.writeLastBackup = function () {
+        if (isEnabled()) return blockLocalHistoryWrite();
+        return originalHandover.writeLastBackup.apply(store, arguments);
+      };
+    }
 
     store.saveHandover = function (record) {
       if (isEnabled()) {
@@ -395,53 +450,61 @@
       getCachedIssues: store.getCachedIssues,
       getIssue: store.getIssue,
       getMetrics: store.getMetrics,
-      createIssue: store.createIssue
+      createIssue: store.createIssue,
+      updateStatus: store.updateStatus,
+      updatePriority: store.updatePriority,
+      updateIssueWithTimeline: store.updateIssueWithTimeline,
+      refresh: store.refresh,
+      init: store.init
     };
 
+    /* Public Demo removes the standalone Maintenance module — never surface board issues. */
     store.getCachedIssues = function () {
-      var real = originalMaintenance.getCachedIssues.call(store);
-      if (!isEnabled()) return real;
-      return mergeIssues(real, getDemoIssues());
+      if (isEnabled()) return [];
+      return originalMaintenance.getCachedIssues.call(store);
     };
 
     store.listIssues = function (filters) {
       if (!isEnabled()) return originalMaintenance.listIssues.call(store, filters);
-      var merged = mergeIssues(
-        originalMaintenance.getCachedIssues.call(store),
-        getDemoIssues()
-      );
-      if (store.applyFilters) return store.applyFilters(merged, filters || {});
-      return merged;
+      return [];
     };
 
     store.getIssue = function (issueId) {
-      var id = String(issueId || "");
-      if (isEnabled()) {
-        var demo = getDemoIssues();
-        for (var i = 0; i < demo.length; i++) {
-          if (String(demo[i].id) === id) return demo[i];
-        }
-      }
+      if (isEnabled()) return null;
       return originalMaintenance.getIssue.call(store, issueId);
     };
 
     store.getMetrics = function () {
       if (!isEnabled()) return originalMaintenance.getMetrics.call(store);
-      var issues = store.getCachedIssues();
       if (typeof store.computeMetrics === "function") {
-        return store.computeMetrics(issues);
+        return store.computeMetrics([]);
       }
-      return originalMaintenance.getMetrics.call(store);
+      return {
+        openIssues: 0,
+        highPriority: 0,
+        inProgress: 0,
+        completedToday: 0
+      };
     };
 
+    function rejectMaintenanceWrite() {
+      return Promise.reject(Object.assign(new Error("DEMO_MODE_READ_ONLY"), {
+        code: "DEMO_MODE_READ_ONLY"
+      }));
+    }
+
     store.createIssue = function (payload) {
-      if (isEnabled()) {
-        return Promise.reject(Object.assign(new Error("DEMO_MODE_READ_ONLY"), {
-          code: "DEMO_MODE_READ_ONLY"
-        }));
-      }
+      if (isEnabled()) return rejectMaintenanceWrite();
       return originalMaintenance.createIssue.call(store, payload);
     };
+
+    ["updateStatus", "updatePriority", "updateIssueWithTimeline"].forEach(function (key) {
+      if (typeof store[key] !== "function" || !originalMaintenance[key]) return;
+      store[key] = function () {
+        if (isEnabled()) return rejectMaintenanceWrite();
+        return originalMaintenance[key].apply(store, arguments);
+      };
+    });
   }
 
   function installOverlays() {
@@ -469,6 +532,21 @@
       global.HFHandoverStore.getSavedHandovers = originalHandover.getSavedHandovers;
       global.HFHandoverStore.saveHandover = originalHandover.saveHandover;
       global.HFHandoverStore.deleteHandover = originalHandover.deleteHandover;
+      if (originalHandover.saveAllLocal) {
+        global.HFHandoverStore.saveAllLocal = originalHandover.saveAllLocal;
+      }
+      if (originalHandover.saveAll) {
+        global.HFHandoverStore.saveAll = originalHandover.saveAll;
+      }
+      if (originalHandover.uploadLocalHandovers) {
+        global.HFHandoverStore.uploadLocalHandovers = originalHandover.uploadLocalHandovers;
+      }
+      if (originalHandover.writeLastBackupAt) {
+        global.HFHandoverStore.writeLastBackupAt = originalHandover.writeLastBackupAt;
+      }
+      if (originalHandover.writeLastBackup) {
+        global.HFHandoverStore.writeLastBackup = originalHandover.writeLastBackup;
+      }
     }
     originalHandover = null;
 
@@ -478,6 +556,11 @@
       global.HFMaintenanceStore.getIssue = originalMaintenance.getIssue;
       global.HFMaintenanceStore.getMetrics = originalMaintenance.getMetrics;
       global.HFMaintenanceStore.createIssue = originalMaintenance.createIssue;
+      ["updateStatus", "updatePriority", "updateIssueWithTimeline", "refresh", "init"].forEach(function (key) {
+        if (originalMaintenance[key]) {
+          global.HFMaintenanceStore[key] = originalMaintenance[key];
+        }
+      });
     }
     originalMaintenance = null;
     overlaysInstalled = false;
@@ -580,11 +663,13 @@
       '<div class="hf-demo-banner-inner">' +
         '<div class="hf-demo-banner-copy">' +
           '<span class="hf-demo-banner-badge">Demo Mode</span>' +
-          '<p class="hf-demo-banner-text">Interactive Demo — The Oakwood Mayfair · AI Shift Handover &amp; Hotel Brain (sample data is never saved).</p>' +
+          '<p class="hf-demo-banner-text">Demo Mode — changes are temporary and nothing is saved. The Oakwood Mayfair sample · AI Shift Handover &amp; Hotel Brain.</p>' +
         "</div>" +
         '<div class="hf-demo-banner-actions">' +
           '<a class="hf-demo-banner-link" href="handover.html">AI Shift Handover</a>' +
           '<a class="hf-demo-banner-link" href="hotel-profile.html">Hotel Brain</a>' +
+          '<a class="hf-demo-banner-link" href="index.html#waitlist">Apply for pilot</a>' +
+          '<button type="button" class="hf-demo-banner-reset" id="hfDemoBannerReset">Reset Demo</button>' +
           '<button type="button" class="hf-demo-banner-exit" id="hfDemoBannerExit">Exit Demo</button>' +
         "</div>" +
       "</div>";
@@ -595,7 +680,39 @@
         disable({ confirm: true, redirectTo: getReturnTo() });
       });
     }
+    var resetBtn = bannerEl.querySelector("#hfDemoBannerReset");
+    if (resetBtn) {
+      resetBtn.addEventListener("click", function () {
+        resetDemo({ confirm: true });
+      });
+    }
     return bannerEl;
+  }
+
+  /**
+   * Restore original Oakwood sample notes/snapshot and clear generated output.
+   * Keeps Demo Mode active.
+   */
+  function resetDemo(options) {
+    options = options || {};
+    if (!isEnabled()) return Promise.resolve({ ok: false, reason: "inactive" });
+    if (options.confirm && global.confirm) {
+      var ok = global.confirm(
+        "Reset Demo?\n\nSample notes and snapshot will restore to the original Oakwood pack. Generated output and temporary edits will clear."
+      );
+      if (!ok) return Promise.resolve({ ok: false, reason: "cancelled" });
+    }
+    clearMemoryPack();
+    ensurePack();
+    try {
+      global.dispatchEvent(new CustomEvent("hf-demo-mode-reset", {
+        detail: { packId: activePack && activePack.packId }
+      }));
+    } catch (err) {
+      /* ignore */
+    }
+    dispatchChange();
+    return Promise.resolve({ ok: true, packId: activePack && activePack.packId });
   }
 
   function syncBanner() {
@@ -845,6 +962,22 @@
   }
 
   /**
+   * Public Demo is Handover + Hotel Brain only.
+   * Standalone Maintenance redirects to the Handover demo.
+   */
+  function redirectDemoAwayFromMaintenance() {
+    if (!isEnabled()) return false;
+    try {
+      var path = String((global.location && global.location.pathname) || "").toLowerCase();
+      if (path.indexOf("maintenance.html") === -1) return false;
+      global.location.replace("handover.html?demo=1");
+      return true;
+    } catch (err) {
+      return false;
+    }
+  }
+
+  /**
    * Protected pages call this before auth. When Demo Mode is active (or ?demo=1),
    * returns a guest session so the page can boot without login.
    */
@@ -852,10 +985,18 @@
     options = options || {};
     hydrate();
     if (isEnabled()) {
+      if (redirectDemoAwayFromMaintenance()) {
+        return Promise.resolve({ demoGuest: true, redirected: true });
+      }
       initPageChrome({ banner: options.banner !== false });
       return Promise.resolve({ demoGuest: true });
     }
-    return consumeDemoQueryEntry(options);
+    return consumeDemoQueryEntry(options).then(function (session) {
+      if (session && redirectDemoAwayFromMaintenance()) {
+        return { demoGuest: true, redirected: true };
+      }
+      return session;
+    });
   }
 
   /** @deprecated Hotel workspace demo card removed — operators use mountOperatorDemoLink. */
@@ -870,13 +1011,17 @@
   function initPageChrome(options) {
     options = options || {};
     hydrate();
+    if (redirectDemoAwayFromMaintenance()) return getState();
     if (options.banner !== false) syncBanner();
     if (isEnabled()) installOverlays();
     document.documentElement.classList.toggle("hf-demo-active", isEnabled());
+    document.documentElement.classList.toggle("hf-demo-workspace", isEnabled());
     if (isEnabled()) {
       requestAnimationFrame(function () {
         document.documentElement.classList.add("hf-demo-reveal");
       });
+    } else {
+      document.documentElement.classList.remove("hf-demo-reveal");
     }
     return getState();
   }
@@ -903,6 +1048,7 @@
     getState: getState,
     enable: enable,
     disable: disable,
+    resetDemo: resetDemo,
     initPageChrome: initPageChrome,
     resolveGuestSession: resolveGuestSession,
     mountOperatorDemoLink: mountOperatorDemoLink,

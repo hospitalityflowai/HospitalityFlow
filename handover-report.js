@@ -1,6 +1,6 @@
 /**
  * Hospitality Flow — Shift Handover Report Renderer
- * Shared structured payload → Print HTML (PDF export uses the same payload in handover-pdf.js).
+ * Consumes the canonical generated handover view (Print HTML).
  */
 (function (global) {
   "use strict";
@@ -13,7 +13,16 @@
     "Payment Issues": "#1a3055",
     "Events": "#7c5cbf",
     "General Updates": "#5a6578",
-    "Completed Actions": "#5dce8a"
+    "Completed Actions": "#5dce8a",
+    "Guest Follow-up": "#4a8fc4",
+    "Finance": "#5dce8a"
+  };
+
+  var STATUS_DOT = {
+    critical: "#c45c5c",
+    attention: "#d4a017",
+    normal: "#5a9a6a",
+    unknown: "#9aa3b2"
   };
 
   function escapeHtml(value) {
@@ -59,7 +68,9 @@
     if (parsed.heading) {
       html += '<div class="hr-note-heading">' + escapeHtml(parsed.heading) + "</div>";
     }
-    html += '<div class="hr-note-body">' + escapeHtml(parsed.body || stripTagPrefix(text)) + "</div>";
+    html += '<div class="hr-note-body">' +
+      escapeHtml(parsed.body || stripTagPrefix(text)).replace(/\n/g, "<br>") +
+      "</div>";
     html += "</div>";
     return html;
   }
@@ -84,30 +95,79 @@
     }).join("");
   }
 
-  function renderSummaryHtml(summary) {
-    if (!summary) return "";
-
-    var overview = typeof summary === "string" ? summary : (summary.overview || "");
-    var rows = typeof summary === "object" && summary.rows ? summary.rows : [];
-    if (!overview && !rows.length) return "";
-
-    var html = '<section class="hr-section"><h2 class="hr-section-title">AI Summary</h2><div class="hr-summary-box">';
-
-    if (overview) {
-      html += '<p class="hr-summary-overview">' + escapeHtml(overview) + "</p>";
+  function renderBriefingHtml(briefing) {
+    if (!briefing) return "";
+    var paragraphs = Array.isArray(briefing.paragraphs) ? briefing.paragraphs : [];
+    if (!paragraphs.length && typeof briefing === "string") {
+      paragraphs = [briefing];
     }
+    if (!paragraphs.length) return "";
 
-    rows.forEach(function (row) {
-      if (!row || !row.text) return;
-      html +=
-        '<div class="hr-summary-sub">' +
-          '<div class="hr-summary-sub-title">' + escapeHtml(row.heading || "Summary") + "</div>" +
-          '<div class="hr-summary-sub-text">' + escapeHtml(row.text) + "</div>" +
-        "</div>";
+    var html = '<section class="hr-section"><h2 class="hr-section-title">Today\'s Briefing</h2><div class="hr-summary-box">';
+    paragraphs.forEach(function (para) {
+      if (!para) return;
+      html += '<p class="hr-briefing-block">' + escapeHtml(para).replace(/\n/g, "<br>") + "</p>";
     });
-
     html += "</div></section>";
     return html;
+  }
+
+  function renderHotelStatusHtml(areas) {
+    if (!areas || !areas.length) return "";
+    var cards = areas.map(function (area) {
+      var level = String(area.level || "unknown").toLowerCase();
+      var dot = STATUS_DOT[level] || STATUS_DOT.unknown;
+      return (
+        '<div class="hr-status-card" data-level="' + escapeHtml(level) + '">' +
+          '<div class="hr-status-label">' +
+            '<span class="hr-status-dot" style="background:' + dot + '" aria-hidden="true"></span>' +
+            escapeHtml(area.label || area.key || "") +
+          "</div>" +
+          '<div class="hr-status-level">' + escapeHtml(level.charAt(0).toUpperCase() + level.slice(1)) + "</div>" +
+          '<div class="hr-status-summary">' + escapeHtml(area.summary || "") + "</div>" +
+        "</div>"
+      );
+    }).join("");
+
+    return (
+      '<section class="hr-section">' +
+        '<h2 class="hr-section-title">Hotel Status</h2>' +
+        '<div class="hr-status-grid">' + cards + "</div>" +
+      "</section>"
+    );
+  }
+
+  function renderTimelineHtml(timeline) {
+    var groups = timeline && timeline.groups ? timeline.groups : [];
+    if (!groups.length) return "";
+
+    var body = groups.map(function (group) {
+      var items = (group.items || []).map(function (item) {
+        var when = item.time || item.deadlineLabel || "—";
+        return (
+          '<div class="hr-timeline-item">' +
+            '<div class="hr-timeline-icon" aria-hidden="true">' + escapeHtml(item.icon || "•") + "</div>" +
+            '<div class="hr-timeline-when">' + escapeHtml(when) + "</div>" +
+            '<div class="hr-timeline-action">' + escapeHtml(item.action || "") +
+              (item.reason ? '<span class="hr-timeline-reason">' + escapeHtml(item.reason) + "</span>" : "") +
+            "</div>" +
+          "</div>"
+        );
+      }).join("");
+      return (
+        '<div class="hr-timeline-group">' +
+          '<div class="hr-timeline-group-label">' + escapeHtml(group.label || group.key || "") + "</div>" +
+          items +
+        "</div>"
+      );
+    }).join("");
+
+    return (
+      '<section class="hr-section">' +
+        '<h2 class="hr-section-title">Today\'s Timeline</h2>' +
+        body +
+      "</section>"
+    );
   }
 
   function renderSectionsHtml(sections) {
@@ -118,9 +178,10 @@
 
       var accent = SECTION_ACCENTS[section.title] || "#4a8fc4";
       var items = section.items.map(function (item) {
+        var text = typeof item === "string" ? item : (item.displayText || item.text || "");
         return (
           '<div class="hr-note-wrap" style="border-left-color:' + accent + '">' +
-            renderNoteHtml(item) +
+            renderNoteHtml(text) +
           "</div>"
         );
       }).join("");
@@ -138,12 +199,13 @@
     if (!recommendations || !recommendations.length) return "";
 
     var items = recommendations.map(function (item) {
-      return '<li class="hr-bullet-item">' + escapeHtml(item) + "</li>";
+      var text = typeof item === "string" ? item : (item.text || "");
+      return '<li class="hr-bullet-item">' + escapeHtml(text) + "</li>";
     }).join("");
 
     return (
       '<section class="hr-section">' +
-        '<h2 class="hr-section-title">Shift Intelligence</h2>' +
+        '<h2 class="hr-section-title">AI Recommendations</h2>' +
         '<p class="hr-section-intro">Recommendations for the incoming shift</p>' +
         '<ul class="hr-bullet-list">' + items + "</ul>" +
       "</section>"
@@ -168,15 +230,27 @@
       ".hr-section-title { margin: 0 0 8px; font-size: 11.5pt; color: #1a3055; border-bottom: 2px solid #4a8fc4; padding-bottom: 4px; break-after: avoid; page-break-after: avoid; }",
       ".hr-section-intro { margin: -4px 0 8px; font-size: 9pt; color: #5a6578; }",
       ".hr-snapshot-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 8px; }",
-      ".hr-snapshot-card { border: 1px solid #d8e0ea; border-radius: 8px; background: #fff; padding: 8px 10px; min-height: 52px; position: relative; overflow: hidden; }",
+      ".hr-snapshot-card { border: 1px solid #d8e0ea; border-radius: 8px; background: #fff; padding: 8px 10px; min-height: 52px; position: relative; overflow: hidden; break-inside: avoid; page-break-inside: avoid; }",
       ".hr-snapshot-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: rgba(74, 143, 196, 0.45); }",
       ".hr-snapshot-label { font-size: 7pt; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #5a6578; margin-bottom: 4px; line-height: 1.2; white-space: normal; }",
       ".hr-snapshot-value { font-size: 12pt; font-weight: 700; color: #0c1829; line-height: 1.2; word-break: break-word; overflow-wrap: anywhere; }",
       ".hr-summary-box { background: #eef6fc; border: 1px solid rgba(74, 143, 196, 0.35); border-radius: 8px; padding: 12px 14px; }",
-      ".hr-summary-overview { margin: 0 0 8px; font-size: 10pt; color: #3d4654; }",
-      ".hr-summary-sub { margin-top: 8px; }",
-      ".hr-summary-sub-title { font-size: 7.5pt; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #1a3055; margin-bottom: 3px; }",
-      ".hr-summary-sub-text { font-size: 9.5pt; color: #3d4654; }",
+      ".hr-briefing-block { margin: 0 0 10px; font-size: 10pt; color: #3d4654; white-space: pre-line; }",
+      ".hr-briefing-block:last-child { margin-bottom: 0; }",
+      ".hr-status-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }",
+      ".hr-status-card { border: 1px solid #d8e0ea; border-radius: 8px; padding: 8px 9px; background: #f8fafc; break-inside: avoid; page-break-inside: avoid; }",
+      ".hr-status-label { display: flex; align-items: center; gap: 6px; font-size: 7pt; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #1a3055; margin-bottom: 3px; }",
+      ".hr-status-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }",
+      ".hr-status-level { font-size: 8.5pt; font-weight: 700; color: #0c1829; margin-bottom: 4px; }",
+      ".hr-status-summary { font-size: 8.5pt; color: #5a6578; line-height: 1.35; }",
+      ".hr-timeline-group { margin-bottom: 10px; }",
+      ".hr-timeline-group-label { font-size: 7.5pt; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #5a6578; margin-bottom: 6px; }",
+      ".hr-timeline-item { display: grid; grid-template-columns: 18px 90px 1fr; gap: 8px; padding: 5px 0; border-top: 1px solid #e8edf3; break-inside: avoid; page-break-inside: avoid; }",
+      ".hr-timeline-item:first-of-type { border-top: 0; }",
+      ".hr-timeline-icon { font-size: 9pt; line-height: 1.35; text-align: center; }",
+      ".hr-timeline-when { font-size: 9pt; font-weight: 700; color: #1a3055; }",
+      ".hr-timeline-action { font-size: 9.5pt; color: #3d4654; }",
+      ".hr-timeline-reason { display: block; margin-top: 2px; font-size: 8pt; color: #5a6578; }",
       ".hr-note-wrap { border-left: 3px solid #4a8fc4; padding: 0 0 0 10px; margin: 0 0 8px; break-inside: avoid; page-break-inside: avoid; }",
       ".hr-note-heading { font-size: 9.8pt; font-weight: 700; color: #1a3055; margin-bottom: 2px; word-break: break-word; }",
       ".hr-note-body { font-size: 10pt; color: #3d4654; white-space: normal; word-break: break-word; overflow-wrap: anywhere; }",
@@ -185,7 +259,8 @@
       ".hr-footer { margin-top: 16px; padding-top: 8px; border-top: 1px solid #d8e0ea; font-size: 7.5pt; color: #5a6578; display: flex; justify-content: space-between; }",
       "@media print {",
       "  .hr-section-notes { break-inside: auto; page-break-inside: auto; }",
-      "  .hr-note-wrap { break-inside: avoid; page-break-inside: avoid; }",
+      "  .hr-note-wrap, .hr-status-card, .hr-timeline-item, .hr-snapshot-card { break-inside: avoid; page-break-inside: avoid; }",
+      "  .hr-status-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }",
       "}"
     ].join("\n");
   }
@@ -196,8 +271,20 @@
     }
 
     var meta = payload.meta;
-    var snapshotHtml = renderSnapshotHtml(payload.hotelSnapshot);
-    var summaryHtml = renderSummaryHtml(payload.summary);
+    var snapshot = payload.hotelSnapshot || payload.snapshot || [];
+    var snapshotHtml = renderSnapshotHtml(snapshot);
+    var briefingHtml = renderBriefingHtml(payload.briefing);
+    /* Legacy fallback only when canonical briefing is absent */
+    if (!briefingHtml && payload.summary) {
+      var legacyOverview = typeof payload.summary === "string"
+        ? payload.summary
+        : (payload.summary.overview || "");
+      if (legacyOverview) {
+        briefingHtml = renderBriefingHtml({ paragraphs: [legacyOverview] });
+      }
+    }
+    var statusHtml = renderHotelStatusHtml(payload.hotelStatus);
+    var timelineHtml = renderTimelineHtml(payload.timeline);
     var sectionsHtml = renderSectionsHtml(payload.sections);
     var recommendationsHtml = renderRecommendationsHtml(payload.recommendations);
 
@@ -220,7 +307,9 @@
         (snapshotHtml
           ? '<section class="hr-section"><h2 class="hr-section-title">Hotel Snapshot</h2>' + snapshotHtml + "</section>"
           : "") +
-        summaryHtml +
+        briefingHtml +
+        statusHtml +
+        timelineHtml +
         sectionsHtml +
         recommendationsHtml +
         '<footer class="hr-footer"><span>Hospitality Flow — AI Shift Handover Assistant</span><span>Printed report</span></footer>' +
