@@ -89,7 +89,7 @@ assertEqual(
 );
 assertEqual(
   Engine.rewriteNote("room 1 moving to 51 upgrade paid 50 per extra per night"),
-  "Room 1 – Room move to Room 51 has been noted. The upgrade is recorded at an additional charge of £50 per night.",
+  "Room 1 – Room move to Room 51 noted. The upgrade is recorded at an additional charge of £50 per night.",
   "room move with paid upgrade (no invented PMS action)"
 );
 assertEqual(
@@ -104,7 +104,7 @@ assertEqual(
 );
 assertEqual(
   Engine.rewriteNote("24 ac broken maint aware fan guest", { section: "urgent" }),
-  "Room 24 – AC not cooling. Guest provided with a fan. Maintenance informed. Follow up next shift.",
+  "Room 24 – AC not cooling. Guest provided with a fan. Maintenance has been informed. Follow up next shift until resolved.",
   "messy AC note → operational intelligence"
 );
 

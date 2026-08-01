@@ -445,10 +445,15 @@ async function run() {
   } else {
     ok = pass("Demo Mode visitors are redirected away from Maintenance") && ok;
   }
-  if (!/id="handoverMeta"[\s\S]*id="shiftGlance"[\s\S]*id="summaryCard"[\s\S]*id="sectionsGrid"[\s\S]*id="shiftIntelligenceCard"/.test(handoverHtml)) {
-    ok = fail("Handover results order must be Snapshot → AI Summary → Sections → AI Recommendations") && ok;
+  if (!/id="handoverMeta"[\s\S]*id="shiftGlance"[\s\S]*id="summaryCard"[\s\S]*id="hotelStatusCard"[\s\S]*id="timelineCard"[\s\S]*id="sectionsGrid"[\s\S]*id="shiftIntelligenceCard"/.test(handoverHtml)) {
+    ok = fail("Handover results order must be Snapshot → Briefing → Hotel Status → Timeline → Sections → Recommendations") && ok;
   } else {
-    ok = pass("Handover results order is Snapshot → Summary → Sections → Recommendations") && ok;
+    ok = pass("Handover results order is Snapshot → Briefing → Status → Timeline → Sections → Recommendations") && ok;
+  }
+  if (!/Today's Briefing/.test(handoverHtml) || !/buildHandoverIntelligenceExperience/.test(handoverHtml)) {
+    ok = fail("Handover must render Today's Briefing from shared engine experience") && ok;
+  } else {
+    ok = pass("Today's Briefing uses shared Intelligence Experience pipeline") && ok;
   }
   if (
     !/function setHandoverOutputChrome/.test(handoverHtml) ||

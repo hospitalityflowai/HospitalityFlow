@@ -167,8 +167,8 @@ console.log("\nPhase 2A — recommendations from facts\n");
   }), "maintenance remains actionable Pending recommendation");
 
   assert(recs.some(function (r) {
-    return /305/i.test(r.text) && /—|because|remains open|guest-impacting/i.test(r.text);
-  }), "maintenance recommendation explains why follow-up is needed");
+    return /305/i.test(r.text) && /Follow up|until resolved|Maintenance/i.test(r.text);
+  }), "maintenance recommendation is a direct follow-up action");
 
   assert(!recs.some(function (r) {
     return /late check/i.test(r.text) && /Room 18/i.test(r.text);

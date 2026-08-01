@@ -134,17 +134,19 @@ console.log("\nIntelligence Engine — operational reasoning\n");
   assert(!/arrange the guest request/i.test(text), "bans vague arrange-the-guest-request");
   assert(!/as recorded/i.test(text), "bans as-recorded recommendation phrasing");
   assert(recs.some(function (r) {
-    return /24|Room 24/i.test(r.text) && /AC|maintenance/i.test(r.text) && /—/.test(r.text);
-  }), "AC recommendation is specific and explains why");
+    return /24|Room 24/i.test(r.text) && /AC|maintenance/i.test(r.text);
+  }), "AC recommendation is specific and action-first");
   assert(recs.some(function (r) {
     return /extra bed/i.test(r.text) && /Room 7/i.test(r.text);
   }), "guest request recommendation names item + room");
   assert(recs.some(function (r) {
-    return /14/i.test(r.text) && /balance|settle/i.test(r.text) && /—/.test(r.text);
-  }), "payment recommendation explains why");
+    return /14/i.test(r.text) && /balance|collect|settle/i.test(r.text);
+  }), "payment recommendation is action-first");
   assert(recs.some(function (r) {
-    return /vip/i.test(r.text) && (/42/.test(r.text) || /Hotel Brain|VIP rules|quiet/i.test(r.text));
-  }), "VIP recommendation uses notes and/or Hotel Brain enrichment");
+    return /vip/i.test(r.text) && /Review VIP|Prepare VIP|arrival/i.test(r.text);
+  }), "VIP recommendation is a direct operational action");
+  assert(!/Hotel standards/i.test(text), "bans generic Hotel standards filler");
+  assert(!/Action VIP notes this shift/i.test(text), "bans robotic Action VIP notes phrasing");
 })();
 
 (function omitThinGuestRequest() {
@@ -187,6 +189,51 @@ console.log("\nIntelligence Engine — operational reasoning\n");
   assert(classified.guestImpact === "high" || classified.guestImpact === "critical", "classification carries guestImpact");
   assert(classified.ownerDepartment === "Maintenance" || classified.department === "Maintenance",
     "classification carries owner department");
+})();
+
+(function shorthandResolvesOperationalMeaning() {
+  const normalized = Engine.normalizeInput("b.com city tax £12 // arr 22:00 // maint aware // quiet upper");
+  assert(/Booking\.com/i.test(normalized), "b.com → Booking.com");
+  assert(/before|arrival|22:00/i.test(normalized) || /arrivals?/i.test(normalized), "arrival shorthand preserved/expanded");
+  assert(/Maintenance has been informed/i.test(normalized), "maint aware → Maintenance has been informed");
+  assert(/quiet upper-floor/i.test(normalized), "quiet upper → quiet upper-floor room");
+
+  const rewritten = Engine.rewriteNote("24 ac broken maint aware fan guest", { section: "urgent" });
+  assert(/AC not cooling/i.test(rewritten), "messy AC rewrite states the fault");
+  assert(/Maintenance has been informed/i.test(rewritten), "messy AC rewrite expands maint aware");
+  assert(/Follow up next shift/i.test(rewritten), "messy AC rewrite states next action");
+})();
+
+(function summaryPrioritisesOperationalRisk() {
+  const notes = [
+    "Room 7 extra bed requested",
+    "24 ac broken maint aware fan guest",
+    "Room 14 open balance £42.50 on folio",
+    "VIP Whitmore arriving 11:00 Room 42 quiet upper"
+  ];
+  const analyzed = makeAnalyzed(notes);
+  const summary = Engine.summarizeFromFacts(analyzed, { detail: "standard" });
+  assert(summary.length > 0, "summary is produced");
+  assert(/AC|maintenance|balance|VIP|payment|guest-impact|Priority/i.test(summary),
+    "summary mentions operational risk or impact items");
+  const acPos = summary.search(/AC|maintenance/i);
+  const bedPos = summary.search(/extra bed/i);
+  if (acPos >= 0 && bedPos >= 0) {
+    assert(acPos < bedPos, "summary surfaces maintenance risk before lower-impact guest request");
+  } else {
+    assert(/Priority for the next shift|operational follow-up/i.test(summary),
+      "summary prioritises risk topics for the next shift");
+  }
+})();
+
+(function relatedFactsMergeIntoOneObject() {
+  const facts = Engine.extractOperationalFacts
+    ? Engine.extractOperationalFacts("VIP Whitmore arriving 11:00 Room 42 // quiet upper // champagne")
+    : [Engine.extractOperationalFact("VIP Whitmore arriving 11:00 Room 42 // quiet upper // champagne")];
+  assert(facts.length === 1, "related VIP fragments merge into one operational fact");
+  const src = String((facts[0] && facts[0].sourceText) || "");
+  assert(/Whitmore/i.test(src) && (/quiet|champagne/i.test(src) || facts[0].subject === "vip_arrival"),
+    "merged VIP fact keeps guest and preference context");
 })();
 
 console.log("\n" + passed + " passed, " + failed + " failed\n");

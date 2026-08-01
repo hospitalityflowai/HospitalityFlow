@@ -152,7 +152,7 @@
     var tomorrow = tomorrowLabel();
     return {
       urgent: [
-        item("Room 24 – AC not cooling. Guest provided with a fan. Maintenance informed. Follow up next shift.")
+        item("Room 24 – AC not cooling. Guest provided with a fan. Maintenance has been informed. Follow up next shift until resolved.")
       ],
       vip: [
         item("Whitmore VIP – due " + tomorrow + " 11:00. Quiet upper suite Room 42. Champagne + welcome card. Confirm 15% corp rate on invoice.")
@@ -164,9 +164,9 @@
         item("Room 21 Chen – late CO approved 13:00.")
       ],
       maintenance: [
-        item("Room 24 – AC not cooling. Guest provided with a fan. Maintenance informed. Follow up next shift."),
+        item("Room 24 – AC not cooling. Guest provided with a fan. Maintenance has been informed. Follow up next shift until resolved."),
         item("Room 31 – Shower mixer dripping. HK reported. Medium priority."),
-        item("Lobby WC – Hand dryer failed. Paper towels placed. Maintenance informed."),
+        item("Lobby WC – Hand dryer failed. Paper towels placed. Maintenance has been informed."),
         item("Room 11 – Safe keypad intermittent. On hold for parts. Guest relocated to Room 21.")
       ],
       payments: [

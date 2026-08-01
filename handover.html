@@ -951,6 +951,10 @@
     }
 
     .glance-stat[data-stat="vip"] {
+      box-shadow: var(--shadow-card), inset 0 3px 0 0 #c9a227;
+    }
+
+    .glance-stat[data-stat="guest"] {
       box-shadow: var(--shadow-card), inset 0 3px 0 0 var(--blue-500);
     }
 
@@ -959,7 +963,7 @@
     }
 
     .glance-stat[data-stat="payments"] {
-      box-shadow: var(--shadow-card), inset 0 3px 0 0 var(--navy-700);
+      box-shadow: var(--shadow-card), inset 0 3px 0 0 var(--green-500);
     }
 
     .glance-stat[data-stat="events"] {
@@ -967,7 +971,7 @@
     }
 
     .glance-stat[data-stat="tasks"] {
-      box-shadow: var(--shadow-card), inset 0 3px 0 0 var(--green-500);
+      box-shadow: var(--shadow-card), inset 0 3px 0 0 #2a9d8f;
     }
 
     .glance-stat:hover,
@@ -1059,6 +1063,11 @@
       color: #b8860b;
     }
 
+    .glance-stat[data-stat="guest"] .glance-stat-icon {
+      background: var(--blue-50);
+      color: var(--blue-500);
+    }
+
     .glance-stat[data-stat="maintenance"] .glance-stat-icon {
       background: var(--amber-50);
       color: var(--amber-500);
@@ -1075,8 +1084,8 @@
     }
 
     .glance-stat[data-stat="tasks"] .glance-stat-icon {
-      background: var(--gray-100);
-      color: var(--navy-600);
+      background: #e8f6f4;
+      color: #2a9d8f;
     }
 
     .glance-stat-body {
@@ -1253,13 +1262,267 @@
       color: var(--navy-800);
       line-height: 1.65;
       letter-spacing: -0.015em;
-      margin-bottom: 16px;
+      margin-bottom: 0;
+    }
+
+    .summary-text p {
+      margin: 0 0 0.85em;
+      white-space: pre-line;
+    }
+
+    .summary-text p:last-child {
+      margin-bottom: 0;
     }
 
     .summary-rows {
-      display: flex;
-      flex-direction: column;
+      display: none;
+    }
+
+    .hotel-status-card,
+    .timeline-card {
+      display: none;
+      border: 1px solid rgba(7, 14, 26, 0.08);
+      border-radius: var(--radius-xl);
+      background: var(--white);
+      box-shadow: var(--shadow-sm);
+      margin-top: 14px;
+    }
+
+    .hotel-status-card.is-visible,
+    .timeline-card.is-visible {
+      display: block;
+    }
+
+    .hotel-status-card .card-body,
+    .timeline-card .card-body {
+      padding: 18px 20px;
+    }
+
+    .hotel-status-header {
+      margin-bottom: 14px;
+    }
+
+    .hotel-status-title {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--navy-800);
+    }
+
+    .hotel-status-sub {
+      margin: 4px 0 0;
+      font-size: 0.82rem;
+      color: var(--gray-500);
+    }
+
+    .hotel-status-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
       gap: 10px;
+    }
+
+    @media (max-width: 1100px) {
+      .hotel-status-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 720px) {
+      .hotel-status-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    .hotel-status-item {
+      border: 1px solid rgba(7, 14, 26, 0.08);
+      border-radius: 12px;
+      padding: 12px 12px 11px;
+      background: var(--gray-50);
+      border-left: 3px solid var(--gray-300);
+      min-height: 100%;
+    }
+
+    .hotel-status-item[data-level="critical"] {
+      border-left-color: #c45c5c;
+      background: #fbf6f6;
+    }
+
+    .hotel-status-item[data-level="attention"] {
+      border-left-color: #d4a017;
+      background: #fbf8f0;
+    }
+
+    .hotel-status-item[data-level="normal"] {
+      border-left-color: #5a9a6a;
+      background: #f4f8f5;
+    }
+
+    .hotel-status-item[data-level="unknown"] {
+      border-left-color: var(--gray-300);
+    }
+
+    .hotel-status-label {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--navy-700);
+      margin-bottom: 4px;
+    }
+
+    .hotel-status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      background: var(--gray-300);
+      box-shadow: 0 0 0 2px rgba(7, 14, 26, 0.06);
+    }
+
+    .hotel-status-item[data-level="critical"] .hotel-status-dot {
+      background: #c45c5c;
+      box-shadow: 0 0 0 2px rgba(196, 92, 92, 0.18);
+    }
+
+    .hotel-status-item[data-level="attention"] .hotel-status-dot {
+      background: #d4a017;
+      box-shadow: 0 0 0 2px rgba(212, 160, 23, 0.18);
+    }
+
+    .hotel-status-item[data-level="normal"] .hotel-status-dot {
+      background: #5a9a6a;
+      box-shadow: 0 0 0 2px rgba(90, 154, 106, 0.18);
+    }
+
+    .hotel-status-level {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--navy-800);
+      margin-bottom: 6px;
+    }
+
+    .hotel-status-summary {
+      font-size: 0.8rem;
+      line-height: 1.4;
+      color: var(--gray-600);
+    }
+
+    .timeline-toggle {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: transparent;
+      border: 0;
+      padding: 0;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .timeline-toggle-text strong {
+      display: block;
+      font-size: 1rem;
+      color: var(--navy-800);
+    }
+
+    .timeline-toggle-sub {
+      display: block;
+      margin-top: 2px;
+      font-size: 0.8rem;
+      color: var(--gray-500);
+    }
+
+    .timeline-chevron {
+      width: 18px;
+      height: 18px;
+      color: var(--gray-500);
+      transition: transform 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .timeline-toggle.is-open .timeline-chevron {
+      transform: rotate(180deg);
+    }
+
+    .timeline-body {
+      display: none;
+      margin-top: 14px;
+    }
+
+    .timeline-body.is-open {
+      display: block;
+    }
+
+    .timeline-group {
+      margin-bottom: 14px;
+    }
+
+    .timeline-group:last-child {
+      margin-bottom: 0;
+    }
+
+    .timeline-group-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--gray-500);
+      margin-bottom: 8px;
+    }
+
+    .timeline-item {
+      display: grid;
+      grid-template-columns: 24px 118px 1fr;
+      gap: 8px;
+      padding: 7px 0;
+      border-top: 1px solid rgba(7, 14, 26, 0.06);
+      align-items: start;
+    }
+
+    .timeline-item:first-child {
+      border-top: 0;
+    }
+
+    .timeline-icon {
+      font-size: 0.85rem;
+      line-height: 1.35;
+      text-align: center;
+      opacity: 0.9;
+    }
+
+    .timeline-when {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--navy-700);
+      line-height: 1.35;
+    }
+
+    .timeline-action {
+      font-size: 0.88rem;
+      color: var(--navy-800);
+      line-height: 1.4;
+    }
+
+    .timeline-reason {
+      display: block;
+      margin-top: 2px;
+      font-size: 0.78rem;
+      color: var(--gray-500);
+    }
+
+    @media (max-width: 640px) {
+      .timeline-item {
+        grid-template-columns: 24px 1fr;
+        gap: 6px 8px;
+      }
+
+      .timeline-when {
+        grid-column: 2;
+      }
+
+      .timeline-action {
+        grid-column: 2;
+      }
     }
 
     .summary-row {
@@ -1570,6 +1833,7 @@
     .handover-item-text {
       word-wrap: break-word;
       overflow-wrap: anywhere;
+      white-space: pre-line;
     }
 
     .handover-item-import-badge {
@@ -2444,6 +2708,10 @@
       }
 
       .glance-stat[data-stat="vip"] {
+        box-shadow: inset 0 2px 0 0 #c9a227 !important;
+      }
+
+      .glance-stat[data-stat="guest"] {
         box-shadow: inset 0 2px 0 0 var(--blue-500) !important;
       }
 
@@ -2452,7 +2720,7 @@
       }
 
       .glance-stat[data-stat="payments"] {
-        box-shadow: inset 0 2px 0 0 var(--navy-700) !important;
+        box-shadow: inset 0 2px 0 0 var(--green-500) !important;
       }
 
       .glance-stat[data-stat="events"] {
@@ -2460,7 +2728,7 @@
       }
 
       .glance-stat[data-stat="tasks"] {
-        box-shadow: inset 0 2px 0 0 var(--green-500) !important;
+        box-shadow: inset 0 2px 0 0 #2a9d8f !important;
       }
 
       .summary-card::before,
@@ -3286,11 +3554,36 @@
                         </svg>
                       </div>
                       <div class="summary-content">
-                        <div class="summary-label" id="summaryLabel">AI Summary</div>
-                        <p class="summary-text" id="summaryOverview"></p>
-                        <div class="summary-rows" id="summaryRows"></div>
+                        <div class="summary-label" id="summaryLabel">Today's Briefing</div>
+                        <div class="summary-text" id="summaryOverview"></div>
+                        <div class="summary-rows" id="summaryRows" hidden></div>
                         <div class="summary-stats" id="summaryStats" hidden></div>
                       </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="card hotel-status-card" id="hotelStatusCard" hidden>
+                  <div class="card-body">
+                    <div class="hotel-status-header">
+                      <h3 class="hotel-status-title">Hotel Status</h3>
+                      <p class="hotel-status-sub">Operational health for the incoming shift</p>
+                    </div>
+                    <div class="hotel-status-grid" id="hotelStatusGrid"></div>
+                  </div>
+                </div>
+
+                <div class="card timeline-card" id="timelineCard" hidden>
+                  <div class="card-body">
+                    <button class="timeline-toggle is-open" id="timelineToggle" type="button" aria-expanded="true" aria-controls="timelineBody">
+                      <span class="timeline-toggle-text">
+                        <strong>Today's Timeline</strong>
+                        <span class="timeline-toggle-sub">Timed actions and deadlines</span>
+                      </span>
+                      <svg class="timeline-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="timeline-body is-open" id="timelineBody">
+                      <div id="timelineGroups"></div>
                     </div>
                   </div>
                 </div>
@@ -3585,6 +3878,13 @@
       var preparedBy = document.getElementById("preparedBy");
       var summaryOverview = document.getElementById("summaryOverview");
       var summaryRows = document.getElementById("summaryRows");
+      var hotelStatusCard = document.getElementById("hotelStatusCard");
+      var hotelStatusGrid = document.getElementById("hotelStatusGrid");
+      var timelineCard = document.getElementById("timelineCard");
+      var timelineToggle = document.getElementById("timelineToggle");
+      var timelineBody = document.getElementById("timelineBody");
+      var timelineGroups = document.getElementById("timelineGroups");
+      var lastIntelligenceExperience = null;
       var summaryStats = document.getElementById("summaryStats");
       var summaryCard = document.getElementById("summaryCard");
       var shiftGlance = document.getElementById("shiftGlance");
@@ -3702,7 +4002,7 @@
         copy: "Copy Handover",
         save: "Save Handover",
         saved: "Previous Handovers",
-        aiSummary: "AI Summary",
+        aiSummary: "Today's Briefing",
         assistant: "AI Shift Handover"
       };
       var PAGE_SUBTITLE = "Turn scattered shift notes into clear, structured handovers in seconds.";
@@ -5773,10 +6073,11 @@
         var expanded = [];
         rawLines.forEach(function (line) {
           var parts = [];
+          /* Prefer shared engine segmentation — do not re-split when the engine already reasoned. */
           if (window.AiWritingEngine && window.AiWritingEngine.splitSourceIntoFactSegments) {
-            parts = window.AiWritingEngine.splitSourceIntoFactSegments(line);
+            parts = window.AiWritingEngine.splitSourceIntoFactSegments(line) || [];
           }
-          if (!parts || parts.length < 2) {
+          if (!parts.length) {
             parts = splitOperationalTopics(line);
           }
           parts.forEach(function (part) {
@@ -6330,7 +6631,8 @@
 
         if (isCompletedActionNote(line)) return "completed";
 
-        if (noteContains(line, ["lost property", "lost item", "found in lobby", "found in the", "left behind"])) {
+        if (noteContains(line, ["lost property", "lost prop", "lost item", "found in lobby", "found in the", "left behind"]) ||
+            (note.fact && note.fact.subject === "lost_property")) {
           return "lostproperty";
         }
 
@@ -6360,8 +6662,17 @@
           return "guest";
         }
 
-        if (isPaymentRelatedLine(line)) {
-          return isPaymentIssueLine(line) ? "payments" : "general";
+        /* Shared engine subject → section (no second classification layer). */
+        if (note.fact && note.fact.subject && window.AiWritingEngine && window.AiWritingEngine.sectionFromFact) {
+          var fromFact = window.AiWritingEngine.sectionFromFact(note.fact, "");
+          if (fromFact && fromFact !== "general") return fromFact;
+        }
+
+        if (isPaymentRelatedLine(line) || noteContains(line, ["booking.com", "b.com", "expedia", "city tax", "outstanding"])) {
+          if (isPaymentIssueLine(line) || noteContains(line, ["outstanding", "city tax", "open balance", "minibar"]) ||
+              (note.fact && /payment|balance|folio|invoice|charge/i.test(note.fact.subject || ""))) {
+            return "payments";
+          }
         }
 
         if (note.fact && note.fact.subject === "guest_arrangement") return "guest";
@@ -6386,7 +6697,10 @@
           return "maintenance";
         }
 
-        if (noteContains(line, ["late checkout", "late check-out", "wake-up", "wakeup", "taxi", "transfer", "request", "requested", "amenity"])) {
+        if (noteContains(line, [
+          "late checkout", "late check-out", "wake-up", "wakeup", "wake ", "taxi", "transfer",
+          "addison", "interconnect", "request", "requested", "amenity", "dep am", "departure"
+        ])) {
           return "guest";
         }
 
@@ -7479,7 +7793,7 @@
         },
         {
           id: "guest",
-          label: "Guest Requests",
+          label: "Guest Follow-ups",
           icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M9 8h1"/><path d="M9 12h1"/><path d="M9 16h1"/><path d="M14 8h1"/><path d="M14 12h1"/><path d="M14 16h1"/><path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"/></svg>'
         },
         {
@@ -8671,7 +8985,21 @@
         showShiftGlance();
       }
 
+      function getHandoverIntelligenceExperience(classified) {
+        if (window.AiWritingEngine && window.AiWritingEngine.buildHandoverIntelligenceExperience) {
+          return window.AiWritingEngine.buildHandoverIntelligenceExperience(
+            (classified && classified._analyzed) || [],
+            getAiWritingOptions()
+          );
+        }
+        return null;
+      }
+
       function buildSummaryOverview(classified) {
+        var experience = getHandoverIntelligenceExperience(classified);
+        if (experience && experience.briefing && experience.briefing.paragraphs && experience.briefing.paragraphs.length) {
+          return experience.briefing.paragraphs.join("\n\n");
+        }
         if (window.AiWritingEngine) {
           return window.AiWritingEngine.summarizeHandover({
             analyzed: classified._analyzed || [],
@@ -8682,6 +9010,96 @@
         var metrics = getHandoverMetrics(classified);
         var analyzed = classified._analyzed || [];
         return applyAiPreferencesToSummary(buildOpeningSentence(metrics, analyzed), classified);
+      }
+
+      function renderHotelStatusUI(statusAreas) {
+        if (!hotelStatusCard || !hotelStatusGrid) return;
+        hotelStatusGrid.innerHTML = "";
+        var areas = statusAreas || [];
+        if (!areas.length) {
+          hotelStatusCard.hidden = true;
+          hotelStatusCard.classList.remove("is-visible");
+          return;
+        }
+        areas.forEach(function (area) {
+          var el = document.createElement("div");
+          el.className = "hotel-status-item";
+          el.setAttribute("data-level", area.level || "unknown");
+          var label = document.createElement("div");
+          label.className = "hotel-status-label";
+          var dot = document.createElement("span");
+          dot.className = "hotel-status-dot";
+          dot.setAttribute("aria-hidden", "true");
+          var labelText = document.createElement("span");
+          labelText.textContent = area.label || area.key || "";
+          label.appendChild(dot);
+          label.appendChild(labelText);
+          var level = document.createElement("div");
+          level.className = "hotel-status-level";
+          level.textContent = String(area.level || "unknown").replace(/^\w/, function (c) {
+            return c.toUpperCase();
+          });
+          var summary = document.createElement("div");
+          summary.className = "hotel-status-summary";
+          summary.textContent = area.summary || "";
+          el.appendChild(label);
+          el.appendChild(level);
+          el.appendChild(summary);
+          hotelStatusGrid.appendChild(el);
+        });
+        hotelStatusCard.hidden = false;
+        hotelStatusCard.classList.add("is-visible");
+      }
+
+      function renderTimelineUI(timeline) {
+        if (!timelineCard || !timelineGroups) return;
+        timelineGroups.innerHTML = "";
+        var groups = (timeline && timeline.groups) || [];
+        if (!groups.length) {
+          timelineCard.hidden = true;
+          timelineCard.classList.remove("is-visible");
+          return;
+        }
+        groups.forEach(function (group) {
+          var wrap = document.createElement("div");
+          wrap.className = "timeline-group";
+          var label = document.createElement("div");
+          label.className = "timeline-group-label";
+          label.textContent = group.label || group.key || "";
+          wrap.appendChild(label);
+          (group.items || []).forEach(function (item) {
+            var row = document.createElement("div");
+            row.className = "timeline-item";
+            var icon = document.createElement("div");
+            icon.className = "timeline-icon";
+            icon.setAttribute("aria-hidden", "true");
+            icon.textContent = item.icon || "•";
+            var when = document.createElement("div");
+            when.className = "timeline-when";
+            when.textContent = item.time || item.deadlineLabel || "—";
+            var action = document.createElement("div");
+            action.className = "timeline-action";
+            action.textContent = item.action || "";
+            if (item.reason) {
+              var reason = document.createElement("span");
+              reason.className = "timeline-reason";
+              reason.textContent = item.reason;
+              action.appendChild(reason);
+            }
+            row.appendChild(icon);
+            row.appendChild(when);
+            row.appendChild(action);
+            wrap.appendChild(row);
+          });
+          timelineGroups.appendChild(wrap);
+        });
+        timelineCard.hidden = false;
+        timelineCard.classList.add("is-visible");
+        if (timelineBody && timelineToggle) {
+          timelineBody.classList.add("is-open");
+          timelineToggle.classList.add("is-open");
+          timelineToggle.setAttribute("aria-expanded", "true");
+        }
       }
 
       function getSummaryDetailCards(classified) {
@@ -8793,68 +9211,51 @@
       }
 
       function renderSummaryUI(classified) {
-        var metrics = getHandoverMetrics(classified);
-        var factCards = getSummaryDetailCards(classified);
-        summaryOverview.textContent = buildSummaryOverview(classified);
-        summaryRows.innerHTML = "";
+        var experience = getHandoverIntelligenceExperience(classified);
+        lastIntelligenceExperience = experience;
+        var briefingParas = experience && experience.briefing && experience.briefing.paragraphs
+          ? experience.briefing.paragraphs
+          : [];
+        summaryOverview.innerHTML = "";
+        if (briefingParas.length) {
+          briefingParas.forEach(function (para) {
+            var p = document.createElement("p");
+            p.textContent = applyAiPreferencesToSummary(para, classified);
+            summaryOverview.appendChild(p);
+          });
+          lastSummaryText = briefingParas.join("\n\n");
+        } else {
+          var fallback = buildSummaryOverview(classified);
+          var pFall = document.createElement("p");
+          pFall.textContent = fallback;
+          summaryOverview.appendChild(pFall);
+          lastSummaryText = fallback;
+        }
+        if (summaryRows) {
+          summaryRows.innerHTML = "";
+          summaryRows.hidden = true;
+        }
+        renderHotelStatusUI(experience && experience.hotelStatus);
+        renderTimelineUI(experience && experience.timeline);
+      }
 
-        var rows = [
-          { id: "urgent", tone: "urgent", heading: "Immediate Attention", count: metrics.urgent, icon: GLANCE_STATS[0].icon },
-          { id: "guest", tone: "guest", heading: "VIP & Guest Follow-up", count: metrics.vip > 0 ? metrics.vip : metrics.display.guest, icon: GLANCE_STATS[1].icon },
-          { id: "maintenance", tone: "maintenance", heading: "Maintenance", count: metrics.maintenance, icon: GLANCE_STATS[2].icon },
-          { id: "payments", tone: "payments", heading: "Finance", count: metrics.payments, icon: GLANCE_STATS[3].icon },
-          { id: "events", tone: "events", heading: "Reception", count: metrics.events, icon: GLANCE_STATS[4].icon },
-          { id: "tasks", tone: "tasks", heading: "Housekeeping & Inventory", count: metrics.tasks, icon: GLANCE_STATS[5].icon }
-        ];
-
-        rows.forEach(function (row) {
-          var factCard = factCards && factCards[row.id] ? factCards[row.id] : null;
-          if (factCard) {
-            if (!factCard.show) return;
-            row.count = factCard.unresolvedCount;
-          } else if (!row.count) {
-            return;
-          }
-
-          var sentence = buildSummaryRowSentence(row.id, classified, metrics, factCards);
-          if (!sentence) return;
-          sentence = applyAiPreferencesToSummary(sentence, classified);
-
-          var el = document.createElement("div");
-          el.className = "summary-row";
-          el.setAttribute("data-tone", row.tone);
-
-          var icon = document.createElement("div");
-          icon.className = "summary-row-icon";
-          icon.setAttribute("aria-hidden", "true");
-          icon.innerHTML = row.icon;
-
-          var body = document.createElement("div");
-          body.className = "summary-row-body";
-
-          var heading = document.createElement("div");
-          heading.className = "summary-row-heading";
-
-          var title = document.createElement("span");
-          title.className = "summary-row-title";
-          title.textContent = row.heading;
-
-          var count = document.createElement("span");
-          count.className = "summary-row-count";
-          count.textContent = String(row.count);
-
-          var text = document.createElement("p");
-          text.className = "summary-row-text";
-          text.textContent = sentence;
-
-          heading.appendChild(title);
-          heading.appendChild(count);
-          body.appendChild(heading);
-          body.appendChild(text);
-          el.appendChild(icon);
-          el.appendChild(body);
-          summaryRows.appendChild(el);
-        });
+      function clearIntelligenceExperienceUI() {
+        lastIntelligenceExperience = null;
+        if (summaryOverview) summaryOverview.innerHTML = "";
+        if (summaryRows) {
+          summaryRows.innerHTML = "";
+          summaryRows.hidden = true;
+        }
+        if (hotelStatusGrid) hotelStatusGrid.innerHTML = "";
+        if (hotelStatusCard) {
+          hotelStatusCard.hidden = true;
+          hotelStatusCard.classList.remove("is-visible");
+        }
+        if (timelineGroups) timelineGroups.innerHTML = "";
+        if (timelineCard) {
+          timelineCard.hidden = true;
+          timelineCard.classList.remove("is-visible");
+        }
       }
 
       function renderSummaryStats(classified) {
@@ -9070,8 +9471,7 @@
           shiftAlertsGrid.innerHTML = "";
           shiftAlertsGroup.style.display = "";
           shiftGlance.classList.remove("is-visible");
-          summaryOverview.textContent = "";
-          summaryRows.innerHTML = "";
+          clearIntelligenceExperienceUI();
           summaryStats.innerHTML = "";
           summaryCard.classList.remove("is-visible");
           hideRecommendationsPanel();
@@ -9135,8 +9535,7 @@
         shiftAlertsGrid.innerHTML = "";
         shiftAlertsGroup.style.display = "";
         shiftGlance.classList.remove("is-visible");
-        summaryOverview.textContent = "";
-        summaryRows.innerHTML = "";
+        clearIntelligenceExperienceUI();
         summaryStats.innerHTML = "";
         summaryCard.classList.remove("is-visible");
         lastHandoverText = "";
@@ -9991,6 +10390,15 @@
           generateHandover();
         }
       });
+
+      if (timelineToggle && timelineBody) {
+        timelineToggle.addEventListener("click", function () {
+          var open = !timelineBody.classList.contains("is-open");
+          timelineBody.classList.toggle("is-open", open);
+          timelineToggle.classList.toggle("is-open", open);
+          timelineToggle.setAttribute("aria-expanded", open ? "true" : "false");
+        });
+      }
 
       function finishHandoverPageInit(preferredDraft) {
         wireShiftSelectorOnce();

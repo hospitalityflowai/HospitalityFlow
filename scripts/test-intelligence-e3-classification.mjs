@@ -182,7 +182,7 @@ console.log("\n-- Writing subject → category --");
   ["room_move", "guest"],
   ["late_checkout", "guest"],
   ["twin_setup", "task"],
-  ["wake_up", "task"],
+  ["wake_up", "guest"],
   ["delivery", "task"],
   ["inventory", "task"]
 ].forEach(function (pair) {
