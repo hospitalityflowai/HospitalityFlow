@@ -343,27 +343,57 @@ main {
 .account-links {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-bottom: 24px;
+  gap: 12px;
+  margin-bottom: 28px;
 }
 
-.account-links a {
+.account-links a,
+.account-links .workspace-tool {
   display: block;
-  padding: 14px 16px;
+  padding: 16px 18px;
   background: var(--navy-800);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius);
   color: var(--gray-200);
-  font-size: 0.9rem;
-  font-weight: 500;
-  transition: background var(--transition), border-color var(--transition);
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.35;
+  transition: background var(--transition), border-color var(--transition), color var(--transition);
 }
 
 .account-links a:hover,
-.account-links a:focus-visible {
+.account-links a:focus-visible,
+.account-links .workspace-tool:hover,
+.account-links .workspace-tool:focus-visible {
   background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(74, 143, 196, 0.25);
+  border-color: rgba(74, 143, 196, 0.3);
   color: var(--white);
+}
+
+.account-links .workspace-tool--primary {
+  border-color: rgba(74, 143, 196, 0.35);
+  background: linear-gradient(180deg, rgba(74, 143, 196, 0.12), var(--navy-800));
+}
+
+.account-links .workspace-tool--primary:hover,
+.account-links .workspace-tool--primary:focus-visible {
+  border-color: rgba(74, 143, 196, 0.5);
+  background: linear-gradient(180deg, rgba(74, 143, 196, 0.18), rgba(255, 255, 255, 0.03));
+}
+
+.account-link-desc {
+  display: block;
+  margin-top: 5px;
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--gray-400);
+  line-height: 1.45;
+}
+
+/* Maintenance module kept in codebase but inaccessible in current product UX */
+.workspace-tool--hidden,
+#workspace-tool-maintenance[hidden] {
+  display: none !important;
 }
 
 .account-actions {
@@ -408,12 +438,14 @@ main {
 }
 
 .account-workspace-primary {
-  margin: 12px 0 16px;
+  margin: 14px 0 20px;
 }
 
 .account-workspace-primary .btn {
   width: auto;
   display: inline-flex;
+  justify-content: center;
+  text-align: center;
 }
 
 .account-signout-actions {

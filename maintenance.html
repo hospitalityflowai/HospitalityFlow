@@ -1875,40 +1875,15 @@
     setMetricsLoading();
     els.loadingState.hidden = false;
 
-    /* Fast path: ?demo=1 never boots the Maintenance module. */
+    /*
+     * Product surface: Maintenance module is temporarily inaccessible.
+     * Keep page/code/database intact, but never boot the board UI.
+     */
     if (/[?&]demo=1(?:&|$)/.test(String(window.location.search || ""))) {
       window.location.replace("handover.html?demo=1");
       return;
     }
-
-    var bootPromise = (window.HFDemoMode && window.HFDemoMode.resolveGuestSession
-      ? window.HFDemoMode.resolveGuestSession({ banner: true })
-      : Promise.resolve(null)
-    ).then(function (demoSession) {
-      if (demoSession) return demoSession;
-      return window.HFPlatformAccess && window.HFPlatformAccess.requireApprovedAccess
-        ? window.HFPlatformAccess.requireApprovedAccess({ redirect: "account.html?access=pending" })
-        : (window.HFAuth && window.HFAuth.requireAuth ? window.HFAuth.requireAuth() : Promise.resolve(null));
-    });
-
-    bootPromise.then(function (session) {
-      if (!session) return;
-      if (session.redirected) return;
-
-      /* Public Demo Mode focuses on Handover + Hotel Brain only. */
-      if (window.HFDemoMode && window.HFDemoMode.isEnabled && window.HFDemoMode.isEnabled()) {
-        window.location.replace("handover.html?demo=1");
-        return;
-      }
-
-      if (window.HFDemoMode && !session.demoGuest) {
-        window.HFDemoMode.initPageChrome({ banner: true });
-      }
-      if (session.user && session.user.email && !els.reportedBy.value) {
-        /* leave reported-by blank; email alone is not ideal as display name */
-      }
-      return loadPage();
-    });
+    window.location.replace("account.html");
   }
 
   if (document.readyState === "loading") {

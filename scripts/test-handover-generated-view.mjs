@@ -140,6 +140,17 @@ assert(view && view.version === 1, "canonical generated view model exists");
 assert(view.briefing && view.briefing.paragraphs.length >= 1, "view includes Today's Briefing paragraphs");
 assert(view.hotelStatus && view.hotelStatus.length === 5, "view includes five Hotel Status areas");
 assert(view.timeline && view.timeline.groups && view.timeline.groups.length >= 1, "view includes Timeline groups");
+assert(typeof View.formatTimelineEntry === "function", "timeline entry formatter exported");
+(function assertTimelineFormatting() {
+  const sample = { time: "23:30", action: "Prepare quiet upper-floor room for VIP Mr Smith", icon: "⭐" };
+  const line = View.formatTimelineEntry(sample);
+  assert(line === "23:30 \u2014 Prepare quiet upper-floor room for VIP Mr Smith",
+    "timeline formats as time — action without icons");
+  assert(!/[⭐🔧•]/.test(line), "timeline line excludes emoji/icons");
+  const pdfLine = View.formatTimelineEntry(sample, { pdfSafe: true });
+  assert(pdfLine.indexOf("23:30 - ") === 0 && pdfLine.indexOf("VIP Mr Smith") > 0,
+    "PDF-safe timeline uses ASCII hyphen separator");
+})();
 assert(view.sections && view.sections.length >= 1, "view includes operational sections");
 assert(view.recommendations && view.recommendations.length === 2, "view includes recommendations");
 assert(view.snapshot && view.snapshot.length === 2, "view includes snapshot");

@@ -57,10 +57,10 @@ function main() {
     ok = pass("Auth and workspace scripts present") && ok;
   }
 
-  if (!/requireApprovedAccess/.test(html)) {
-    ok = fail("Platform access guard must be present") && ok;
+  if (!/js\/platform-access\.js/.test(html) || !/location\.replace\(["']account\.html["']\)/.test(html)) {
+    ok = fail("Maintenance module must stay inaccessible while platform-access remains loaded") && ok;
   } else {
-    ok = pass("Platform access guard present") && ok;
+    ok = pass("Maintenance module inaccessible; platform-access script retained") && ok;
   }
 
   ["Open Issues", "High Priority", "In Progress", "Completed Today"].forEach((label) => {
@@ -308,7 +308,7 @@ function main() {
   }
 
   if (/HFMaintenanceStore|maintenance-store\.js/i.test(read("handover.html"))) {
-    if (!/integrateMaintenanceIssues|filterMaintenanceIssuesForHandover|Imported from Maintenance/i.test(read("handover.html"))) {
+    if (!/integrateMaintenanceIssues|filterMaintenanceIssuesForHandover|importedFromMaintenance/i.test(read("handover.html"))) {
       ok = fail("M4 wiring incomplete on handover.html") && ok;
     } else {
       ok = pass("M4 Maintenance → Handover integration present") && ok;

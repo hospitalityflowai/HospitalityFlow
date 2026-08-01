@@ -186,7 +186,7 @@ assert(/maintenance-store\.js/.test(handoverHtml), "handover loads maintenance-s
 assert(/integrateMaintenanceIssues/.test(handoverHtml), "integrateMaintenanceIssues present");
 assert(/factsFromMaintenanceIssues/.test(handoverHtml), "uses factsFromMaintenanceIssues");
 assert(/analyzeFacts/.test(handoverHtml), "calls analyzeFacts when maintenance facts present");
-assert(/Imported from Maintenance/.test(handoverHtml), "import badge present");
+assert(/importedFromMaintenance/.test(handoverHtml), "imported maintenance items still flagged");
 assert(/loadMaintenanceIssuesForHandover/.test(handoverHtml), "loads maintenance issues on generate");
 assert(!/recommendationFromMaintenance|maintenanceSpecificRule/.test(handoverHtml), "no Maintenance-specific recommendation rules in page");
 

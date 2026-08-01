@@ -47,12 +47,45 @@
             action: item.action || "",
             reason: item.reason || null,
             priority: item.priority || "normal",
-            icon: item.icon || "•"
+            icon: item.icon || ""
           };
         }).filter(function (item) { return !!item.action; })
       };
     }).filter(function (group) { return group.items.length > 0; });
     return { groups: groups };
+  }
+
+  /** Professional timeline when-label (never empty). */
+  function formatTimelineWhen(item) {
+    item = item || {};
+    var when = String(item.time || item.deadlineLabel || "").trim();
+    return when || "TBC";
+  }
+
+  /**
+   * Clean operational timeline line for screen / Print / Copy / PDF.
+   * Example: "23:30 — Prepare quiet upper-floor room for VIP Mr Smith"
+   * Icons/emoji are never included (avoids print/PDF encoding corruption).
+   */
+  function formatTimelineEntry(item, options) {
+    options = options || {};
+    item = item || {};
+    var when = formatTimelineWhen(item);
+    var action = String(item.action || "").replace(/\s+/g, " ").trim();
+    var sep = options.pdfSafe ? " - " : " \u2014 ";
+    if (!action) return when;
+    return when + sep + action;
+  }
+
+  /** Strip characters that break jsPDF Helvetica (emoji / exotic symbols). */
+  function toPdfSafeText(value) {
+    return String(value || "")
+      .replace(/[\u2014\u2013]/g, "-")
+      .replace(/[\u2022\u00B7]/g, "-")
+      .replace(/[\uD800-\uDFFF]/g, "")
+      .replace(/[^\x09\x0A\x0D\x20-\x7E\u00A0-\u00FF]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
   }
 
   function normalizeHotelStatus(areas) {
@@ -260,8 +293,7 @@
       timeline.groups.forEach(function (group) {
         parts.push(String(group.label || group.key).toUpperCase());
         group.items.forEach(function (item) {
-          var when = item.time || item.deadlineLabel || "—";
-          parts.push((item.icon ? item.icon + " " : "") + when + " — " + item.action);
+          parts.push(formatTimelineEntry(item));
         });
         parts.push("");
       });
@@ -273,7 +305,7 @@
       parts.push(String(section.title || "Section").toUpperCase());
       items.forEach(function (item) {
         var line = typeof item === "string" ? item : (item.displayText || item.text || "");
-        if (line) parts.push("• " + line);
+        if (line) parts.push("- " + line);
       });
       parts.push("");
     });
@@ -301,6 +333,9 @@
     build: buildGeneratedHandoverView,
     toReportPayload: toReportPayload,
     formatText: formatGeneratedHandoverText,
+    formatTimelineWhen: formatTimelineWhen,
+    formatTimelineEntry: formatTimelineEntry,
+    toPdfSafeText: toPdfSafeText,
     hasCanonicalBriefing: hasCanonicalBriefing,
     clone: clone
   };

@@ -448,6 +448,28 @@
     this.y += cardHeight + LAYOUT.sectionGap;
   };
 
+  function formatTimelineEntryPdf(item) {
+    var HGV = global.HandoverGeneratedView;
+    if (HGV && typeof HGV.formatTimelineEntry === "function") {
+      var line = HGV.formatTimelineEntry(item, { pdfSafe: true });
+      return HGV.toPdfSafeText ? HGV.toPdfSafeText(line) : line;
+    }
+    var when = String((item && (item.time || item.deadlineLabel)) || "").trim() || "TBC";
+    var action = String((item && item.action) || "").replace(/\s+/g, " ").trim();
+    return action ? when + " - " + action : when;
+  }
+
+  function pdfSafe(value) {
+    if (global.HandoverGeneratedView && typeof global.HandoverGeneratedView.toPdfSafeText === "function") {
+      return global.HandoverGeneratedView.toPdfSafeText(value);
+    }
+    return String(value || "")
+      .replace(/[\u2014\u2013]/g, "-")
+      .replace(/[\uD800-\uDFFF]/g, "")
+      .replace(/[^\x20-\x7E\u00A0-\u00FF]/g, "")
+      .trim();
+  }
+
   PdfDocument.prototype.drawTimeline = function (timeline) {
     var groups = timeline && timeline.groups ? timeline.groups : [];
     if (!groups.length) return;
@@ -460,26 +482,25 @@
       doc.setFont("helvetica", "bold");
       doc.setFontSize(7.2);
       setText(doc, COLORS.gray500);
-      this.ensureSpace(10);
-      doc.text(String(group.label || group.key || "").toUpperCase(), LAYOUT.marginX, this.y);
-      this.y += 5;
+      this.ensureSpace(12);
+      doc.text(pdfSafe(String(group.label || group.key || "").toUpperCase()), LAYOUT.marginX, this.y);
+      this.y += 5.5;
 
       (group.items || []).forEach(function (item) {
-        var when = item.time || item.deadlineLabel || "—";
-        var line = (item.icon ? item.icon + " " : "") + when + "  " + (item.action || "");
-        var lines = measureWrappedLines(doc, line, width - 4, LAYOUT.bodyFontSize);
-        var height = blockHeight(lines.length, LAYOUT.lineHeight, 1.5);
-        this.ensureSpace(height + 1);
+        var line = formatTimelineEntryPdf(item);
+        var lines = measureWrappedLines(doc, line, width - 2, LAYOUT.bodyFontSize);
+        var height = blockHeight(lines.length, LAYOUT.lineHeight, 2);
+        this.ensureSpace(height + 2);
         doc.setFont("helvetica", "normal");
         doc.setFontSize(LAYOUT.bodyFontSize);
         setText(doc, COLORS.gray600);
         doc.text(lines, LAYOUT.marginX, this.y);
         this.y += height;
       }, this);
-      this.y += 2;
+      this.y += 3;
     }, this);
 
-    this.y += LAYOUT.sectionGap - 2;
+    this.y += LAYOUT.sectionGap;
   };
 
   /** @deprecated Use drawBriefing — kept for older payloads without briefing */

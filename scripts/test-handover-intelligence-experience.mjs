@@ -405,7 +405,8 @@ console.log("\nHandover Intelligence Experience Sprint 1\n");
   assert(/buildHandoverIntelligenceExperience/.test(handoverHtml),
     "handover.html renders shared engine experience");
   assert(/hotel-status-dot/.test(handoverHtml), "Hotel Status UI includes status dots");
-  assert(/timeline-icon/.test(handoverHtml), "Timeline UI renders item icons");
+  assert(/timeline-line/.test(handoverHtml) && /formatTimelineEntry/.test(handoverHtml),
+    "Timeline UI renders professional entry lines");
   assert(/data-stat="guest"/.test(handoverHtml) && /Guest Follow-ups/.test(handoverHtml),
     "Guest Follow-ups glance card uses blue accent treatment");
   assert(/#c9a227/.test(handoverHtml) && /#2a9d8f/.test(handoverHtml),

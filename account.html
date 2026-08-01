@@ -157,12 +157,13 @@
             </form>
           </div>
 
-          <p class="account-note" id="workspace-sync-note">Hotel Brain and handovers sync to this workspace only.</p>
+          <p class="account-note" id="workspace-sync-note">Hotel Brain and AI Shift Handover sync to this workspace only.</p>
 
           <div class="account-links" id="workspace-tool-links">
-            <a href="handover.html">AI Shift Handover</a>
-            <a href="maintenance.html">Maintenance <span class="badge-new" style="display:inline-flex;align-items:center;margin-left:8px;padding:2px 7px;border-radius:999px;font-size:.65rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;background:rgba(74,143,196,.18);color:#9ecef0;border:1px solid rgba(74,143,196,.35);">New</span><br><span style="display:block;margin-top:4px;font-size:.8rem;font-weight:400;color:var(--gray-400);">Report, track and resolve hotel maintenance issues.</span></a>
-            <a href="hotel-profile.html">Hotel Brain profile</a>
+            <a href="handover.html" class="workspace-tool workspace-tool--primary">AI Shift Handover<br><span class="account-link-desc">Turn shift notes into a clear operational handover.</span></a>
+            <a href="hotel-profile.html" class="workspace-tool">Hotel Brain<br><span class="account-link-desc">Hotel knowledge that powers AI Shift Handover.</span></a>
+            <!-- Maintenance module retained in codebase but inaccessible in current product UX. -->
+            <a href="maintenance.html" id="workspace-tool-maintenance" class="workspace-tool workspace-tool--hidden" hidden aria-hidden="true" tabindex="-1">Maintenance<br><span class="account-link-desc">Report, track and resolve hotel maintenance issues.</span></a>
           </div>
         </section>
 

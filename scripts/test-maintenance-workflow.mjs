@@ -144,22 +144,24 @@ function main() {
     ok = pass("No DELETE behaviour was added") && ok;
   }
 
-  if (!/href="maintenance\.html"/i.test(account)) {
-    ok = fail("Account must link to maintenance.html") && ok;
+  if (!/href="maintenance\.html"/i.test(account) ||
+      !/id="workspace-tool-maintenance"[^>]*\bhidden\b/i.test(account)) {
+    ok = fail("Account must retain hidden maintenance.html link (module inaccessible)") && ok;
   } else {
-    ok = pass("Account links to maintenance.html") && ok;
+    ok = pass("Account retains hidden maintenance.html link") && ok;
   }
 
-  if (!/AI Shift Handover[\s\S]*maintenance\.html[\s\S]*Hotel Brain/i.test(account)) {
-    ok = fail("Account tool order should be Handover → Maintenance → Hotel Brain") && ok;
+  if (!/AI Shift Handover[\s\S]*Hotel Brain[\s\S]*maintenance\.html/i.test(account)) {
+    ok = fail("Account tools should expose Handover + Hotel Brain with Maintenance hidden") && ok;
   } else {
-    ok = pass("Account tool order includes Maintenance between Handover and Hotel Brain") && ok;
+    ok = pass("Account tools expose Handover + Hotel Brain; Maintenance hidden") && ok;
   }
 
-  if (!/requireApprovedAccess/i.test(html) || !/js\/platform-access\.js/i.test(html)) {
-    ok = fail("Existing auth/platform guards must remain") && ok;
+  if (!/js\/platform-access\.js/i.test(html) || !/js\/auth\.js/i.test(html) ||
+      !/location\.replace\(["']account\.html["']\)/.test(html)) {
+    ok = fail("Maintenance page must retain auth scripts and stay UX-inaccessible") && ok;
   } else {
-    ok = pass("Existing auth/platform guards remain") && ok;
+    ok = pass("Maintenance page retains auth scripts and stays UX-inaccessible") && ok;
   }
 
   if (/rewriteMaintenance|AiWritingEngine/i.test(html + store)) {

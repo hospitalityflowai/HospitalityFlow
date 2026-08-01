@@ -434,10 +434,11 @@ async function run() {
   } else {
     ok = pass("Handover allows public Demo Mode guest boot") && ok;
   }
-  if (!/href="maintenance\.html"/.test(accountHtml)) {
-    ok = fail("Authenticated hotel account must still link to Maintenance") && ok;
+  if (!/id="workspace-tool-maintenance"[\s\S]*?hidden/.test(accountHtml) ||
+      !/workspace-tool--hidden/.test(accountHtml)) {
+    ok = fail("Authenticated hotel account must keep Maintenance link hidden from UX") && ok;
   } else {
-    ok = pass("Authenticated hotel workspace still includes Maintenance") && ok;
+    ok = pass("Authenticated hotel workspace hides Maintenance from product UX") && ok;
   }
 
   // --- Static: no Zetter coupling / public demo scope ---
@@ -1621,26 +1622,27 @@ async function run() {
     ok = pass("11. No demo action persists data") && ok;
   }
 
-  // 12–13: Real Zetter / Pilot Lab Maintenance unchanged (account still links; maintenance page intact)
-  if (!/maintenance\.html/.test(accountHtmlForNav)) {
-    ok = fail("12. Real workspace Maintenance link must remain on account") && ok;
+  // 12–13: Maintenance code retained but inaccessible; Pilot Lab Handover/Brain stay available
+  if (!/id="workspace-tool-maintenance"[\s\S]*?hidden/.test(accountHtmlForNav) ||
+      !/location\.replace\(["']account\.html["']\)/.test(maintenanceHtml)) {
+    ok = fail("12. Maintenance must remain in codebase but inaccessible from UX") && ok;
   } else {
-    ok = pass("12. Real Zetter Maintenance remains unchanged") && ok;
+    ok = pass("12. Maintenance retained but inaccessible from product UX") && ok;
   }
   if (!/function loadPage|Report Issue|issue-detail/i.test(maintenanceHtml) ||
       /hf-demo-brain-readonly/.test(maintenanceHtml)) {
-    ok = fail("13. Pilot Lab / production Maintenance module must remain intact") && ok;
+    ok = fail("13. Pilot Lab / production Maintenance module code must remain intact") && ok;
   } else {
-    ok = pass("13. Pilot Lab Maintenance remains unchanged") && ok;
+    ok = pass("13. Pilot Lab Maintenance module code remains intact") && ok;
   }
 
-  // 14: Production navigation unchanged (account still has Maintenance; demo banner is separate)
-  if (!/maintenance\.html/.test(accountHtmlForNav) ||
-      !/hotel-profile\.html/.test(accountHtmlForNav) ||
-      !/handover\.html/.test(accountHtmlForNav)) {
-    ok = fail("14. Production navigation must remain unchanged") && ok;
+  // 14: Production navigation exposes Handover + Hotel Brain only
+  if (!/hotel-profile\.html/.test(accountHtmlForNav) ||
+      !/handover\.html/.test(accountHtmlForNav) ||
+      !/id="workspace-tool-maintenance"[\s\S]*?hidden/.test(accountHtmlForNav)) {
+    ok = fail("14. Production navigation must expose Handover + Hotel Brain only") && ok;
   } else {
-    ok = pass("14. Production navigation remains unchanged") && ok;
+    ok = pass("14. Production navigation exposes Handover + Hotel Brain only") && ok;
   }
 
   // —— Hotel Brain demo simplification + full read-only ——
