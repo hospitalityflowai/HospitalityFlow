@@ -29,7 +29,8 @@
  *   → return IntelligenceResult
  *
  * Wired today (safely): adapt, normalise (neutral facts), lifecycle flags,
- * M4 cross-dedupe when callers use it, rank, recommend, result shape.
+ * M4 cross-dedupe when callers use it, rank (incl. operational impact),
+ * recommend, result shape, operational object grouping, snapshot extract.
  * Not moved yet: Handover section classification, Writing same-source merge,
  * full EntityReference graphs, conflict detection.
  *
@@ -119,7 +120,7 @@
 
   var ENGINE_VERSION = 1;
   var CONTRACT_VERSION = "E1";
-  var MAX_RECOMMENDATIONS = 6;
+  var MAX_RECOMMENDATIONS = 8;
   var MAX_CHECKLIST_ITEMS = 16;
 
   var PRIORITY_RANK = { urgent: 0, high: 1, normal: 2, low: 3 };
@@ -863,6 +864,1368 @@
       note.operationalSubject = eng.subject || (note.fact && note.fact.subject) || "";
     }
     return note;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /*  Phase 1 / E4 — Operational impact ranking, objects, snapshot       */
+  /* ------------------------------------------------------------------ */
+
+  /**
+   * Operational object kinds a Duty Manager clusters related facts into.
+   * Presentation may still show separate lines; reasoning groups by these.
+   */
+  var OPERATIONAL_OBJECT_TYPE = {
+    vip: "vip",
+    payment: "payment",
+    maintenance: "maintenance",
+    wake_up: "wake_up",
+    transport: "transport",
+    departure: "departure",
+    timed: "timed",
+    interconnect: "interconnect",
+    guest_request: "guest_request",
+    reception: "reception",
+    other: "other"
+  };
+
+  var HOTEL_STATUS_LEVEL = {
+    normal: "normal",
+    attention: "attention",
+    critical: "critical"
+  };
+
+  var BRIEFING_MAX_BLOCKS = 5;
+
+  function firstSnapshotMatch(text, patterns) {
+    for (var i = 0; i < patterns.length; i += 1) {
+      var match = text.match(patterns[i]);
+      if (match) return match;
+    }
+    return null;
+  }
+
+  function snapshotCapture(match) {
+    if (!match) return null;
+    for (var i = 1; i < match.length; i += 1) {
+      if (match[i] != null && match[i] !== "") return match[i];
+    }
+    return null;
+  }
+
+  /**
+   * Expand common hotel KPI shorthand before snapshot regex matching.
+   * Keeps uncertainty: does not invent values; only normalises tokens.
+   */
+  function expandSnapshotShorthand(text) {
+    var result = String(text || "");
+    result = result
+      .replace(/\binhouse\b/gi, "in-house")
+      .replace(/\bstayovers?\b/gi, "stayovers")
+      .replace(/\bstays?\b(?=\s*[:\-]?\s*\d)/gi, "stayovers")
+      .replace(/\bocc\b(?=\s*[:\-]?\s*\d)/gi, "occupancy")
+      .replace(/\b(?:rooms?\s+)?sold\b(?=\s*[:\-]?\s*\d)/gi, "rooms sold")
+      .replace(/\b(?:rooms?\s+)?avail(?:able)?\b(?=\s*[:\-]?\s*\d)/gi, "rooms available")
+      .replace(/\barrs\b(?=\s*[:\-]?\s*\d)/gi, "arrivals")
+      .replace(/\bdeps\b(?=\s*[:\-]?\s*\d)/gi, "departures")
+      /* Bare arr/dep counts — not arrival times (arr 22:00 / arr ~2345 / late arr). */
+      .replace(/\barr\b(?=\s*[:\-]?\s*\d{1,3}(?![:.\d]))/gi, "arrivals")
+      .replace(/\bdep\b(?=\s*[:\-]?\s*\d{1,3}(?![:.\d]))/gi, "departures")
+      .replace(/(\d{1,3})\s+arrs?\b(?!\s*[:.]\d)/gi, "$1 arrivals")
+      .replace(/(\d{1,3})\s+deps?\b(?!\s*[:.]\d)/gi, "$1 departures")
+      .replace(/(\d{1,3})\s+sold\b/gi, "$1 rooms sold")
+      .replace(/(\d{1,3})\s+avail(?:able)?\b/gi, "$1 rooms available")
+      .replace(/(\d{1,3})\s+stay(?:overs?)?\b/gi, "$1 stayovers")
+      .replace(/(\d+(?:\.\d+)?)\s*%?\s*occ\b/gi, "$1% occupancy");
+    return result;
+  }
+
+  /**
+   * Shared Hotel Snapshot extraction (KPI facts only).
+   * Recognises full phrases and common shorthand (arr/dep/stay/occ/sold/avail).
+   * Never invents missing KPIs — absent match → null.
+   */
+  function extractHotelSnapshot(notesText) {
+    var text = expandSnapshotShorthand(String(notesText || ""));
+    var normalized = text.replace(/\s+/g, " ").trim();
+
+    var arrivalsMatch = firstSnapshotMatch(normalized, [
+      /(?:expected\s+)?arrivals?\s*(?:today|tomorrow|tonight|left|remain(?:ing)?)?\s*[:\-]?\s*(\d+)/i,
+      /arrivals?\s*[:\-]\s*(\d+)/i,
+      /(\d+)\s+arrivals?/i
+    ]);
+    var departuresMatch = firstSnapshotMatch(normalized, [
+      /(?:expected\s+)?departures?\s*(?:today|tomorrow|tonight)?\s*[:\-]?\s*(\d+)/i,
+      /departures?\s*[:\-]\s*(\d+)/i,
+      /(\d+)\s+departures?/i,
+      /(?:check[\s-]?outs?|checkouts?)\s*[:\-]?\s*(\d+)/i,
+      /(\d+)\s+(?:check[\s-]?outs?|checkouts?)/i
+    ]);
+    var inHouseMatch = firstSnapshotMatch(normalized, [
+      /(\d+)\s+in[\s-]?house\s+guests?/i,
+      /in[\s-]?house\s+guests?\s*[:\-]?\s*(\d+)/i,
+      /(\d+)\s+guests?\s+in[\s-]?house/i,
+      /guests?\s+in[\s-]?house\s*[:\-]?\s*(\d+)/i,
+      /in[\s-]?house\s*[:\-]?\s*(\d+)/i
+    ]);
+    var adultsMatch = firstSnapshotMatch(normalized, [
+      /(\d+)\s+adults?/i,
+      /adults?\s*[:\-]?\s*(\d+)/i
+    ]);
+    var childrenMatch = firstSnapshotMatch(normalized, [
+      /(\d+)\s+children\b/i,
+      /(\d+)\s+child\b/i,
+      /children\s*[:\-]?\s*(\d+)/i,
+      /child(?:ren)?\s*[:\-]?\s*(\d+)/i
+    ]);
+    var occupancyMatch = firstSnapshotMatch(normalized, [
+      /occupancy\s*[:\-]?\s*(\d+(?:\.\d+)?)\s*(?:%|percent)?/i,
+      /(\d+(?:\.\d+)?)\s*%\s+occupancy/i,
+      /occupancy\s+at\s+(\d+(?:\.\d+)?)/i
+    ]);
+    var adrMatch = firstSnapshotMatch(normalized, [
+      /adr\s*[:\-]?\s*([£$€])?\s*(\d+(?:\.\d+)?)/i,
+      /average\s+daily\s+rate\s*[:\-]?\s*([£$€])?\s*(\d+(?:\.\d+)?)/i,
+      /([£$€])\s*(\d+(?:\.\d+)?)\s+adr/i
+    ]);
+    var adr = null;
+    if (adrMatch) {
+      adr = {
+        currency: adrMatch[2] ? (adrMatch[1] || "£") : "£",
+        value: adrMatch[2] || adrMatch[1]
+      };
+    }
+    var roomsSoldMatch = firstSnapshotMatch(normalized, [
+      /(\d+)\s+rooms?\s+sold/i,
+      /rooms?\s+sold\s*[:\-]?\s*(\d+)/i
+    ]);
+    var revparMatch = firstSnapshotMatch(normalized, [
+      /revpar\s*[:\-]?\s*([£$€])?\s*(\d+(?:\.\d+)?)/i,
+      /([£$€])\s*(\d+(?:\.\d+)?)\s+revpar/i
+    ]);
+    var revpar = null;
+    if (revparMatch) {
+      revpar = {
+        currency: revparMatch[2] ? (revparMatch[1] || "£") : "£",
+        value: revparMatch[2] || revparMatch[1]
+      };
+    }
+    var stayoversMatch = firstSnapshotMatch(normalized, [
+      /(\d+)\s+stayovers?/i,
+      /stayovers?\s*[:\-]?\s*(\d+)/i
+    ]);
+    var roomsAvailableMatch = firstSnapshotMatch(normalized, [
+      /(\d+)\s+rooms?\s+available/i,
+      /rooms?\s+available\s*[:\-]?\s*(\d+)/i
+    ]);
+
+    return {
+      arrivals: snapshotCapture(arrivalsMatch),
+      departures: snapshotCapture(departuresMatch),
+      inHouse: snapshotCapture(inHouseMatch),
+      adults: snapshotCapture(adultsMatch),
+      children: snapshotCapture(childrenMatch),
+      occupancy: snapshotCapture(occupancyMatch),
+      adr: adr,
+      revpar: revpar,
+      roomsSold: snapshotCapture(roomsSoldMatch),
+      roomsAvailable: snapshotCapture(roomsAvailableMatch),
+      stayovers: snapshotCapture(stayoversMatch)
+    };
+  }
+
+  function factSourceText(fact, note) {
+    return String(
+      (fact && (fact.sourceText || fact.detail || fact.action)) ||
+      (note && (note.original || note.text)) ||
+      ""
+    );
+  }
+
+  function factRoomsList(fact, note) {
+    var rooms = [];
+    if (fact) {
+      if (Array.isArray(fact.rooms)) {
+        fact.rooms.forEach(function (r) {
+          var n = normalizeRoomNumber(r && r.id != null ? r.id : r);
+          if (n) rooms.push(n);
+        });
+      }
+      if (fact.room) {
+        var one = normalizeRoomNumber(
+          typeof fact.room === "object" ? (fact.room.id || fact.room.label) : fact.room
+        );
+        if (one) rooms.push(one);
+      }
+    }
+    if (note && Array.isArray(note.rooms)) {
+      note.rooms.forEach(function (r) {
+        var n = normalizeRoomNumber(r);
+        if (n) rooms.push(n);
+      });
+    }
+    var seen = {};
+    return rooms.filter(function (r) {
+      if (seen[r]) return false;
+      seen[r] = true;
+      return true;
+    });
+  }
+
+  function factGuestName(fact, note) {
+    if (fact && fact.guestName) return trimText(fact.guestName);
+    if (fact && fact.guest) {
+      if (typeof fact.guest === "string") return trimText(fact.guest);
+      return trimText(fact.guest.name || fact.guest.label || "");
+    }
+    if (note && note.guestName) return trimText(note.guestName);
+    return "";
+  }
+
+  function normalizeSubjectToken(value) {
+    return trimText(value).toLowerCase().replace(/[\s-]+/g, "_");
+  }
+
+  /**
+   * Classify a fact into a Duty Manager operational object kind.
+   * Prefer evidence in subject/source; low-evidence → other (not guessed VIP/payment).
+   */
+  function classifyOperationalObject(fact, note) {
+    fact = fact || {};
+    note = note || null;
+    var subject = normalizeSubjectToken(fact.subject || fact.subjectType || "");
+    var src = factSourceText(fact, note).toLowerCase();
+    var section = trimText((note && note.section) || fact.sectionHint || "").toLowerCase();
+    var confidence = "high";
+
+    if (subject === "vip_arrival" || section === "vip" || (note && note.isVip) ||
+        (/\bvip\b/.test(src) && /arriv|due|prep|amenity|champagne|welcome/.test(src)) ||
+        (/\bchampagne\b|\bwelcome\s+card\b/.test(src) && !/\bminibar|balance|declined|wake|taxi\b/.test(src))) {
+      return {
+        type: OPERATIONAL_OBJECT_TYPE.vip,
+        confidence: /\bvip\b/.test(src) || subject === "vip_arrival" ? "high" : "medium"
+      };
+    }
+    /* Pure collection notes may extract as departure_followup — keep them payments. */
+    var paymentCue = /\b(minibar|city\s+tax|outstanding|folio|balance|booking\.com|expedia|declined)\b/.test(src) ||
+      subject === "payment" || subject === "outstanding_balance" || subject === "payment_balance" ||
+      subject === "financial_settlement_unclear" || subject === "invoice" || subject === "folio" ||
+      subject === "charge" || subject === "bill" ||
+      (/\badapter\b/.test(src) && /\b(?:£|\$|€|\d+|charge|posted|not\s+posted|collect)\b/.test(src));
+    var timedDepartureCue = /\bwake\b/.test(src) || /\baddison|taxi|transfer\b/.test(src) ||
+      subject === "wake_up" || subject === "transfer";
+    if (paymentCue && !timedDepartureCue &&
+        (subject === "departure_followup" || section === "payments" || subject === "inventory" || paymentCue)) {
+      return { type: OPERATIONAL_OBJECT_TYPE.payment, confidence: "high" };
+    }
+    if (subject === "departure_followup" ||
+        (/\bwake\b/.test(src) && /\b(addison|taxi|transfer)\b/.test(src))) {
+      var components = [];
+      if (/\bwake\b/.test(src) || subject === "wake_up") components.push("wake_up");
+      if (/\baddison|taxi|transfer\b/.test(src) || subject === "transfer") components.push("transport");
+      if (/\bminibar|balance|city\s+tax|collect\b/.test(src)) components.push("payment");
+      return {
+        type: OPERATIONAL_OBJECT_TYPE.departure,
+        confidence: "high",
+        components: components.length ? components : ["departure"]
+      };
+    }
+    if (subject === "wake_up" || /\bwake(?:[\s-]*up)?\b/.test(src)) {
+      return { type: OPERATIONAL_OBJECT_TYPE.wake_up, confidence: "high" };
+    }
+    if (subject === "transfer" || /\baddison(?:\s+lee)?\b|\btaxi\b|\btransfer\b/.test(src)) {
+      return { type: OPERATIONAL_OBJECT_TYPE.transport, confidence: "high" };
+    }
+    if (
+      subject === "payment" || subject === "outstanding_balance" || subject === "payment_balance" ||
+      subject === "invoice" || subject === "folio" || subject === "bill" ||
+      section === "payments" ||
+      /\b(minibar|city\s+tax|outstanding|folio|balance|booking\.com|expedia)\b/.test(src)
+    ) {
+      return { type: OPERATIONAL_OBJECT_TYPE.payment, confidence: subject || section === "payments" ? "high" : "medium" };
+    }
+    if (subject === "maintenance" || section === "maintenance") {
+      return { type: OPERATIONAL_OBJECT_TYPE.maintenance, confidence: "high" };
+    }
+    if (subject === "interconnect" || subject === "guest_preparation") {
+      return { type: OPERATIONAL_OBJECT_TYPE.interconnect, confidence: "high" };
+    }
+    if (subject === "guest_request" || subject === "room_move" || subject === "twin_setup" ||
+        subject === "late_checkout" || subject === "lost_property" || subject === "delivery") {
+      return { type: OPERATIONAL_OBJECT_TYPE.guest_request, confidence: "high" };
+    }
+    if (subject === "no_show" || subject === "late_arrival" ||
+        /arrivals?\s+left|allocation|no-show|late\s+arr(?:ival)?\b/.test(src)) {
+      return {
+        type: OPERATIONAL_OBJECT_TYPE.reception,
+        confidence: /no-show|arrivals?\s+left|late\s+arr/.test(src) ? "high" : "medium"
+      };
+    }
+    confidence = subject ? "medium" : "low";
+    return { type: OPERATIONAL_OBJECT_TYPE.other, confidence: confidence };
+  }
+
+  function extractMoneyAmount(fact, note) {
+    var src = factSourceText(fact, note);
+    var details = (fact && fact.details) || [];
+    for (var i = 0; i < details.length; i += 1) {
+      if (details[i] && details[i].type === "money" && details[i].value != null) {
+        var fromDetail = parseFloat(String(details[i].value).replace(/[^\d.]/g, ""), 10);
+        if (!isNaN(fromDetail)) return fromDetail;
+      }
+    }
+    var m = src.match(/([£$€])\s*([\d,]+(?:\.\d{1,2})?)/) ||
+      src.match(/\b(?:outstanding|balance|collect|charge|declined)\D{0,12}([£$€])?\s*([\d,]+(?:\.\d{1,2})?)/i) ||
+      src.match(/\b([\d,]+(?:\.\d{1,2})?)\s*(?:pounds?|gbp)\b/i);
+    if (!m) return null;
+    var raw = m[2] != null && m[2] !== "" && !/^[£$€]$/.test(m[2]) ? m[2] : (m[1] && !/^[£$€]$/.test(m[1]) ? m[1] : m[2] || m[1]);
+    if (raw && /^[£$€]$/.test(raw)) raw = m[2] || m[3];
+    var n = parseFloat(String(raw || "").replace(/,/g, ""), 10);
+    return isNaN(n) ? null : n;
+  }
+
+  function hasDeclinedPaymentEvidence(fact, note) {
+    var src = factSourceText(fact, note).toLowerCase();
+    return /\bdeclined\b/.test(src) && /\b(?:card|payment|pdq|pos|authoris|authoriz)\b/.test(src) ||
+      /\bcard\s+declined\b/.test(src) ||
+      /\bpayment\s+(?:failed|declined)\b/.test(src);
+  }
+
+  function isGuestImpactingMaintenance(fact, note) {
+    var subject = normalizeSubjectToken(fact && (fact.subject || fact.subjectType) || "");
+    var impact = trimText(fact && fact.guestImpact || "").toLowerCase();
+    var fault = trimText(fact && fact.faultType || "").toLowerCase();
+    var src = factSourceText(fact, note).toLowerCase();
+    if (subject !== "maintenance" && !/maint|fault|broken|leak|hot\s*water|heating|ac\b|air\s*con|not cooling|on hold/.test(src)) {
+      return false;
+    }
+    if (impact === "high" || impact === "critical") return true;
+    if (fault === "ac" || fault === "hot water" || fault === "hot_water" || fault === "shower/leak" || fault === "heating") {
+      return true;
+    }
+    return /hot\s*water|no\s+hot\s+water|not cooling|ac\b|air\s*con|on hold|unavailable|leak|unhappy|guest\s+impact/.test(src);
+  }
+
+  function isHighFinancialRisk(fact, note) {
+    var amount = extractMoneyAmount(fact, note);
+    if (hasDeclinedPaymentEvidence(fact, note)) return true;
+    if (amount != null && amount >= 100) return true;
+    return false;
+  }
+
+  /**
+   * Combined operational impact (lower = higher priority).
+   * Considers guest impact, financial risk, VIP readiness, timed actions,
+   * unresolved maintenance and departure dependency — not note order.
+   *
+   * @returns {{ score: number, canonicalPriority: string, objectType: string, confidence: string, reasons: string[] }}
+   */
+  function scoreOperationalImpact(factOrEntry, note) {
+    var entry = factOrEntry && factOrEntry.fact ? factOrEntry : null;
+    var fact = entry ? entry.fact : (factOrEntry || {});
+    var hostNote = note || (entry && entry.note) || null;
+    var topic = entry && entry.topic ? String(entry.topic) : "";
+    var subject = normalizeSubjectToken(fact.subject || fact.subjectType || "");
+    var impact = trimText(fact.guestImpact || "").toLowerCase();
+    var priority = toCanonicalPriority(
+      fact.priority || fact.canonicalPriority ||
+      (hostNote && hostNote.maintenancePriority) || ""
+    );
+    var src = factSourceText(fact, hostNote).toLowerCase();
+    var objectInfo = classifyOperationalObject(fact, hostNote);
+    var reasons = [];
+    var score = 90;
+    var confidence = objectInfo.confidence || "medium";
+    var amount = extractMoneyAmount(fact, hostNote);
+    var guestMaint = isGuestImpactingMaintenance(fact, hostNote);
+    var highFinance = (
+      objectInfo.type === OPERATIONAL_OBJECT_TYPE.payment ||
+      subject === "payment" || subject === "outstanding_balance" || subject === "payment_balance" ||
+      topic === "payment"
+    ) && isHighFinancialRisk(fact, hostNote);
+
+    if (topic === "critical" || impact === "critical" || priority === CANONICAL_PRIORITY.critical) {
+      score = 0;
+      reasons.push("critical_impact");
+    } else if (guestMaint) {
+      var fault = trimText(fact.faultType || "").toLowerCase();
+      if (fault === "ac" || fault === "hot water" || /hot\s*water|not cooling|\bac\b|air\s*con/.test(src)) {
+        score = 10;
+        reasons.push("guest_impacting_maintenance");
+      } else if (/on hold|unavailable/.test(src) || fault === "safe") {
+        score = 16;
+        reasons.push("room_unavailable_maintenance");
+      } else {
+        score = 14;
+        reasons.push("guest_impacting_maintenance");
+      }
+      if (/depart|check[\s-]?out|extended\s+check/.test(src)) reasons.push("departure_dependency");
+    } else if (highFinance) {
+      score = 20;
+      reasons.push("high_financial_risk");
+      if (hasDeclinedPaymentEvidence(fact, hostNote)) reasons.push("declined_payment");
+      if (/depart|check[\s-]?out|before\s+departure/.test(src)) reasons.push("departure_dependency");
+    } else if (objectInfo.type === OPERATIONAL_OBJECT_TYPE.vip || subject === "vip_arrival") {
+      score = 30;
+      reasons.push("vip_readiness");
+      if (/champagne|welcome\s+card|amenity|quiet/.test(src)) reasons.push("outstanding_vip_prep");
+    } else if (
+      objectInfo.type === OPERATIONAL_OBJECT_TYPE.wake_up ||
+      objectInfo.type === OPERATIONAL_OBJECT_TYPE.transport ||
+      objectInfo.type === OPERATIONAL_OBJECT_TYPE.departure ||
+      objectInfo.type === OPERATIONAL_OBJECT_TYPE.timed ||
+      subject === "wake_up" || subject === "departure_followup" || subject === "transfer"
+    ) {
+      score = 40;
+      reasons.push("timed_guest_action");
+    } else if (
+      objectInfo.type === OPERATIONAL_OBJECT_TYPE.payment ||
+      subject === "payment" || subject === "outstanding_balance" || subject === "payment_balance" ||
+      topic === "payment" ||
+      (/\badapter\b/.test(src) && amount != null)
+    ) {
+      score = 50;
+      reasons.push("payment_before_departure");
+    } else if (
+      objectInfo.type === OPERATIONAL_OBJECT_TYPE.interconnect ||
+      subject === "interconnect" || subject === "guest_preparation" ||
+      /tomorrow|tmrw/.test(src)
+    ) {
+      score = 60;
+      reasons.push("tomorrow_prep");
+    } else if (subject === "maintenance" || objectInfo.type === OPERATIONAL_OBJECT_TYPE.maintenance) {
+      score = 70;
+      reasons.push("maintenance_follow_up");
+    } else if (
+      topic === "guest" || subject === "guest_request" || subject === "lost_property" ||
+      subject === "late_checkout" || subject === "room_move" ||
+      objectInfo.type === OPERATIONAL_OBJECT_TYPE.guest_request
+    ) {
+      score = 80;
+      reasons.push("guest_follow_up");
+    } else if (objectInfo.type === OPERATIONAL_OBJECT_TYPE.reception) {
+      score = 85;
+      reasons.push("reception_ops");
+    } else {
+      confidence = confidence === "high" ? "medium" : confidence;
+      if (!subject && !src) {
+        confidence = "low";
+        reasons.push("insufficient_evidence");
+      } else {
+        reasons.push("general");
+      }
+    }
+
+    var canonicalPriority = CANONICAL_PRIORITY.normal;
+    if (score <= 10) canonicalPriority = CANONICAL_PRIORITY.critical;
+    else if (score <= 50) canonicalPriority = CANONICAL_PRIORITY.high;
+    else if (score <= 85) canonicalPriority = CANONICAL_PRIORITY.normal;
+    else canonicalPriority = CANONICAL_PRIORITY.low;
+
+    return {
+      score: score,
+      canonicalPriority: canonicalPriority,
+      objectType: objectInfo.type,
+      components: objectInfo.components || [],
+      confidence: confidence,
+      reasons: reasons,
+      moneyAmount: amount
+    };
+  }
+
+  function compareByOperationalImpact(a, b) {
+    var scoreA = scoreOperationalImpact(a).score;
+    var scoreB = scoreOperationalImpact(b).score;
+    if (scoreA !== scoreB) return scoreA - scoreB;
+    var roomsA = factRoomsList(a && a.fact ? a.fact : a, a && a.note).join(",");
+    var roomsB = factRoomsList(b && b.fact ? b.fact : b, b && b.note).join(",");
+    if (roomsA !== roomsB) return roomsA < roomsB ? -1 : 1;
+    return 0;
+  }
+
+  function operationalObjectGroupKey(fact, note, objectInfo) {
+    var type = (objectInfo && objectInfo.type) || OPERATIONAL_OBJECT_TYPE.other;
+    var rooms = factRoomsList(fact, note);
+    var guest = factGuestName(fact, note).toLowerCase();
+    var subject = normalizeSubjectToken(fact && (fact.subject || fact.subjectType) || "");
+    var fault = trimText((fact && fact.faultType) || "").toLowerCase();
+    if (type === OPERATIONAL_OBJECT_TYPE.vip) {
+      return ["vip", guest || rooms[0] || subject || "unknown"].join("|");
+    }
+    if (type === OPERATIONAL_OBJECT_TYPE.maintenance) {
+      return ["maintenance", rooms[0] || "area", fault || subject || "issue"].join("|");
+    }
+    if (type === OPERATIONAL_OBJECT_TYPE.payment) {
+      return ["payment", rooms[0] || guest || "folio"].join("|");
+    }
+    if (
+      type === OPERATIONAL_OBJECT_TYPE.wake_up ||
+      type === OPERATIONAL_OBJECT_TYPE.transport ||
+      type === OPERATIONAL_OBJECT_TYPE.departure
+    ) {
+      return ["departure", rooms[0] || guest || "guest"].join("|");
+    }
+    if (type === OPERATIONAL_OBJECT_TYPE.interconnect) {
+      return ["interconnect", guest || rooms.slice().sort().join("+") || "group"].join("|");
+    }
+    return [type, rooms[0] || guest || subject || "item"].join("|");
+  }
+
+  /**
+   * Group related facts into operational objects (VIP, payment, maintenance,
+   * wake-up/transport departure bundles, etc.). Never merges incompatible money
+   * or conflicting rooms. Low-confidence orphans stay as singleton objects.
+   */
+  function groupIntoOperationalObjects(items) {
+    var groups = {};
+    var order = [];
+
+    (items || []).forEach(function (item, index) {
+      if (!item) return;
+      var fact = item.fact || item;
+      var note = item.note || (item.fact ? item : null);
+      if (!fact || typeof fact !== "object") return;
+      var objectInfo = classifyOperationalObject(fact, note);
+      var impact = scoreOperationalImpact(item, note);
+      var key = operationalObjectGroupKey(fact, note, objectInfo);
+      if (impact.confidence === "low" && objectInfo.type === OPERATIONAL_OBJECT_TYPE.other) {
+        key = key + "|orphan|" + index;
+      }
+      if (!groups[key]) {
+        groups[key] = {
+          id: key,
+          type: objectInfo.type,
+          components: (objectInfo.components || []).slice(),
+          rooms: factRoomsList(fact, note),
+          guestName: factGuestName(fact, note),
+          factIds: [],
+          facts: [],
+          items: [],
+          impactScore: impact.score,
+          canonicalPriority: impact.canonicalPriority,
+          confidence: impact.confidence,
+          reasons: impact.reasons.slice()
+        };
+        order.push(key);
+      }
+      var group = groups[key];
+      var factId = (note && note._neutralFactId) || fact.id || ("fact-" + index);
+      if (group.factIds.indexOf(factId) === -1) group.factIds.push(factId);
+      group.facts.push(fact);
+      group.items.push(item);
+      if (impact.score < group.impactScore) {
+        group.impactScore = impact.score;
+        group.canonicalPriority = impact.canonicalPriority;
+      }
+      if (impact.confidence === "low") group.confidence = "low";
+      else if (impact.confidence === "medium" && group.confidence === "high") {
+        group.confidence = "medium";
+      }
+      (objectInfo.components || []).forEach(function (c) {
+        if (group.components.indexOf(c) === -1) group.components.push(c);
+      });
+      factRoomsList(fact, note).forEach(function (r) {
+        if (group.rooms.indexOf(r) === -1) group.rooms.push(r);
+      });
+      if (!group.guestName) group.guestName = factGuestName(fact, note);
+    });
+
+    var list = order.map(function (key) { return groups[key]; });
+
+    /* Merge amenity-only VIP fragments into the primary VIP object. */
+    var primaryVip = null;
+    list.forEach(function (g) {
+      if (g.type !== OPERATIONAL_OBJECT_TYPE.vip) return;
+      if (!primaryVip || (g.rooms && g.rooms.length && !(primaryVip.rooms && primaryVip.rooms.length))) {
+        primaryVip = g;
+      }
+    });
+    if (primaryVip) {
+      list = list.filter(function (g) {
+        if (g === primaryVip || g.type !== OPERATIONAL_OBJECT_TYPE.vip) return true;
+        var src = objectSourceBlob(g);
+        if (!/\bchampagne\b|\bwelcome\s+card\b|\bamenity\b/.test(src)) return true;
+        (g.items || []).forEach(function (item) { primaryVip.items.push(item); });
+        (g.facts || []).forEach(function (f) { primaryVip.facts.push(f); });
+        (g.factIds || []).forEach(function (id) {
+          if (primaryVip.factIds.indexOf(id) === -1) primaryVip.factIds.push(id);
+        });
+        if (g.impactScore < primaryVip.impactScore) {
+          primaryVip.impactScore = g.impactScore;
+          primaryVip.canonicalPriority = g.canonicalPriority;
+        }
+        return false;
+      });
+    }
+
+    return list.sort(function (a, b) {
+      if (a.impactScore !== b.impactScore) return a.impactScore - b.impactScore;
+      return String(a.id).localeCompare(String(b.id));
+    });
+  }
+
+  function rankByOperationalImpact(items) {
+    return (items || []).slice().sort(compareByOperationalImpact);
+  }
+
+  function scoreOperationalObject(object) {
+    if (!object) return 90;
+    if (typeof object.impactScore === "number") return object.impactScore;
+    var items = object.items || [];
+    if (!items.length) return 90;
+    var best = 90;
+    items.forEach(function (item) {
+      var scored = scoreOperationalImpact(item).score;
+      if (scored < best) best = scored;
+    });
+    return best;
+  }
+
+  function objectPrimaryFact(object) {
+    if (!object || !object.items || !object.items.length) return null;
+    var sorted = object.items.slice().sort(compareByOperationalImpact);
+    return sorted[0] || null;
+  }
+
+  function objectSourceBlob(object) {
+    var parts = [];
+    (object && object.facts || []).forEach(function (f) {
+      if (f && f.sourceText) parts.push(String(f.sourceText));
+    });
+    (object && object.items || []).forEach(function (item) {
+      if (item && item.note && item.note.original) parts.push(String(item.note.original));
+    });
+    return parts.join(" | ").toLowerCase();
+  }
+
+  function buildPriorityActionSpec(object) {
+    var primary = objectPrimaryFact(object);
+    var fact = primary && primary.fact ? primary.fact : null;
+    var src = objectSourceBlob(object);
+    var room = (object.rooms && object.rooms[0]) || (fact && fact.rooms && fact.rooms[0]) || "";
+    var roomLabel = room ? "Room " + room : "";
+    var guest = object.guestName || (fact && fact.guestName) || "";
+    var amount = fact ? extractMoneyAmount(fact, primary && primary.note) : null;
+    var amountLabel = amount != null ? ("£" + amount.toFixed(amount % 1 ? 2 : 0)) : "";
+    var fault = trimText(fact && fact.faultType || "");
+    if (!fault && /hot\s*water/.test(src)) fault = "hot water";
+    if (!fault && /(?:\bac\b|air\s*con|not cooling)/.test(src)) fault = "AC";
+    var times = [];
+    var wake = src.match(/\bwake(?:[\s-]*up)?\s*(\d{3,4}|\d{1,2}[:.]\d{2}|\d{1,2}\s*(?:am|pm))/i);
+    var taxi = src.match(/\b(?:addison(?:\s+lee)?|taxi|transfer)\s*(\d{3,4}|\d{1,2}[:.]\d{2}|\d{1,2}\s*(?:am|pm))/i);
+    if (wake) times.push({ kind: "wake_up", raw: wake[1] });
+    if (taxi) times.push({ kind: "transport", raw: taxi[1] });
+
+    var actionKind = "follow_up";
+    var reasonKind = "";
+    var entities = {
+      room: room,
+      guestName: guest,
+      amount: amountLabel,
+      faultType: fault,
+      times: times,
+      components: (object.components || []).slice(),
+      amenities: []
+    };
+    if (/champagne/.test(src)) entities.amenities.push("champagne");
+    if (/welcome\s+card/.test(src)) entities.amenities.push("welcome card");
+    if (/quiet/.test(src)) entities.amenities.push("quiet upper-floor room");
+
+    if (object.type === OPERATIONAL_OBJECT_TYPE.maintenance || isGuestImpactingMaintenance(fact, primary && primary.note)) {
+      actionKind = "follow_up_maintenance";
+      reasonKind = /depart|check[\s-]?out|extended/.test(src) ? "before_departure_guest_impact" : "before_further_guest_impact";
+    } else if (
+      object.type === OPERATIONAL_OBJECT_TYPE.payment ||
+      objectLooksLikePayment(object) ||
+      (/\badapter\b/.test(src) && (amount != null || /\b(?:£|\$|€|\d+|charge|posted|collect)\b/.test(src)))
+    ) {
+      actionKind = /adapter/.test(src) ? "post_or_collect_charge" : "collect_payment";
+      reasonKind = hasDeclinedPaymentEvidence(fact, primary && primary.note)
+        ? "card_declined"
+        : (/adapter|not posted|post or collect/.test(src) ? "unposted_charge" : "before_departure");
+    } else if (object.type === OPERATIONAL_OBJECT_TYPE.vip) {
+      actionKind = "prepare_vip";
+      reasonKind = entities.amenities.length ? "outstanding_vip_prep" : "vip_arrival";
+    } else if (
+      object.type === OPERATIONAL_OBJECT_TYPE.departure ||
+      object.type === OPERATIONAL_OBJECT_TYPE.wake_up ||
+      object.type === OPERATIONAL_OBJECT_TYPE.transport ||
+      object.type === OPERATIONAL_OBJECT_TYPE.timed
+    ) {
+      actionKind = "complete_timed_actions";
+      reasonKind = "timed_departure";
+    } else if (object.type === OPERATIONAL_OBJECT_TYPE.interconnect) {
+      actionKind = "reserve_interconnect";
+      reasonKind = "tomorrow_arrival";
+    } else if (object.type === OPERATIONAL_OBJECT_TYPE.guest_request) {
+      actionKind = "guest_follow_up";
+      reasonKind = "";
+    } else {
+      actionKind = "operational_follow_up";
+    }
+
+    return {
+      objectId: object.id,
+      objectType: object.type,
+      impactScore: scoreOperationalObject(object),
+      canonicalPriority: object.canonicalPriority || toCanonicalPriority(""),
+      confidence: object.confidence || "medium",
+      factIds: (object.factIds || []).slice(),
+      rooms: (object.rooms || []).slice(),
+      actionKind: actionKind,
+      reasonKind: reasonKind,
+      entities: entities,
+      evidenceText: src
+    };
+  }
+
+  /**
+   * True when an extracted object still needs promotion into briefing/alerts/status.
+   * Prefers uncertainty over dropping valid open maintenance/payment/VIP/timed work.
+   */
+  function isResolvedNoiseObject(obj) {
+    if (!obj) return true;
+    var src = objectSourceBlob(obj);
+    if (!src) return false;
+    if (obj.type === OPERATIONAL_OBJECT_TYPE.payment ||
+        obj.type === OPERATIONAL_OBJECT_TYPE.maintenance ||
+        obj.type === OPERATIONAL_OBJECT_TYPE.vip ||
+        obj.type === OPERATIONAL_OBJECT_TYPE.departure ||
+        obj.type === OPERATIONAL_OBJECT_TYPE.wake_up ||
+        obj.type === OPERATIONAL_OBJECT_TYPE.transport ||
+        obj.type === OPERATIONAL_OBJECT_TYPE.timed) {
+      return false;
+    }
+    return /\b(?:settled|resolved|completed|done|closed)\b/.test(src) &&
+      !/\b(?:still|unresolved|monitor|follow|outstanding|needed|confirm|collect|prepare)\b/.test(src);
+  }
+
+  function isPromotableOperationalObject(obj) {
+    if (!obj) return false;
+    if (obj.confidence === "low" && obj.type === OPERATIONAL_OBJECT_TYPE.other) return false;
+    if (isResolvedNoiseObject(obj)) return false;
+    var src = objectSourceBlob(obj);
+    var primary = objectPrimaryFact(obj);
+    var fact = primary && primary.fact;
+    var subject = normalizeSubjectToken(fact && (fact.subject || fact.subjectType) || "");
+    if (
+      obj.type === OPERATIONAL_OBJECT_TYPE.maintenance ||
+      obj.type === OPERATIONAL_OBJECT_TYPE.payment ||
+      obj.type === OPERATIONAL_OBJECT_TYPE.vip ||
+      obj.type === OPERATIONAL_OBJECT_TYPE.departure ||
+      obj.type === OPERATIONAL_OBJECT_TYPE.wake_up ||
+      obj.type === OPERATIONAL_OBJECT_TYPE.transport ||
+      obj.type === OPERATIONAL_OBJECT_TYPE.timed ||
+      obj.type === OPERATIONAL_OBJECT_TYPE.interconnect ||
+      obj.type === OPERATIONAL_OBJECT_TYPE.guest_request ||
+      obj.type === OPERATIONAL_OBJECT_TYPE.reception
+    ) {
+      return true;
+    }
+    /* Promote evidence-backed "other" facts that were extracted with clear ops cues. */
+    if (
+      /hot\s*water|maint|fault|outstanding|declined|wake|taxi|vip|champagne|welcome\s+card|parcel|feather|late\s+check|adapter|arriv/i.test(src) ||
+      subject === "financial_settlement_unclear" || subject === "delivery" || subject === "late_checkout"
+    ) {
+      return true;
+    }
+    return scoreOperationalObject(obj) <= 85 && obj.confidence !== "low";
+  }
+
+  function objectLooksLikePayment(obj) {
+    if (!obj) return false;
+    if (obj.type === OPERATIONAL_OBJECT_TYPE.payment) return true;
+    var src = objectSourceBlob(obj);
+    var primary = objectPrimaryFact(obj);
+    var fact = primary && primary.fact;
+    var subject = normalizeSubjectToken(fact && (fact.subject || fact.subjectType) || "");
+    return subject === "payment" || subject === "outstanding_balance" || subject === "payment_balance" ||
+      subject === "financial_settlement_unclear" || subject === "invoice" || subject === "folio" ||
+      subject === "charge" ||
+      /\b(outstanding|declined|minibar|city\s+tax|folio|balance)\b/.test(src) ||
+      (/\badapter\b/.test(src) && /\b(?:£|\$|€|\d+|charge|posted|collect)\b/.test(src));
+  }
+
+  function objectLooksLikeMaintenance(obj) {
+    if (!obj) return false;
+    if (obj.type === OPERATIONAL_OBJECT_TYPE.maintenance) return true;
+    var primary = objectPrimaryFact(obj);
+    return isGuestImpactingMaintenance(primary && primary.fact, primary && primary.note) ||
+      /hot\s*water|maint|fault|broken|leak|not cooling|on hold|ac\b|air\s*con/.test(objectSourceBlob(obj));
+  }
+
+  /**
+   * Engine-owned Today's Briefing model: up to 5 highest-impact operational
+   * objects as action priorities. Writing formats; must not re-rank.
+   */
+  function buildBriefingModel(items, options) {
+    options = options || {};
+    var maxBlocks = options.maxBlocks != null ? options.maxBlocks : BRIEFING_MAX_BLOCKS;
+    var objects = groupIntoOperationalObjects(items || []);
+    var actionable = objects.filter(isPromotableOperationalObject).sort(function (a, b) {
+      var sa = scoreOperationalObject(a);
+      var sb = scoreOperationalObject(b);
+      if (sa !== sb) return sa - sb;
+      return String(a.id).localeCompare(String(b.id));
+    });
+
+    function typeFamily(obj) {
+      if (!obj) return "other";
+      if (objectLooksLikePayment(obj)) return OPERATIONAL_OBJECT_TYPE.payment;
+      if (objectLooksLikeMaintenance(obj)) return OPERATIONAL_OBJECT_TYPE.maintenance;
+      if (
+        obj.type === OPERATIONAL_OBJECT_TYPE.wake_up ||
+        obj.type === OPERATIONAL_OBJECT_TYPE.transport ||
+        obj.type === OPERATIONAL_OBJECT_TYPE.timed
+      ) {
+        return OPERATIONAL_OBJECT_TYPE.departure;
+      }
+      if (obj.type === OPERATIONAL_OBJECT_TYPE.reception) return OPERATIONAL_OBJECT_TYPE.guest_request;
+      return obj.type;
+    }
+
+    /*
+     * Diversify: best of each core ops family first, then fill by impact.
+     * Soft guest_request / reception amenity work must not crowd out a second
+     * payment, timed action, or interconnect when the briefing budget is tight.
+     */
+    var selected = [];
+    var seenIds = {};
+    var coreFamilies = [
+      OPERATIONAL_OBJECT_TYPE.maintenance,
+      OPERATIONAL_OBJECT_TYPE.payment,
+      OPERATIONAL_OBJECT_TYPE.vip,
+      OPERATIONAL_OBJECT_TYPE.departure,
+      OPERATIONAL_OBJECT_TYPE.interconnect
+    ];
+    function promotionWeight(obj) {
+      var family = typeFamily(obj);
+      if (family === OPERATIONAL_OBJECT_TYPE.maintenance || family === OPERATIONAL_OBJECT_TYPE.payment) return 0;
+      if (family === OPERATIONAL_OBJECT_TYPE.vip || family === OPERATIONAL_OBJECT_TYPE.departure) return 1;
+      if (family === OPERATIONAL_OBJECT_TYPE.interconnect) return 2;
+      if (family === OPERATIONAL_OBJECT_TYPE.guest_request) {
+        var src = objectSourceBlob(obj);
+        if (/complaint|noise|unhappy|late\s+check/.test(src)) return 2;
+        return 4;
+      }
+      return 3;
+    }
+    coreFamilies.forEach(function (family) {
+      if (selected.length >= maxBlocks) return;
+      var best = null;
+      actionable.forEach(function (obj) {
+        if (typeFamily(obj) !== family) return;
+        if (!best || scoreOperationalObject(obj) < scoreOperationalObject(best)) best = obj;
+      });
+      if (best && !seenIds[best.id]) {
+        selected.push(best);
+        seenIds[best.id] = true;
+      }
+    });
+    /* Additional payments / maint faults outrank soft guest requests for leftover slots. */
+    var remainder = actionable.filter(function (obj) { return !seenIds[obj.id]; }).sort(function (a, b) {
+      var wa = promotionWeight(a);
+      var wb = promotionWeight(b);
+      if (wa !== wb) return wa - wb;
+      var sa = scoreOperationalObject(a);
+      var sb = scoreOperationalObject(b);
+      if (sa !== sb) return sa - sb;
+      return String(a.id).localeCompare(String(b.id));
+    });
+    remainder.forEach(function (obj) {
+      if (selected.length >= maxBlocks) return;
+      selected.push(obj);
+      seenIds[obj.id] = true;
+    });
+    selected.sort(function (a, b) {
+      var sa = scoreOperationalObject(a);
+      var sb = scoreOperationalObject(b);
+      if (sa !== sb) return sa - sb;
+      return String(a.id).localeCompare(String(b.id));
+    });
+
+    var priorities = [];
+    selected.slice(0, maxBlocks).forEach(function (obj) {
+      var spec = buildPriorityActionSpec(obj);
+      /* Only suppress truly empty low-confidence unknowns — keep medium open work. */
+      if (spec.confidence === "low" && spec.objectType === OPERATIONAL_OBJECT_TYPE.other && priorities.length) {
+        return;
+      }
+      priorities.push(spec);
+    });
+
+    return {
+      priorities: priorities,
+      objects: objects,
+      maxBlocks: maxBlocks,
+      generatedFromObjectCount: objects.length
+    };
+  }
+
+  function statusLevelFromObjects(areaKey, objects) {
+    var level = HOTEL_STATUS_LEVEL.normal;
+    var supporting = [];
+    (objects || []).forEach(function (obj) {
+      if (!isPromotableOperationalObject(obj) && areaKey !== "vip_readiness") return;
+      var src = objectSourceBlob(obj);
+      var primary = objectPrimaryFact(obj);
+      var fact = primary && primary.fact;
+      if (areaKey === "guest_experience") {
+        if (objectLooksLikeMaintenance(obj) && isGuestImpactingMaintenance(fact, primary && primary.note)) {
+          supporting.push(obj);
+          level = HOTEL_STATUS_LEVEL.critical;
+        } else if (
+          (obj.type === OPERATIONAL_OBJECT_TYPE.guest_request || obj.type === OPERATIONAL_OBJECT_TYPE.reception) &&
+          /complaint|unhappy|noise|feather|bedding|guest\s+request|follow/i.test(src) &&
+          !isResolvedNoiseObject(obj)
+        ) {
+          supporting.push(obj);
+          if (level === HOTEL_STATUS_LEVEL.normal) level = HOTEL_STATUS_LEVEL.attention;
+        }
+      } else if (areaKey === "vip_readiness") {
+        if (obj.type === OPERATIONAL_OBJECT_TYPE.vip || /\bvip\b/.test(src)) {
+          supporting.push(obj);
+          if (/champagne|welcome\s+card|amenity|quiet|prepare|still\s+needed/.test(src) &&
+              !/\b(?:prepared|complete|done)\b/.test(src)) {
+            level = HOTEL_STATUS_LEVEL.attention;
+          } else if (level === HOTEL_STATUS_LEVEL.normal) {
+            level = HOTEL_STATUS_LEVEL.attention;
+          }
+        }
+      } else if (areaKey === "maintenance") {
+        if (objectLooksLikeMaintenance(obj) && !isResolvedNoiseObject(obj)) {
+          supporting.push(obj);
+          if (isGuestImpactingMaintenance(fact, primary && primary.note) ||
+              /hot\s*water|on hold|unavailable|ac\b|not cooling/.test(src)) {
+            level = HOTEL_STATUS_LEVEL.critical;
+          } else if (level === HOTEL_STATUS_LEVEL.normal) {
+            level = HOTEL_STATUS_LEVEL.attention;
+          }
+        }
+      } else if (areaKey === "revenue") {
+        if (objectLooksLikePayment(obj) && !isResolvedNoiseObject(obj)) {
+          supporting.push(obj);
+          if (isHighFinancialRisk(fact, primary && primary.note)) {
+            level = HOTEL_STATUS_LEVEL.critical;
+          } else if (level === HOTEL_STATUS_LEVEL.normal) {
+            level = HOTEL_STATUS_LEVEL.attention;
+          }
+        }
+      } else if (areaKey === "reception_operations") {
+        if (
+          obj.type === OPERATIONAL_OBJECT_TYPE.departure ||
+          obj.type === OPERATIONAL_OBJECT_TYPE.wake_up ||
+          obj.type === OPERATIONAL_OBJECT_TYPE.transport ||
+          obj.type === OPERATIONAL_OBJECT_TYPE.timed ||
+          obj.type === OPERATIONAL_OBJECT_TYPE.interconnect ||
+          obj.type === OPERATIONAL_OBJECT_TYPE.reception ||
+          (obj.type === OPERATIONAL_OBJECT_TYPE.guest_request &&
+            /late\s+check|room\s+move|allocation|no-show|arriv|parcel|delivery/.test(src))
+        ) {
+          supporting.push(obj);
+          if (level === HOTEL_STATUS_LEVEL.normal) level = HOTEL_STATUS_LEVEL.attention;
+        }
+      }
+    });
+    return { level: level, supporting: supporting };
+  }
+
+  function buildStatusSummaryIntent(areaKey, level, supporting) {
+    if (!supporting.length) {
+      return {
+        kind: areaKey + "_clear",
+        level: level,
+        room: "",
+        amount: "",
+        faultType: "",
+        guestName: "",
+        count: 0
+      };
+    }
+    var top = supporting.slice().sort(function (a, b) {
+      return scoreOperationalObject(a) - scoreOperationalObject(b);
+    })[0];
+    var primary = objectPrimaryFact(top);
+    var fact = primary && primary.fact;
+    var src = objectSourceBlob(top);
+    var amount = fact ? extractMoneyAmount(fact, primary && primary.note) : null;
+    var total = 0;
+    var moneyCount = 0;
+    if (areaKey === "revenue") {
+      supporting.forEach(function (obj) {
+        var p = objectPrimaryFact(obj);
+        var a = p && p.fact ? extractMoneyAmount(p.fact, p.note) : null;
+        if (a != null) {
+          total += a;
+          moneyCount += 1;
+        }
+      });
+      if (moneyCount) amount = total;
+    }
+    var fault = trimText(fact && fact.faultType || "");
+    if (!fault && /hot\s*water/.test(src)) fault = "hot water";
+    return {
+      kind: areaKey + "_open",
+      level: level,
+      room: (top.rooms && top.rooms[0]) || "",
+      amount: amount != null ? ("£" + Number(amount).toFixed(Number(amount) % 1 ? 2 : 0)) : "",
+      amountTotal: moneyCount ? ("£" + total.toFixed(2)) : "",
+      faultType: fault,
+      guestName: top.guestName || "",
+      count: supporting.length,
+      declined: supporting.some(function (obj) {
+        var p = objectPrimaryFact(obj);
+        return hasDeclinedPaymentEvidence(p && p.fact, p && p.note);
+      }),
+      amenities: (/champagne/.test(src) ? ["champagne"] : []).concat(/welcome\s+card/.test(src) ? ["welcome card"] : []),
+      timed: supporting.some(function (obj) {
+        return /wake|taxi|addison|transfer/.test(objectSourceBlob(obj));
+      })
+    };
+  }
+
+  /**
+   * Engine-owned Hotel Status model — levels from operational evidence only.
+   */
+  function buildHotelStatusModel(items) {
+    var objects = groupIntoOperationalObjects(items || []);
+    var areas = [
+      { key: "guest_experience", label: "Guest Experience" },
+      { key: "vip_readiness", label: "VIP Readiness" },
+      { key: "maintenance", label: "Maintenance" },
+      { key: "revenue", label: "Revenue" },
+      { key: "reception_operations", label: "Reception Operations" }
+    ];
+    return areas.map(function (area) {
+      var judged = statusLevelFromObjects(area.key, objects);
+      var summaryIntent = buildStatusSummaryIntent(area.key, judged.level, judged.supporting);
+      return {
+        key: area.key,
+        label: area.label,
+        level: judged.level,
+        summaryIntent: summaryIntent,
+        count: judged.supporting.length,
+        supportingFactIds: judged.supporting.reduce(function (acc, obj) {
+          return acc.concat(obj.factIds || []);
+        }, [])
+      };
+    });
+  }
+
+  /**
+   * Shift Alerts from distinct operational objects (not keyword / sentence counts).
+   */
+  function computeShiftAlertsFromObjects(items) {
+    var objects = groupIntoOperationalObjects(items || []);
+    var counts = {
+      urgent: 0,
+      vip: 0,
+      maintenance: 0,
+      payments: 0,
+      timedActions: 0,
+      guest: 0,
+      tasks: 0,
+      events: 0
+    };
+    var seen = {};
+
+    function bump(key, objectId) {
+      var token = key + "::" + objectId;
+      if (seen[token]) return;
+      seen[token] = true;
+      counts[key] += 1;
+    }
+
+    objects.forEach(function (obj) {
+      if (!isPromotableOperationalObject(obj) && obj.type !== OPERATIONAL_OBJECT_TYPE.vip) return;
+      var src = objectSourceBlob(obj);
+      var resolvedInfo = isResolvedNoiseObject(obj);
+      var primary = objectPrimaryFact(obj);
+
+      if (obj.type === OPERATIONAL_OBJECT_TYPE.vip || /\bvip\b/.test(src)) bump("vip", obj.id);
+      if (objectLooksLikeMaintenance(obj) && !resolvedInfo) {
+        bump("maintenance", obj.id);
+        if (isGuestImpactingMaintenance(primary && primary.fact, primary && primary.note)) {
+          bump("urgent", obj.id);
+        }
+      }
+      if (objectLooksLikePayment(obj) && !resolvedInfo) bump("payments", obj.id);
+      if (
+        obj.type === OPERATIONAL_OBJECT_TYPE.departure ||
+        obj.type === OPERATIONAL_OBJECT_TYPE.wake_up ||
+        obj.type === OPERATIONAL_OBJECT_TYPE.transport ||
+        obj.type === OPERATIONAL_OBJECT_TYPE.timed ||
+        (obj.components && (obj.components.indexOf("wake_up") !== -1 || obj.components.indexOf("transport") !== -1)) ||
+        /\bwake\b.+\b(?:taxi|addison|transfer)\b|\b(?:taxi|addison|transfer)\b.+\bwake\b/.test(src)
+      ) {
+        bump("timedActions", obj.id);
+        bump("events", obj.id);
+      }
+      if (
+        obj.type === OPERATIONAL_OBJECT_TYPE.guest_request ||
+        obj.type === OPERATIONAL_OBJECT_TYPE.reception ||
+        obj.type === OPERATIONAL_OBJECT_TYPE.vip ||
+        /late\s+check|late\s+arr|arriv/.test(src)
+      ) {
+        if (!resolvedInfo || obj.type === OPERATIONAL_OBJECT_TYPE.vip) bump("guest", obj.id);
+      }
+      if (
+        obj.type === OPERATIONAL_OBJECT_TYPE.guest_request ||
+        obj.type === OPERATIONAL_OBJECT_TYPE.interconnect ||
+        obj.type === OPERATIONAL_OBJECT_TYPE.reception ||
+        /parcel|package|delivery|adapter|task|bedding|feather|confirm prepared/.test(src)
+      ) {
+        if (!resolvedInfo || /parcel|package|delivery|adapter|bedding|feather/.test(src)) {
+          bump("tasks", obj.id);
+        }
+      }
+    });
+
+    return {
+      urgent: counts.urgent,
+      vip: counts.vip,
+      maintenance: counts.maintenance,
+      payments: counts.payments,
+      timedActions: counts.timedActions,
+      events: counts.timedActions,
+      tasks: counts.tasks,
+      guest: counts.guest,
+      display: {
+        urgent: counts.urgent,
+        guest: counts.guest,
+        maintenance: counts.maintenance,
+        payments: counts.payments,
+        events: counts.timedActions,
+        timedActions: counts.timedActions,
+        tasks: counts.tasks,
+        general: 0
+      },
+      objects: objects
+    };
+  }
+
+  /**
+   * Suggested handover section for an operational object (presentation mapping).
+   * Does not invent facts — routes existing objects only.
+   */
+  function suggestHandoverSectionForObject(object) {
+    if (!object) return "general";
+    var src = objectSourceBlob(object);
+    var primary = objectPrimaryFact(object);
+    var fact = primary && primary.fact;
+    var subject = normalizeSubjectToken(fact && (fact.subject || fact.subjectType) || "");
+    var status = String((fact && fact.status) || "").toLowerCase();
+
+    /* Closed guest-status notes (e.g. resolved noise) belong in Completed Actions. */
+    if (
+      (
+        status === "done" ||
+        status === "resolved" ||
+        (primary && primary.note && primary.note.section === "completed") ||
+        /\b(?:quiet\s+afterwards|noise\s+settled|(?:apologised|apologized)\s+and\s+quiet)\b/i.test(src)
+      ) &&
+      !objectLooksLikePayment(object) &&
+      !objectLooksLikeMaintenance(object) &&
+      object.type !== OPERATIONAL_OBJECT_TYPE.vip
+    ) {
+      return "completed";
+    }
+
+    if (object.type === OPERATIONAL_OBJECT_TYPE.vip || subject === "vip_arrival") return "vip";
+    if (object.type === OPERATIONAL_OBJECT_TYPE.maintenance || subject === "maintenance") {
+      return "maintenance";
+    }
+    if (object.type === OPERATIONAL_OBJECT_TYPE.payment || objectLooksLikePayment(object)) {
+      return "payments";
+    }
+    if (
+      object.type === OPERATIONAL_OBJECT_TYPE.departure ||
+      object.type === OPERATIONAL_OBJECT_TYPE.wake_up ||
+      object.type === OPERATIONAL_OBJECT_TYPE.transport ||
+      object.type === OPERATIONAL_OBJECT_TYPE.timed ||
+      subject === "wake_up" || subject === "departure_followup" || subject === "late_checkout" ||
+      subject === "transfer"
+    ) {
+      return "guest";
+    }
+    if (subject === "twin_setup") return "tasks";
+    if (subject === "inventory" || subject === "adapter" ||
+        (/\bumbrella\b/.test(src) && /\b(?:not\s+returned|loan|outstanding)\b/.test(src))) {
+      return "inventory";
+    }
+    if (subject === "delivery" || /\bparcels?|packages?|courier\b/.test(src)) return "deliveries";
+    if (subject === "lost_property") return "lostproperty";
+    if (object.type === OPERATIONAL_OBJECT_TYPE.guest_request || subject === "guest_request" ||
+        subject === "room_move" || subject === "extension") {
+      return "guest";
+    }
+    if (object.type === OPERATIONAL_OBJECT_TYPE.interconnect || subject === "interconnect") {
+      return "guest";
+    }
+    if (object.type === OPERATIONAL_OBJECT_TYPE.reception || subject === "no_show" ||
+        subject === "late_arrival") {
+      return "events";
+    }
+    if (/\badapter\b/.test(src) && !/\b(?:£|charge|posted|collect)\b/.test(src)) return "inventory";
+    return "general";
+  }
+
+  var DEFAULT_ORGANISED_SECTION_IDS = [
+    "urgent", "vip", "guest", "maintenance", "payments", "events",
+    "tasks", "inventory", "deliveries", "lostproperty", "general", "completed"
+  ];
+
+  /**
+   * Canonical organised handover section model.
+   * One item per operational object; engine owns placement. Writing formats text later.
+   */
+  function buildOrganisedSectionModel(analyzedNotes, options) {
+    options = options || {};
+    var sectionIds = options.sectionIds && options.sectionIds.length
+      ? options.sectionIds.slice()
+      : DEFAULT_ORGANISED_SECTION_IDS.slice();
+    var sections = {};
+    sectionIds.forEach(function (id) { sections[id] = []; });
+
+    var analyzed = (analyzedNotes || []).filter(Boolean);
+    var entries = analyzed.map(function (note, index) {
+      var fact = note.fact || null;
+      return {
+        note: note,
+        fact: fact,
+        factId: note._neutralFactId || (fact && fact.id) || ("section-" + index),
+        topic: note.section || "",
+        section: note.section || ""
+      };
+    }).filter(function (entry) {
+      return entry.note && (entry.fact || entry.note.original);
+    });
+
+    var objects = groupIntoOperationalObjects(entries);
+    var consumedFactIds = {};
+
+    function markConsumed(obj) {
+      (obj.factIds || []).forEach(function (id) { consumedFactIds[id] = true; });
+      (obj.items || []).forEach(function (item) {
+        if (item && item.factId) consumedFactIds[item.factId] = true;
+        if (item && item.note && item.note._neutralFactId) {
+          consumedFactIds[item.note._neutralFactId] = true;
+        }
+      });
+    }
+
+    function pushItem(sectionId, obj, note) {
+      if (!sections[sectionId]) sections[sectionId] = [];
+      var primary = note || (objectPrimaryFact(obj) && objectPrimaryFact(obj).note) || null;
+      var fact = (primary && primary.fact) || (objectPrimaryFact(obj) && objectPrimaryFact(obj).fact) || null;
+      var rooms = (obj && obj.rooms && obj.rooms.length)
+        ? obj.rooms.slice()
+        : ((primary && primary.rooms) || (fact && fact.rooms) || []).slice();
+      var sourceParts = [];
+      if (obj && obj.items && obj.items.length) {
+        obj.items.forEach(function (item) {
+          var src = item && item.note && item.note.original
+            ? String(item.note.original)
+            : (item && item.fact && item.fact.sourceText ? String(item.fact.sourceText) : "");
+          if (src && sourceParts.indexOf(src) === -1) sourceParts.push(src);
+        });
+      } else if (primary && primary.original) {
+        sourceParts.push(String(primary.original));
+      }
+      var mergedOriginal = sourceParts.join(" // ");
+      var displayNote = primary
+        ? Object.assign({}, primary, {
+            original: mergedOriginal || primary.original,
+            rooms: rooms.length ? rooms : (primary.rooms || []),
+            section: sectionId,
+            isVip: sectionId === "vip" || !!(primary.isVip),
+            fact: fact || primary.fact || null,
+            _operationalObjectId: obj && obj.id,
+            _mergedNotes: (obj && obj.items)
+              ? obj.items.map(function (item) { return item.note; }).filter(Boolean)
+              : (primary._mergedNotes || null)
+          })
+        : {
+            original: mergedOriginal,
+            rooms: rooms,
+            section: sectionId,
+            isVip: sectionId === "vip",
+            fact: fact,
+            _operationalObjectId: obj && obj.id
+          };
+      sections[sectionId].push({
+        note: displayNote,
+        fact: fact,
+        rooms: rooms,
+        objectId: obj && obj.id,
+        objectType: obj && obj.type,
+        section: sectionId,
+        sourceText: mergedOriginal,
+        factIds: (obj && obj.factIds) ? obj.factIds.slice() : []
+      });
+    }
+
+    objects.forEach(function (obj) {
+      /* Skip empty low-confidence noise with no operational cue. */
+      var src = objectSourceBlob(obj);
+      if (
+        obj.confidence === "low" &&
+        obj.type === OPERATIONAL_OBJECT_TYPE.other &&
+        !/\b(?:room|rm\.?|vip|parcel|package|payment|maint|wake|taxi|cot|twin|umbrella|expedia|outstanding)\b/i.test(src)
+      ) {
+        return;
+      }
+      var sectionId = suggestHandoverSectionForObject(obj);
+      if (sectionIds.indexOf(sectionId) === -1) sectionId = "general";
+      /* Safety/urgent override only when explicitly critical. */
+      if (
+        sectionId === "maintenance" &&
+        /flood|fire|evacuat|unsafe|injury|gas\s+leak/i.test(src)
+      ) {
+        sectionId = "urgent";
+      }
+      pushItem(sectionId, obj, null);
+      markConsumed(obj);
+    });
+
+    /* Safety net: any useful analyzed note not consumed becomes its own section item. */
+    analyzed.forEach(function (note, index) {
+      var factId = note._neutralFactId || ("section-" + index);
+      if (consumedFactIds[factId]) return;
+      if (note.fact && note.fact.id && consumedFactIds[note.fact.id]) return;
+      var src = String(note.original || (note.fact && note.fact.sourceText) || "").trim();
+      if (!src) return;
+      if (/^(?:guest\s+cold|mr\.?\s+\w+|still\s+awaiting|anniversary\s+setup)/i.test(src) &&
+          (!note.rooms || !note.rooms.length)) {
+        /* Orphan fragment that should have been merged — skip rather than invent a section. */
+        return;
+      }
+      var singleton = {
+        id: "singleton|" + factId,
+        type: classifyOperationalObject(note.fact || {}, note).type,
+        components: [],
+        rooms: (note.rooms || []).slice(),
+        guestName: (note.fact && note.fact.guestName) || "",
+        factIds: [factId],
+        facts: note.fact ? [note.fact] : [],
+        items: [{ note: note, fact: note.fact, factId: factId }],
+        impactScore: 90,
+        canonicalPriority: CANONICAL_PRIORITY.normal,
+        confidence: "medium",
+        reasons: ["singleton_coverage"]
+      };
+      var sectionId = note.section || suggestHandoverSectionForObject(singleton);
+      if (sectionIds.indexOf(sectionId) === -1) sectionId = "general";
+      pushItem(sectionId, singleton, note);
+      markConsumed(singleton);
+    });
+
+    return {
+      sections: sections,
+      objects: objects,
+      analyzed: analyzed,
+      sectionIds: sectionIds,
+      generatedFromObjectCount: objects.length
+    };
   }
 
   function stableToken(value, maxLen) {
@@ -1777,12 +3140,22 @@
       timeBit = " the " + timeMatch[1];
     }
 
+    var anniversary = /\banniversary\b/i.test(line);
+    var setupBits = [];
+    if (/\bwelcome\s+card\b/i.test(line)) setupBits.push("welcome card");
+    if (/\bchocolates?\b/i.test(line)) setupBits.push("chocolates");
+    if (/\bchampagne\b/i.test(line)) setupBits.push("champagne");
+
     var base;
-    if (vipArrival) {
-      base = "Review VIP requirements before" + (timeBit || "") + " arrival" +
-        (roomRef ? " for " + roomRef : "");
+    if (anniversary || setupBits.length) {
+      base = "Complete VIP" + (roomRef ? " " + roomRef : "") +
+        (anniversary ? " anniversary setup" : " room setup") +
+        " before" + (timeBit || "") + " arrival";
+    } else if (vipArrival) {
+      base = "Complete VIP" + (roomRef ? " " + roomRef : "") +
+        " preparation before" + (timeBit || "") + " arrival";
     } else {
-      base = "Review VIP requirements" + (roomRef ? " for " + roomRef : "") + " this shift";
+      base = "Complete VIP" + (roomRef ? " " + roomRef : "") + " requirements this shift";
     }
 
     return appendBrainGuidance(base, findHotelBrainGuidance(brainContext, "vip"), "Hotel VIP rules");
@@ -1918,8 +3291,11 @@
 
     if (subject === "outstanding_balance" || subject === "payment" || subject === "invoice" ||
         subject === "bill" || subject === "folio" || subject === "account" || subject === "charge" ||
-        verb === "settle") {
-      if (!roomRef && !/\b(balance|payment|folio|invoice|bill|booking\.com|expedia|city\s+tax)\b/i.test(src)) {
+        subject === "payment_balance" || subject === "financial_settlement_unclear" ||
+        verb === "settle" ||
+        (/\b(outstanding|declined|minibar|city\s+tax)\b/i.test(src) &&
+          (/\b(balance|payment|collect|card|folio|£|\d+)/i.test(src) || roomRef))) {
+      if (!roomRef && !/\b(balance|payment|folio|invoice|bill|booking\.com|expedia|city\s+tax|outstanding|declined|adapter)\b/i.test(src)) {
         return null;
       }
       var payText = paymentActionText(note, shiftType);
@@ -1934,8 +3310,10 @@
       };
     }
 
-    if (subject === "maintenance" || (verb === "follow_up" && /maintenance/i.test(fact.actionTarget || dept))) {
-      if (!roomRef && !(fact.rooms && fact.rooms.length)) return null;
+    if (subject === "maintenance" || (verb === "follow_up" && /maintenance/i.test(fact.actionTarget || dept)) ||
+        /\b(hot\s*water|not cooling|ac\b|air\s*con|leak|broken|on hold)\b/i.test(src) &&
+          (roomRef || /maint/i.test(src))) {
+      if (!roomRef && !(fact.rooms && fact.rooms.length) && !/maint|hot\s*water|ac\b/i.test(src)) return null;
       var roomsLabel = roomRef;
       if (fact.rooms && fact.rooms.length > 1) {
         roomsLabel = "Rooms " + fact.rooms.join(", ").replace(/, ([^,]+)$/, " and $1");
@@ -1943,10 +3321,11 @@
       var issueLabel = maintenanceIssueLabel(fact, note);
       if (!issueLabel || issueLabel === "open issue") {
         /* Preserve meaning without inventing a vague maintenance chase. */
-        if (!/\b(maintenance|ac|a\/c|leak|broken|faulty|repair|heating|safe|dryer)\b/i.test(src)) {
+        if (!/\b(maintenance|ac|a\/c|leak|broken|faulty|repair|heating|safe|dryer|hot\s*water)\b/i.test(src)) {
           return null;
         }
-        issueLabel = "reported fault";
+        if (/\bhot\s*water\b/i.test(src)) issueLabel = "hot-water issue";
+        else issueLabel = "reported fault";
       }
       var maintText = "Follow up the " + (roomsLabel || roomRef) + " " + issueLabel +
         " with Maintenance until resolved.";
@@ -2021,18 +3400,42 @@
       return null;
     }
 
-    if (subject === "wake_up") {
-      if (fact.status === "confirmed" || fact.status === "done") return null;
-      var timeMatch = src.match(/\b(\d{1,2}[:.]\d{2})\b/);
-      return {
-        text: withReason(
-          "Confirm that the" + (timeMatch ? " " + timeMatch[1].replace(".", ":") : "") +
-            " wake-up call" + (roomRef ? " for " + roomRef : "") + " is loaded",
-          reason
-        ),
-        priority: "normal",
-        department: resolveDepartment([dept, "Reception", "Front Office", "Night Team"], "Reception", departments)
-      };
+    if (subject === "wake_up" || subject === "departure_followup") {
+      if (fact.status === "done") return null;
+      var wakeRaw = (src.match(/\bwake(?:[\s-]*up)?\s*(\d{3,4}|\d{1,2}[:.]\d{2}|\d{1,2}\s*(?:am|pm))/i) ||
+        src.match(/\b(\d{1,2}[:.]\d{2})\b/) || [])[1];
+      var wakeNorm = wakeRaw && global.AiWritingEngine && global.AiWritingEngine.normalizeTimelineTime
+        ? global.AiWritingEngine.normalizeTimelineTime(wakeRaw)
+        : wakeRaw;
+      var taxiRaw = (src.match(/\b(?:addison(?:\s+lee)?|taxi|transfer)\s*(\d{3,4}|\d{1,2}[:.]\d{2}|\d{1,2}\s*(?:am|pm))/i) || [])[1];
+      var taxiNorm = taxiRaw && global.AiWritingEngine && global.AiWritingEngine.normalizeTimelineTime
+        ? global.AiWritingEngine.normalizeTimelineTime(taxiRaw)
+        : taxiRaw;
+      if (wakeNorm && taxiNorm && roomRef) {
+        return {
+          text: "Complete " + roomRef + " wake-up at " + wakeNorm + " and taxi at " + taxiNorm + ".",
+          priority: "high",
+          department: resolveDepartment([dept, "Reception", "Night Team"], "Reception", departments)
+        };
+      }
+      if (wakeNorm || subject === "wake_up") {
+        return {
+          text: withReason(
+            "Complete the" + (wakeNorm ? " " + wakeNorm : "") +
+              " wake-up call" + (roomRef ? " for " + roomRef : ""),
+            reason
+          ),
+          priority: "high",
+          department: resolveDepartment([dept, "Reception", "Front Office", "Night Team"], "Reception", departments)
+        };
+      }
+      if (taxiNorm && roomRef) {
+        return {
+          text: "Confirm the " + roomRef + " taxi / transfer at " + taxiNorm + ".",
+          priority: "high",
+          department: resolveDepartment([dept, "Reception", "Night Team"], "Reception", departments)
+        };
+      }
     }
 
     if (subject === "guest_request" || verb === "arrange") {
@@ -2080,20 +3483,6 @@
         priority: "high",
         department: resolveDepartment([dept, "Reception", "Front Office", "Night Team"], "Reception", departments)
       };
-    }
-
-    if (subject === "departure_followup" || subject === "wake_up") {
-      var wakeRec = (src.match(/\bwake(?:[\s-]*up)?\s*(\d{3,4}|\d{1,2}[:.]\d{2})/i) || [])[1];
-      var wakeNorm = wakeRec && global.AiWritingEngine && global.AiWritingEngine.normalizeTimelineTime
-        ? global.AiWritingEngine.normalizeTimelineTime(wakeRec)
-        : wakeRec;
-      if (wakeNorm && roomRef) {
-        return {
-          text: "Complete the " + roomRef + " wake-up at " + wakeNorm + ".",
-          priority: "high",
-          department: resolveDepartment([dept, "Reception", "Night Team"], "Reception", departments)
-        };
-      }
     }
 
     if (subject === "room_move" && (fact.status === "requested" || fact.status === "open" || verb)) {
@@ -2217,6 +3606,66 @@
       }
 
       /* Phase 2A: do not invent from rewritten display or legacy templates when facts are thin. */
+    });
+
+    /*
+     * Promote operational objects that extraction already understood but note-level
+     * subject routing skipped (e.g. financial_settlement_unclear, compact wake times).
+     */
+    var promoEntries = analyzed.map(function (note, index) {
+      var fact = ensureNoteFact(note);
+      if (!fact || isFactClosedForRecs(fact)) return null;
+      return {
+        note: note,
+        fact: fact,
+        factId: note._neutralFactId || ("rec-" + index)
+      };
+    }).filter(Boolean);
+    groupIntoOperationalObjects(promoEntries).forEach(function (obj) {
+      if (!isPromotableOperationalObject(obj)) return;
+      var primary = objectPrimaryFact(obj);
+      if (!primary || !primary.fact) return;
+      var already = candidates.some(function (rec) {
+        var text = String(rec.text || "");
+        return (obj.rooms || []).some(function (room) {
+          return new RegExp("\\b" + room + "\\b").test(text);
+        }) && (
+          (objectLooksLikeMaintenance(obj) && /maint|fault|hot|ac|leak|follow up/i.test(text)) ||
+          (objectLooksLikePayment(obj) && /collect|payment|balance|charge|outstanding/i.test(text)) ||
+          (obj.type === OPERATIONAL_OBJECT_TYPE.vip && /vip/i.test(text)) ||
+          ((obj.type === OPERATIONAL_OBJECT_TYPE.departure || obj.type === OPERATIONAL_OBJECT_TYPE.wake_up ||
+            obj.type === OPERATIONAL_OBJECT_TYPE.transport) && /wake|taxi|transfer/i.test(text))
+        );
+      });
+      if (already) return;
+      var fromObj = recommendationFromFact(
+        primary.fact,
+        primary.note || { original: objectSourceBlob(obj), rooms: obj.rooms, section: "", isVip: obj.type === "vip" },
+        departments,
+        fallbackDept,
+        shiftType,
+        brainContext
+      );
+      if (!fromObj && objectLooksLikePayment(obj) && obj.rooms && obj.rooms[0]) {
+        fromObj = {
+          text: "Collect outstanding balance for Room " + obj.rooms[0] + " before departure.",
+          priority: "high",
+          department: resolveDepartment(["Reception", "Finance"], "Reception", departments)
+        };
+      }
+      if (!fromObj && objectLooksLikeMaintenance(obj) && obj.rooms && obj.rooms[0]) {
+        fromObj = {
+          text: "Follow up the Room " + obj.rooms[0] + " reported fault with Maintenance until resolved.",
+          priority: "high",
+          department: resolveDepartment(["Maintenance"], "Maintenance", departments)
+        };
+      }
+      if (fromObj) {
+        fromObj.sourceFactIds = (obj.factIds || []).slice();
+        fromObj.sourceTypes = ["handover"];
+        fromObj.reasonCode = "operational_object_promotion";
+        addCandidate(fromObj);
+      }
     });
 
     if (global.HotelProfileOperational && brainContext) {
@@ -2834,6 +4283,26 @@
     classifyOperationalFacts: classifyOperationalFacts,
     compareClassificationParity: compareClassificationParity,
     applyEngineClassificationToNote: applyEngineClassificationToNote,
+    /* Phase 1 / E4 — Operational impact, objects, snapshot */
+    OPERATIONAL_OBJECT_TYPE: OPERATIONAL_OBJECT_TYPE,
+    HOTEL_STATUS_LEVEL: HOTEL_STATUS_LEVEL,
+    BRIEFING_MAX_BLOCKS: BRIEFING_MAX_BLOCKS,
+    classifyOperationalObject: classifyOperationalObject,
+    scoreOperationalImpact: scoreOperationalImpact,
+    compareByOperationalImpact: compareByOperationalImpact,
+    groupIntoOperationalObjects: groupIntoOperationalObjects,
+    rankByOperationalImpact: rankByOperationalImpact,
+    buildBriefingModel: buildBriefingModel,
+    buildHotelStatusModel: buildHotelStatusModel,
+    computeShiftAlertsFromObjects: computeShiftAlertsFromObjects,
+    suggestHandoverSectionForObject: suggestHandoverSectionForObject,
+    buildOrganisedSectionModel: buildOrganisedSectionModel,
+    DEFAULT_ORGANISED_SECTION_IDS: DEFAULT_ORGANISED_SECTION_IDS,
+    isPromotableOperationalObject: isPromotableOperationalObject,
+    isGuestImpactingMaintenance: isGuestImpactingMaintenance,
+    isHighFinancialRisk: isHighFinancialRisk,
+    expandSnapshotShorthand: expandSnapshotShorthand,
+    extractHotelSnapshot: extractHotelSnapshot,
     /* Phase 16B foundation surface */
     NEUTRAL_FACT_FIELDS: NEUTRAL_FACT_FIELDS,
     createEmptyNeutralFact: createEmptyNeutralFact,

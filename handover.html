@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-handover-page-state="input">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -592,6 +592,114 @@
 
     .actions.has-handover-output .actions-clear {
       display: flex;
+    }
+
+    /* ── Page state: input | generated | saved-view ── */
+    .handover-input-workspace {
+      display: contents;
+    }
+
+    html[data-handover-page-state="generated"] .handover-input-workspace,
+    html[data-handover-page-state="saved-view"] .handover-input-workspace {
+      display: none;
+    }
+
+    html[data-handover-page-state="generated"] #generateBtn,
+    html[data-handover-page-state="saved-view"] #generateBtn {
+      display: none;
+    }
+
+    html[data-handover-page-state="input"] #handoverOutputActions,
+    html[data-handover-page-state="input"] #outputSection,
+    html[data-handover-page-state="input"] #savedViewBanner {
+      display: none !important;
+    }
+
+    html[data-handover-page-state="input"] #handoverClearActions {
+      display: flex;
+    }
+
+    html[data-handover-page-state="input"] #editNotesBtn,
+    html[data-handover-page-state="input"] #newHandoverBtn {
+      display: none;
+    }
+
+    html[data-handover-page-state="saved-view"] #savedViewBanner {
+      display: block;
+    }
+
+    html[data-handover-page-state="saved-view"] .handover-item-edit-btn,
+    html[data-handover-page-state="saved-view"] .handover-item-status-select,
+    html[data-handover-page-state="saved-view"] .recommendation-item-edit-btn,
+    html[data-handover-page-state="saved-view"] .recommendation-item-delete-btn,
+    html[data-handover-page-state="saved-view"] .recommendation-item-status-select {
+      pointer-events: none;
+      opacity: 0.55;
+    }
+
+    .saved-view-banner {
+      display: none;
+      margin: 4px 0 8px;
+      padding: 14px 16px;
+      border: 1px solid rgba(74, 143, 196, 0.28);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(74, 143, 196, 0.08), rgba(255, 255, 255, 0.9));
+    }
+
+    .saved-view-banner-inner {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .saved-view-banner-copy {
+      margin: 0;
+      font-size: 0.88rem;
+      color: var(--navy-700);
+      font-weight: 600;
+    }
+
+    .saved-view-banner-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .saved-handovers-section.is-collapsed .saved-handovers-collapsible {
+      display: none;
+    }
+
+    .saved-handovers-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 40px;
+      padding: 0;
+      border: none;
+      background: transparent;
+      color: var(--navy-900);
+      font: inherit;
+      font-size: 1.05rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .saved-handovers-toggle svg {
+      width: 16px;
+      height: 16px;
+      transition: transform 0.2s ease;
+    }
+
+    .saved-handovers-section:not(.is-collapsed) .saved-handovers-toggle svg {
+      transform: rotate(180deg);
+    }
+
+    .saved-handovers-toggle-hint {
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--gray-400);
     }
 
     .actions-meta {
@@ -3368,6 +3476,7 @@
         </div>
 
         <div class="dashboard-grid">
+          <div class="handover-input-workspace" id="handoverInputWorkspace">
           <!-- Handover Details -->
           <div class="card hotel-card">
             <div class="card-header">
@@ -3437,6 +3546,7 @@
               ></textarea>
             </div>
           </div>
+          </div>
 
           <!-- Actions: secondary/output controls stay hidden until a handover is generated -->
           <div class="actions" id="handoverActions">
@@ -3445,7 +3555,7 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M12 2a4 4 0 0 1 4 4c0 1.95-1.4 3.58-3.25 3.93"/><path d="M8.5 10.5A4 4 0 0 1 12 2"/><path d="M12 12v4"/><path d="M8 22h8"/><path d="M12 18v4"/>
               </svg>
-              <span class="btn-text" id="generateBtnText">Generate Handover</span>
+              <span class="btn-text" id="generateBtnText">Generate Shift Handover</span>
             </button>
             <div class="secondary-actions" id="handoverOutputActions" hidden>
               <button class="btn btn-secondary" id="copyBtn" type="button" disabled>
@@ -3481,6 +3591,12 @@
               <span class="draft-restored-hint" id="draftRestoredHint" hidden aria-live="polite">Previous draft restored.</span>
             </div>
             <div class="actions-clear" id="handoverClearActions" hidden>
+              <button class="btn btn-new-handover" id="editNotesBtn" type="button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3l1 1a2.12 2.12 0 0 1 0 3L7 21l-4 1 1-4Z"/>
+                </svg>
+                Edit Notes
+              </button>
               <button class="btn btn-new-handover" id="newHandoverBtn" type="button">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
@@ -3493,6 +3609,16 @@
                 </svg>
                 Clear Notes
               </button>
+            </div>
+          </div>
+
+          <div class="saved-view-banner" id="savedViewBanner" hidden>
+            <div class="saved-view-banner-inner">
+              <p class="saved-view-banner-copy" id="savedViewBannerText">Viewing a saved handover (read-only).</p>
+              <div class="saved-view-banner-actions">
+                <button class="btn btn-secondary" id="backToCurrentHandoverBtn" type="button">Back to current handover</button>
+                <button class="btn btn-new-handover" id="savedViewNewHandoverBtn" type="button">New Handover</button>
+              </div>
             </div>
           </div>
 
@@ -3611,57 +3737,63 @@
             </div>
           </aside>
 
-          <!-- Previous Handovers -->
-          <section class="saved-handovers-section" id="savedHandoversSection" aria-label="Previous handovers">
+          <!-- Previous Handovers (collapsed by default — open intentionally) -->
+          <section class="saved-handovers-section is-collapsed" id="savedHandoversSection" aria-label="Previous handovers">
             <div class="saved-handovers-panel">
               <div class="saved-handovers-header">
                 <div class="saved-handovers-header-main">
-                  <h2 id="savedHandoversTitle">Previous Handovers</h2>
+                  <button type="button" class="saved-handovers-toggle" id="savedHandoversToggle" aria-expanded="false" aria-controls="savedHandoversCollapsible">
+                    <span id="savedHandoversTitle">Previous Handovers</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+                  </button>
                   <span class="saved-handovers-count" id="savedHandoversCount"></span>
+                  <span class="saved-handovers-toggle-hint" id="savedHandoversToggleHint">Open to browse saved reports</span>
                 </div>
+              </div>
+              <div class="saved-handovers-collapsible" id="savedHandoversCollapsible" hidden>
                 <input type="search" class="handover-archive-search" id="savedHandoversSearch" placeholder="Search handovers…" aria-label="Search previous handovers">
-              </div>
-              <div class="saved-handovers-toolbar">
-                <div class="storage-status" id="storageStatus">
-                  <span><span class="storage-status-dot" aria-hidden="true"></span><span id="storageStatusLabel">Offline mode — saved on this device</span></span>
-                  <span id="lastBackupLabel">Last backup: Never</span>
-                </div>
-              </div>
-              <div class="advanced-data-options" id="advancedDataOptions">
-                <button class="advanced-data-toggle" id="advancedDataToggle" type="button" aria-expanded="false" aria-controls="advancedDataBody">
-                  <span>Advanced data options</span>
-                  <svg class="advanced-data-toggle-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
-                </button>
-                <div class="advanced-data-body" id="advancedDataBody">
-                  <p class="advanced-data-desc">Export or restore handovers stored on this device.</p>
-                  <div class="data-actions">
-                    <button class="btn btn-data" id="exportBackupBtn" type="button">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-                      </svg>
-                      Export Backup
-                    </button>
-                    <button class="btn btn-data" id="importBackupBtn" type="button">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
-                      </svg>
-                      Import Backup
-                    </button>
-                    <input type="file" id="importBackupInput" accept=".json,application/json" hidden>
-                    <button class="btn btn-data" id="uploadLocalHandoversBtn" type="button">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
-                      </svg>
-                      Upload local handovers to cloud
-                    </button>
-                  </div>
-                  <div class="data-actions data-actions-destructive">
-                    <button class="btn btn-data btn-data-danger" id="clearAllHistoryBtn" type="button">Clear All History</button>
+                <div class="saved-handovers-toolbar">
+                  <div class="storage-status" id="storageStatus">
+                    <span><span class="storage-status-dot" aria-hidden="true"></span><span id="storageStatusLabel">Offline mode — saved on this device</span></span>
+                    <span id="lastBackupLabel">Last backup: Never</span>
                   </div>
                 </div>
+                <div class="advanced-data-options" id="advancedDataOptions">
+                  <button class="advanced-data-toggle" id="advancedDataToggle" type="button" aria-expanded="false" aria-controls="advancedDataBody">
+                    <span>Advanced data options</span>
+                    <svg class="advanced-data-toggle-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+                  </button>
+                  <div class="advanced-data-body" id="advancedDataBody">
+                    <p class="advanced-data-desc">Export or restore handovers stored on this device.</p>
+                    <div class="data-actions">
+                      <button class="btn btn-data" id="exportBackupBtn" type="button">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        Export Backup
+                      </button>
+                      <button class="btn btn-data" id="importBackupBtn" type="button">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                        Import Backup
+                      </button>
+                      <input type="file" id="importBackupInput" accept=".json,application/json" hidden>
+                      <button class="btn btn-data" id="uploadLocalHandoversBtn" type="button">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                        Upload local handovers to cloud
+                      </button>
+                    </div>
+                    <div class="data-actions data-actions-destructive">
+                      <button class="btn btn-data btn-data-danger" id="clearAllHistoryBtn" type="button">Clear All History</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="saved-handovers-grid" id="savedHandoversGrid"></div>
+                <p class="saved-handovers-empty" id="savedHandoversEmpty">No saved handovers yet. Generate and save a handover to keep it on this device.</p>
               </div>
-              <div class="saved-handovers-grid" id="savedHandoversGrid"></div>
-              <p class="saved-handovers-empty" id="savedHandoversEmpty">No saved handovers yet. Generate and save a handover to keep it on this device.</p>
             </div>
           </section>
         </div>
@@ -3910,6 +4042,21 @@
       var draftStatus = document.getElementById("draftStatus");
       var draftRestoredHint = document.getElementById("draftRestoredHint");
       var newHandoverBtn = document.getElementById("newHandoverBtn");
+      var editNotesBtn = document.getElementById("editNotesBtn");
+      var handoverInputWorkspace = document.getElementById("handoverInputWorkspace");
+      var savedViewBanner = document.getElementById("savedViewBanner");
+      var backToCurrentHandoverBtn = document.getElementById("backToCurrentHandoverBtn");
+      var savedViewNewHandoverBtn = document.getElementById("savedViewNewHandoverBtn");
+      var savedHandoversToggle = document.getElementById("savedHandoversToggle");
+      var savedHandoversCollapsible = document.getElementById("savedHandoversCollapsible");
+      var HANDOVER_PAGE_STATE = {
+        INPUT: "input",
+        GENERATED: "generated",
+        SAVED_VIEW: "saved-view"
+      };
+      var handoverPageState = HANDOVER_PAGE_STATE.INPUT;
+      var cachedSessionBeforeSavedView = null;
+      var viewingSavedHandoverId = null;
       var exportBackupBtn = document.getElementById("exportBackupBtn");
       var importBackupBtn = document.getElementById("importBackupBtn");
       var importBackupInput = document.getElementById("importBackupInput");
@@ -5665,8 +5812,12 @@
           else handoverOutputActions.removeAttribute("aria-hidden");
         }
         if (newHandoverBtn) {
-          newHandoverBtn.hidden = demo;
+          newHandoverBtn.hidden = demo || handoverPageState === HANDOVER_PAGE_STATE.INPUT;
           if (demo) newHandoverBtn.disabled = true;
+          else newHandoverBtn.disabled = false;
+        }
+        if (editNotesBtn) {
+          editNotesBtn.hidden = handoverPageState === HANDOVER_PAGE_STATE.INPUT;
         }
 
         var savedSection = document.getElementById("savedHandoversSection");
@@ -6733,7 +6884,8 @@
           "audit complete", "audit completed", "night audit complete", "night audit completed",
           "pm accounts complete", "pm accounts completed", "accounts complete", "accounts completed",
           "wake-up call done", "wake up call done", "wakeup call done",
-          "wake-up calls completed", "wake up calls completed", "calls completed"
+          "wake-up calls completed", "wake up calls completed", "calls completed",
+          "quiet afterwards", "apologised and quiet", "apologized and quiet"
         ]);
         var hasNegative = noteContains(line, [
           "not complete", "not completed", "not done", "not fixed",
@@ -6742,6 +6894,17 @@
           "needs to be completed", "to be completed", "must complete"
         ]);
         if (hasNegative) return false;
+        /*
+         * Taxi/wake "booked" means the arrangement is confirmed for later —
+         * not that the timed action is already completed this shift.
+         */
+        if (
+          hasPositive &&
+          /\bwake/i.test(line) &&
+          noteContains(line, ["taxi booked", "taxis booked", "already booked", "booked and confirmed", "booked"])
+        ) {
+          return false;
+        }
         if (hasPositive) return true;
         if (noteContains(line, ["night audit", "pm account"]) && noteContains(line, ["done", "complete", "finished"])) {
           return true;
@@ -6799,7 +6962,16 @@
         return rooms;
       }
 
+      function isRestatementFollowUpWrap(line) {
+        var src = String(line || "").trim();
+        if (!/^please\s+follow\s+up\b/i.test(src)) return false;
+        if (/\b(?:room|rm\.?|suite)\s*[#.]?\s*\d/i.test(src)) return false;
+        return /\b(?:heating|payment|vip|collect|check)\b/i.test(src);
+      }
+
       function detectVip(line) {
+        /* Wrap-ups that only say "check VIP setup" are not VIP guest leads. */
+        if (isRestatementFollowUpWrap(line)) return false;
         return noteContains(line, VIP_TERMS);
       }
 
@@ -6961,6 +7133,7 @@
       function isNoiseOperationalLine(line) {
         var lower = String(line || "").toLowerCase().trim();
         if (!lower) return true;
+        if (isRestatementFollowUpWrap(line)) return true;
         return /^(overall\s+)?(a\s+)?quiet\s+(night|shift)\.?$/.test(lower) ||
           /^(everything|all)\s+(else\s+)?(fine|quiet|ok|okay|good)\.?$/.test(lower) ||
           /^nothing\s+to\s+report\.?$/.test(lower) ||
@@ -7388,7 +7561,10 @@
       }
 
       function classifyNotes(lines) {
-        var analyzed = lines.map(analyzeNote);
+        var analyzed = lines.map(analyzeNote).filter(function (note) {
+          /* Drop closing wrap-ups that only restate facts already segmented. */
+          return !isRestatementFollowUpWrap(note && note.original);
+        });
         analyzed.forEach(function (note) {
           note.section = classifyAnalyzedNote(note);
           finalizeNote(note);
@@ -7408,37 +7584,63 @@
         });
 
         var classified = {};
-        SECTIONS.forEach(function (section) {
-          classified[section.id] = buildSectionDisplay(analyzed, section.id);
-        });
+        var sectionModel = null;
 
-        var seenIdentity = {};
-        SECTIONS.forEach(function (section) {
-          classified[section.id] = (classified[section.id] || []).filter(function (item) {
-            var factKey = "";
-            if (item && item.fact && window.AiWritingEngine && window.AiWritingEngine.factIdentityKey) {
-              factKey = window.AiWritingEngine.factIdentityKey(item.fact);
-            }
-            if (factKey) {
-              if (seenIdentity[factKey]) return false;
-              seenIdentity[factKey] = true;
-              return true;
-            }
-            /* Legacy fallback: text signature only when no fact identity exists. */
-            var text = typeof item === "string" ? item : (item && item.text) || "";
-            var sig = text.toLowerCase()
-              .replace(/[^a-z0-9\s]/g, " ")
-              .replace(/\s+/g, " ")
-              .trim()
-              .slice(0, 90);
-            if (!sig) return true;
-            if (seenIdentity["text|" + sig]) return false;
-            seenIdentity["text|" + sig] = true;
-            return true;
+        /*
+         * Canonical path: engine owns section placement from operational objects.
+         * Demo and real workspaces both render this model — no legacy room-merge path.
+         */
+        if (
+          window.ShiftIntelligenceEngine &&
+          typeof window.ShiftIntelligenceEngine.buildOrganisedSectionModel === "function"
+        ) {
+          sectionModel = window.ShiftIntelligenceEngine.buildOrganisedSectionModel(analyzed, {
+            sectionIds: SECTIONS.map(function (section) { return section.id; })
           });
-        });
+          SECTIONS.forEach(function (section) {
+            var modelItems = (sectionModel.sections && sectionModel.sections[section.id]) || [];
+            classified[section.id] = modelItems.map(function (entry) {
+              var note = entry && entry.note ? entry.note : entry;
+              if (note && entry && entry.section) note.section = entry.section;
+              return formatNoteDisplay(note);
+            });
+          });
+          if (sectionModel.analyzed && sectionModel.analyzed.length) {
+            analyzed = sectionModel.analyzed;
+          }
+        } else {
+          SECTIONS.forEach(function (section) {
+            classified[section.id] = buildSectionDisplay(analyzed, section.id);
+          });
+
+          var seenIdentity = {};
+          SECTIONS.forEach(function (section) {
+            classified[section.id] = (classified[section.id] || []).filter(function (item) {
+              var factKey = "";
+              if (item && item.fact && window.AiWritingEngine && window.AiWritingEngine.factIdentityKey) {
+                factKey = window.AiWritingEngine.factIdentityKey(item.fact);
+              }
+              if (factKey) {
+                if (seenIdentity[factKey]) return false;
+                seenIdentity[factKey] = true;
+                return true;
+              }
+              var text = typeof item === "string" ? item : (item && item.text) || "";
+              var sig = text.toLowerCase()
+                .replace(/[^a-z0-9\s]/g, " ")
+                .replace(/\s+/g, " ")
+                .trim()
+                .slice(0, 90);
+              if (!sig) return true;
+              if (seenIdentity["text|" + sig]) return false;
+              seenIdentity["text|" + sig] = true;
+              return true;
+            });
+          });
+        }
 
         classified._analyzed = analyzed;
+        classified._sectionModel = sectionModel;
         classified._metrics = computeHandoverMetrics(analyzed);
         return classified;
       }
@@ -8147,6 +8349,11 @@
           icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>'
         },
         {
+          id: "events",
+          label: "Timed Actions",
+          icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>'
+        },
+        {
           id: "tasks",
           label: "Outstanding Tasks",
           icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14l2 2 4-4"/></svg>'
@@ -8829,6 +9036,12 @@
       }
 
       function extractHotelSnapshot(notesText) {
+        /* Shared Hospitality Intelligence Engine owns KPI / shorthand extraction. */
+        var SI = window.ShiftIntelligenceEngine || window.HospitalityIntelligenceEngine;
+        if (SI && typeof SI.extractHotelSnapshot === "function") {
+          return SI.extractHotelSnapshot(notesText);
+        }
+
         var text = String(notesText || "");
         var normalized = text.replace(/\s+/g, " ").trim();
 
@@ -9240,6 +9453,7 @@
           maintenance: metrics.maintenance || display.maintenance || 0,
           guest: display.guest || 0,
           payments: metrics.payments || display.payments || 0,
+          events: metrics.timedActions || metrics.events || display.timedActions || display.events || 0,
           tasks: metrics.tasks || display.tasks || 0
         };
       }
@@ -9796,6 +10010,10 @@
           ? Object.assign({}, draft.hotelSnapshot)
           : null;
 
+        /*
+         * Draft may restore input fields and cache prior generated data in memory,
+         * but must never auto-open the generated report in the main workflow.
+         */
         if (draft.hasGeneratedOutput && draft.organisedHandover) {
           lastSummaryText = draft.aiSummary || "";
           lastClassified = restoreClassifiedFromSaved(draft);
@@ -9803,38 +10021,29 @@
             ? draft.recommendations.map(normalizeRecommendation)
             : [];
           lastGeneratedTime = draft.generatedTime || "";
-          renderSummaryUI(lastClassified);
-          renderShiftAtAGlance(lastClassified);
-          renderPreHandoverSnapshot();
-          renderHandoverMeta(lastGeneratedTime);
-          renderSummaryStats(lastClassified);
-          renderSections(lastClassified);
-          renderShiftIntelligence();
-          showSummaryCard();
-          lastHandoverText = formatHandoverText(lastClassified);
-          setHandoverOutputChrome(true);
+          lastHandoverText = "";
         } else {
           lastSummaryText = "";
           lastClassified = null;
           lastRecommendations = [];
           lastGeneratedTime = "";
           lastHandoverText = "";
-          activeHandoverEditId = null;
-          activeRecommendationEditId = null;
-          handoverMetaGrid.innerHTML = "";
-          handoverMeta.classList.remove("is-visible");
-          sectionsGrid.innerHTML = "";
-          shiftSnapshotGrid.innerHTML = "";
-          shiftAlertsGrid.innerHTML = "";
-          shiftAlertsGroup.style.display = "";
-          shiftGlance.classList.remove("is-visible");
-          clearIntelligenceExperienceUI();
-          summaryStats.innerHTML = "";
-          summaryCard.classList.remove("is-visible");
-          hideRecommendationsPanel();
-          renderPreHandoverSnapshot();
-          setHandoverOutputChrome(false);
         }
+        activeHandoverEditId = null;
+        activeRecommendationEditId = null;
+        handoverMetaGrid.innerHTML = "";
+        handoverMeta.classList.remove("is-visible");
+        sectionsGrid.innerHTML = "";
+        shiftSnapshotGrid.innerHTML = "";
+        shiftAlertsGrid.innerHTML = "";
+        shiftAlertsGroup.style.display = "";
+        shiftGlance.classList.remove("is-visible");
+        clearIntelligenceExperienceUI();
+        summaryStats.innerHTML = "";
+        summaryCard.classList.remove("is-visible");
+        hideRecommendationsPanel();
+        renderPreHandoverSnapshot();
+        setHandoverPageState(HANDOVER_PAGE_STATE.INPUT);
       }
 
       function restoreDraftFromStorage(preferredDraft) {
@@ -9854,14 +10063,157 @@
         updateDraftStatusUI(null);
       }
 
+      function captureHandoverSessionSnapshot() {
+        captureHotelSnapshotInputs();
+        return {
+          hotelName: hotelName.value,
+          preparedBy: preparedBy.value,
+          shift: selectedShift,
+          date: handoverDate.value,
+          notes: notesInput.value,
+          hotelSnapshotOverrides: Object.assign({}, lastHotelSnapshotOverrides || {}),
+          normalizedSnapshot: lastNormalizedSnapshot ? Object.assign({}, lastNormalizedSnapshot) : null,
+          classified: lastClassified,
+          recommendations: (lastRecommendations || []).slice(),
+          summaryText: lastSummaryText || "",
+          generatedTime: lastGeneratedTime || "",
+          handoverText: lastHandoverText || "",
+          generatedView: lastGeneratedView,
+          intelligenceExperience: lastIntelligenceExperience,
+          editingSavedHandoverId: editingSavedHandoverId,
+          isEditingExistingSavedHandover: isEditingExistingSavedHandover,
+          pageState: handoverPageState
+        };
+      }
+
+      function applyHandoverSessionSnapshot(snapshot) {
+        if (!snapshot) return;
+        skipDraftSave = true;
+        hotelName.value = snapshot.hotelName || "";
+        preparedBy.value = snapshot.preparedBy || "";
+        setSelectedShift(snapshot.shift || "AM", { respectUserSelection: true });
+        if (snapshot.date) handoverDate.value = snapshot.date;
+        notesInput.value = snapshot.notes || "";
+        updateCharCount();
+        lastHotelSnapshotOverrides = snapshot.hotelSnapshotOverrides
+          ? Object.assign({}, snapshot.hotelSnapshotOverrides)
+          : {};
+        lastNormalizedSnapshot = snapshot.normalizedSnapshot
+          ? Object.assign({}, snapshot.normalizedSnapshot)
+          : null;
+        lastClassified = snapshot.classified || null;
+        lastRecommendations = Array.isArray(snapshot.recommendations) ? snapshot.recommendations.slice() : [];
+        lastSummaryText = snapshot.summaryText || "";
+        lastGeneratedTime = snapshot.generatedTime || "";
+        lastHandoverText = snapshot.handoverText || "";
+        lastGeneratedView = snapshot.generatedView || null;
+        lastIntelligenceExperience = snapshot.intelligenceExperience || null;
+        editingSavedHandoverId = snapshot.editingSavedHandoverId || null;
+        isEditingExistingSavedHandover = !!snapshot.isEditingExistingSavedHandover;
+        if (lastClassified) {
+          renderSummaryUI(lastClassified);
+          renderShiftAtAGlance(lastClassified);
+          renderPreHandoverSnapshot();
+          renderHandoverMeta(lastGeneratedTime);
+          renderSummaryStats(lastClassified);
+          renderSections(lastClassified);
+          renderShiftIntelligence();
+          showSummaryCard();
+        }
+        skipDraftSave = false;
+      }
+
+      /**
+       * Single page-state authority for Demo, Pilot Lab, and real workspaces.
+       * States: input | generated | saved-view
+       */
+      function setHandoverPageState(state, options) {
+        options = options || {};
+        if (
+          state !== HANDOVER_PAGE_STATE.INPUT &&
+          state !== HANDOVER_PAGE_STATE.GENERATED &&
+          state !== HANDOVER_PAGE_STATE.SAVED_VIEW
+        ) {
+          state = HANDOVER_PAGE_STATE.INPUT;
+        }
+        handoverPageState = state;
+        document.documentElement.setAttribute("data-handover-page-state", state);
+        document.body.classList.remove(
+          "hf-page-state-input",
+          "hf-page-state-generated",
+          "hf-page-state-saved-view"
+        );
+        document.body.classList.add("hf-page-state-" + state);
+
+        var isInput = state === HANDOVER_PAGE_STATE.INPUT;
+        var isGenerated = state === HANDOVER_PAGE_STATE.GENERATED;
+        var isSavedView = state === HANDOVER_PAGE_STATE.SAVED_VIEW;
+        var showOutput = isGenerated || isSavedView;
+
+        if (isInput) viewingSavedHandoverId = null;
+
+        setHandoverOutputChrome(showOutput, {
+          pageState: state,
+          skipDemoSync: true
+        });
+
+        if (savedViewBanner) {
+          savedViewBanner.hidden = !isSavedView;
+        }
+        if (generateBtn) {
+          generateBtn.hidden = !isInput;
+        }
+        if (editNotesBtn) {
+          editNotesBtn.hidden = isInput;
+          editNotesBtn.disabled = isInput;
+        }
+        if (newHandoverBtn) {
+          /* Visible in generated/saved-view; Demo continues to hide via applyDemoWorkspaceChrome. */
+          newHandoverBtn.hidden = isInput;
+        }
+        if (clearBtn) {
+          clearBtn.hidden = false;
+        }
+        if (handoverClearActions) {
+          handoverClearActions.hidden = false;
+        }
+
+        var lockForm = isSavedView;
+        [hotelName, preparedBy, handoverDate, notesInput].forEach(function (el) {
+          if (!el) return;
+          if (isDemoModeActive()) return; /* Demo locking handled separately. */
+          el.readOnly = lockForm;
+        });
+        if (shiftSelector) {
+          shiftSelector.classList.toggle("is-readonly", lockForm);
+          shiftSelector.querySelectorAll(".shift-btn").forEach(function (btn) {
+            btn.disabled = lockForm && !isDemoModeActive();
+          });
+        }
+
+        if (!options.skipDemoChrome) {
+          applyDemoWorkspaceChrome();
+        }
+        syncDemoConversionCard(showOutput && isDemoModeActive());
+
+        if (options.focusNotes && notesInput) {
+          notesInput.focus();
+        }
+        if (options.scrollToOutput && outputSection && showOutput) {
+          outputSection.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }
+
       /**
        * Pre-generate: only details, snapshot, notes, and Generate.
-       * Post-generate: reveal Organised Handover + Copy/Save/PDF/Print/New/Clear.
+       * Post-generate: reveal Organised Handover + Copy/Save/PDF/Print/Edit/New/Clear.
        * Shared by public Interactive Demo and real hotel workspaces.
        */
-      function setHandoverOutputChrome(hasOutput) {
+      function setHandoverOutputChrome(hasOutput, options) {
+        options = options || {};
         var show = !!hasOutput;
         var demo = isDemoModeActive();
+        var state = options.pageState || handoverPageState;
         if (handoverActions) {
           handoverActions.classList.toggle("has-handover-output", show);
         }
@@ -9870,8 +10222,8 @@
           handoverOutputActions.hidden = demo || !show;
         }
         if (handoverClearActions) {
-          /* Keep Clear Notes available in demo; hide New Handover via chrome. */
-          handoverClearActions.hidden = !show;
+          /* Clear Notes stays available in input + generated; Edit/New gated by page state CSS. */
+          handoverClearActions.hidden = false;
         }
         if (outputSection) {
           outputSection.classList.toggle("visible", show);
@@ -9898,14 +10250,16 @@
           }
           if (saveHandoverBtn) {
             saveHandoverBtn.hidden = false;
-            saveHandoverBtn.disabled = !show;
+            saveHandoverBtn.disabled = !show || state === HANDOVER_PAGE_STATE.SAVED_VIEW;
           }
         }
         if (!show && copyBtn) {
           copyBtn.classList.remove("copied");
           restoreCopyButtonHtml();
         }
-        syncDemoConversionCard(show && demo);
+        if (!options.skipDemoSync) {
+          syncDemoConversionCard(show && demo);
+        }
       }
 
       function clearHandoverOutputState() {
@@ -9933,7 +10287,7 @@
         editingSavedHandoverId = null;
         isEditingExistingSavedHandover = false;
         hideShiftIntelligencePanel();
-        setHandoverOutputChrome(false);
+        setHandoverPageState(HANDOVER_PAGE_STATE.INPUT);
       }
 
       function resetHandoverForm() {
@@ -9945,14 +10299,30 @@
         notesInput.value = "";
         updateCharCount();
         clearHandoverOutputState();
+        cachedSessionBeforeSavedView = null;
+        viewingSavedHandoverId = null;
         renderPreHandoverSnapshot();
         applyBrainPrefillToForm({ preserveExisting: false });
       }
 
+      function editNotesFromGenerated() {
+        if (handoverPageState === HANDOVER_PAGE_STATE.SAVED_VIEW) {
+          /* Leave read-only saved view into editable input with the loaded values. */
+          viewingSavedHandoverId = null;
+        }
+        setHandoverPageState(HANDOVER_PAGE_STATE.INPUT, { focusNotes: true });
+        if (handoverInputWorkspace) {
+          handoverInputWorkspace.scrollIntoView({ behavior: "smooth", block: "start" });
+        } else if (notesInput) {
+          notesInput.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+        showToast("Edit your notes, then generate again.");
+      }
+
       function startNewHandover() {
-        if (draftPayloadHasContent(buildDraftPayload())) {
+        if (draftPayloadHasContent(buildDraftPayload()) || lastClassified) {
           if (!window.confirm(
-            "You have an unfinished handover draft. Starting a new handover will clear the current draft. Continue?"
+            "You have unsaved handover work. Starting a new handover will clear the current draft. Continue?"
           )) {
             return;
           }
@@ -9964,7 +10334,35 @@
         isEditingExistingSavedHandover = false;
         skipDraftSave = false;
         hideDraftRestoredHint();
-        notesInput.focus();
+        setHandoverPageState(HANDOVER_PAGE_STATE.INPUT, { focusNotes: true });
+      }
+
+      function backToCurrentHandover() {
+        if (cachedSessionBeforeSavedView) {
+          var snap = cachedSessionBeforeSavedView;
+          cachedSessionBeforeSavedView = null;
+          viewingSavedHandoverId = null;
+          applyHandoverSessionSnapshot(snap);
+          if (snap.classified) {
+            setHandoverPageState(HANDOVER_PAGE_STATE.GENERATED, { scrollToOutput: true });
+          } else {
+            setHandoverPageState(HANDOVER_PAGE_STATE.INPUT, { focusNotes: true });
+          }
+          showToast("Returned to your current handover.");
+          return;
+        }
+        viewingSavedHandoverId = null;
+        setHandoverPageState(HANDOVER_PAGE_STATE.INPUT, { focusNotes: true });
+      }
+
+      function setPreviousHandoversExpanded(expanded) {
+        var section = document.getElementById("savedHandoversSection");
+        if (!section || !savedHandoversToggle || !savedHandoversCollapsible) return;
+        section.classList.toggle("is-collapsed", !expanded);
+        savedHandoversCollapsible.hidden = !expanded;
+        savedHandoversToggle.setAttribute("aria-expanded", expanded ? "true" : "false");
+        var hint = document.getElementById("savedHandoversToggleHint");
+        if (hint) hint.hidden = !!expanded;
       }
 
       function buildBackupPayload() {
@@ -10155,7 +10553,7 @@
       }
 
       function applyCloudSavedHandoverId(result) {
-        if (!result || !result.cloud || !result.record) {
+        if (!result || !result.record) {
           return;
         }
 
@@ -10165,7 +10563,14 @@
           /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(cloudId))
         ) {
           editingSavedHandoverId = String(cloudId);
+        } else if (result.record.id) {
+          editingSavedHandoverId = String(result.record.id);
         }
+        isEditingExistingSavedHandover = true;
+        if (lastClassified) {
+          setHandoverPageState(HANDOVER_PAGE_STATE.GENERATED);
+        }
+        setPreviousHandoversExpanded(true);
       }
 
       function buildSavePayload() {
@@ -10205,14 +10610,7 @@
         return classified;
       }
 
-      function restoreSavedHandover(saved, options) {
-        options = options || {};
-        skipDraftSave = true;
-        hideDraftRestoredHint();
-
-        isEditingExistingSavedHandover = true;
-        editingSavedHandoverId = saved.cloudId || saved.id || null;
-
+      function loadSavedHandoverContent(saved) {
         hotelName.value = saved.hotelName === "Not specified" ? "" : (saved.hotelName || "");
         preparedBy.value = saved.preparedBy === "Not specified" ? "" : (saved.preparedBy || "");
         shiftTouchedByUser = false;
@@ -10244,17 +10642,56 @@
         renderSections(lastClassified);
         renderShiftIntelligence();
         showSummaryCard();
-
         lastHandoverText = formatHandoverText(lastClassified);
-        setHandoverOutputChrome(true);
+      }
 
+      /** Intentional Open → read-only saved-report view (does not hijack the input workflow). */
+      function openSavedHandoverView(saved, options) {
+        options = options || {};
+        if (!saved || !saved.organisedHandover) {
+          showToast("Saved handover is missing generated content.");
+          return;
+        }
+        hideDraftRestoredHint();
+        if (
+          handoverPageState !== HANDOVER_PAGE_STATE.SAVED_VIEW &&
+          (lastClassified || draftPayloadHasContent(buildDraftPayload()))
+        ) {
+          cachedSessionBeforeSavedView = captureHandoverSessionSnapshot();
+        }
+        skipDraftSave = true;
+        isEditingExistingSavedHandover = false;
+        editingSavedHandoverId = saved.cloudId || saved.id || null;
+        viewingSavedHandoverId = editingSavedHandoverId;
+        loadSavedHandoverContent(saved);
+        skipDraftSave = false;
+        setHandoverPageState(HANDOVER_PAGE_STATE.SAVED_VIEW, { scrollToOutput: !options.forPrint });
+        if (!options.forPrint) {
+          showToast("Opened saved handover.");
+        }
+      }
+
+      /** Intentional Edit → editable generated workflow for that saved record. */
+      function editSavedHandover(saved) {
+        if (!saved || !saved.organisedHandover) {
+          showToast("Saved handover is missing generated content.");
+          return;
+        }
+        hideDraftRestoredHint();
+        skipDraftSave = true;
+        isEditingExistingSavedHandover = true;
+        editingSavedHandoverId = saved.cloudId || saved.id || null;
+        viewingSavedHandoverId = null;
+        loadSavedHandoverContent(saved);
         skipDraftSave = false;
         saveDraftNow();
+        setHandoverPageState(HANDOVER_PAGE_STATE.GENERATED, { scrollToOutput: true });
+        showToast("Saved handover loaded for editing.");
+      }
 
-        if (!options.forPrint) {
-          outputSection.scrollIntoView({ behavior: "smooth", block: "start" });
-          showToast("Saved handover loaded.");
-        }
+      function restoreSavedHandover(saved, options) {
+        /* Legacy alias — Open path uses the intentional saved-view. */
+        openSavedHandoverView(saved, options);
       }
 
       function printSavedHandover(saved) {
@@ -10427,18 +10864,11 @@
               lastClassified = classified;
               lastIntelligenceExperience = getHandoverIntelligenceExperience(classified);
               refreshCanonicalGeneratedView();
-              setHandoverOutputChrome(true);
+              setHandoverPageState(HANDOVER_PAGE_STATE.GENERATED, { scrollToOutput: true });
               applyDemoWorkspaceChrome();
 
               showToast(uiLabels.handover + " generated successfully!");
               if (!isDemoModeActive()) scheduleDraftSave();
-
-              var scrollTarget = shiftGlance && shiftGlance.classList.contains("is-visible")
-                ? shiftGlance
-                : summaryCard;
-              if (scrollTarget) {
-                scrollTarget.scrollIntoView({ behavior: "smooth", block: "nearest" });
-              }
             } catch (err) {
               console.error("[Handover] Generate failed:", err);
               showToast("Could not generate handover. Please try again.");
@@ -10741,6 +11171,19 @@
       });
       clearBtn.addEventListener("click", clearNotes);
       if (newHandoverBtn) newHandoverBtn.addEventListener("click", startNewHandover);
+      if (editNotesBtn) editNotesBtn.addEventListener("click", editNotesFromGenerated);
+      if (backToCurrentHandoverBtn) {
+        backToCurrentHandoverBtn.addEventListener("click", backToCurrentHandover);
+      }
+      if (savedViewNewHandoverBtn) {
+        savedViewNewHandoverBtn.addEventListener("click", startNewHandover);
+      }
+      if (savedHandoversToggle) {
+        savedHandoversToggle.addEventListener("click", function () {
+          var expanded = savedHandoversToggle.getAttribute("aria-expanded") === "true";
+          setPreviousHandoversExpanded(!expanded);
+        });
+      }
       if (exportBackupBtn) {
         exportBackupBtn.addEventListener("click", function () {
           if (isDemoModeActive()) {
@@ -10798,6 +11241,7 @@
 
       window.addEventListener("hf-demo-mode-reset", function () {
         clearHandoverOutputState();
+        cachedSessionBeforeSavedView = null;
         var draft = window.HFDemoMode && HFDemoMode.getDemoDraft ? HFDemoMode.getDemoDraft() : null;
         if (draft) restoreDraftFromStorage(draft);
         else if (window.HFDemoMode && HFDemoMode.getDemoDraft) {
@@ -10805,15 +11249,29 @@
           setTimeout(function () {
             var next = HFDemoMode.getDemoDraft();
             if (next) restoreDraftFromStorage(next);
+            setHandoverPageState(HANDOVER_PAGE_STATE.INPUT);
             applyDemoWorkspaceChrome();
           }, 0);
         }
+        setHandoverPageState(HANDOVER_PAGE_STATE.INPUT);
         applyDemoWorkspaceChrome();
         showToast("Demo reset — sample notes restored.");
       });
       window.addEventListener("hf-demo-mode-change", function () {
         applyDemoWorkspaceChrome();
-        setHandoverOutputChrome(!!(lastClassified || lastGeneratedView));
+        if (handoverPageState === HANDOVER_PAGE_STATE.INPUT) {
+          setHandoverPageState(HANDOVER_PAGE_STATE.INPUT, { skipDemoChrome: true });
+        } else if (lastClassified || lastGeneratedView) {
+          setHandoverPageState(
+            handoverPageState === HANDOVER_PAGE_STATE.SAVED_VIEW
+              ? HANDOVER_PAGE_STATE.SAVED_VIEW
+              : HANDOVER_PAGE_STATE.GENERATED,
+            { skipDemoChrome: true }
+          );
+        } else {
+          setHandoverPageState(HANDOVER_PAGE_STATE.INPUT, { skipDemoChrome: true });
+        }
+        setHandoverOutputChrome(handoverPageState !== HANDOVER_PAGE_STATE.INPUT);
       });
 
       var demoRestartCta = document.getElementById("hfDemoRestartCta");
@@ -10864,20 +11322,22 @@
 
       function finishHandoverPageInit(preferredDraft) {
         wireShiftSelectorOnce();
-        setHandoverOutputChrome(false);
+        setHandoverPageState(HANDOVER_PAGE_STATE.INPUT);
+        setPreviousHandoversExpanded(false);
         var draftWasRestored = false;
         try {
           draftWasRestored = restoreDraftFromStorage(preferredDraft);
         } catch (err) {
           console.error("[Handover] Draft restore failed:", err);
-          setHandoverOutputChrome(false);
+          setHandoverPageState(HANDOVER_PAGE_STATE.INPUT);
         }
 
         if (draftWasRestored) {
           showDraftRestoredHint();
+          setHandoverPageState(HANDOVER_PAGE_STATE.INPUT);
         } else {
           initDate();
-          setHandoverOutputChrome(false);
+          setHandoverPageState(HANDOVER_PAGE_STATE.INPUT);
         }
         applyBrainPrefillToForm({ preserveExisting: true });
         updateCharCount();
@@ -10938,8 +11398,8 @@
           showToast: showToast,
           onSaveRequest: buildSavePayload,
           onSaveComplete: applyCloudSavedHandoverId,
-          onOpen: restoreSavedHandover,
-          onEdit: restoreSavedHandover,
+          onOpen: openSavedHandoverView,
+          onEdit: editSavedHandover,
           onPrint: printSavedHandover,
           onExportPdf: exportSavedHandoverPdf,
           onConfirmDelete: function () {

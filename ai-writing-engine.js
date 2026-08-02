@@ -21,7 +21,9 @@
  * - Does NOT own final operational category classification (E3+ — Hospitality
  *   Intelligence Engine classifyOperationalFact).
  * - Hospitality Intelligence Engine (shift-intelligence-engine.js) owns
- *   operational reasoning. Modules must not add a second recommendation system.
+ *   operational reasoning (impact ranking, operational objects, snapshot KPI
+ *   extraction). This module formats engine-ranked facts for display only.
+ * - Modules must not add a second recommendation system.
  */
 (function (global) {
   "use strict";
@@ -189,6 +191,26 @@
     return null;
   }
 
+  /** Writing-only time pulls from already-extracted source text (no new facts). */
+  function extractWakeDisplayTime(src) {
+    var text = String(src || "");
+    var m = text.match(
+      /\bwake(?:[\s-]*up)?(?:\s+call)?(?:\s+for\s+(?:rm\.?|room)\s*\d{1,4}[a-z]?)?(?:\s+at)?\s*(\d{1,2}(?::\d{2})?\s*(?:am|pm)|\d{3,4}|\d{1,2}[:.]\d{2})\b/i
+    );
+    if (!m) {
+      m = text.match(/\bwake(?:[\s-]*up)?[^.]{0,48}?\bat\s+(\d{1,2}(?::\d{2})?\s*(?:am|pm)|\d{3,4}|\d{1,2}[:.]\d{2})\b/i);
+    }
+    return m ? normalizeTimelineTime(m[1]) : null;
+  }
+
+  function extractTaxiDisplayTime(src) {
+    var text = String(src || "");
+    var m = text.match(
+      /\b(?:addison(?:\s+lee)?|taxi|transfer)(?:\s+booked)?(?:\s+for)?\s*(\d{1,2}(?::\d{2})?\s*(?:am|pm)|\d{3,4}|\d{1,2}[:.]\d{2})\b/i
+    );
+    return m ? normalizeTimelineTime(m[1]) : null;
+  }
+
   function extractGuestNames(text) {
     var names = [];
     var re = /\b((?:mr|mrs|ms|miss|dr)\.?\s+[A-Za-z][A-Za-z'-]+)/gi;
@@ -280,9 +302,15 @@
       }
     });
 
-    /* Bare leading room number: "11 iron board…" (no global flag — avoids ^/g loops) */
+    /* Bare leading room number: "11 iron board…" (no global flag — avoids ^/g loops).
+       Do not treat leading quantities as rooms: "2 parcels", "3 packages". */
     var bareLead = source.match(/^\s*(\d{1,4}[a-z]?)\b(?=\s+(?!am\b|pm\b))/i);
-    if (bareLead) addRoom(bareLead[1]);
+    if (
+      bareLead &&
+      !/^\s*\d{1,4}[a-z]?\s+(?:parcels?|packages?|umbrellas?|adapters?|keys?|items?|guests?|arrivals?|deps?|departures?|boxes?)\b/i.test(source)
+    ) {
+      addRoom(bareLead[1]);
+    }
 
     /* Maintenance follow-up lists: "follow up 51, 42, and 16" */
     var followList = source.match(/\bfollow[\s-]*up\s+(\d{1,4}[a-z]?(?:\s*,\s*\d{1,4}[a-z]?)*(?:\s*,?\s*and\s*\d{1,4}[a-z]?)?)/i);
@@ -384,6 +412,9 @@
     if (m) return formatMoneyAmount(m[1], currency);
     m = source.match(/\b(\d+(?:\.\d{1,2})?)\s*(?:per\s+)?(?:extra\s+)?(?:per\s+)?night\b/i);
     if (m) return formatMoneyAmount(m[1], currency);
+    /* "outstanding 175" / "outstanding £175" without currency symbol */
+    m = source.match(/\boutstanding\s+(?:balance\s+)?(?:of\s+)?([£$€]?\s*\d+(?:[.,]\d{1,2})?)\b/i);
+    if (m) return formatMoneyAmount(m[1], currency || "£");
     return "";
   }
 
@@ -485,10 +516,15 @@
     [/\bmaint\b(?=\s|$|[.,!?])/gi, "maintenance"],
     [/\bdeps\b(?=\s|$|[.,!?:])/gi, "departures"],
     [/\bdep\b(?=\s+(?:am|pm|tomorrow|tmrw|morning|afternoon|tonight)\b)/gi, "departure"],
+    [/\bdep\b(?=\s*[:\-]?\s*\d{1,3}(?![:.\d]))/gi, "departures"],
     [/\barrs\b(?=\s|$|[.,!?:])/gi, "arrivals"],
     [/\barr\b(?=\s+(?:am|pm|tonight|tomorrow|tmrw|~|\d))/gi, "arrival"],
+    [/\barr\b(?=\s*[:\-]?\s*\d{1,3}(?![:.\d]))/gi, "arrivals"],
     [/\binhouse\b/gi, "in-house"],
     [/\bocc\b(?=\s|$|[.,!?:%\d])/gi, "occupancy"],
+    [/\bstay\b(?=\s*[:\-]?\s*\d)/gi, "stayovers"],
+    [/\b(?:rooms?\s+)?sold\b(?=\s*[:\-]?\s*\d)/gi, "rooms sold"],
+    [/\b(?:rooms?\s+)?avail(?:able)?\b(?=\s*[:\-]?\s*\d)/gi, "rooms available"],
     [/\bno[\s-]?show\b/gi, "no-show"],
     [/\blost\s*prop(?:erty)?\b/gi, "lost property"],
     [/\bfb\b(?=\s|$|[.,!?])/gi, "F&B"],
@@ -815,16 +851,22 @@
 
   function buildLateCheckoutBody(normalized, prefs) {
     var until = extractUntilTime(normalized, prefs);
-    var untilBit = until ? " until " + until : "";
+    if (!until) {
+      var bareTime = String(normalized || "").match(
+        /\b(\d{1,2}[:.]\d{2}|\d{1,2}\s*(?:am|pm))\b/i
+      );
+      if (bareTime) until = normalizeTimelineTime(bareTime[1]) || formatTime(bareTime[1], prefs);
+    }
+    var untilBit = until ? " for " + until : "";
     /* Phase 3A: status from language only — never invent HK/DM/guest chase actions.
        Do not treat a bare time as confirmation. */
     if (isConfirmedLanguage(normalized)) {
-      return "Late check-out has been confirmed" + untilBit;
+      return "Late check-out confirmed" + untilBit;
     }
     if (isRequestLanguage(normalized)) {
-      return "Late check-out has been requested" + untilBit;
+      return "Late check-out requested" + untilBit;
     }
-    return "Late check-out has been noted" + untilBit;
+    return "Late check-out noted" + untilBit;
   }
 
   function buildExtendStayBody(normalized) {
@@ -934,6 +976,15 @@
     if (detectAcIssue(normalized)) {
       return buildAcBody(normalized);
     }
+    var closed =
+      noteContains(normalized, ["quiet afterwards", "noise settled", "resolved", "apologised and quiet", "apologized and quiet"]) ||
+      (/\bquiet\b/i.test(normalized) && noteContains(normalized, ["apologised", "apologized", "afterwards"]));
+    if (closed && noteContains(normalized, ["noise", "corridor"])) {
+      return "Corridor noise complaint closed after staff intervention. No further action required";
+    }
+    if (closed && noteContains(normalized, ["noise"])) {
+      return "Noise complaint closed. Guest satisfied. No further action required";
+    }
     var topic = "";
     if (noteContains(normalized, ["noise"])) topic = " regarding noise";
     else if (noteContains(normalized, ["smell", "odour", "odor"])) topic = " regarding an odour";
@@ -976,38 +1027,60 @@
   }
 
   function buildVipBody(normalized, original, guestName, prefs) {
-    /* Night Manager: who, when, where, preferences, what next. */
+    /* Concise operational VIP lead — name, arrival, room, occasion, prep actions. */
     var rooms = extractRoomNumbers(original || normalized);
     var hasArrival = noteContains(normalized, ["arriv"]);
     if (!guestName && !rooms.length && !hasArrival &&
-        !noteContains(normalized, ["champagne", "flowers", "amenity", "quiet"])) {
+        !noteContains(normalized, ["champagne", "flowers", "amenity", "quiet", "anniversary", "welcome card", "chocolate"])) {
       return "";
     }
-    var status;
+
+    var parts = [];
     if (guestName) {
-      status = guestName + (/\breturning\b/i.test(normalized) ? " is a returning VIP guest" : " is a VIP guest");
-      if (hasArrival) status += " arriving";
+      parts.push(
+        guestName + " — " +
+        (/\breturning\b/i.test(normalized) ? "Returning VIP arrival" : "VIP arrival")
+      );
     } else {
-      status = "A VIP guest" + (hasArrival ? " is arriving" : " requires preparation");
+      parts.push(hasArrival ? "VIP arrival" : "VIP preparation required");
     }
-    if (rooms.length === 1) status += (hasArrival || guestName ? " for Room " : " in Room ") + rooms[0];
+
+    if (noteContains(normalized, ["anniversary"])) parts.push("Anniversary stay");
+
     var timeMatch = (original || "").match(/\b(\d{1,2}[:.]\d{2}|\d{1,2}\s*(?:am|pm))\b/i) ||
       normalized.match(/\b(\d{1,2}[:.]\d{2}|\d{1,2}\s*(?:am|pm))\b/i);
-    if (timeMatch) status += " at " + formatTime(timeMatch[1], prefs);
+    var timeBit = timeMatch ? (normalizeTimelineTime(timeMatch[1]) || formatTime(timeMatch[1], prefs)) : "";
 
     var amenityBits = [];
     if (noteContains(normalized, ["champagne"])) amenityBits.push("champagne");
+    if (noteContains(normalized, ["welcome card"])) amenityBits.push("welcome card");
+    if (noteContains(normalized, ["chocolate"])) amenityBits.push("chocolates");
     if (noteContains(normalized, ["flowers"])) amenityBits.push("flowers");
     if (noteContains(normalized, ["water"])) amenityBits.push("extra water");
     if (noteContains(normalized, ["quiet upper"])) amenityBits.push("quiet upper-floor allocation");
     else if (noteContains(normalized, ["quiet"])) amenityBits.push("a quiet room");
-    if (amenityBits.length) {
-      status += ". Prepare " + joinNatural(amenityBits) + " before arrival";
+    /* Anniversary already stated as occasion — do not repeat as amenity. */
+
+    if (rooms.length === 1 && amenityBits.length) {
+      parts.push(
+        "Prepare Room " + rooms[0] + " with " + joinNatural(amenityBits) +
+        (timeBit ? " before the " + timeBit + " arrival" : " before arrival")
+      );
+    } else if (rooms.length === 1) {
+      parts.push(
+        "Prepare Room " + rooms[0] +
+        (timeBit ? " before the " + timeBit + " arrival" : " before arrival")
+      );
+    } else if (amenityBits.length) {
+      parts.push(
+        "Prepare " + joinNatural(amenityBits) +
+        (timeBit ? " before the " + timeBit + " arrival" : " before arrival")
+      );
     } else if (hasArrival) {
-      status += ". Confirm room readiness before arrival";
+      parts.push(timeBit ? "Confirm room readiness before the " + timeBit + " arrival" : "Confirm room readiness before arrival");
     }
 
-    return status;
+    return parts.join(". ");
   }
 
   function buildPaymentBody(normalized, options) {
@@ -1044,8 +1117,17 @@
     if (noteContains(normalized, ["ota", "virtual card", "booking.com", "expedia", "city tax"])) {
       var channel = noteContains(normalized, ["expedia"]) ? "Expedia"
         : (noteContains(normalized, ["booking.com"]) ? "Booking.com" : "OTA");
+      var guestBits = extractPlainGuestNames(normalized);
+      var guestBit = guestBits.length ? " for " + guestBits[0] : "";
+      if (noteContains(normalized, ["virtual card"])) {
+        var vcc = channel + " virtual-card payment" + amountBit + guestBit;
+        if (noteContains(normalized, ["pending", "awaiting", "auth"])) {
+          return vcc + " is still pending authorisation";
+        }
+        return vcc + " still needs to be collected";
+      }
       var taxBit = noteContains(normalized, ["city tax"]) ? " city tax" : " payment";
-      return "An outstanding " + channel + taxBit + amountBit + " still needs to be collected";
+      return "An outstanding " + channel + taxBit + amountBit + guestBit + " still needs to be collected";
     }
     return "";
   }
@@ -1089,8 +1171,36 @@
     if (noteContains(normalized, ["tv", "remote"])) {
       return "TV remote not working. Guest needs a replacement";
     }
-    if (noteContains(normalized, ["heating", "no heat", "cold"])) {
-      return "Heating issue reported. Guest comfort affected";
+    if (noteContains(normalized, ["heating", "no heat", "too warm", "controls not responding", "cold"])) {
+      var heatParts = [];
+      if (noteContains(normalized, ["controls not responding", "not responding"])) {
+        heatParts.push("Heating controls not responding");
+      } else if (noteContains(normalized, ["too warm", "too hot"])) {
+        heatParts.push("Heating too warm");
+      } else if (noteContains(normalized, ["no heat", "no heating", "cold"])) {
+        heatParts.push("No heating / room cold");
+      } else {
+        heatParts.push("Heating issue reported");
+      }
+      if (noteContains(normalized, ["too warm", "too hot"]) &&
+          heatParts[0].indexOf("too warm") === -1 &&
+          noteContains(normalized, ["controls not responding", "not responding"])) {
+        heatParts[0] = "Heating too warm and controls not responding";
+      }
+      if (noteContains(normalized, ["guest", "complain", "comfort", "cold", "warm", "hot"])) {
+        heatParts.push("Guest comfort affected");
+      }
+      if (noteContains(normalized, ["fan provided", "fan given", "fan left", "fan guest"])) {
+        heatParts.push("Fan provided");
+      }
+      if (noteContains(normalized, ["maintenance", "maint", "engineer"]) &&
+          noteContains(normalized, ["informed", "notified", "advised", "aware"])) {
+        heatParts.push("Maintenance informed");
+      }
+      if (noteContains(normalized, ["follow up", "follow-up", "still need", "unresolved", "still"])) {
+        heatParts.push("Follow up required");
+      }
+      return heatParts.join(". ");
     }
     if (noteContains(normalized, ["lock", "key", "cannot enter", "card not"])) {
       return "Room access or lock issue. Guest cannot enter reliably";
@@ -1099,13 +1209,48 @@
   }
 
   function buildDeliveryBody(normalized, guestName) {
-    /* Phase 3B: held package status only — no invented contact/recording. */
-    var status = "Package is being held at Reception";
+    /* Preserve quantity and stated storage location — never invent Reception. */
+    var src = String(normalized || "");
+    var wordCount = src.match(/\b(two|three|four|five|six|seven|eight|nine|ten)\s+(?:parcels?|packages?|boxes?)\b/i);
+    var countMatch = src.match(/\b(\d+)\s+(?:parcels?|packages?|boxes?)\b/i);
+    var noun = /\bparcels?\b/i.test(src) ? "parcel" : "package";
+    var countLabel = "";
+    if (wordCount) {
+      countLabel = capitalize(wordCount[1].toLowerCase());
+      if (!/^one$/i.test(wordCount[1])) noun = noun === "parcel" ? "parcels" : "packages";
+    } else if (countMatch) {
+      var n = parseInt(countMatch[1], 10);
+      countLabel = n === 1 ? "One" : String(countMatch[1]);
+      if (n > 1) noun = noun === "parcel" ? "parcels" : "packages";
+    }
+    var storage = "";
+    if (/\bback\s+office\b/i.test(src)) storage = "the back office";
+    else if (/\breception\b/i.test(src)) storage = "Reception";
+    else if (/\bconcierge\b/i.test(src)) storage = "Concierge";
+
+    var status;
+    if (countLabel) {
+      status = countLabel + " " + noun +
+        (/\breceived\b/i.test(src) ? " received" : " held");
+    } else {
+      status = (noun === "parcels" || noun === "packages" ? capitalize(noun) : capitalize(noun)) +
+        (/\breceived\b/i.test(src) ? " received" : " being held");
+    }
     if (guestName) status += " for " + guestName;
-    if (noteContains(normalized || "", ["contact", "call", "notify", "advise", "phone"])) {
+    if (/\b(?:tomorrow|tmrw|tomorrows)\b/i.test(src) && /\barriv(?:al|als|ing)\b/i.test(src)) {
+      status += " for tomorrow's arrivals";
+    } else if (/\b(?:tomorrow|tmrw)\b/i.test(src)) {
+      status += " for tomorrow";
+    }
+    if (storage) {
+      status += ". Stored in " + storage;
+    } else if (/\bstored\b/i.test(src)) {
+      status += ". Stored for collection";
+    }
+    if (noteContains(src, ["contact", "call", "notify", "advise", "phone"])) {
       status += ". Guest contact noted";
     }
-    if (noteContains(normalized || "", ["handed over", "collected", "collection recorded", "signed for"])) {
+    if (noteContains(src, ["handed over", "collected", "collection recorded", "signed for"])) {
       status += ". Collection/handover noted";
     }
     return status;
@@ -1274,6 +1419,7 @@
   function extractFaultType(text) {
     var src = String(text || "");
     if (/\bair\s*con(?:ditioning)?\b|\ba\/c\b|\bac\b|\bnot\s+cooling\b|\bhvac\b/i.test(src)) return "AC";
+    if (/\bhot\s*water\b|\bno\s+hot\s+water\b|\bcold\s+water\s+only\b/i.test(src)) return "hot water";
     if (/\bshower\b|\bleak(?:ing)?\b|\bdrip(?:ping)?\b|\bmixer\b|\bbathroom\b/i.test(src)) return "shower/leak";
     if (/\btv\b|\bremote\b/i.test(src)) return "TV remote";
     if (/\bsafe\b|\bkeypad\b/i.test(src)) return "safe";
@@ -1287,7 +1433,7 @@
   function classifyGuestImpact(text, subject) {
     var src = String(text || "");
     if (/\bflood|fire|evacuat|unsafe|injury|critical\b/i.test(src)) return "critical";
-    if (/\bnot\s+cooling\b|\bac\s+broken\b|\bleak(?:ing)?\b|\bunhappy\b|\bcomplaint\b|\bdeclined\b|\boutstanding\s+balance\b|\bvip\b/i.test(src)) {
+    if (/\bnot\s+cooling\b|\bac\s+broken\b|\bhot\s*water\b|\bno\s+hot\s+water\b|\bleak(?:ing)?\b|\bunhappy\b|\bcomplaint\b|\bdeclined\b|\boutstanding\s+balance\b|\bvip\b/i.test(src)) {
       return "high";
     }
     if (subject === "maintenance" && /\bguest\b|\bfan\b|\broom\s+\d/i.test(src)) return "high";
@@ -1351,13 +1497,19 @@
       return false;
     }
     return /\boutstanding\s+(?:balance|amount|payment)\b/.test(lower) ||
+      /\bbalance\s+outstanding\b/.test(lower) ||
+      /\boutstanding\s*[£$€]?\s*\d/.test(lower) ||
+      (/[£$€]\s*\d/.test(src) && /\b(?:balance|outstanding|unpaid|payment\s+link)\b/.test(lower)) ||
       /\bunpaid\b/.test(lower) ||
+      /\bnot\s+(?:yet\s+)?paid\b/.test(lower) ||
       /\bstill\s+to\s+pay\b/.test(lower) ||
       /\bstill\s+open\b/.test(lower) && /\b(?:minibar|balance|folio|tax|payment)\b/.test(lower) ||
       /\bcity\s*tax\b/.test(lower) ||
       /\bminibar\b/.test(lower) && /\b(?:open|collect|still|outstanding|charge)\b/.test(lower) ||
+      (/\badapters?\b/.test(lower) && /\b(?:charge|posted|not\s+posted|collect|fee|£|\$|€|\d+)/.test(lower)) ||
       (/\b(?:booking\.com|expedia|ota|virtual\s+card)\b/.test(lower) &&
-        /\b(?:tax|payment|collect|outstanding|open|balance)\b/.test(lower)) ||
+        /\b(?:tax|payment|collect|outstanding|open|balance|pending|auth|authoris|authoriz|vcc)\b/.test(lower)) ||
+      /\bvirtual\s+card\b/.test(lower) && /\b(?:pending|awaiting|auth|authoris|authoriz)\b/.test(lower) ||
       /\bpayment\s+(?:failed|failure|declined)\b/.test(lower) ||
       /\bcard\s+declined\b/.test(lower) ||
       /\bdeclined\b/.test(lower) && /\b(?:card|payment|pdq|pos)\b/.test(lower) ||
@@ -1422,7 +1574,11 @@
     if (
       (/\bnot\s+settled\b/.test(lower) && financial) ||
       /\bunpaid\b/.test(lower) ||
+      /\bnot\s+(?:yet\s+)?paid\b/.test(lower) ||
       /\bstill\s+outstanding\b/.test(lower) ||
+      /* Outstanding is open unless the same note explicitly settles/pays it. */
+      (/\boutstanding\s+(?:balance|amount|payment)\b/.test(lower) && !/\bsettled\b/.test(lower) && !/\b(?:has\s+been\s+)?paid\b/.test(lower)) ||
+      (/\bbalance\s+outstanding\b/.test(lower) && !/\bsettled\b/.test(lower) && !/\b(?:has\s+been\s+)?paid\b/.test(lower)) ||
       /\bunresolved\b/.test(lower) ||
       /\bpending\b/.test(lower) ||
       /\bnot\s+completed\b/.test(lower) ||
@@ -1440,14 +1596,17 @@
 
     if (
       (/\b(?:has\s+been\s+)?settled\b/.test(lower) && financial) ||
-      /\b(?:has\s+been\s+)?paid\b/.test(lower) ||
+      (/\b(?:has\s+been\s+)?paid\b/.test(lower) && !/\bnot\s+(?:yet\s+)?paid\b/.test(lower)) ||
       /\bcleared\b/.test(lower) ||
       /\bcompleted\b/.test(lower) ||
       /\bresolved\b/.test(lower) ||
       /\bfixed\b/.test(lower) ||
       /\bcollected\b/.test(lower) ||
       /\bdelivered\b/.test(lower) ||
-      /\bdone\b/.test(lower)
+      /\bdone\b/.test(lower) ||
+      /\bquiet\s+afterwards\b/.test(lower) ||
+      /\b(?:apologised|apologized)\s+and\s+quiet\b/.test(lower) ||
+      /\bnoise\s+settled\b/.test(lower)
     ) {
       return FACT_STATUS.done;
     }
@@ -1459,12 +1618,10 @@
       return FACT_STATUS.open;
     }
 
-    if (
-      /\b(?:request(?:ed)?|asking|asked|would like|wants?|needs?|maybe|possibly)\b/.test(lower)
-    ) {
-      return FACT_STATUS.requested;
-    }
-
+    /*
+     * Confirmed arrangements beat bare "requested" when both appear
+     * ("requested late c/o 12:30 confirmed").
+     */
     if (
       (/\b(?:approved|confirmed|agreed|granted|authorised|authorized)\b/.test(lower) &&
         !/\bnot\s+(?:yet\s+)?(?:approved|confirmed|agreed|granted|authorised|authorized)\b/.test(lower)) ||
@@ -1472,6 +1629,12 @@
       /\bbooked\b/.test(lower)
     ) {
       return FACT_STATUS.confirmed;
+    }
+
+    if (
+      /\b(?:request(?:ed)?|asking|asked|would like|wants?|needs?|maybe|possibly)\b/.test(lower)
+    ) {
+      return FACT_STATUS.requested;
     }
 
     if (
@@ -1537,10 +1700,19 @@
     );
     if (lead) {
       var messy = lead[1].replace(/\s+/g, " ").trim();
-      if (messy && !/^(room|vip|late|no)$/i.test(messy)) {
+      /* "Guest in rm 41" is a room lead, not a guest named "Guest In". */
+      if (messy && !/^(room|vip|late|no|guest)\b/i.test(messy) && !/^guest\s+/i.test(messy)) {
         messy = messy.replace(/\b([a-z])/g, function (ch) { return ch.toUpperCase(); });
         if (names.indexOf(messy) === -1) names.unshift(messy);
       }
+    }
+    /* Title + surname: "mr khan", "Mrs Taylor" */
+    var titled = src.match(/\b(mr|mrs|ms|miss)\.?\s+([a-zà-öø-ÿ'’-]+)\b/i);
+    if (titled) {
+      var title = titled[1].charAt(0).toUpperCase() + titled[1].slice(1).toLowerCase();
+      var surname = titled[2].charAt(0).toUpperCase() + titled[2].slice(1).toLowerCase();
+      var titledName = title + " " + surname;
+      if (names.indexOf(titledName) === -1) names.unshift(titledName);
     }
     return names;
   }
@@ -1564,20 +1736,47 @@
     if (/^paper\s+towels?\s+(?:placed|provided|given|left)\b/i.test(s)) return true;
 
     var prev = String(previousSegment || "");
+    var prevRooms = extractRoomNumbers(prev);
+    var segRooms = extractRoomNumbers(s);
+    var sameRoom = segRooms.some(function (r) { return prevRooms.indexOf(r) !== -1; });
+    var introducesDifferentRoom = segRooms.length > 0 && prevRooms.length > 0 && !sameRoom;
+
+    /*
+     * A new room number is a new fact subject — never attach wake/taxi/minibar
+     * for Room B onto Room A's late checkout / complaint / payment.
+     */
+    if (introducesDifferentRoom) return false;
+
+    var maintFaultCue = /\b(?:ac\b|air\s*con|leak|shower|dryer|safe|broken|fault|dead|drip|hand\s*dryer|keypad|heat(?:ing)?|hot\s*water|not\s+working)\b/i;
     if (/^(?:maint(?:enance)?\s+aware|maintenance\s+has\s+been\s+informed)\b/i.test(s)) {
-      return !!prev && /\b(?:ac\b|air\s*con|leak|shower|dryer|safe|broken|fault|dead|drip|hand\s*dryer|keypad)\b/i.test(prev);
+      return !!prev && maintFaultCue.test(prev);
     }
 
     if (prev) {
-      var prevRooms = extractRoomNumbers(prev);
-      var segRooms = extractRoomNumbers(s);
-      var sameRoom = segRooms.some(function (r) { return prevRooms.indexOf(r) !== -1; });
       if (sameRoom && /\b(?:on\s+hold|parts|awaiting|guest\s+moved|relocated|moved\s+to)\b/i.test(s)) {
+        return true;
+      }
+      /* Guest-impact clause belongs with the prior maintenance fault. */
+      if (/^guest\s+(?:cold|hot|unhappy|impacted|affected|comfort)\b/i.test(s) && maintFaultCue.test(prev)) {
+        return true;
+      }
+      /* VIP amenity / setup fragments stay with the VIP lead. */
+      if (/\b(?:anniversary|welcome\s+card|chocolates?|champagne|amenity|quiet\s+upper)\b/i.test(s) &&
+          /\bvip\b/i.test(prev)) {
+        return true;
+      }
+      /* Payment guest-name / auth fragments stay with the payment lead. */
+      if (
+        (/\b(?:expedia|booking\.com|virtual\s+card|outstanding|payment|collect|folio|balance)\b/i.test(prev) ||
+          /\boutstanding\s*[£$€]?\s*\d/i.test(prev)) &&
+        (/^(?:mr|mrs|ms|miss)\b/i.test(s) ||
+          /\b(?:awaiting|pending|auth|authoris|authoriz|still\s+needed)\b/i.test(s))
+      ) {
         return true;
       }
       /* Attach trailing maint-aware to the nearest prior maintenance segment when sandwiched. */
       if (/^(?:maint(?:enance)?\s+aware|maintenance\s+has\s+been\s+informed)\b/i.test(s)) {
-        return /\b(?:ac\b|air\s*con|leak|shower|dryer|safe|broken|fault|dead|drip)\b/i.test(prev);
+        return maintFaultCue.test(prev);
       }
     }
 
@@ -1590,7 +1789,17 @@
         /\b(?:arriv|dep|vip|balance|leak|ac\b)/i.test(s)) {
       return false;
     }
-    return /^(?:wake(?:[\s-]*up)?|minibar|transfer|addison|collect|champagne|welcome\s+card|twin|corp(?:orate)?\s+rate|15\s*%|mobile|prepaid|fan\s+guest|guest\s+has\s+fan|guest\s+moved|follow\s*(?:up\s*)?(?:am|next)|quiet\s+upper|on\s+hold|bday|birthday|balloons)/i.test(s);
+    /*
+     * Wake/minibar/etc. continue only when they belong to the same room lead or a
+     * guest-reservation lead without a conflicting room. Standalone "Wake-up for rm N"
+     * after a different room's sentence is a new operational object.
+     */
+    if (/^(?:wake(?:[\s-]*up)?|minibar|transfer|addison|collect|champagne|welcome\s+card|chocolates?|anniversary|twin|corp(?:orate)?\s+rate|15\s*%|mobile|prepaid|fan\s+guest|guest\s+has\s+fan|guest\s+(?:cold|hot|moved)|follow\s*(?:up\s*)?(?:am|next)|quiet\s+upper|on\s+hold|bday|birthday|balloons|still\s+unresolved|still\s+awaiting|awaiting\s+auth)/i.test(s)) {
+      if (segRooms.length && prevRooms.length && !sameRoom) return false;
+      if (segRooms.length && !prevRooms.length && !looksLikeGuestReservationLead(prev)) return false;
+      return true;
+    }
+    return false;
   }
 
   function looksLikeGuestReservationLead(segment) {
@@ -1607,6 +1816,51 @@
   function looksLikeGuestArrangement(segment) {
     var s = String(segment || "");
     return /\b(?:instagram|influencer|deliverable|grid post|stories|comp(?:limentary)?\s+bed|comp\s+bnb|marketing|partnership)\b/i.test(s);
+  }
+
+  /**
+   * True when the text after a sentence boundary starts a new operational lead
+   * (another room/guest/channel/request). Prevents dense night-manager paragraphs
+   * from collapsing into one multi-room fact.
+   */
+  function startsNewOperationalLead(text) {
+    var s = String(text || "").replace(/^[\s"']+/, "");
+    if (!s) return false;
+    if (/^(?:room|rm\.?|suite)\s*[#.]?\s*\d{1,4}[a-z]?\b/i.test(s)) return true;
+    if (/^wake(?:[\s-]*up)?\b/i.test(s)) return true;
+    if (/^vip\b/i.test(s)) return true;
+    if (/^guest\s+in\s+(?:room|rm\.?)\s*\d/i.test(s)) return true;
+    if (/^(?:expedia|booking\.com|b\.com)\b/i.test(s)) return true;
+    if (/^baby\s*cot\b/i.test(s)) return true;
+    if (/^(?:\d+|two|three|four|five)\s+(?:parcels?|packages?)\b/i.test(s)) return true;
+    if (/^please\s+follow\s+up\b/i.test(s)) return true;
+    if (/^(?:mr|mrs|ms|miss)\.?\s+[A-ZÀ-ÖØ-Þ]/i.test(s)) return true;
+    if (/^[A-ZÀ-ÖØ-Þ][a-zà-öø-ÿ'’-]+\s+[A-ZÀ-ÖØ-Þ][a-zà-öø-ÿ'’-]+\b/.test(s) &&
+        /\b(?:arriv|dep|vip|balance|room|rm\.?)\b/i.test(s)) {
+      return true;
+    }
+    return false;
+  }
+
+  function splitDenseOperationalSentences(piece) {
+    var text = String(piece || "").trim();
+    if (!text || text.length < 40) return [text];
+    if (!/\.\s+\S/.test(text)) return [text];
+
+    var parts = [];
+    var cursor = 0;
+    var match;
+    var re = /\.\s+/g;
+    while ((match = re.exec(text)) !== null) {
+      var next = text.slice(match.index + match[0].length);
+      if (!startsNewOperationalLead(next)) continue;
+      var chunk = trimText(text.slice(cursor, match.index + 1));
+      if (chunk) parts.push(chunk);
+      cursor = match.index + match[0].length;
+    }
+    var tail = trimText(text.slice(cursor));
+    if (tail) parts.push(tail);
+    return parts.length ? parts : [text];
   }
 
   /**
@@ -1629,7 +1883,18 @@
         });
         return;
       }
-      /* Also split on ". " when a new Room N / guest-lead starts */
+      /*
+       * Split dense paragraphs on ". " when the next sentence introduces a new
+       * room / VIP / wake-up / OTA / parcel lead (includes Rm/Room shorthand).
+       */
+      var sentenceParts = splitDenseOperationalSentences(piece);
+      if (sentenceParts.length > 1) {
+        sentenceParts.forEach(function (part) {
+          if (part) rough.push(part);
+        });
+        return;
+      }
+      /* Legacy: ". Room N" / guest-name leads */
       if (/\.\s+(?=Room\s*\d)/i.test(piece) || /\.\s+(?=[A-ZÀ-ÖØ-Þ][a-zà-öø-ÿ'’-]+\s+[A-ZÀ-ÖØ-Þ])/.test(piece)) {
         piece.split(/\.\s+(?=Room\s*\d|[A-ZÀ-ÖØ-Þ][a-zà-öø-ÿ'’-]+\s+[A-ZÀ-ÖØ-Þ])/i).forEach(function (part, idx, arr) {
           var p = trimText(part);
@@ -1658,10 +1923,10 @@
       }
       var prev = grouped[grouped.length - 1];
       var segTrim = String(segment || "").replace(/^[\s/–—-]+/, "").trim();
-      /* Attach orphan maint-aware to the nearest prior fault, not a supply note in between. */
-      if (/^(?:maint(?:enance)?\s+aware|maintenance\s+has\s+been\s+informed)\.?$/i.test(segTrim)) {
+      /* Attach orphan maint-aware (and unresolved follow-ups) to the nearest prior fault. */
+      if (/^(?:maint(?:enance)?\s+aware|maintenance\s+has\s+been\s+informed)(?:\s*[-–—,]?\s*(?:still\s+)?(?:unresolved|follow(?:\s*up)?(?:\s*am)?)?)?\.?$/i.test(segTrim)) {
         for (var gi = grouped.length - 1; gi >= 0; gi--) {
-          if (/\b(?:ac\b|air\s*con|leak|shower|dryer|safe|broken|fault|dead|drip|hand\s*dryer|keypad)\b/i.test(grouped[gi])) {
+          if (/\b(?:ac\b|air\s*con|leak|shower|dryer|safe|broken|fault|dead|drip|hand\s*dryer|keypad|heat(?:ing)?|hot\s*water|not\s+working)\b/i.test(grouped[gi])) {
             grouped[gi] = grouped[gi] + " // " + segment;
             return;
           }
@@ -1740,14 +2005,23 @@
     }
 
     /* Twin / king bed configuration */
-    if (/\bking\b/i.test(sourceText) && /\btwin\b/i.test(sourceText)) {
+    if (
+      (/\bking\b/i.test(sourceText) && /\btwin\b/i.test(sourceText)) ||
+      /\btwin\s+beds?\b/i.test(sourceText) ||
+      /\btwin\s+(?:pls|please|pref(?:erence)?|requested?|request)\b/i.test(sourceText)
+    ) {
       fact.subject = "twin_setup";
-      fact.actionVerb = "configure";
+      fact.actionVerb = fact.actionVerb || "configure";
       fact.ownerDept = fact.ownerDept || "Housekeeping";
       fact.category = "guest-follow-up";
       if (fact.status === FACT_STATUS.unknown || fact.status === FACT_STATUS.confirmed) {
-        /* "to be set" is an open action even if arrival details look confirmed */
-        if (/\bto\s+be\s+set\b/i.test(sourceText) || /\bset\s+as\s+twin\b/i.test(sourceText)) {
+        /* "to be set" / explicit request is an open action */
+        if (
+          /\bto\s+be\s+set\b/i.test(sourceText) ||
+          /\bset\s+as\s+twin\b/i.test(sourceText) ||
+          /\btwin\s+(?:beds?\s+)?(?:pls|please|pref|requested?|request)\b/i.test(sourceText) ||
+          /\btwin\s+beds?\s+requested\b/i.test(sourceText)
+        ) {
           fact.status = FACT_STATUS.requested;
         }
       }
@@ -1829,6 +2103,18 @@
     if (/^(?:maint(?:enance)?\s+aware|maintenance\s+has\s+been\s+informed|maintenance informed)\.?$/i.test(src)) {
       return false;
     }
+    /*
+     * Closing wrap-ups that only restate already-split follow-ups ("Please follow up
+     * heating, collect both payments and check VIP setup") are not distinct facts.
+     */
+    if (
+      /^please\s+follow\s+up\b/i.test(src) &&
+      !(fact.rooms && fact.rooms.length) &&
+      !fact.guestName &&
+      /\b(?:heating|payment|vip|collect|check)\b/i.test(src)
+    ) {
+      return false;
+    }
     if ((fact.rooms && fact.rooms.length) || fact.guestName || fact.arrivalDate) return true;
     if (fact.preferredLocation || fact.paymentMethod || fact.package || fact.guarantee) return true;
     if (fact.actionVerb && fact.actionVerb !== "prepare") return true;
@@ -1848,9 +2134,21 @@
     if (!fact || !hasUsefulOperationalDetail(fact)) return "";
 
     var lead = "";
-    if (fact.rooms && fact.rooms.length === 1) lead = "Room " + fact.rooms[0];
-    else if (fact.rooms && fact.rooms.length > 1) lead = "Rooms " + joinNatural(fact.rooms);
     var src = String(fact.sourceText || "");
+    /*
+     * One actionable object → one primary room lead. Multi-room leads only when
+     * the note truly spans related rooms (interconnect / adapter inventory).
+     * Prevents "Rooms 23, 16, 32…" generic departure collapses.
+     */
+    if (fact.rooms && fact.rooms.length === 1) {
+      lead = "Room " + fact.rooms[0];
+    } else if (fact.rooms && fact.rooms.length > 1) {
+      var multiRoomOk = fact.subject === "interconnect" || fact.subject === "inventory" ||
+        /\binterconnect/i.test(src) || /\badapters?\s+\d/i.test(src);
+      lead = multiRoomOk
+        ? ("Rooms " + joinNatural(fact.rooms))
+        : ("Room " + fact.rooms[0]);
+    }
 
     if (fact.subject === "room_move") {
       /* Paid upgrades / destination-room moves keep legacy/Phase1 wording */
@@ -1878,17 +2176,33 @@
     }
 
     if (fact.subject === "departure_followup" || fact.subject === "wake_up") {
-      var depLines = [];
-      if (/\bdep|departure|check[\s-]?out/i.test(src)) {
-        depLines.push("Guest departing this morning");
+      var wakeT = extractWakeDisplayTime(src);
+      var taxiT = extractTaxiDisplayTime(src);
+      var depBits = [];
+      if (/\bdep(?:arture|artures)?\b|\bcheck[\s-]?out\b/i.test(src)) {
+        depBits.push("Guest departing this morning");
       }
-      var wakeT = normalizeTimelineTime((src.match(/\bwake(?:[\s-]*up)?\s*(\d{3,4}|\d{1,2}[:.]\d{2}|\d{1,2}\s*(?:am|pm))/i) || [])[1]);
-      if (wakeT) depLines.push("Wake-up call scheduled for " + wakeT);
-      var taxiT = normalizeTimelineTime((src.match(/\b(?:addison(?:\s+lee)?|taxi|transfer)\s*(\d{3,4}|\d{1,2}[:.]\d{2}|\d{1,2}\s*(?:am|pm))/i) || [])[1]);
-      if (taxiT) depLines.push("Addison Lee booked for " + taxiT);
-      if (!depLines.length) return "";
-      if (lead) return lead + "\n" + depLines.map(ensureSentence).join("\n");
-      return depLines.map(ensureSentence).join("\n");
+      if (wakeT) depBits.push("Wake-up call at " + wakeT);
+      else if (/\bwake/i.test(src)) depBits.push("Wake-up call booked");
+      if (taxiT) {
+        depBits.push((/addison/i.test(src) ? "Addison Lee booked for " : "Taxi booked for ") + taxiT);
+      } else if (/\b(?:taxi|transfer|addison)\b/i.test(src) && !wakeT && !/\bwake/i.test(src)) {
+        depBits.push(/addison/i.test(src) ? "Addison Lee booked" : "Taxi booked");
+      }
+      if (!depBits.length) return "";
+      return finishFactRender(lead, depBits.join(". "));
+    }
+
+    if (fact.subject === "guest_request" &&
+        (/baby\s*cot|cot\b/i.test(fact.requestItem || "") || /baby\s*cot|\bcot\b/i.test(src))) {
+      var cotTime = normalizeTimelineTime(
+        (src.match(/\b(?:before|by|at)\s+(\d{1,2}(?::\d{2})?\s*(?:am|pm)|\d{3,4}|\d{1,2}[:.]\d{2})\b/i) ||
+          src.match(/\b(\d{1,2}\s*(?:am|pm))\b/i) || [])[1]
+      );
+      var cotBody = "Prepare baby cot" +
+        (lead ? " in " + lead : "") +
+        (cotTime ? " before the " + cotTime + " arrival" : " before arrival");
+      return ensureSentence(cotBody);
     }
 
     if (fact.subject === "interconnect") {
@@ -2128,8 +2442,9 @@
     }
 
     if (isActualFinancialIssue(detectText) &&
-        (/\bsettled\b/i.test(detectText) || /\boutstanding\s+(?:balance|amount)\b/i.test(detectText) ||
-          /\b(?:balance|folio|payment|invoice|bill|declined|refund|deposit|charge|booking\.com|expedia|city\s+tax)\b/i.test(detectText))) {
+        (/\bsettled\b/i.test(detectText) || /\boutstanding\s+(?:balance|amount)?\s*[£$€]?\s*\d/i.test(detectText) ||
+          /\boutstanding\s+(?:balance|amount)\b/i.test(detectText) ||
+          /\b(?:balance|folio|payment|invoice|bill|declined|refund|deposit|charge|booking\.com|expedia|city\s+tax|virtual\s+card|pending|auth)\b/i.test(detectText))) {
       var noun = financialSettlementNoun(detectText);
       if (noun === "invoice") fact.subject = "invoice";
       else if (noun === "bill") fact.subject = "bill";
@@ -2182,7 +2497,16 @@
       if (!fact.actionVerb) fact.actionVerb = "prepare";
     }
 
-    if (/\bvip\b/i.test(detectText) || options.isVip) {
+    /*
+     * VIP subject requires a concrete VIP guest/room lead — not a wrap-up like
+     * "check VIP setup" that mentions VIP among unrelated follow-ups.
+     * Bare options.isVip is insufficient without guest/room evidence.
+     */
+    var vipLead =
+      /\bvip\s+(?:mr|mrs|ms|miss|guest|arrival|rm\.?|room)\b/i.test(detectText) ||
+      (/\bvip\b/i.test(detectText) && (fact.guestName || (fact.rooms && fact.rooms.length))) ||
+      (options.isVip && (fact.guestName || (fact.rooms && fact.rooms.length)));
+    if (vipLead) {
       if (!fact.subject || fact.subject === "follow_up" || fact.subject === "wake_up") {
         fact.subject = "vip_arrival";
       }
@@ -2192,7 +2516,7 @@
       }
     }
 
-    if (/\b(?:air\s*con|a\/c|\bac\b|leak|leaking|broken|faulty|repair|maintenance|not cooling|heating|hand\s*dryer|safe\s+keypad|\bon\s+hold\s+parts)\b/i.test(detectText) &&
+    if (/\b(?:air\s*con|a\/c|\bac\b|leak|leaking|broken|faulty|repair|maintenance|not cooling|heating|hot\s*water|no\s+hot\s+water|hand\s*dryer|safe\s+keypad|\bon\s+hold\s+parts)\b/i.test(detectText) &&
         !fact.subject) {
       fact.subject = "maintenance";
       if (!fact.ownerDept) fact.ownerDept = "Maintenance";
@@ -2207,8 +2531,41 @@
     }
 
     if (/\badapters?\b/i.test(detectText) &&
+        (!fact.subject || fact.subject === "follow_up" || fact.subject === "guest_request" || fact.subject === "inventory")) {
+      if (/\b(?:£|\$|€|\d+(?:\.\d{1,2})?)\b/.test(detectText) &&
+          /\b(?:charge|posted|not\s+posted|collect|outstanding|fee)\b/i.test(detectText)) {
+        fact.subject = "payment";
+        if (!fact.ownerDept) fact.ownerDept = "Reception";
+        if (!fact.actionVerb) fact.actionVerb = "collect";
+      } else {
+        fact.subject = "inventory";
+        if (!fact.ownerDept) fact.ownerDept = "Reception";
+        if (!fact.actionVerb) fact.actionVerb = "follow_up";
+      }
+    }
+
+    if (/\bfeather[\s-]*free\b|\bnon[\s-]*feather\b|\ballerg/i.test(detectText) &&
+        (!fact.subject || fact.subject === "follow_up")) {
+      fact.subject = "guest_request";
+      fact.requestItem = fact.requestItem || "feather-free bedding";
+      if (!fact.ownerDept) fact.ownerDept = "Housekeeping";
+      if (!fact.actionVerb) fact.actionVerb = "confirm";
+    }
+
+    if (/\bbaby\s*cot\b|\bcot\s+required\b/i.test(detectText) &&
+        (!fact.subject || fact.subject === "follow_up" || fact.subject === "guest_request")) {
+      fact.subject = "guest_request";
+      fact.requestItem = fact.requestItem || "baby cot";
+      if (!fact.ownerDept) fact.ownerDept = "Housekeeping";
+      if (!fact.actionVerb) fact.actionVerb = "arrange";
+      if (fact.status === FACT_STATUS.unknown) fact.status = FACT_STATUS.requested;
+    }
+
+    if (/\bumbrella/i.test(detectText) &&
+        /\b(?:not\s+returned|outstanding|loan|still\s+out)\b/i.test(detectText) &&
         (!fact.subject || fact.subject === "follow_up" || fact.subject === "guest_request")) {
       fact.subject = "inventory";
+      fact.requestItem = fact.requestItem || "umbrella";
       if (!fact.ownerDept) fact.ownerDept = "Reception";
       if (!fact.actionVerb) fact.actionVerb = "follow_up";
     }
@@ -2246,7 +2603,7 @@
 
     var faultType = extractFaultType(detectText) || extractFaultType(sourceText);
     if (faultType && (fact.subject === "maintenance" || !fact.subject ||
-        /\b(?:air\s*con|a\/c|\bac\b|leak|broken|faulty|repair|not cooling|heating|safe|dryer)\b/i.test(detectText))) {
+        /\b(?:air\s*con|a\/c|\bac\b|leak|broken|faulty|repair|not cooling|heating|hot\s*water|safe|dryer)\b/i.test(detectText))) {
       fact.faultType = faultType;
       if (!fact.subject) {
         fact.subject = "maintenance";
@@ -2258,10 +2615,10 @@
       }
     }
 
-    if (/\b(?:package|parcel|delivery|courier)\b/i.test(detectText) && !fact.subject) {
+    if (/\b(?:packages?|parcels?|delivery|courier)\b/i.test(detectText) && !fact.subject) {
       fact.subject = "delivery";
       if (!fact.ownerDept) fact.ownerDept = "Reception";
-      if (!fact.actionVerb) fact.actionVerb = "contact";
+      if (!fact.actionVerb) fact.actionVerb = "hold";
     }
 
     if (/\blost\s+prop(?:erty)?\b/i.test(detectText) || /\blost\s+prop\b/i.test(sourceText)) {
@@ -2452,6 +2809,10 @@
     });
 
     function impactRank(entry) {
+      if (global.ShiftIntelligenceEngine &&
+          typeof global.ShiftIntelligenceEngine.scoreOperationalImpact === "function") {
+        return global.ShiftIntelligenceEngine.scoreOperationalImpact(entry).score;
+      }
       var fact = entry.fact || {};
       var impact = String(fact.guestImpact || "").toLowerCase();
       var priority = String(fact.priority || "").toLowerCase();
@@ -2897,10 +3258,49 @@
   }
 
   /**
-   * Shift Glance / top badge metrics from structured facts.
-   * Shape matches handover computeHandoverMetrics for drop-in use.
+   * Shift Glance / top badge metrics.
+   * Prefers Hospitality Intelligence Engine object-based alert counts.
    */
   function computeHandoverMetricsFromFacts(analyzed) {
+    var entries = [];
+    (analyzed || []).forEach(function (note, index) {
+      if (!note) return;
+      var fact = ensureNoteFact(note);
+      if (!fact) return;
+      if (!isGlanceActiveFact(note, fact)) return;
+      entries.push({
+        note: note,
+        fact: fact,
+        factId: note._neutralFactId || factIdentityKey(fact) || ("fact-" + index),
+        topic: classifyFactSummaryTopic(fact, note),
+        section: note.section || sectionFromFact(fact, "general")
+      });
+    });
+
+    if (global.ShiftIntelligenceEngine &&
+        typeof global.ShiftIntelligenceEngine.computeShiftAlertsFromObjects === "function") {
+      var alerts = global.ShiftIntelligenceEngine.computeShiftAlertsFromObjects(entries);
+      return {
+        urgent: alerts.urgent || 0,
+        vip: alerts.vip || 0,
+        maintenance: alerts.maintenance || 0,
+        payments: alerts.payments || 0,
+        events: alerts.timedActions || alerts.events || 0,
+        timedActions: alerts.timedActions || 0,
+        tasks: alerts.tasks || 0,
+        display: {
+          urgent: (alerts.display && alerts.display.urgent) || alerts.urgent || 0,
+          guest: (alerts.display && alerts.display.guest) || alerts.guest || 0,
+          maintenance: (alerts.display && alerts.display.maintenance) || alerts.maintenance || 0,
+          payments: (alerts.display && alerts.display.payments) || alerts.payments || 0,
+          events: (alerts.display && alerts.display.timedActions) || alerts.timedActions || 0,
+          timedActions: alerts.timedActions || 0,
+          tasks: (alerts.display && alerts.display.tasks) || alerts.tasks || 0,
+          general: (alerts.display && alerts.display.general) || 0
+        }
+      };
+    }
+
     var urgentNotes = [];
     var vipNotes = [];
     var maintenanceNotes = [];
@@ -2910,61 +3310,28 @@
     var guestNotes = [];
     var generalNotes = [];
 
-    (analyzed || []).forEach(function (note) {
-      if (!note) return;
-      var fact = ensureNoteFact(note);
-      if (!fact) return;
-      if (note.section === "completed" && fact.status === FACT_STATUS.unknown) {
-        fact = Object.assign({}, fact, { status: FACT_STATUS.done });
-      }
-
-      var section = note.section || fact.sectionHint || "";
-      var topic = classifyFactSummaryTopic(fact, note);
-      var active = isGlanceActiveFact(note, fact);
-
-      if (section === "urgent" || topic === "critical") {
-        if (active) urgentNotes.push(note);
-      }
-      if (isVipGlanceNote(note, fact) && active) {
-        vipNotes.push(note);
-      }
-      if ((section === "maintenance" || topic === "maintenance") && active) {
-        maintenanceNotes.push(note);
-      }
-      if ((section === "payments" || topic === "payment") && active) {
-        paymentNotes.push(note);
-      }
-      if (section === "events" || topic === "event") {
-        /*
-         * Events: keep counting unless structured status clearly closes the item.
-         * Unknown / missing closure → include (preserve prior behaviour).
-         */
-        if (fact.status !== FACT_STATUS.done && fact.status !== FACT_STATUS.confirmed) {
-          eventNotes.push(note);
-        }
-      }
-      if (isTaskLikeGlanceNote(note, fact) && active) {
-        taskLikeNotes.push(note);
-      }
+    entries.forEach(function (entry) {
+      var note = entry.note;
+      var fact = entry.fact;
+      var section = entry.section || "";
+      var topic = entry.topic || "";
+      if (section === "urgent" || topic === "critical") urgentNotes.push(note);
+      if (isVipGlanceNote(note, fact)) vipNotes.push(note);
+      if (section === "maintenance" || topic === "maintenance") maintenanceNotes.push(note);
+      if (section === "payments" || topic === "payment") paymentNotes.push(note);
+      if (section === "events" || topic === "event") eventNotes.push(note);
+      if (isTaskLikeGlanceNote(note, fact)) taskLikeNotes.push(note);
       if (
-        (section === "guest" || section === "vip" || topic === "guest" || topic === "vip" ||
-          topic === "lateCheckout" || topic === "roomMove" || topic === "extension" ||
-          topic === "complaint") &&
-        active
+        section === "guest" || section === "vip" || topic === "guest" || topic === "vip" ||
+        topic === "lateCheckout" || topic === "roomMove" || topic === "extension" || topic === "complaint"
       ) {
         guestNotes.push(note);
       }
-      if ((section === "general" || section === "lostproperty") && active) {
-        generalNotes.push(note);
-      }
+      if (section === "general" || section === "lostproperty") generalNotes.push(note);
     });
 
     var vip = countNotesUniqueByRoom(vipNotes);
     var taskLike = countNotesUniqueByRoom(taskLikeNotes);
-    /*
-     * Outstanding Tasks includes unresolved VIP preparation so pending amenities
-     * surface on both VIP Arrivals and Outstanding Tasks badges.
-     */
     var tasks = taskLike + vip;
     var maintenance = countNotesUniqueByRoom(maintenanceNotes);
     var payments = countNotesUniqueByRoom(paymentNotes);
@@ -2979,6 +3346,7 @@
       maintenance: maintenance,
       payments: payments,
       events: events,
+      timedActions: events,
       tasks: tasks,
       display: {
         urgent: urgent,
@@ -2986,6 +3354,7 @@
         maintenance: maintenance,
         payments: payments,
         events: events,
+        timedActions: events,
         tasks: tasks,
         general: general
       }
@@ -3618,7 +3987,10 @@
       body = buildIronBody(normalized);
     } else if (detectComplaint(normalized) && detectAcIssue(normalized)) {
       body = buildAcBody(normalized);
-    } else if (detectComplaint(normalized) && (section === "guest" || !section)) {
+    } else if (
+      detectComplaint(normalized) &&
+      (section === "guest" || section === "completed" || !section)
+    ) {
       body = buildComplaintBody(normalized);
     } else if (detectAcIssue(normalized) && (section === "maintenance" || section === "urgent" || section === "guest" || !section)) {
       body = buildAcBody(normalized);
@@ -4619,7 +4991,15 @@
     return out;
   }
 
+  /**
+   * Briefing sort key — delegates to Hospitality Intelligence Engine impact
+   * scoring when loaded; local fallback preserves prior Duty Manager order.
+   */
   function briefingRank(entry) {
+    if (global.ShiftIntelligenceEngine &&
+        typeof global.ShiftIntelligenceEngine.scoreOperationalImpact === "function") {
+      return global.ShiftIntelligenceEngine.scoreOperationalImpact(entry).score;
+    }
     var fact = entry.fact || {};
     var topic = entry.topic || "";
     var subject = String(fact.subject || "");
@@ -4636,6 +5016,14 @@
     if (topic === "guest" || subject === "guest_request" || subject === "lost_property") return 7;
     if (topic === "payment") return 4;
     return 20;
+  }
+
+  function operationalObjectsFromEntries(entries) {
+    if (global.ShiftIntelligenceEngine &&
+        typeof global.ShiftIntelligenceEngine.groupIntoOperationalObjects === "function") {
+      return global.ShiftIntelligenceEngine.groupIntoOperationalObjects(entries);
+    }
+    return [];
   }
 
   function factMoneyValues(fact) {
@@ -4668,6 +5056,74 @@
     return currency + total.toFixed(2);
   }
 
+  function formatBriefingPriorityAction(spec) {
+    if (!spec || !spec.entities) return "";
+    var e = spec.entities;
+    var room = e.room ? "Room " + e.room : "";
+    var fault = e.faultType || "maintenance issue";
+    if (fault === "AC") fault = "AC fault";
+    if (fault === "hot water") fault = "hot-water issue";
+
+    if (spec.actionKind === "follow_up_maintenance") {
+      return "Follow up " + (room ? room + " " : "") + fault +
+        (spec.reasonKind === "before_departure_guest_impact"
+          ? " before departure / further guest impact"
+          : " before further guest impact");
+    }
+    if (spec.actionKind === "collect_payment") {
+      /*
+       * Briefing summarises revenue attention — recommendation cards own the
+       * exact "Collect …" duty instruction.
+       */
+      if (e.amount && room) {
+        return "Revenue follow-up required for " + room + " outstanding " + e.amount +
+          (spec.reasonKind === "card_declined" ? " after declined card" : "") +
+          " before departures";
+      }
+      if (e.amount) {
+        return "Revenue follow-up required for outstanding " + e.amount + " before departures";
+      }
+      return "Revenue follow-up required for outstanding channel payment before departures";
+    }
+    if (spec.actionKind === "post_or_collect_charge") {
+      return "Revenue follow-up required for " + (room ? room + " " : "") +
+        (e.amount || "outstanding") + " adapter charge before departures";
+    }
+    if (spec.actionKind === "prepare_vip") {
+      var amenityBit = "";
+      if (e.amenities && e.amenities.length) {
+        amenityBit = " (" + joinNatural(e.amenities.filter(function (a) {
+          return a !== "quiet upper-floor room";
+        })) + ")";
+      }
+      if (room && e.guestName) {
+        return "VIP readiness follow-up for " + e.guestName + " in " + room + amenityBit;
+      }
+      return "VIP readiness follow-up for " + (room || e.guestName || "arrival") + amenityBit;
+    }
+    if (spec.actionKind === "complete_timed_actions") {
+      var bits = [];
+      (e.times || []).forEach(function (t) {
+        var when = normalizeTimelineTime(t.raw) || t.raw;
+        if (t.kind === "wake_up") bits.push("wake-up at " + when);
+        if (t.kind === "transport") bits.push("taxi at " + when);
+      });
+      if (!bits.length) return "Timed departure actions require attention" + (room ? " for " + room : "");
+      return "Timed departure actions for " + (room ? room + ": " : "") + joinNatural(bits);
+    }
+    if (spec.actionKind === "reserve_interconnect") {
+      if (e.room && spec.rooms && spec.rooms.length >= 2) {
+        return "Reserve interconnecting Rooms " + spec.rooms[0] + " & " + spec.rooms[1] +
+          (e.guestName ? " for " + e.guestName : "");
+      }
+      return "Reserve interconnecting rooms" + (e.guestName ? " for " + e.guestName : "");
+    }
+    if (spec.actionKind === "guest_follow_up") {
+      return "Follow up " + (room || "guest request");
+    }
+    return "";
+  }
+
   function buildTodaysBriefing(analyzed, options) {
     options = options || {};
     var entries = unresolvedAnalyzedEntries(analyzed).slice().sort(function (a, b) {
@@ -4675,113 +5131,32 @@
     });
     var paragraphs = [];
     var primaryFactIds = [];
-    var priorityN = 0;
+    var objects = operationalObjectsFromEntries(entries);
+    var model = null;
 
-    function take(pred, limit) {
-      var found = [];
-      entries.forEach(function (entry) {
-        if (found.length >= (limit || 99)) return;
-        if (pred(entry)) {
-          found.push(entry);
-          if (primaryFactIds.indexOf(entry.factId) === -1) primaryFactIds.push(entry.factId);
-        }
+    /* Engine owns ranking / what to surface; writing formats only. */
+    if (global.ShiftIntelligenceEngine &&
+        typeof global.ShiftIntelligenceEngine.buildBriefingModel === "function") {
+      model = global.ShiftIntelligenceEngine.buildBriefingModel(entries, {
+        maxBlocks: global.ShiftIntelligenceEngine.BRIEFING_MAX_BLOCKS || 5
       });
-      return found;
-    }
-
-    function pushSection(label, action) {
-      var line = String(action || "").replace(/\s+/g, " ").replace(/\.+$/, "").trim();
-      if (!line) return;
-      paragraphs.push(label + "\n" + line + ".");
-    }
-
-    var vip = take(function (e) { return e.fact.subject === "vip_arrival"; }, 1)[0];
-    var ac = take(function (e) {
-      return e.fact.subject === "maintenance" && (e.fact.faultType === "AC" || /ac\b|air\s*con/i.test(e.fact.sourceText || ""));
-    }, 1)[0];
-    var highMaint = take(function (e) {
-      return e.fact.subject === "maintenance" && e !== ac;
-    }, 1)[0];
-
-    if (vip) {
-      priorityN += 1;
-      var vipTime = normalizeTimelineTime(detailValueFromFact(vip.fact, "time") ||
-        ((vip.fact.sourceText || "").match(/\b(\d{1,2}(?::\d{2})?\s*(?:am|pm)?|\d{3,4})\b/i) || [])[1]);
-      pushSection(
-        "Priority " + priorityN,
-        "Prepare VIP " + (vip.fact.guestName || "arrival") +
-          (vipTime ? " for the " + vipTime + " arrival" : " for arrival")
-      );
-    }
-    if (ac) {
-      priorityN += 1;
-      var acRoom = ac.fact.rooms && ac.fact.rooms[0] ? "Room " + ac.fact.rooms[0] : "the affected room";
-      pushSection(
-        "Priority " + priorityN,
-        "Follow up the unresolved AC fault in " + acRoom + " before further guest impact"
-      );
-    } else if (highMaint) {
-      priorityN += 1;
-      pushSection(
-        "Priority " + priorityN,
-        "Follow up " + (highMaint.fact.faultType || "maintenance") +
-          (highMaint.fact.rooms && highMaint.fact.rooms[0] ? " in Room " + highMaint.fact.rooms[0] : "") +
-          " before further guest impact"
-      );
-    }
-
-    var payments = take(function (e) {
-      var src = e.fact.sourceText || "";
-      return normalizeSubjectForIdentity(e.fact.subject) === "payment_balance" ||
-        e.section === "payments" ||
-        (/minibar|city\s+tax|booking\.com|expedia|outstanding/i.test(src) &&
-          (factMoneyValues(e.fact).length > 0 || /collect|outstanding|still open/i.test(src)));
-    }, 4);
-    var collectBits = [];
-    payments.forEach(function (e) {
-      var amount = factMoneyValues(e.fact)[0];
-      var room = e.fact.rooms && e.fact.rooms[0] ? "Room " + e.fact.rooms[0] : "";
-      var src = e.fact.sourceText || "";
-      if (/minibar/i.test(src) && amount) collectBits.push("the " + amount + " minibar charge");
-      else if (/city\s+tax/i.test(src) && amount) {
-        collectBits.push(amount + (room ? " " + room + " " : " ") + "city tax");
-      } else if (amount) {
-        collectBits.push(amount + (room ? " on " + room : ""));
-      }
-    });
-    if (collectBits.length) {
-      pushSection("Before departures", "Collect " + joinNatural(collectBits));
-    }
-
-    var arrivalsLeft = (analyzed || []).some(function (n) {
-      return /arrivals?\s+left|arrivals?\s+remain/i.test((n && n.original) || "");
-    });
-    var interconnect = take(function (e) { return e.fact.subject === "interconnect"; }, 1)[0];
-    var receptionBits = [];
-    if (arrivalsLeft) receptionBits.push("Confirm the remaining two arrivals");
-    if (interconnect) {
-      var rooms = interconnect.fact.rooms || [];
-      var groupName = interconnect.fact.guestName || "";
-      var groupPhrase = groupName ? ("tomorrow's " + groupName + " group") : "tomorrow's group";
-      if (rooms.length >= 2) {
-        receptionBits.push(
-          "reserve Rooms " + rooms[0] + " & " + rooms[1] + " for " + groupPhrase
-        );
-      } else {
-        receptionBits.push("reserve interconnecting rooms for " + groupPhrase);
-      }
-    }
-    if (receptionBits.length) {
-      var receptionJoined = joinNatural(receptionBits);
-      receptionJoined = receptionJoined.charAt(0).toUpperCase() + receptionJoined.slice(1);
-      pushSection("Reception", receptionJoined);
+      objects = model.objects || objects;
+      (model.priorities || []).forEach(function (spec, index) {
+        var action = formatBriefingPriorityAction(spec);
+        if (!action) return;
+        var label = "Priority " + (index + 1);
+        paragraphs.push(label + "\n" + action.replace(/\.+$/, "") + ".");
+        (spec.factIds || []).forEach(function (id) {
+          if (primaryFactIds.indexOf(id) === -1) primaryFactIds.push(id);
+        });
+      });
     }
 
     if (!paragraphs.length) {
       paragraphs.push("Shift status\nNo urgent guest-impacting priorities for the incoming team.");
     }
 
-    paragraphs = paragraphs.slice(0, 4);
+    paragraphs = paragraphs.slice(0, 5);
     var firstAction = (paragraphs[0] || "").split("\n")[1] || paragraphs[0] || "Today's shift briefing";
     var headline = String(firstAction).replace(/\.+$/, "").trim();
     if (headline.length > 120) headline = "Today's shift briefing";
@@ -4790,179 +5165,138 @@
       headline: headline,
       paragraphs: paragraphs,
       primaryFactIds: primaryFactIds.slice(0, 12),
-      generatedFromFactCount: entries.length
+      generatedFromFactCount: entries.length,
+      operationalObjects: objects.slice(0, 16),
+      briefingModel: model
     };
+  }
+
+  function formatHotelStatusSummary(area) {
+    var intent = area && area.summaryIntent ? area.summaryIntent : null;
+    if (!intent) return "Status unavailable.";
+    var room = intent.room ? "Room " + intent.room : "";
+    if (area.key === "guest_experience") {
+      if (intent.kind === "guest_experience_clear") return "No unresolved guest-impacting issues.";
+      if (intent.faultType === "hot water" || /hot\s*water/i.test(intent.faultType || "")) {
+        return (room || "A room") + " has an unresolved hot-water issue affecting the guest.";
+      }
+      if (intent.faultType === "AC") {
+        return (room || "A room") + " has an unresolved AC fault affecting the guest.";
+      }
+      return (room || "A guest room") + " still needs guest-impacting follow-up.";
+    }
+    if (area.key === "vip_readiness") {
+      if (intent.kind === "vip_readiness_clear") return "No VIP preparation required.";
+      var amenity = (intent.amenities || []).length
+        ? joinNatural(intent.amenities)
+        : "VIP preparation";
+      var name = intent.guestName || "guest";
+      return "VIP " + name + " still requires " + amenity +
+        (room ? " in " + room : "") + ".";
+    }
+    if (area.key === "maintenance") {
+      if (intent.kind === "maintenance_clear") return "No unresolved maintenance.";
+      if (intent.faultType === "hot water" || /hot\s*water/i.test(intent.faultType || "")) {
+        return (room || "A room") + " hot-water fault remains unresolved.";
+      }
+      if (intent.count === 1) return "One guest or room-impacting fault requires follow-up.";
+      return (intent.count === 2 ? "Two" : String(intent.count || 0)) +
+        " guest or room-impacting faults require follow-up.";
+    }
+    if (area.key === "revenue") {
+      if (intent.kind === "revenue_clear") return "No unresolved revenue actions.";
+      if (intent.amountTotal && intent.count > 1) {
+        return "Known outstanding charges total " + intent.amountTotal +
+          (intent.declined ? ", including a declined card" : "") + ".";
+      }
+      if (intent.declined && intent.amount) {
+        return (room || "A room") + " has " + intent.amount +
+          " outstanding after a declined card" +
+          (intent.count > 1 ? ", with additional open charges." : ".");
+      }
+      if (intent.amount) {
+        return "Outstanding " + intent.amount +
+          (room ? " on " + room : "") + " requires collection before departure.";
+      }
+      return "Outstanding charges require review before departure.";
+    }
+    if (area.key === "reception_operations") {
+      if (intent.kind === "reception_operations_clear") {
+        return "No unresolved reception operational work.";
+      }
+      if (intent.timed) {
+        return "Timed wake-up/taxi and reception follow-ups remain open.";
+      }
+      return "Reception follow-up remains open.";
+    }
+    return "Follow-up remains open.";
   }
 
   function buildHotelStatus(analyzed, options) {
     options = options || {};
     var entries = unresolvedAnalyzedEntries(analyzed);
 
-    function area(key, label, pickFn, levelFn, summaryFn) {
-      var supporting = entries.filter(pickFn);
-      var level = levelFn(supporting);
-      return {
-        key: key,
-        label: label,
-        level: level,
-        summary: summaryFn(supporting, level),
-        count: supporting.length,
-        supportingFactIds: supporting.map(function (e) { return e.factId; })
-      };
+    if (global.ShiftIntelligenceEngine &&
+        typeof global.ShiftIntelligenceEngine.buildHotelStatusModel === "function") {
+      return global.ShiftIntelligenceEngine.buildHotelStatusModel(entries).map(function (area) {
+        return {
+          key: area.key,
+          label: area.label,
+          level: area.level,
+          summary: formatHotelStatusSummary(area),
+          count: area.count,
+          supportingFactIds: area.supportingFactIds || [],
+          summaryIntent: area.summaryIntent || null
+        };
+      });
     }
 
-    var guest = area(
-      "guest_experience",
-      "Guest Experience",
-      function (e) {
-        return e.fact.subject === "maintenance" &&
-          (e.fact.guestImpact === "high" || e.fact.guestImpact === "critical" ||
-            /fan|guest|unhappy|occupied|on hold/i.test(e.fact.sourceText || "")) ||
-          e.fact.subject === "guest_request" || e.fact.subject === "room_move" ||
-          e.fact.subject === "lost_property" || e.topic === "complaint";
-      },
-      function (list) {
-        if (list.some(function (e) {
-          return e.fact.guestImpact === "critical" ||
-            (e.fact.subject === "maintenance" && e.fact.guestImpact === "high") ||
-            /on hold|unavailable/i.test(e.fact.sourceText || "");
-        })) return "critical";
-        if (list.length) return "attention";
-        return "normal";
-      },
-      function (list, level) {
-        if (!list.length) return "No unresolved guest-impacting issues.";
-        var bits = [];
-        list.slice(0, 3).forEach(function (e) {
-          var room = e.fact.rooms && e.fact.rooms[0] ? "Room " + e.fact.rooms[0] : "";
-          if (e.fact.faultType === "AC" || /ac\b|not cooling/i.test(e.fact.sourceText || "")) {
-            bits.push((room || "A room") + " has an unresolved AC fault affecting the guest");
-          } else if (e.fact.faultType === "safe" || /on hold|parts/i.test(e.fact.sourceText || "")) {
-            bits.push((room || "A room") + " remains unavailable while awaiting parts");
-          } else if (e.fact.subject === "lost_property") {
-            bits.push("Lost property follow-up" + (room ? " for " + room : "") + " remains open");
-          } else if (room) {
-            bits.push(room + " still needs guest follow-up");
-          }
-        });
-        return bits.length ? bits.join("; ") + "." : "Guest follow-up remains open.";
-      }
-    );
-
-    var vip = area(
-      "vip_readiness",
-      "VIP Readiness",
-      function (e) { return e.fact.subject === "vip_arrival" || e.section === "vip" || e.note.isVip; },
-      function (list) {
-        if (!list.length) return "normal";
-        if (list.some(function (e) {
-          return isFactClosed(e.fact) && e.fact.status === FACT_STATUS.done;
-        }) && list.every(function (e) { return isFactClosed(e.fact); })) {
-          return "normal";
-        }
-        var imminent = list.some(function (e) {
-          var t = normalizeTimelineTime(detailValueFromFact(e.fact, "time") ||
-            ((e.fact.sourceText || "").match(/\b(\d{1,2}\s*(?:am|pm)|\d{3,4}|\d{1,2}[:.]\d{2})\b/i) || [])[1]);
-          return t && t <= "12:00";
-        });
-        if (imminent && list.some(function (e) { return /quiet|champagne|amenity|room/i.test(e.fact.sourceText || ""); })) {
-          return "attention";
-        }
-        return list.length ? "attention" : "normal";
-      },
-      function (list) {
-        if (!list.length) return "No VIP preparation required.";
-        var e = list[0];
-        var name = e.fact.guestName || "VIP guest";
-        var t = normalizeTimelineTime(detailValueFromFact(e.fact, "time") ||
-          ((e.fact.sourceText || "").match(/\b(\d{1,2}\s*(?:am|pm)|\d{3,4}|\d{1,2}[:.]\d{2})\b/i) || [])[1]);
-        var pref = /quiet/i.test(e.fact.sourceText || "") ? "quiet upper-floor room" : "VIP preparation";
-        return "VIP " + name + " requires a " + pref + (t ? " before the " + t + " arrival" : " before arrival") + ".";
-      }
-    );
-
-    var maint = area(
-      "maintenance",
-      "Maintenance",
-      function (e) { return e.fact.subject === "maintenance" || e.section === "maintenance"; },
-      function (list) {
-        if (!list.length) return "normal";
-        if (list.some(function (e) {
-          return e.fact.guestImpact === "high" || e.fact.guestImpact === "critical" ||
-            e.fact.priority === "urgent" || /on hold|unavailable|ac\b|not cooling/i.test(e.fact.sourceText || "");
-        })) return "critical";
-        return "attention";
-      },
-      function (list) {
-        if (!list.length) return "No unresolved maintenance.";
-        var impacting = list.filter(function (e) {
-          return e.fact.guestImpact === "high" || e.fact.guestImpact === "critical" ||
-            /guest|on hold|ac\b|dryer|safe/i.test(e.fact.sourceText || "");
-        });
-        var n = impacting.length || list.length;
-        return n === 1
-          ? "One guest or room-impacting fault requires follow-up."
-          : (n === 2 ? "Two" : String(n)) + " guest or room-impacting faults require follow-up.";
-      }
-    );
-
-    var revenueEntries = entries.filter(function (e) {
-      return normalizeSubjectForIdentity(e.fact.subject) === "payment_balance" ||
-        e.section === "payments" ||
-        /minibar|city\s+tax|booking\.com|expedia|outstanding|folio|balance/i.test(e.fact.sourceText || "");
+    /* Fallback when engine is unavailable — evidence-based, no invented levels. */
+    var hasMaint = entries.some(function (e) {
+      return e.fact && e.fact.subject === "maintenance";
     });
-    var revenueTotal = sumMatchingMoney(revenueEntries);
-    var revenue = {
-      key: "revenue",
-      label: "Revenue",
-      level: !revenueEntries.length ? "normal"
-        : (revenueEntries.some(function (e) {
-          var amount = factMoneyValues(e.fact)[0];
-          var value = amount ? parseFloat(String(amount).replace(/[^\d.]/g, ""), 10) : 0;
-          return /declined/i.test(e.fact.sourceText || "") || value >= 100;
-        }) ? "critical" : "attention"),
-      summary: !revenueEntries.length
-        ? "No unresolved revenue actions."
-        : ("Known outstanding charges" +
-          (revenueTotal ? " total " + revenueTotal : "") +
-          (revenueEntries.some(function (e) { return /booking\.com|b\.?\s*com/i.test(e.fact.sourceText || ""); })
-            ? ", with additional Booking.com payments requiring review"
-            : "") + "."),
-      count: revenueEntries.length,
-      supportingFactIds: revenueEntries.map(function (e) { return e.factId; })
-    };
-
-    var reception = area(
-      "reception_operations",
-      "Reception Operations",
-      function (e) {
-        return e.fact.subject === "no_show" || e.fact.subject === "interconnect" ||
-          e.fact.subject === "room_move" || e.fact.subject === "wake_up" ||
-          e.fact.subject === "departure_followup" || e.section === "events" ||
-          /arrivals?\s+left|allocation|twin|interconnect/i.test(e.fact.sourceText || "");
+    return [
+      {
+        key: "guest_experience",
+        label: "Guest Experience",
+        level: hasMaint ? "attention" : "normal",
+        summary: hasMaint ? "Guest-impacting follow-up remains open." : "No unresolved guest-impacting issues.",
+        count: 0,
+        supportingFactIds: []
       },
-      function (list) { return list.length ? "attention" : "normal"; },
-      function (list) {
-        if (!list.length) return "No unresolved reception operational work.";
-        var bits = [];
-        if ((analyzed || []).some(function (n) { return /arrivals?\s+left\s+tonight:\s*2/i.test((n && n.original) || ""); })) {
-          bits.push("Two arrivals remain tonight");
-        }
-        if (list.some(function (e) { return e.fact.subject === "no_show"; })) {
-          bits.push("a no-show decision");
-        }
-        if (list.some(function (e) {
-          return e.fact.subject === "interconnect" || e.fact.subject === "room_move" || /twin|allocation/i.test(e.fact.sourceText || "");
-        })) {
-          bits.push("room allocation requests still open");
-        }
-        if (!bits.length) return "Reception follow-up remains open.";
-        if (bits.length === 1) return bits[0] + ".";
-        return bits[0] + ", with " + bits.slice(1).join(" and ") + ".";
+      {
+        key: "vip_readiness",
+        label: "VIP Readiness",
+        level: "normal",
+        summary: "No VIP preparation required.",
+        count: 0,
+        supportingFactIds: []
+      },
+      {
+        key: "maintenance",
+        label: "Maintenance",
+        level: hasMaint ? "attention" : "normal",
+        summary: hasMaint ? "Unresolved maintenance requires follow-up." : "No unresolved maintenance.",
+        count: 0,
+        supportingFactIds: []
+      },
+      {
+        key: "revenue",
+        label: "Revenue",
+        level: "normal",
+        summary: "No unresolved revenue actions.",
+        count: 0,
+        supportingFactIds: []
+      },
+      {
+        key: "reception_operations",
+        label: "Reception Operations",
+        level: "normal",
+        summary: "No unresolved reception operational work.",
+        count: 0,
+        supportingFactIds: []
       }
-    );
-
-    return [guest, vip, maint, revenue, reception];
+    ];
   }
 
   function buildTodaysTimeline(analyzed, options) {
@@ -5007,26 +5341,25 @@
       var priority = fact.priority || "normal";
 
       if (fact.subject === "departure_followup" || fact.subject === "wake_up" || /wake\s*\d/i.test(src)) {
-        var wakeRaw = (src.match(/\bwake(?:[\s-]*up)?\s*(\d{3,4}|\d{1,2}[:.]\d{2}|\d{1,2}\s*(?:am|pm))/i) || [])[1];
-        var wake = normalizeTimelineTime(wakeRaw);
+        var wake = extractWakeDisplayTime(src);
         if (wake) {
           addItem("scheduled", {
             factId: entry.factId,
             time: wake,
             deadlineLabel: null,
-            action: "Wake-up call" + (room ? " for " + room : ""),
+            action: "Complete wake-up call" + (room ? " for " + room : ""),
             reason: null,
             priority: priority
           });
         }
-        var taxiRaw = (src.match(/\b(?:addison(?:\s+lee)?|taxi|transfer)\s*(\d{3,4}|\d{1,2}[:.]\d{2}|\d{1,2}\s*(?:am|pm))/i) || [])[1];
-        var taxi = normalizeTimelineTime(taxiRaw);
+        var taxi = extractTaxiDisplayTime(src);
         if (taxi) {
           addItem("scheduled", {
             factId: entry.factId,
             time: taxi,
             deadlineLabel: null,
-            action: "Addison Lee collection" + (room ? " for " + room : ""),
+            action: (/addison/i.test(src) ? "Complete Addison Lee collection" : "Complete taxi departure") +
+              (room ? " for " + room : ""),
             reason: null,
             priority: priority
           });
@@ -5036,11 +5369,15 @@
       if (fact.subject === "vip_arrival") {
         var vipTime = normalizeTimelineTime(detailValueFromFact(fact, "time") ||
           (src.match(/\b(\d{1,2}\s*(?:am|pm)|\d{3,4}|\d{1,2}[:.]\d{2})\b/i) || [])[1]);
+        var vipGuest = fact.guestName || "VIP guest";
+        var vipAction = /quiet/i.test(src)
+          ? ("Complete quiet upper-floor VIP setup for " + vipGuest + (room ? " (" + room + ")" : ""))
+          : ("Complete VIP room setup for " + vipGuest + (room ? " (" + room + ")" : ""));
         addItem("scheduled", {
           factId: entry.factId,
           time: vipTime,
           deadlineLabel: vipTime ? "Before " + vipTime : "Before arrival",
-          action: "Prepare quiet upper-floor room for VIP " + (fact.guestName || "arrival"),
+          action: vipAction,
           reason: /quiet/i.test(src) ? "Quiet preference noted" : null,
           priority: "high"
         });
@@ -5078,15 +5415,20 @@
         } else if (/city\s+tax/i.test(src)) {
           action = "Collect " + (amount || "outstanding") + (room ? " " + room : "") +
             (/expedia/i.test(src) ? " Expedia city tax" : " city tax");
+        } else if (/expedia|booking\.com|virtual\s+card/i.test(src)) {
+          action = "Chase " + (/expedia/i.test(src) ? "Expedia" : "OTA") +
+            " virtual-card payment" + (fact.guestName ? " for " + fact.guestName : "") +
+            (amount ? " (" + amount + ")" : "");
         } else {
-          action = "Collect outstanding " + (amount || "payment") + (room ? " for " + room : "");
+          action = "Collect outstanding " + (amount || "balance") + (room ? " on " + room : "") +
+            " before guest departure";
         }
         addItem("before_deadline", {
           factId: entry.factId,
           time: null,
           deadlineLabel: /before\s+checkout|b4\s+checkout|before\s+departure|before\s+check-out/i.test(src)
             ? "Before check-out"
-            : "Before departure",
+            : "Before guest departure",
           action: action,
           reason: null,
           priority: "high"
@@ -5096,13 +5438,14 @@
       if (fact.subject === "maintenance") {
         var issue = fact.faultType === "AC" ? "AC fault"
           : (fact.faultType === "safe" ? "safe repair / room hold"
-            : (fact.faultType || "maintenance issue"));
+            : (fact.faultType === "heating" || /heat/i.test(src) ? "heating fault"
+              : (fact.faultType || "maintenance issue")));
         addItem("during_shift", {
           factId: entry.factId,
           time: null,
           deadlineLabel: "During shift",
-          action: "Follow up " + (room ? room + " " : "") + issue,
-          reason: /fan|guest/i.test(src) ? "Guest impact remains open" : null,
+          action: "Follow up " + (room ? room + " " : "") + issue + " with Maintenance until resolved",
+          reason: /fan|guest|comfort/i.test(src) ? "Guest impact remains open" : null,
           priority: fact.guestImpact === "high" ? "high" : priority
         });
       }

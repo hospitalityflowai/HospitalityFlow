@@ -258,15 +258,18 @@
 
     var shift = escapeHtml(formatShiftLabel(item.shift));
     var preparedBy = escapeHtml(item.preparedBy || "Not specified");
+    var dateLabel = escapeHtml(item.dateDisplay || formatDayHeading(getHandoverDateKey(item)));
     var generated = escapeHtml(formatGeneratedClock(item.timestamp));
     var preview = escapeHtml(getPreviewText(item));
 
     row.innerHTML =
       '<div class="handover-archive-row-main">' +
         '<div class="handover-archive-row-title">' +
-          shift + " — " + preparedBy + " — generated " + generated +
+          dateLabel + " · " + shift + " · " + preparedBy +
         "</div>" +
-        '<div class="handover-archive-row-preview">' + preview + "</div>" +
+        '<div class="handover-archive-row-preview">' +
+          "Saved " + generated + (preview ? " — " + preview : "") +
+        "</div>" +
       "</div>" +
       '<div class="handover-archive-row-actions">' +
         '<button class="btn btn-secondary handover-archive-open" type="button">Open</button>' +

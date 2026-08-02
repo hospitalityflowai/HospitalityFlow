@@ -236,5 +236,69 @@ console.log("\nIntelligence Engine — operational reasoning\n");
     "merged VIP fact keeps guest and preference context");
 })();
 
+(function engineRanksByOperationalImpact() {
+  const notes = [
+    "Room 7 extra bed requested",
+    "24 ac broken maint aware fan guest",
+    "Room 14 open balance £42.50 on folio",
+    "VIP Whitmore arriving 11:00 Room 42 quiet upper"
+  ];
+  const analyzed = makeAnalyzed(notes);
+  const ranked = Shift.rankByOperationalImpact(analyzed.map(function (n, i) {
+    return { fact: n.fact, note: n, factId: "f-" + i, topic: n.section };
+  }));
+  assert(ranked.length === 4, "rank returns all entries");
+  assert(ranked[0].fact.subject === "maintenance" || /ac/i.test(ranked[0].fact.sourceText || ""),
+    "guest-impacting AC ranks before note-order extras");
+  const scores = ranked.map(function (e) { return Shift.scoreOperationalImpact(e).score; });
+  assert(scores[0] <= scores[scores.length - 1], "impact scores ascend (lower = higher priority)");
+})();
+
+(function engineGroupsOperationalObjects() {
+  const notes = [
+    "vip eleanor whitmore due 11am quiet upper — rm42",
+    "okonkwo rm22 dep am — wake 0630 addison lee 1015",
+    "minibar 42.50 still open — collect b4 checkout",
+    "24 ac broken maint aware fan guest"
+  ];
+  const analyzed = makeAnalyzed(notes);
+  const entries = analyzed.map(function (n, i) {
+    return { fact: n.fact, note: n, factId: "f-" + i };
+  });
+  const groups = Shift.groupIntoOperationalObjects(entries);
+  assert(groups.some(function (g) { return g.type === "vip"; }), "groups VIP object");
+  assert(groups.some(function (g) { return g.type === "maintenance"; }), "groups maintenance object");
+  assert(groups.some(function (g) {
+    return g.type === "departure" || g.type === "wake_up" || g.type === "transport";
+  }), "groups wake-up / transport departure object");
+  assert(groups.some(function (g) { return g.type === "payment"; }) ||
+    groups.some(function (g) { return (g.components || []).indexOf("payment") !== -1; }),
+    "groups payment object or payment component");
+})();
+
+(function snapshotShorthandExtraction() {
+  const snap = Shift.extractHotelSnapshot("arr 12 / dep 8 / stay 40 / occ 75% / sold 60 / avail 20");
+  assert(String(snap.arrivals) === "12", "arr shorthand → arrivals");
+  assert(String(snap.departures) === "8", "dep shorthand → departures");
+  assert(String(snap.stayovers) === "40", "stay shorthand → stayovers");
+  assert(String(snap.occupancy) === "75", "occ shorthand → occupancy");
+  assert(String(snap.roomsSold) === "60", "sold shorthand → rooms sold");
+  assert(String(snap.roomsAvailable) === "20", "avail shorthand → rooms available");
+
+  const timed = Shift.extractHotelSnapshot("late arr ~2345 rm16 prepaid");
+  assert(timed.arrivals == null, "arrival time shorthand does not invent arrivals KPI");
+
+  const full = Shift.extractHotelSnapshot("Arrivals: 11\nDepartures: 8\nOccupancy: 100%\nRooms sold: 24");
+  assert(String(full.arrivals) === "11" && String(full.roomsSold) === "24",
+    "full-phrase snapshot extraction preserved");
+})();
+
+(function lowConfidencePrefersUncertainty() {
+  const scored = Shift.scoreOperationalImpact({ subject: "", sourceText: "" });
+  assert(scored.confidence === "low" || scored.score >= 20,
+    "empty evidence stays low confidence / low priority");
+  assert(scored.objectType === "other", "empty evidence is not guessed as VIP/payment");
+})();
+
 console.log("\n" + passed + " passed, " + failed + " failed\n");
 if (failed) process.exit(1);
