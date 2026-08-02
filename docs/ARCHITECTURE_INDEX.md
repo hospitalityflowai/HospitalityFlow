@@ -17,7 +17,7 @@ Hospitality Flow helps independent and boutique hotels run better shifts through
 | **Hotel Brain** | Durable hotel knowledge and operational context |
 | **AI Shift Handover** | Shift communication, facts, and recommendations |
 | **Maintenance** | Issue tracking with optional handover contribution |
-| **Guest Intelligence** | GI-1 — temporary read-only observations from engine outputs ([architecture](GUEST_INTELLIGENCE_ARCHITECTURE.md)); no durable profiles yet |
+| **Guest Intelligence** | GI-2 — temporary observations + reviewable candidates ([architecture](GUEST_INTELLIGENCE_ARCHITECTURE.md)); no durable profiles yet |
 | **Operator / Pilot Lab** | Platform administration and operator sandbox |
 
 ### How modules connect
@@ -36,7 +36,7 @@ Hospitality Intelligence Engine
         ▼
 AI Shift Handover (presentation + saved reports)
 
-Guest Intelligence (GI-1 read-only observations) → same engine contracts, not a parallel brain
+Guest Intelligence (GI-2 candidates from observations) → same engine contracts, not a parallel brain
 ```
 
 
@@ -62,7 +62,7 @@ Detailed canonical security architecture lives in [security/SECURITY_ARCHITECTUR
 |----------|-------------|
 | [PRODUCT_PRINCIPLES.md](PRODUCT_PRINCIPLES.md) | Product principles and mission |
 | [HOSPITALITY_INTELLIGENCE_ENGINE_ARCHITECTURE.md](HOSPITALITY_INTELLIGENCE_ENGINE_ARCHITECTURE.md) | Shared intelligence engine design (E1–E4) |
-| [GUEST_INTELLIGENCE_ARCHITECTURE.md](GUEST_INTELLIGENCE_ARCHITECTURE.md) | Guest Intelligence GI-0/GI-1 — architecture + temporary observations |
+| [GUEST_INTELLIGENCE_ARCHITECTURE.md](GUEST_INTELLIGENCE_ARCHITECTURE.md) | Guest Intelligence GI-0–GI-2 — observations + temporary candidates |
 | [HOSPITALITY_INTELLIGENCE_ARCHITECTURE_AUDIT.md](HOSPITALITY_INTELLIGENCE_ARCHITECTURE_AUDIT.md) | Intelligence architecture audit / roadmap context |
 | [PHASE_16B_INTELLIGENCE_FOUNDATION.md](PHASE_16B_INTELLIGENCE_FOUNDATION.md) | Phase 16B shared foundation |
 
@@ -75,7 +75,7 @@ Detailed canonical security architecture lives in [security/SECURITY_ARCHITECTUR
 | **Hotel Brain** | Dedicated architecture document not yet created. Covered in intelligence docs above; UI at `hotel-profile.html`. |
 | **AI Shift Handover** | Dedicated architecture document not yet created. Covered in intelligence docs above; UI at `handover.html`. |
 | **Maintenance** | [MAINTENANCE_V1_SPEC.md](MAINTENANCE_V1_SPEC.md), [MAINTENANCE_UI_V1.md](MAINTENANCE_UI_V1.md) |
-| **Guest Intelligence** | [GUEST_INTELLIGENCE_ARCHITECTURE.md](GUEST_INTELLIGENCE_ARCHITECTURE.md) (GI-1: `guest-intelligence.js`; no profiles/UI/DB) |
+| **Guest Intelligence** | [GUEST_INTELLIGENCE_ARCHITECTURE.md](GUEST_INTELLIGENCE_ARCHITECTURE.md) (GI-2: `guest-intelligence.js`; no profiles/UI/DB) |
 | **Operator / Pilot Lab** | [OPERATOR_INVITE.md](OPERATOR_INVITE.md), [operator/PILOT_LAB_ACCOUNT_SETUP.md](operator/PILOT_LAB_ACCOUNT_SETUP.md) |
 
 Pilot validation (ops/research, not core architecture): [pilot-validation/README.md](pilot-validation/README.md).
@@ -143,7 +143,7 @@ Live suites must run **only** against the dedicated non-production project `hosp
 | Hotel Brain | Active development (enrich-only for shift recommendations) |
 | AI Shift Handover | Active development |
 | Maintenance | Active development |
-| Guest Intelligence | **GI-1 done** — `guest-intelligence.js` temporary observations only; must reuse E4 contracts, not a parallel brain |
+| Guest Intelligence | **GI-2 done** — temporary observations + candidate knowledge only; must reuse E4 contracts, not a parallel brain |
 
 ---
 

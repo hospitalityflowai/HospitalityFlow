@@ -1,17 +1,18 @@
 /**
- * Hospitality Flow — Guest Intelligence (GI-1)
+ * Hospitality Flow — Guest Intelligence (GI-1 + GI-2)
  *
- * Read-only guest observation extraction from existing engine outputs.
+ * GI-1: read-only GuestObservation extraction from engine outputs.
+ * GI-2: temporary CandidateGuestKnowledge from observations (reviewable, not confirmed).
  * Consumes OperationalFact / OperationalContext / OperationalMemory / DecisionTrace.
  * Does NOT score, rank, recommend, persist profiles, or promote preferences.
  *
- * GI-1: temporary GuestObservation only — no durable guestId, no DB, no UI.
+ * No durable guestId, no DB, no staff UI, no auto-confirm.
  */
 (function (global) {
   "use strict";
 
-  var GI_VERSION = 1;
-  var GI_PHASE = "GI-1";
+  var GI_VERSION = 2;
+  var GI_PHASE = "GI-2";
 
   var OBSERVATION_TYPE = {
     room_preference: "room_preference",
@@ -70,6 +71,131 @@
 
   /** Session-only Demo cache — never persisted. Cleared on Demo reset/exit. */
   var lastDemoObservations = null;
+  var lastDemoCandidates = null;
+
+  /* ─── GI-2 candidate knowledge ─────────────────────────────────────────── */
+
+  var KNOWLEDGE_TYPE = {
+    floor_preference: "floor_preference",
+    room_location_preference: "room_location_preference",
+    bedding_preference: "bedding_preference",
+    bed_configuration_preference: "bed_configuration_preference",
+    amenity_preference: "amenity_preference",
+    communication_preference: "communication_preference",
+    recurring_service_pattern: "recurring_service_pattern",
+    complaint_pattern: "complaint_pattern",
+    service_recovery_note: "service_recovery_note",
+    vip_or_recognition: "vip_or_recognition",
+    accessibility_or_service_need: "accessibility_or_service_need",
+    operational_restriction: "operational_restriction"
+  };
+
+  var CANDIDATE_ELIGIBILITY = {
+    auto_proposable: "auto_proposable",
+    staff_review_required: "staff_review_required",
+    never_candidate: "never_candidate"
+  };
+
+  var CANDIDATE_LIFECYCLE = {
+    proposed: "proposed",
+    insufficient_evidence: "insufficient_evidence",
+    conflicting: "conflicting",
+    rejected_by_rule: "rejected_by_rule",
+    prohibited: "prohibited"
+  };
+
+  var CONTRADICTION_STATE = {
+    none: "none",
+    conflicting: "conflicting",
+    superseded: "superseded",
+    uncertain: "uncertain"
+  };
+
+  /**
+   * Observation type → candidate eligibility + knowledge type.
+   * never_candidate types do not become guest knowledge in GI-2.
+   */
+  var OBSERVATION_CANDIDATE_RULES = {};
+  OBSERVATION_CANDIDATE_RULES[OBSERVATION_TYPE.floor_preference] = {
+    eligibility: CANDIDATE_ELIGIBILITY.auto_proposable,
+    knowledgeType: KNOWLEDGE_TYPE.floor_preference
+  };
+  OBSERVATION_CANDIDATE_RULES[OBSERVATION_TYPE.location_preference] = {
+    eligibility: CANDIDATE_ELIGIBILITY.auto_proposable,
+    knowledgeType: KNOWLEDGE_TYPE.room_location_preference
+  };
+  OBSERVATION_CANDIDATE_RULES[OBSERVATION_TYPE.room_preference] = {
+    eligibility: CANDIDATE_ELIGIBILITY.auto_proposable,
+    knowledgeType: KNOWLEDGE_TYPE.room_location_preference
+  };
+  OBSERVATION_CANDIDATE_RULES[OBSERVATION_TYPE.bedding_preference] = {
+    eligibility: CANDIDATE_ELIGIBILITY.auto_proposable,
+    knowledgeType: KNOWLEDGE_TYPE.bedding_preference
+  };
+  OBSERVATION_CANDIDATE_RULES[OBSERVATION_TYPE.bed_configuration] = {
+    eligibility: CANDIDATE_ELIGIBILITY.auto_proposable,
+    knowledgeType: KNOWLEDGE_TYPE.bed_configuration_preference
+  };
+  OBSERVATION_CANDIDATE_RULES[OBSERVATION_TYPE.amenity_preference] = {
+    eligibility: CANDIDATE_ELIGIBILITY.auto_proposable,
+    knowledgeType: KNOWLEDGE_TYPE.amenity_preference
+  };
+  OBSERVATION_CANDIDATE_RULES[OBSERVATION_TYPE.communication_preference] = {
+    eligibility: CANDIDATE_ELIGIBILITY.auto_proposable,
+    knowledgeType: KNOWLEDGE_TYPE.communication_preference
+  };
+  OBSERVATION_CANDIDATE_RULES[OBSERVATION_TYPE.vip_or_recognition] = {
+    eligibility: CANDIDATE_ELIGIBILITY.auto_proposable,
+    knowledgeType: KNOWLEDGE_TYPE.vip_or_recognition,
+    retentionHint: "short_lived_recognition"
+  };
+  OBSERVATION_CANDIDATE_RULES[OBSERVATION_TYPE.occasion] = {
+    eligibility: CANDIDATE_ELIGIBILITY.auto_proposable,
+    knowledgeType: KNOWLEDGE_TYPE.vip_or_recognition,
+    retentionHint: "short_lived_recognition"
+  };
+  OBSERVATION_CANDIDATE_RULES[OBSERVATION_TYPE.accessibility_or_service_need] = {
+    eligibility: CANDIDATE_ELIGIBILITY.staff_review_required,
+    knowledgeType: KNOWLEDGE_TYPE.accessibility_or_service_need
+  };
+  OBSERVATION_CANDIDATE_RULES[OBSERVATION_TYPE.complaint] = {
+    eligibility: CANDIDATE_ELIGIBILITY.staff_review_required,
+    knowledgeType: KNOWLEDGE_TYPE.complaint_pattern
+  };
+  OBSERVATION_CANDIDATE_RULES[OBSERVATION_TYPE.service_recovery] = {
+    eligibility: CANDIDATE_ELIGIBILITY.staff_review_required,
+    knowledgeType: KNOWLEDGE_TYPE.service_recovery_note
+  };
+  OBSERVATION_CANDIDATE_RULES[OBSERVATION_TYPE.payment_issue] = {
+    eligibility: CANDIDATE_ELIGIBILITY.never_candidate,
+    knowledgeType: KNOWLEDGE_TYPE.operational_restriction,
+    rejectReason: "payment_not_guest_preference"
+  };
+  OBSERVATION_CANDIDATE_RULES[OBSERVATION_TYPE.wakeup_or_transport] = {
+    eligibility: CANDIDATE_ELIGIBILITY.never_candidate,
+    knowledgeType: KNOWLEDGE_TYPE.recurring_service_pattern,
+    rejectReason: "one_stay_timed_service"
+  };
+  OBSERVATION_CANDIDATE_RULES[OBSERVATION_TYPE.parcel_or_delivery] = {
+    eligibility: CANDIDATE_ELIGIBILITY.never_candidate,
+    rejectReason: "current_stay_parcel"
+  };
+  OBSERVATION_CANDIDATE_RULES[OBSERVATION_TYPE.maintenance_guest_impact] = {
+    eligibility: CANDIDATE_ELIGIBILITY.never_candidate,
+    rejectReason: "temporary_maintenance_impact"
+  };
+  OBSERVATION_CANDIDATE_RULES[OBSERVATION_TYPE.late_checkout_request] = {
+    eligibility: CANDIDATE_ELIGIBILITY.never_candidate,
+    rejectReason: "current_stay_operational_request"
+  };
+  OBSERVATION_CANDIDATE_RULES[OBSERVATION_TYPE.general_guest_request] = {
+    eligibility: CANDIDATE_ELIGIBILITY.never_candidate,
+    rejectReason: "untyped_general_request"
+  };
+  OBSERVATION_CANDIDATE_RULES[OBSERVATION_TYPE.informational] = {
+    eligibility: CANDIDATE_ELIGIBILITY.never_candidate,
+    rejectReason: "informational_only"
+  };
 
   function trimText(value) {
     return String(value == null ? "" : value).replace(/\s+/g, " ").trim();
@@ -635,7 +761,7 @@
       observations.push(obs);
     });
 
-    var result = { observations: observations, rejections: rejections, phase: GI_PHASE };
+    var result = { observations: observations, rejections: rejections, phase: "GI-1" };
     if (isDemo) {
       lastDemoObservations = observations.slice();
     }
@@ -650,6 +776,534 @@
     return lastDemoObservations ? lastDemoObservations.slice() : [];
   }
 
+  /* ─── GI-2: CandidateGuestKnowledge ────────────────────────────────────── */
+
+  function normalizeGuestNameKey(name) {
+    return String(name || "").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "").slice(0, 40);
+  }
+
+  function proposedValueFromObservation(obs) {
+    var value = (obs && obs.value) || {};
+    var type = obs.observationType;
+    var proposed = {
+      code: "",
+      tokens: []
+    };
+    if (type === OBSERVATION_TYPE.floor_preference) {
+      proposed.code = value.preferredLocation || "high_floor";
+      if (/ground|lower/i.test(proposed.code) || value.locationDetail === "ground_floor") {
+        proposed.code = "ground_floor";
+      } else if (/high|upper/i.test(proposed.code)) {
+        proposed.code = "high_floor";
+      }
+    } else if (type === OBSERVATION_TYPE.location_preference || type === OBSERVATION_TYPE.room_preference) {
+      proposed.code = value.locationDetail || value.preferredLocation || "location_preference";
+    } else if (type === OBSERVATION_TYPE.bedding_preference) {
+      proposed.code = value.requestItem || "feather_free";
+      if (/feather[\s_-]*free|hypoallergenic|non[\s_-]*feather/i.test(proposed.code)) {
+        proposed.code = "feather_free";
+      } else if (/feather/i.test(proposed.code) && !/free|non/i.test(proposed.code)) {
+        proposed.code = "feather_ok";
+      }
+    } else if (type === OBSERVATION_TYPE.bed_configuration) {
+      proposed.code = value.requestItem || "bed_configuration";
+    } else if (type === OBSERVATION_TYPE.amenity_preference) {
+      proposed.code = value.requestItem || "amenity";
+    } else if (type === OBSERVATION_TYPE.accessibility_or_service_need) {
+      proposed.code = "accessible_room_need";
+      proposed.tokens = ["service_need"];
+    } else if (type === OBSERVATION_TYPE.occasion) {
+      proposed.code = value.occasion || "occasion";
+    } else if (type === OBSERVATION_TYPE.vip_or_recognition) {
+      proposed.code = "vip_recognition";
+    } else if (type === OBSERVATION_TYPE.complaint || type === OBSERVATION_TYPE.service_recovery) {
+      proposed.code = value.summaryCode || type;
+    } else if (type === OBSERVATION_TYPE.payment_issue) {
+      proposed.code = "payment_issue_current_stay";
+    } else {
+      proposed.code = value.summaryCode || type || "unknown";
+    }
+    return proposed;
+  }
+
+  function valuesCompatible(a, b) {
+    if (!a || !b) return false;
+    return String(a.code || "") === String(b.code || "");
+  }
+
+  function valuesConflict(a, b, knowledgeType) {
+    if (!a || !b) return false;
+    if (String(a.code) === String(b.code)) return false;
+    if (knowledgeType === KNOWLEDGE_TYPE.floor_preference) {
+      var floors = { high_floor: 1, upper_floor: 1, ground_floor: 2, lower_ground: 2 };
+      return !!(floors[a.code] && floors[b.code] && floors[a.code] !== floors[b.code]);
+    }
+    if (knowledgeType === KNOWLEDGE_TYPE.bedding_preference) {
+      return (a.code === "feather_free" && a.code !== b.code) ||
+        (b.code === "feather_free" && a.code !== b.code) ||
+        (a.code === "feather_ok" && b.code === "feather_free") ||
+        (b.code === "feather_ok" && a.code === "feather_free");
+    }
+    if (knowledgeType === KNOWLEDGE_TYPE.room_location_preference) {
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Aggregation identity key — namesakes in different rooms without reservation stay separate.
+   * Cross-stay aggregation requires reservation match OR (same guestName + same room).
+   */
+  function candidateIdentityKey(obs) {
+    var evidence = (obs && obs.guestIdentityEvidence) || {};
+    var reservation = trimText(evidence.reservationId || evidence.bookingReference || "");
+    var nameKey = normalizeGuestNameKey(obs.guestName || evidence.guestName || "");
+    var room = normalizeRoom(obs.room || evidence.room || "");
+    if (reservation) return "res:" + reservation.toLowerCase();
+    if (nameKey && room) return "name_room:" + nameKey + "|" + room;
+    if (nameKey) return "name_only:" + nameKey;
+    if (room) return "room_only:" + room;
+    return "anon:" + (obs.observationId || "x");
+  }
+
+  function canAggregateKeys(keyA, keyB, obsA, obsB) {
+    if (keyA === keyB) {
+      /* Same name different rooms without reservation → keys differ (name_room). */
+      if (keyA.indexOf("name_only:") === 0) {
+        var roomA = normalizeRoom(obsA.room);
+        var roomB = normalizeRoom(obsB.room);
+        if (roomA && roomB && roomA !== roomB) return false;
+      }
+      return true;
+    }
+    var resA = trimText((obsA.guestIdentityEvidence || {}).reservationId ||
+      (obsA.guestIdentityEvidence || {}).bookingReference || "");
+    var resB = trimText((obsB.guestIdentityEvidence || {}).reservationId ||
+      (obsB.guestIdentityEvidence || {}).bookingReference || "");
+    if (resA && resB && resA.toLowerCase() === resB.toLowerCase()) return true;
+    return false;
+  }
+
+  function isRoomOnlyObservation(obs) {
+    var strength = obs.guestMatchStrength;
+    var name = trimText(obs.guestName || (obs.guestIdentityEvidence && obs.guestIdentityEvidence.guestName) || "");
+    var reservation = trimText(
+      (obs.guestIdentityEvidence && (obs.guestIdentityEvidence.reservationId ||
+        obs.guestIdentityEvidence.bookingReference)) || ""
+    );
+    if (reservation) return false;
+    if (!name && obs.room) return true;
+    if (strength === MATCH_STRENGTH.uncertain && !name) return true;
+    return false;
+  }
+
+  function identitySufficientForCandidate(obs) {
+    if (isRoomOnlyObservation(obs)) return false;
+    var strength = obs.guestMatchStrength;
+    if (strength === MATCH_STRENGTH.strong || strength === MATCH_STRENGTH.probable) return true;
+    /*
+     * Accessibility / service need: named guest may propose a staff-review candidate
+     * even at uncertain match — never auto-confirmed, never a diagnosis.
+     */
+    if (obs.observationType === OBSERVATION_TYPE.accessibility_or_service_need &&
+        trimText(obs.guestName || (obs.guestIdentityEvidence && obs.guestIdentityEvidence.guestName))) {
+      return true;
+    }
+    return false;
+  }
+
+  function createEmptyCandidate() {
+    return {
+      candidateId: "",
+      workspaceId: "",
+      identityEvidence: {
+        guestName: "",
+        room: "",
+        rooms: [],
+        reservationId: "",
+        bookingReference: "",
+        sourceType: "handover"
+      },
+      guestMatchStrength: MATCH_STRENGTH.none,
+      knowledgeType: "",
+      proposedValue: { code: "", tokens: [] },
+      sourceObservationIds: [],
+      sourceFactIds: [],
+      sourceReportIds: [],
+      evidenceSummary: {
+        observationTypes: [],
+        statuses: [],
+        proposedCodes: []
+      },
+      evidenceCount: 0,
+      confidence: 0,
+      confidenceLabel: CONFIDENCE_LABEL.low,
+      approvalRequirement: APPROVAL_REQUIREMENT.none,
+      sensitivity: SENSITIVITY.normal,
+      lifecycleStatus: CANDIDATE_LIFECYCLE.proposed,
+      contradictionState: CONTRADICTION_STATE.none,
+      retentionHint: "temporary_candidate_only",
+      reasonCodes: [],
+      createdAt: "",
+      temporary: true,
+      persistent: false,
+      confirmed: false,
+      preferencePromoted: false
+    };
+  }
+
+  /**
+   * Deterministic confidence (evidence quality, not importance):
+   *   base = mean(source observation confidence)
+   *   + identity: strong +0.08, probable +0.04, uncertain −0.12
+   *   + explicit_current_request / confirmed_current_stay present: +0.05
+   *   + (evidenceCount − 1) * 0.07 (cap +0.21)
+   *   − contradiction conflicting: −0.22
+   *   room-only / insufficient path: cap 0.45
+   *   sensitive does not remove staff_review
+   */
+  function computeCandidateConfidence(obsList, matchStrength, contradictionState) {
+    var sum = 0;
+    var n = 0;
+    var hasExplicit = false;
+    (obsList || []).forEach(function (o) {
+      if (typeof o.confidence === "number") {
+        sum += o.confidence;
+        n += 1;
+      }
+      if (o.status === OBSERVATION_STATUS.explicit_current_request ||
+          o.status === OBSERVATION_STATUS.confirmed_current_stay) {
+        hasExplicit = true;
+      }
+    });
+    var base = n ? (sum / n) : 0.5;
+    if (matchStrength === MATCH_STRENGTH.strong) base += 0.08;
+    else if (matchStrength === MATCH_STRENGTH.probable) base += 0.04;
+    else if (matchStrength === MATCH_STRENGTH.uncertain) base -= 0.12;
+    else base -= 0.2;
+    if (hasExplicit) base += 0.05;
+    var extra = Math.min(0.21, Math.max(0, ((obsList && obsList.length) || 1) - 1) * 0.07);
+    base += extra;
+    if (contradictionState === CONTRADICTION_STATE.conflicting) base -= 0.22;
+    if (contradictionState === CONTRADICTION_STATE.uncertain) base -= 0.1;
+    if (matchStrength === MATCH_STRENGTH.uncertain) base = Math.min(base, 0.55);
+    if (base > 1) base = 1;
+    if (base < 0) base = 0;
+    return Math.round(base * 100) / 100;
+  }
+
+  function strongestMatch(obsList) {
+    var order = { strong: 3, probable: 2, uncertain: 1, none: 0 };
+    var best = MATCH_STRENGTH.none;
+    (obsList || []).forEach(function (o) {
+      if ((order[o.guestMatchStrength] || 0) > (order[best] || 0)) best = o.guestMatchStrength;
+    });
+    return best;
+  }
+
+  function mergeIdentityEvidence(obsList) {
+    var out = {
+      guestName: "",
+      room: "",
+      rooms: [],
+      reservationId: "",
+      bookingReference: "",
+      sourceType: "handover"
+    };
+    (obsList || []).forEach(function (o) {
+      var e = o.guestIdentityEvidence || {};
+      if (!out.guestName && (o.guestName || e.guestName)) out.guestName = o.guestName || e.guestName;
+      if (!out.room && (o.room || e.room)) out.room = o.room || e.room;
+      var rooms = e.rooms || (o.room ? [o.room] : []);
+      rooms.forEach(function (r) {
+        var id = normalizeRoom(r);
+        if (id && out.rooms.indexOf(id) === -1) out.rooms.push(id);
+      });
+      if (!out.reservationId && e.reservationId) out.reservationId = e.reservationId;
+      if (!out.bookingReference && e.bookingReference) out.bookingReference = e.bookingReference;
+      if (e.sourceType) out.sourceType = e.sourceType;
+    });
+    return out;
+  }
+
+  function uniquePush(arr, value) {
+    if (!value) return;
+    if (arr.indexOf(value) === -1) arr.push(value);
+  }
+
+  function candidateIdFor(workspaceId, knowledgeType, identityKey, proposedCode) {
+    return [
+      "gcand",
+      trimText(workspaceId) || "local",
+      knowledgeType || "unknown",
+      String(identityKey || "").replace(/[^a-z0-9:_|-]/gi, "").slice(0, 48),
+      String(proposedCode || "").slice(0, 24)
+    ].filter(Boolean).join(":");
+  }
+
+  /**
+   * GI-2 canonical entry — temporary reviewable candidates from GI-1 observations.
+   * @returns {{ candidates: CandidateGuestKnowledge[], rejections: Object[] }}
+   */
+  function buildCandidateGuestKnowledge(input) {
+    input = input || {};
+    var workspaceId = trimText(input.workspaceId || "");
+    var createdAt = trimText(input.observedAt || input.createdAt || "") || new Date().toISOString();
+    var isDemo = !!(input.isDemoData || workspaceId === "demo-workspace");
+    var observations = Array.isArray(input.observations) ? input.observations.slice() : [];
+    var observationRejections = Array.isArray(input.observationRejections) ? input.observationRejections : [];
+
+    var candidates = [];
+    var rejections = [];
+    var groups = [];
+
+    observationRejections.forEach(function (rej) {
+      if (!rej) return;
+      rejections.push({
+        rejectionId: rej.rejectionId || ("crej:" + (rej.sourceFactIds && rej.sourceFactIds[0])),
+        code: "prohibited_no_candidate",
+        reasonCode: rej.reasonCode || "prohibited",
+        lifecycleStatus: CANDIDATE_LIFECYCLE.prohibited,
+        sensitivity: SENSITIVITY.prohibited,
+        approvalRequirement: APPROVAL_REQUIREMENT.never_store,
+        sourceFactIds: rej.sourceFactIds || [],
+        retainedContent: false
+      });
+    });
+
+    observations.forEach(function (obs) {
+      if (!obs || !obs.observationId) return;
+      if (!obs.sourceFactIds || !obs.sourceFactIds.length) return;
+      if (obs.workspaceId && workspaceId && obs.workspaceId !== workspaceId) return;
+
+      var rule = OBSERVATION_CANDIDATE_RULES[obs.observationType];
+      if (!rule) {
+        rejections.push({
+          rejectionId: "crej:" + obs.observationId,
+          code: "unknown_observation_type",
+          reasonCode: "no_candidate_rule",
+          lifecycleStatus: CANDIDATE_LIFECYCLE.rejected_by_rule,
+          sourceObservationIds: [obs.observationId],
+          sourceFactIds: obs.sourceFactIds.slice(),
+          retainedContent: false
+        });
+        return;
+      }
+
+      if (rule.eligibility === CANDIDATE_ELIGIBILITY.never_candidate) {
+        rejections.push({
+          rejectionId: "crej:" + obs.observationId,
+          code: "never_candidate",
+          reasonCode: rule.rejectReason || "never_candidate",
+          lifecycleStatus: CANDIDATE_LIFECYCLE.rejected_by_rule,
+          knowledgeType: rule.knowledgeType || "",
+          sourceObservationIds: [obs.observationId],
+          sourceFactIds: obs.sourceFactIds.slice(),
+          retainedContent: false
+        });
+        return;
+      }
+
+      if (obs.sensitivity === SENSITIVITY.prohibited ||
+          obs.approvalRequirement === APPROVAL_REQUIREMENT.never_store) {
+        rejections.push({
+          rejectionId: "crej:" + obs.observationId,
+          code: "prohibited_no_candidate",
+          reasonCode: "prohibited_observation",
+          lifecycleStatus: CANDIDATE_LIFECYCLE.prohibited,
+          sourceObservationIds: [obs.observationId],
+          retainedContent: false
+        });
+        return;
+      }
+
+      var proposed = proposedValueFromObservation(obs);
+      var idKey = candidateIdentityKey(obs);
+
+      /* Room-only → insufficient_evidence (not durable / not cross-stay). */
+      if (isRoomOnlyObservation(obs) || !identitySufficientForCandidate(obs)) {
+        if (isRoomOnlyObservation(obs)) {
+          var insuff = createEmptyCandidate();
+          insuff.candidateId = candidateIdFor(workspaceId, rule.knowledgeType, idKey, proposed.code);
+          insuff.workspaceId = workspaceId || obs.workspaceId || "";
+          insuff.identityEvidence = mergeIdentityEvidence([obs]);
+          insuff.guestMatchStrength = obs.guestMatchStrength || MATCH_STRENGTH.uncertain;
+          insuff.knowledgeType = rule.knowledgeType;
+          insuff.proposedValue = proposed;
+          insuff.sourceObservationIds = [obs.observationId];
+          insuff.sourceFactIds = obs.sourceFactIds.slice();
+          insuff.sourceReportIds = (obs.sourceReportIds || []).slice();
+          insuff.evidenceSummary = {
+            observationTypes: [obs.observationType],
+            statuses: [obs.status],
+            proposedCodes: [proposed.code]
+          };
+          insuff.evidenceCount = 1;
+          insuff.confidence = Math.min(0.45, typeof obs.confidence === "number" ? obs.confidence : 0.4);
+          insuff.confidenceLabel = confidenceLabelFromValue(insuff.confidence);
+          insuff.approvalRequirement = APPROVAL_REQUIREMENT.staff_review;
+          insuff.sensitivity = obs.sensitivity || SENSITIVITY.normal;
+          insuff.lifecycleStatus = CANDIDATE_LIFECYCLE.insufficient_evidence;
+          insuff.contradictionState = CONTRADICTION_STATE.none;
+          insuff.retentionHint = "current_stay_observation_only";
+          insuff.reasonCodes = ["gi2_insufficient_identity", "room_only_no_cross_stay", rule.knowledgeType];
+          insuff.createdAt = createdAt;
+          candidates.push(insuff);
+          return;
+        }
+        rejections.push({
+          rejectionId: "crej:" + obs.observationId,
+          code: "insufficient_identity",
+          reasonCode: "identity_too_weak",
+          lifecycleStatus: CANDIDATE_LIFECYCLE.insufficient_evidence,
+          sourceObservationIds: [obs.observationId],
+          sourceFactIds: obs.sourceFactIds.slice(),
+          retainedContent: false
+        });
+        return;
+      }
+
+      var placed = false;
+      for (var g = 0; g < groups.length; g++) {
+        var group = groups[g];
+        if (group.knowledgeType !== rule.knowledgeType) continue;
+        if (group.workspaceId !== (workspaceId || obs.workspaceId || "")) continue;
+        if (!canAggregateKeys(group.identityKey, idKey, group.seedObs, obs)) continue;
+
+        var conflict = false;
+        var compatible = false;
+        group.obsList.forEach(function (existing) {
+          var existingVal = proposedValueFromObservation(existing);
+          if (valuesCompatible(existingVal, proposed)) compatible = true;
+          if (valuesConflict(existingVal, proposed, rule.knowledgeType)) conflict = true;
+        });
+
+        if (conflict) {
+          group.obsList.push(obs);
+          group.contradictionState = CONTRADICTION_STATE.conflicting;
+          group.proposedValue = group.proposedValue; /* keep first; do not overwrite */
+          placed = true;
+          break;
+        }
+        if (compatible || group.obsList.length === 0) {
+          group.obsList.push(obs);
+          if (!group.proposedValue.code) group.proposedValue = proposed;
+          placed = true;
+          break;
+        }
+        /* Same family, incompatible but not formal conflict → uncertain separate group */
+      }
+
+      if (!placed) {
+        groups.push({
+          workspaceId: workspaceId || obs.workspaceId || "",
+          knowledgeType: rule.knowledgeType,
+          identityKey: idKey,
+          seedObs: obs,
+          obsList: [obs],
+          proposedValue: proposed,
+          rule: rule,
+          contradictionState: CONTRADICTION_STATE.none
+        });
+      }
+    });
+
+    groups.forEach(function (group) {
+      var obsList = group.obsList;
+      var matchStrength = strongestMatch(obsList);
+      var contradictionState = group.contradictionState || CONTRADICTION_STATE.none;
+      var confidence = computeCandidateConfidence(obsList, matchStrength, contradictionState);
+      var lifecycle = CANDIDATE_LIFECYCLE.proposed;
+      if (contradictionState === CONTRADICTION_STATE.conflicting) {
+        lifecycle = CANDIDATE_LIFECYCLE.conflicting;
+      }
+
+      var cand = createEmptyCandidate();
+      cand.candidateId = candidateIdFor(
+        group.workspaceId,
+        group.knowledgeType,
+        group.identityKey,
+        group.proposedValue.code
+      );
+      cand.workspaceId = group.workspaceId;
+      cand.identityEvidence = mergeIdentityEvidence(obsList);
+      cand.guestMatchStrength = matchStrength;
+      cand.knowledgeType = group.knowledgeType;
+      cand.proposedValue = group.proposedValue;
+      cand.sourceObservationIds = [];
+      cand.sourceFactIds = [];
+      cand.sourceReportIds = [];
+      cand.evidenceSummary = { observationTypes: [], statuses: [], proposedCodes: [] };
+      obsList.forEach(function (o) {
+        uniquePush(cand.sourceObservationIds, o.observationId);
+        (o.sourceFactIds || []).forEach(function (id) { uniquePush(cand.sourceFactIds, id); });
+        (o.sourceReportIds || []).forEach(function (id) { uniquePush(cand.sourceReportIds, id); });
+        uniquePush(cand.evidenceSummary.observationTypes, o.observationType);
+        uniquePush(cand.evidenceSummary.statuses, o.status);
+        uniquePush(cand.evidenceSummary.proposedCodes, proposedValueFromObservation(o).code);
+      });
+      cand.evidenceCount = Math.max(obsList.length, cand.sourceObservationIds.length);
+      cand.confidence = confidence;
+      cand.confidenceLabel = confidenceLabelFromValue(confidence);
+      cand.sensitivity = SENSITIVITY.normal;
+      cand.approvalRequirement = APPROVAL_REQUIREMENT.none;
+      obsList.forEach(function (o) {
+        if (o.sensitivity === SENSITIVITY.sensitive) cand.sensitivity = SENSITIVITY.sensitive;
+        if (o.approvalRequirement === APPROVAL_REQUIREMENT.staff_review ||
+            group.rule.eligibility === CANDIDATE_ELIGIBILITY.staff_review_required) {
+          cand.approvalRequirement = APPROVAL_REQUIREMENT.staff_review;
+        }
+      });
+      if (group.rule.eligibility === CANDIDATE_ELIGIBILITY.staff_review_required) {
+        cand.approvalRequirement = APPROVAL_REQUIREMENT.staff_review;
+        cand.sensitivity = cand.sensitivity === SENSITIVITY.prohibited
+          ? SENSITIVITY.prohibited
+          : SENSITIVITY.sensitive;
+      }
+      cand.lifecycleStatus = lifecycle;
+      cand.contradictionState = contradictionState;
+      cand.retentionHint = group.rule.retentionHint || "temporary_candidate_only";
+      cand.reasonCodes = ["gi2_candidate", group.knowledgeType, lifecycle];
+      if (cand.evidenceCount > 1) cand.reasonCodes.push("repeated_consistent_evidence");
+      if (contradictionState === CONTRADICTION_STATE.conflicting) {
+        cand.reasonCodes.push("contradiction_no_overwrite");
+      }
+      if (cand.approvalRequirement === APPROVAL_REQUIREMENT.staff_review) {
+        cand.reasonCodes.push("staff_review_required");
+      }
+      cand.createdAt = createdAt;
+      /* Minimum confidence for proposed auto_proposable — else insufficient */
+      if (lifecycle === CANDIDATE_LIFECYCLE.proposed && confidence < 0.45) {
+        cand.lifecycleStatus = CANDIDATE_LIFECYCLE.insufficient_evidence;
+        cand.reasonCodes.push("below_confidence_threshold");
+      }
+      candidates.push(cand);
+    });
+
+    var result = {
+      candidates: candidates,
+      rejections: rejections,
+      phase: "GI-2"
+    };
+    if (isDemo) {
+      lastDemoCandidates = candidates.slice();
+    }
+    return result;
+  }
+
+  function clearDemoCandidates() {
+    lastDemoCandidates = null;
+  }
+
+  function getLastDemoCandidates() {
+    return lastDemoCandidates ? lastDemoCandidates.slice() : [];
+  }
+
+  function clearDemoGiState() {
+    clearDemoObservations();
+    clearDemoCandidates();
+  }
+
   global.GuestIntelligence = {
     VERSION: GI_VERSION,
     PHASE: GI_PHASE,
@@ -658,10 +1312,20 @@
     OBSERVATION_STATUS: OBSERVATION_STATUS,
     SENSITIVITY: SENSITIVITY,
     APPROVAL_REQUIREMENT: APPROVAL_REQUIREMENT,
+    KNOWLEDGE_TYPE: KNOWLEDGE_TYPE,
+    CANDIDATE_ELIGIBILITY: CANDIDATE_ELIGIBILITY,
+    CANDIDATE_LIFECYCLE: CANDIDATE_LIFECYCLE,
+    CONTRADICTION_STATE: CONTRADICTION_STATE,
+    OBSERVATION_CANDIDATE_RULES: OBSERVATION_CANDIDATE_RULES,
     extractGuestObservations: extractGuestObservations,
+    buildCandidateGuestKnowledge: buildCandidateGuestKnowledge,
     clearDemoObservations: clearDemoObservations,
+    clearDemoCandidates: clearDemoCandidates,
+    clearDemoGiState: clearDemoGiState,
     getLastDemoObservations: getLastDemoObservations,
+    getLastDemoCandidates: getLastDemoCandidates,
     createEmptyObservation: createEmptyObservation,
+    createEmptyCandidate: createEmptyCandidate,
     detectProhibited: detectProhibited
   };
 })(typeof window !== "undefined" ? window : globalThis);

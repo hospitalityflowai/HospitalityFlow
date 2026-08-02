@@ -1,7 +1,7 @@
 # Guest Intelligence — Architecture
 
-**Status:** GI-0 architecture + **GI-1 read-only observation extraction implemented**.  
-GI-1 adds temporary in-memory `GuestObservation` objects only. No durable profiles, schema, migrations, staff UI, preference promotion, or automatic learning.
+**Status:** GI-0 architecture + **GI-1 observations** + **GI-2 candidate knowledge** implemented.  
+GI-1/GI-2 produce temporary in-memory `GuestObservation` and `CandidateGuestKnowledge` only. No durable profiles, schema, migrations, staff UI, confirmed preferences, or automatic learning.
 
 Guest Intelligence is a **reliable consumer** of the Hospitality Intelligence Engine. It must reuse existing contracts and must **not** create a second reasoning engine.
 
@@ -520,7 +520,7 @@ Operational observation (OperationalFact / stay note)
 |-------|--------|--------|
 | **GI-0** | Architecture and contracts | Done |
 | **GI-1** | Read-only guest observation extraction from engine outputs | **Done** (`guest-intelligence.js`) |
-| **GI-2** | Candidate knowledge + confidence model (still temporary / non-profile) | Not started |
+| **GI-2** | Candidate knowledge + confidence model (still temporary / non-profile) | **Done** (`buildCandidateGuestKnowledge`) |
 | **GI-3** | Staff review / approve / reject workflow | Not started |
 | **GI-4** | Guest profile UI | Not started |
 | **GI-5** | Current-stay enrichment into Handover | Not started |
@@ -645,17 +645,129 @@ One operational event → one observation when possible (shared `sourceFactIds`,
 
 ---
 
-## 20. Test strategy
+## 19B. GI-2 — CandidateGuestKnowledge
 
-**GI-1 covered:** identity strength, room-only temporary, observation≠preference, prohibited rejection without retained text, generic-note skip, wake/taxi dedupe, namesake separation, Demo clear, engine `guestObservations` attachment, no GI recommend API.
+### Authority
 
-**Later phases:** contradictions + confidence changes, expiry/review UI, approval workflow, cross-hotel isolation on durable store, suspension/membership denial, profile UI.
+- Module: `guest-intelligence.js` (`GuestIntelligence.buildCandidateGuestKnowledge`)
+- Hook: `analyzeCore` runs GI-1 then GI-2; attaches `guestCandidates` + `guestCandidateRejections`
+- Flow: `OperationalFact` → `GuestObservation` → `CandidateGuestKnowledge`
+- Does **not** alter OperationalContext / DecisionTrace / OperationalMemory, create recommendations, update Hotel Brain, persist, or render UI
+
+### CandidateGuestKnowledge contract (temporary, serializable)
+
+```text
+CandidateGuestKnowledge {
+  candidateId
+  workspaceId
+  identityEvidence { guestName, room, rooms, reservationId, bookingReference, sourceType }
+  guestMatchStrength
+  knowledgeType
+  proposedValue { code, tokens }     // codes only — no polished prose
+  sourceObservationIds
+  sourceFactIds
+  sourceReportIds
+  evidenceSummary { observationTypes, statuses, proposedCodes }
+  evidenceCount
+  confidence                         // evidence quality, not importance
+  confidenceLabel
+  approvalRequirement                // none | staff_review | never_store
+  sensitivity
+  lifecycleStatus                    // proposed | insufficient_evidence |
+                                     // conflicting | rejected_by_rule | prohibited
+  contradictionState                 // none | conflicting | superseded | uncertain
+  retentionHint
+  reasonCodes
+  createdAt
+  temporary: true
+  persistent: false
+  confirmed: false                   // GI-3 owns confirmation
+  preferencePromoted: false
+}
+```
+
+### Candidate types and eligibility
+
+| Knowledge type | Eligibility |
+|----------------|-------------|
+| floor_preference, room_location_preference, bedding_preference, bed_configuration_preference, amenity_preference, communication_preference, vip_or_recognition | `auto_proposable` (still `proposed` only) |
+| accessibility_or_service_need, complaint_pattern, service_recovery_note | `staff_review_required` |
+| recurring_service_pattern (wake/taxi), payment → operational_restriction, parcel, maintenance impact, late checkout, general/informational | `never_candidate` |
+
+### Eligibility rules
+
+- Candidates originate **only** from GI-1 observations (+ prohibited observation rejections → no candidate).
+- Room-only → `insufficient_evidence` (current-stay; no cross-stay aggregation).
+- Single explicit named request → `proposed`, never confirmed.
+- Repeated compatible evidence (same workspace, same identity key, same knowledge family) → one candidate, higher confidence.
+- Identity key: reservation **or** `guestName|room`. Namesakes in different rooms without reservation do **not** merge.
+- Sensitive → always `staff_review`. Prohibited → no candidate / `prohibited` rejection without retained text.
+- Payment issues → `rejected_by_rule` (`payment_not_guest_preference`); never a guest risk score.
+
+### Evidence aggregation
+
+Same workspace + compatible proposed value + aggregatable identity. Source observation/fact/report ids retained. No broad keyword merging.
+
+### Contradiction handling
+
+High floor vs ground floor (or feather-free vs feather) → `lifecycleStatus: conflicting`, both sources kept, confidence reduced, no silent overwrite.
+
+### Confidence model (deterministic)
+
+```text
+base = mean(observation.confidence)
++ identity: strong +0.08 | probable +0.04 | uncertain −0.12
++ explicit/confirmed_current_stay present: +0.05
++ (evidenceCount − 1) * 0.07 (cap +0.21)
+− conflicting: −0.22
+uncertain identity cap 0.55
+```
+
+No importance/severity scoring. Staff confirmation is reserved for GI-3.
+
+### Lifecycle (GI-2)
+
+`proposed` | `insufficient_evidence` | `conflicting` | `rejected_by_rule` | `prohibited`  
+No `confirmed` / active profile knowledge.
+
+### Demo isolation
+
+Session-only via `getLastDemoCandidates`; `clearDemoGiState` on Demo reset/exit. No UI.
+
+### Tests
+
+`scripts/test-guest-intelligence-gi2-candidates.mjs` — scenarios A–J + proofs.
+
+### GI-2 out of scope
+
+- Durable guest profile / DB schema  
+- Staff approval UI  
+- Confirmed preferences  
+- Profile merge/split  
+- Recommendations  
+- PMS integration  
+- Automatic long-term learning  
+
+### GI-2 verdict
+
+**GI-2 COMPLETE** — temporary, reviewable candidate knowledge from GI-1 observations; nothing confirmed or persisted.
 
 ---
 
-## 21. Out of scope (near-term after GI-1)
+## 20. Test strategy
+
+**GI-1 covered:** identity strength, room-only temporary, observation≠preference, prohibited rejection, generic-note skip, wake/taxi dedupe, namesake separation, Demo clear, engine attachment.
+
+**GI-2 covered:** proposed candidates, repeated evidence confidence, room-only insufficient, contradictions, sensitive staff_review, payment never_candidate, wake/taxi never, VIP short retention, prohibited no-candidate, namesake separation, Demo candidate clear.
+
+**Later phases:** staff approve/reject UI, confirmed knowledge, expiry, durable store, profile UI.
+
+---
+
+## 21. Out of scope (near-term after GI-2)
 
 - Profile UI, migrations, durable profile tables  
+- Staff approval UI (GI-3)  
 - Automatic learning in production  
 - CRM / loyalty / marketing  
 - Payment-risk scoring  
@@ -670,16 +782,17 @@ One operational event → one observation when possible (shared `sourceFactIds`,
 
 1. **Identity source of truth** — PMS-linked id vs HF-generated `guestId` with optional PMS attach.  
 2. **Sensitive field visibility** — all members vs restricted roles before GI-4.  
-3. **Storage timing** — first durable table at GI-2 vs GI-3 (prefer after approval workflow design).  
+3. **Storage timing** — first durable table at GI-3 (after approval workflow), not GI-2.  
 4. **Email/phone** — store references/hashes only; confirm legal basis per jurisdiction.  
 5. **Relationship to OperationalMemory** — keep issue continuity separate; GI links via `guestId` when strong match exists.  
-6. **Demo** — sample observations session-only; never write real GI to Supabase.  
+6. **Demo** — sample observations/candidates session-only; never write real GI to Supabase.  
 
 ---
 
 ## 23. Verdicts
 
 **GI-0 COMPLETE (architecture only).**  
-**GI-1 COMPLETE (read-only temporary observations).**
+**GI-1 COMPLETE (read-only temporary observations).**  
+**GI-2 COMPLETE (temporary candidate knowledge; not confirmed).**
 
 Guest Intelligence remains a hotel-scoped, privacy-aware consumer that **enriches** the Hospitality Intelligence Engine and does **not** replace it.

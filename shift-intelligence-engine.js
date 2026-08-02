@@ -6820,13 +6820,15 @@
     var signals = buildSignals(input);
     var recommendations = generateRecommendations(input, signals);
     var checklist = generateChecklist(input, signals, recommendations);
-    /* GI-1: read-only temporary guest observations — no profile mutation / no recs. */
+    /* GI-1/GI-2: temporary observations + candidate knowledge — no profile mutation / no recs. */
     var guestObservations = [];
     var guestObservationRejections = [];
+    var guestCandidates = [];
+    var guestCandidateRejections = [];
     if (global.GuestIntelligence &&
         typeof global.GuestIntelligence.extractGuestObservations === "function") {
       try {
-        var giResult = global.GuestIntelligence.extractGuestObservations({
+        var giOpts = {
           facts: facts || [],
           analyzedNotes: analyzed,
           memories: (memoryIndex && memoryIndex.memories) || [],
@@ -6835,12 +6837,26 @@
           reportId: input.currentReportId || input.reportId || "",
           observedAt: input.currentOccurredAt || input.memoryNow || "",
           isDemoData: !!(input.isDemoData || input.workspaceId === "demo-workspace")
-        });
+        };
+        var giResult = global.GuestIntelligence.extractGuestObservations(giOpts);
         guestObservations = (giResult && giResult.observations) || [];
         guestObservationRejections = (giResult && giResult.rejections) || [];
+        if (typeof global.GuestIntelligence.buildCandidateGuestKnowledge === "function") {
+          var candResult = global.GuestIntelligence.buildCandidateGuestKnowledge({
+            observations: guestObservations,
+            observationRejections: guestObservationRejections,
+            workspaceId: giOpts.workspaceId,
+            observedAt: giOpts.observedAt,
+            isDemoData: giOpts.isDemoData
+          });
+          guestCandidates = (candResult && candResult.candidates) || [];
+          guestCandidateRejections = (candResult && candResult.rejections) || [];
+        }
       } catch (giErr) {
         guestObservations = [];
         guestObservationRejections = [];
+        guestCandidates = [];
+        guestCandidateRejections = [];
       }
     }
     return {
@@ -6851,7 +6867,9 @@
       facts: facts || [],
       operationalMemories: (memoryIndex && memoryIndex.memories) || [],
       guestObservations: guestObservations,
-      guestObservationRejections: guestObservationRejections
+      guestObservationRejections: guestObservationRejections,
+      guestCandidates: guestCandidates,
+      guestCandidateRejections: guestCandidateRejections
     };
   }
 
