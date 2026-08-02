@@ -117,7 +117,7 @@ console.log("\n=== GI-1 GuestObservation Extraction ===\n");
 
 console.log("-- Contract surface --");
 assert(!!GI && typeof GI.extractGuestObservations === "function", "GuestIntelligence.extractGuestObservations");
-assert(GI.PHASE === "GI-2" || GI.PHASE === "GI-1", "PHASE GI-1 or GI-2");
+assert(/GI-[123]/.test(GI.PHASE), "PHASE GI-1/GI-2/GI-3");
 assert(typeof GI.extractGuestObservations === "function", "GI-1 extract still present");
 assert(GI.OBSERVATION_TYPE.floor_preference === "floor_preference", "OBSERVATION_TYPE.floor_preference");
 assert(GI.MATCH_STRENGTH.probable === "probable", "MATCH_STRENGTH.probable");

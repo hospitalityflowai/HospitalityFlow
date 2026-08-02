@@ -122,7 +122,7 @@ console.log("\n=== GI-2 CandidateGuestKnowledge ===\n");
 
 console.log("-- Contract surface --");
 assert(typeof GI.buildCandidateGuestKnowledge === "function", "buildCandidateGuestKnowledge");
-assert(GI.PHASE === "GI-2", "PHASE GI-2");
+assert(GI.PHASE === "GI-2" || GI.PHASE === "GI-3", "PHASE GI-2 or GI-3");
 assert(GI.KNOWLEDGE_TYPE.floor_preference === "floor_preference", "KNOWLEDGE_TYPE.floor_preference");
 assert(GI.CANDIDATE_LIFECYCLE.proposed === "proposed", "lifecycle proposed");
 assert(typeof GI.recommend !== "function", "no recommend API");

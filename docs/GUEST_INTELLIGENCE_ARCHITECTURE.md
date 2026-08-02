@@ -1,7 +1,7 @@
 # Guest Intelligence — Architecture
 
-**Status:** GI-0 architecture + **GI-1 observations** + **GI-2 candidate knowledge** implemented.  
-GI-1/GI-2 produce temporary in-memory `GuestObservation` and `CandidateGuestKnowledge` only. No durable profiles, schema, migrations, staff UI, confirmed preferences, or automatic learning.
+**Status:** GI-0–**GI-3 foundation** implemented.  
+GI-1/GI-2 remain temporary in-memory. GI-3 adds a human-controlled review pathway and a **proposed** (not applied) `guest_knowledge` schema. No full Guest Profile UI, no auto-approval, no recommendation wiring, no identity merge.
 
 Guest Intelligence is a **reliable consumer** of the Hospitality Intelligence Engine. It must reuse existing contracts and must **not** create a second reasoning engine.
 
@@ -521,7 +521,7 @@ Operational observation (OperationalFact / stay note)
 | **GI-0** | Architecture and contracts | Done |
 | **GI-1** | Read-only guest observation extraction from engine outputs | **Done** (`guest-intelligence.js`) |
 | **GI-2** | Candidate knowledge + confidence model (still temporary / non-profile) | **Done** (`buildCandidateGuestKnowledge`) |
-| **GI-3** | Staff review / approve / reject workflow | Not started |
+| **GI-3** | Staff review / approve / reject foundation (+ proposed schema) | **Foundation done** (migration not applied; no profile UI) |
 | **GI-4** | Guest profile UI | Not started |
 | **GI-5** | Current-stay enrichment into Handover | Not started |
 | **GI-6** | Retention, merge/split, deletion controls | Not started |
@@ -754,20 +754,193 @@ Session-only via `getLastDemoCandidates`; `clearDemoGiState` on Demo reset/exit.
 
 ---
 
+## 19C. GI-3 — Staff review and confirmed guest knowledge foundation
+
+### Storage proposal (minimal; not a profile system)
+
+One tenant-scoped table for reviewable knowledge + one append-only audit table:
+
+| Table | Purpose |
+|-------|---------|
+| `public.guest_knowledge` | Confirmed / rejected / superseded / expired knowledge rows |
+| `public.guest_knowledge_review_events` | Immutable review audit trail |
+
+Migration file (proposed, **not applied**):  
+`supabase/migrations/phase17_guest_knowledge.sql`
+
+Candidates (GI-2) stay runtime-only until an explicit staff review action creates a knowledge row.
+
+### ConfirmedGuestKnowledge contract
+
+```text
+ConfirmedGuestKnowledge {
+  id
+  workspaceId
+  identityEvidence
+  knowledgeType
+  value                         // { code, tokens }
+  sourceCandidateIds
+  sourceObservationIds
+  sourceFactIds
+  sourceReportIds
+  confidence
+  sensitivity
+  approvalRequirement
+  approvalStatus                // proposed | confirmed | rejected | superseded | expired
+  approvedBy / approvedAt
+  rejectedBy / rejectedAt
+  supersededBy
+  reviewAt / expiresAt
+  retentionReason / reviewReason
+  createdAt / updatedAt
+  confirmed                     // true only after explicit confirm
+  active                        // true only when confirmed and not expired
+  preferencePromoted: false
+}
+```
+
+### Lifecycle
+
+| Status | Active enrichment? |
+|--------|--------------------|
+| proposed | No |
+| confirmed | Yes (future enrichment only) |
+| rejected | No — cannot silently reappear without new evidence |
+| superseded | No — history retained via `supersededBy` |
+| expired | No |
+
+No hard delete by default (no authenticated DELETE policy). Privacy erasure is a later controlled path.
+
+### Approval authority (current ACL: `owner` \| `member` only)
+
+| Case | Who may review |
+|------|----------------|
+| Normal non-sensitive preference | Active hotel **member** (or owner) |
+| Sensitive accessibility / service need | Any active member via **explicit** confirm/reject (no auto) |
+| `operational_restriction` / do-not-accommodate / security instruction | **Owner** only under current model |
+| Prohibited | Never confirmable |
+
+**Open role decision:** no `manager` role exists today. If behavioural restrictions should require manager-not-owner, add a role later — do not invent unsupported levels now.
+
+### Lifecycle mutation authority (server)
+
+**Blocking rule:** clients must not mutate lifecycle via unrestricted PostgREST UPDATE/INSERT.
+
+| Path | Allowed? |
+|------|----------|
+| Direct `INSERT` / `UPDATE` / `DELETE` on `guest_knowledge` | **No** (no authenticated policies) |
+| Direct `INSERT` / `UPDATE` / `DELETE` on review events | **No** |
+| `propose_guest_knowledge` RPC | Yes — inserts `proposed` + audit event |
+| `review_guest_knowledge` RPC | Yes — confirm/reject/supersede/expire + audit event |
+
+RPCs are `SECURITY DEFINER`, validate `auth.uid()`, `has_active_platform_access()`, membership/role, sensitivity, and owner-only types. Trigger GUC `guest_knowledge.allow_lifecycle='on'` blocks non-RPC writes. Immutable after create: `workspace_id`, `knowledge_type`, source refs, `created_by`/`created_at`, `sensitivity`, `identity_evidence`, `guest_match_strength`, `value`, `confidence`.
+
+### RLS model
+
+Both tables:
+
+- `ENABLE ROW LEVEL SECURITY`
+- Authenticated **SELECT** only: `has_active_platform_access()` AND `hotel_members` on `workspace_id`
+- **No** authenticated INSERT/UPDATE/DELETE policies
+- Denied after suspend / membership removal; no anonymous; no cross-hotel; operators without membership denied
+- Browser must not use `service_role`
+
+### Audit trail
+
+Every propose/review RPC updates knowledge and inserts `guest_knowledge_review_events` in the **same transaction**. Audit rows are append-only (no client INSERT/UPDATE/DELETE). Fields: actor user id, action, timestamp, previous/new status, reason, source refs. Client JS helpers are UX/Demo only — not durable authority.
+
+### Retention / expiry
+
+`expires_at` supported; expired/superseded/rejected rows are inactive (`is_guest_knowledge_active`). Supersession requires same-workspace `superseded_by`, rejects self and simple cycles. Expiry does not delete audit history. Sensitive confirmed rows require `retention_reason`. Default: retain history.
+
+### Engine boundary
+
+API: `GuestIntelligence.reviewCandidateGuestKnowledge` / `authorizeGuestKnowledgeReview` / `canPersistGuestKnowledge` / `isActiveGuestKnowledge`.
+
+GI-3 does **not** yet feed confirmed knowledge into OperationalContext, DecisionTrace, or recommendations. Future path (GI-5+):
+
+```text
+OperationalFact → OperationalContext → Guest Intelligence supporting knowledge
+  → DecisionTrace → Recommendation
+```
+
+### Demo isolation
+
+Demo may simulate confirm/reject in session memory only (`persistAllowed: false`).  
+`clearDemoGiState` clears demo knowledge + review events. Demo never writes Supabase.
+
+### UI
+
+**Out of scope for GI-3 foundation:** Guest Profile page, Handover redesign, customer-facing review UI.  
+A minimal internal review UI may be proposed separately and requires approval before build.
+
+### Identity safety
+
+Schema stores `identity_evidence` + `guest_match_strength` on each knowledge row. It does **not** create a durable guest identity table, and does not promote room-only / surname-only / weak evidence into a permanent `guestId`. Confirmed knowledge preserves match strength and source evidence.
+
+### Privacy / deletion (documented; not implemented)
+
+- Normal lifecycle retains audit history (no authenticated DELETE).
+- Privacy “forget” may later require true deletion/anonymisation of knowledge + events + source refs.
+- Audit `reason` must not store prohibited raw text; use short staff codes.
+- Guest knowledge is never copied into Hotel Brain automatically.
+- Schema blockers for forget: append-only events FK’d to knowledge; need a controlled erasure RPC later.
+
+### Tests
+
+`scripts/test-guest-intelligence-gi3-review.mjs` — authz, lifecycle, prohibited/sensitive, Demo non-persist, migration RPC/RLS static checks, no priority/recommend wiring.
+
+### Live GI-3 test plan (future; non-production; not run yet)
+
+1. Member creates proposed preference via `propose_guest_knowledge`  
+2. Candidate cannot self-confirm through direct UPDATE (denied)  
+3. `review_guest_knowledge('confirm')` confirms and audits atomically  
+4. Rejected item inactive  
+5. Expired item inactive  
+6. Superseded item inactive and linked same-workspace  
+7. Normal member denied owner-only restriction approval  
+8. Owner allowed restriction approval  
+9. Prohibited item rejected at propose/confirm  
+10. Cross-hotel read/write denied  
+11. Suspended user denied  
+12. Removed member denied  
+13. Anonymous denied  
+14. Audit event immutable (no UPDATE/DELETE)  
+15. Direct confirmed INSERT denied  
+16. Demo persistence impossible (app never calls RPCs for demo)
+
+### GI-3 out of scope
+
+- Full Guest Profile UI  
+- Automatic approval  
+- Identity merge / durable guest identity table  
+- Recommendation enrichment  
+- Applying/deploying the migration without review  
+- Manager role invention  
+- Live GI-3 suite execution before migration apply  
+
+### GI-3 verdict
+
+**GI-3 FOUNDATION COMPLETE (schema hardened for RPC-only lifecycle)** — human-controlled review pathway + proposed schema; migration **not applied**; no profile UI; no auto-confirm.
+
+---
+
 ## 20. Test strategy
 
 **GI-1 covered:** identity strength, room-only temporary, observation≠preference, prohibited rejection, generic-note skip, wake/taxi dedupe, namesake separation, Demo clear, engine attachment.
 
 **GI-2 covered:** proposed candidates, repeated evidence confidence, room-only insufficient, contradictions, sensitive staff_review, payment never_candidate, wake/taxi never, VIP short retention, prohibited no-candidate, namesake separation, Demo candidate clear.
 
-**Later phases:** staff approve/reject UI, confirmed knowledge, expiry, durable store, profile UI.
+**GI-3 covered:** no self-confirm, anonymous/cross-hotel/suspend/membership denial, reviewer audit, reject/supersede/expire inactive, prohibited blocked, sensitive explicit review, no priority mutation, no identity merge, Demo non-persist, migration RLS static, no recommend wiring.
+
+**Later phases:** review UI, live RLS suite for `guest_knowledge`, enrichment into Handover, profile UI.
 
 ---
 
-## 21. Out of scope (near-term after GI-2)
+## 21. Out of scope (near-term after GI-3 foundation)
 
-- Profile UI, migrations, durable profile tables  
-- Staff approval UI (GI-3)  
+- Full Guest Profile UI (GI-4)  
+- Applying migrations without explicit approval  
 - Automatic learning in production  
 - CRM / loyalty / marketing  
 - Payment-risk scoring  
@@ -782,10 +955,11 @@ Session-only via `getLastDemoCandidates`; `clearDemoGiState` on Demo reset/exit.
 
 1. **Identity source of truth** — PMS-linked id vs HF-generated `guestId` with optional PMS attach.  
 2. **Sensitive field visibility** — all members vs restricted roles before GI-4.  
-3. **Storage timing** — first durable table at GI-3 (after approval workflow), not GI-2.  
-4. **Email/phone** — store references/hashes only; confirm legal basis per jurisdiction.  
-5. **Relationship to OperationalMemory** — keep issue continuity separate; GI links via `guestId` when strong match exists.  
-6. **Demo** — sample observations/candidates session-only; never write real GI to Supabase.  
+3. **Manager / elevated reviewer role** — not in ACL today; owner used for operational restrictions until decided.  
+4. **When to apply `phase17_guest_knowledge.sql`** — after review; live RLS tests should follow apply.  
+5. **Email/phone** — store references/hashes only; confirm legal basis per jurisdiction.  
+6. **Relationship to OperationalMemory** — keep issue continuity separate; GI links via strong identity later.  
+7. **Demo** — memory-only review simulation; never write real GI to Supabase.  
 
 ---
 
@@ -793,6 +967,7 @@ Session-only via `getLastDemoCandidates`; `clearDemoGiState` on Demo reset/exit.
 
 **GI-0 COMPLETE (architecture only).**  
 **GI-1 COMPLETE (read-only temporary observations).**  
-**GI-2 COMPLETE (temporary candidate knowledge; not confirmed).**
+**GI-2 COMPLETE (temporary candidate knowledge; not confirmed).**  
+**GI-3 FOUNDATION COMPLETE (staff review pathway + proposed schema; migration not applied).**
 
 Guest Intelligence remains a hotel-scoped, privacy-aware consumer that **enriches** the Hospitality Intelligence Engine and does **not** replace it.

@@ -1,18 +1,19 @@
 /**
- * Hospitality Flow — Guest Intelligence (GI-1 + GI-2)
+ * Hospitality Flow — Guest Intelligence (GI-1 + GI-2 + GI-3)
  *
  * GI-1: read-only GuestObservation extraction from engine outputs.
  * GI-2: temporary CandidateGuestKnowledge from observations (reviewable, not confirmed).
+ * GI-3: staff review foundation → ConfirmedGuestKnowledge (human-controlled only).
  * Consumes OperationalFact / OperationalContext / OperationalMemory / DecisionTrace.
- * Does NOT score, rank, recommend, persist profiles, or promote preferences.
+ * Does NOT score, rank, recommend, auto-approve, merge identities, or build profile UI.
  *
- * No durable guestId, no DB, no staff UI, no auto-confirm.
+ * Persistence requires explicit staff action + authorized actor. Demo never persists.
  */
 (function (global) {
   "use strict";
 
-  var GI_VERSION = 2;
-  var GI_PHASE = "GI-2";
+  var GI_VERSION = 3;
+  var GI_PHASE = "GI-3";
 
   var OBSERVATION_TYPE = {
     room_preference: "room_preference",
@@ -72,6 +73,8 @@
   /** Session-only Demo cache — never persisted. Cleared on Demo reset/exit. */
   var lastDemoObservations = null;
   var lastDemoCandidates = null;
+  var lastDemoKnowledge = null;
+  var lastDemoReviewEvents = null;
 
   /* ─── GI-2 candidate knowledge ─────────────────────────────────────────── */
 
@@ -1302,6 +1305,426 @@
   function clearDemoGiState() {
     clearDemoObservations();
     clearDemoCandidates();
+    lastDemoKnowledge = null;
+    lastDemoReviewEvents = null;
+  }
+
+  /*
+   * ─── GI-3: Staff review → ConfirmedGuestKnowledge foundation ────────────
+   * Client helpers validate UX/Demo rules. Durable authority is server-side:
+   *   propose_guest_knowledge / review_guest_knowledge (SECURITY DEFINER RPCs)
+   * in supabase/migrations/phase17_guest_knowledge.sql (proposed; not applied).
+   * Direct PostgREST INSERT/UPDATE of lifecycle fields is denied by RLS + triggers.
+   */
+
+  var KNOWLEDGE_APPROVAL_STATUS = {
+    proposed: "proposed",
+    confirmed: "confirmed",
+    rejected: "rejected",
+    superseded: "superseded",
+    expired: "expired"
+  };
+
+  var REVIEW_ACTION = {
+    confirm: "confirm",
+    reject: "reject",
+    supersede: "supersede",
+    expire: "expire",
+    propose: "propose"
+  };
+
+  var MEMBER_ROLE = {
+    owner: "owner",
+    member: "member"
+  };
+
+  /** Knowledge types that require owner (not plain member) under current ACL. */
+  var OWNER_ONLY_KNOWLEDGE_TYPES = {};
+  OWNER_ONLY_KNOWLEDGE_TYPES[KNOWLEDGE_TYPE.operational_restriction] = true;
+
+  function createEmptyConfirmedKnowledge() {
+    return {
+      id: "",
+      workspaceId: "",
+      identityEvidence: {
+        guestName: "",
+        room: "",
+        rooms: [],
+        reservationId: "",
+        bookingReference: "",
+        sourceType: "handover"
+      },
+      knowledgeType: "",
+      value: { code: "", tokens: [] },
+      sourceCandidateIds: [],
+      sourceObservationIds: [],
+      sourceFactIds: [],
+      sourceReportIds: [],
+      confidence: 0,
+      sensitivity: SENSITIVITY.normal,
+      approvalRequirement: APPROVAL_REQUIREMENT.none,
+      approvalStatus: KNOWLEDGE_APPROVAL_STATUS.proposed,
+      approvedBy: null,
+      approvedAt: null,
+      rejectedBy: null,
+      rejectedAt: null,
+      supersededBy: null,
+      reviewAt: null,
+      expiresAt: null,
+      retentionReason: "staff_reviewed_guest_knowledge",
+      reviewReason: "",
+      createdAt: "",
+      updatedAt: "",
+      temporary: false,
+      persistent: true,
+      confirmed: false,
+      preferencePromoted: false,
+      active: false
+    };
+  }
+
+  function createReviewEvent(partial) {
+    return {
+      id: partial.id || ("grev:" + Date.now() + ":" + Math.random().toString(36).slice(2, 8)),
+      workspaceId: partial.workspaceId || "",
+      knowledgeId: partial.knowledgeId || "",
+      actorUserId: partial.actorUserId || null,
+      action: partial.action || "",
+      previousStatus: partial.previousStatus || null,
+      newStatus: partial.newStatus || "",
+      reason: partial.reason || "",
+      sourceCandidateIds: (partial.sourceCandidateIds || []).slice(),
+      sourceObservationIds: (partial.sourceObservationIds || []).slice(),
+      sourceFactIds: (partial.sourceFactIds || []).slice(),
+      createdAt: partial.createdAt || new Date().toISOString()
+    };
+  }
+
+  function isActiveGuestKnowledge(row) {
+    if (!row) return false;
+    if (row.approvalStatus !== KNOWLEDGE_APPROVAL_STATUS.confirmed) return false;
+    if (row.expiresAt) {
+      var exp = Date.parse(row.expiresAt);
+      if (!isNaN(exp) && exp <= Date.now()) return false;
+    }
+    return true;
+  }
+
+  /**
+   * Authority check for GI-3 review actions.
+   * Current hotel ACL: owner | member only (no manager role yet).
+   *
+   * actor: {
+   *   userId, workspaceId, role, isMember, platformAccess,
+   *   isAnonymous, isDemoWorkspace
+   * }
+   */
+  function authorizeGuestKnowledgeReview(candidateOrKnowledge, actor, action) {
+    actor = actor || {};
+    var result = { ok: false, reasonCode: "", requiredRole: null };
+
+    if (actor.isAnonymous || !trimText(actor.userId)) {
+      result.reasonCode = "anonymous_denied";
+      return result;
+    }
+    if (String(actor.platformAccess || "").toLowerCase() === "suspended") {
+      result.reasonCode = "suspended_denied";
+      return result;
+    }
+    if (!actor.isMember) {
+      result.reasonCode = "membership_removed_denied";
+      return result;
+    }
+
+    var ws = trimText(
+      (candidateOrKnowledge && candidateOrKnowledge.workspaceId) || ""
+    );
+    if (ws && actor.workspaceId && ws !== trimText(actor.workspaceId)) {
+      result.reasonCode = "cross_workspace_denied";
+      return result;
+    }
+
+    if (actor.isDemoWorkspace || ws === "demo-workspace") {
+      if (action === REVIEW_ACTION.confirm || action === REVIEW_ACTION.reject ||
+          action === REVIEW_ACTION.supersede) {
+        /* Demo may simulate review in memory only — persistence layer must still deny. */
+        result.ok = true;
+        result.reasonCode = "demo_memory_only";
+        result.persistAllowed = false;
+        return result;
+      }
+    }
+
+    var sensitivity = (candidateOrKnowledge && candidateOrKnowledge.sensitivity) || SENSITIVITY.normal;
+    var knowledgeType = (candidateOrKnowledge &&
+      (candidateOrKnowledge.knowledgeType || candidateOrKnowledge.observationType)) || "";
+    var approvalReq = (candidateOrKnowledge && candidateOrKnowledge.approvalRequirement) ||
+      APPROVAL_REQUIREMENT.none;
+
+    if (sensitivity === SENSITIVITY.prohibited ||
+        approvalReq === APPROVAL_REQUIREMENT.never_store) {
+      result.reasonCode = "prohibited_cannot_confirm";
+      return result;
+    }
+
+    if (candidateOrKnowledge && candidateOrKnowledge.lifecycleStatus === CANDIDATE_LIFECYCLE.prohibited) {
+      result.reasonCode = "prohibited_cannot_confirm";
+      return result;
+    }
+
+    var role = String(actor.role || MEMBER_ROLE.member).toLowerCase();
+    if (OWNER_ONLY_KNOWLEDGE_TYPES[knowledgeType] ||
+        knowledgeType === "do_not_accommodate" ||
+        knowledgeType === "security_instruction") {
+      result.requiredRole = MEMBER_ROLE.owner;
+      if (role !== MEMBER_ROLE.owner) {
+        result.reasonCode = "owner_required";
+        return result;
+      }
+    }
+
+    /* Sensitive: any active member may act, but only via explicit confirm/reject (not auto). */
+    result.ok = true;
+    result.reasonCode = "authorized";
+    result.persistAllowed = !(actor.isDemoWorkspace || ws === "demo-workspace");
+    result.requiresExplicitAction = true;
+    if (sensitivity === SENSITIVITY.sensitive ||
+        approvalReq === APPROVAL_REQUIREMENT.staff_review) {
+      result.sensitiveExplicitReview = true;
+    }
+    return result;
+  }
+
+  function knowledgeFromCandidate(candidate, extras) {
+    extras = extras || {};
+    var row = createEmptyConfirmedKnowledge();
+    var now = extras.now || new Date().toISOString();
+    row.id = extras.id || ("gk:" + (candidate && candidate.candidateId
+      ? String(candidate.candidateId).slice(0, 64)
+      : Math.random().toString(36).slice(2, 10)));
+    row.workspaceId = (candidate && candidate.workspaceId) || extras.workspaceId || "";
+    row.identityEvidence = (candidate && candidate.identityEvidence)
+      ? JSON.parse(JSON.stringify(candidate.identityEvidence))
+      : row.identityEvidence;
+    row.knowledgeType = (candidate && candidate.knowledgeType) || "";
+    row.value = (candidate && candidate.proposedValue)
+      ? JSON.parse(JSON.stringify(candidate.proposedValue))
+      : { code: "", tokens: [] };
+    row.sourceCandidateIds = candidate && candidate.candidateId ? [candidate.candidateId] : [];
+    row.sourceObservationIds = ((candidate && candidate.sourceObservationIds) || []).slice();
+    row.sourceFactIds = ((candidate && candidate.sourceFactIds) || []).slice();
+    row.sourceReportIds = ((candidate && candidate.sourceReportIds) || []).slice();
+    row.confidence = typeof (candidate && candidate.confidence) === "number"
+      ? candidate.confidence
+      : 0;
+    row.sensitivity = (candidate && candidate.sensitivity) || SENSITIVITY.normal;
+    row.approvalRequirement = (candidate && candidate.approvalRequirement) ||
+      APPROVAL_REQUIREMENT.none;
+    row.approvalStatus = KNOWLEDGE_APPROVAL_STATUS.proposed;
+    row.createdAt = now;
+    row.updatedAt = now;
+    row.temporary = false;
+    row.persistent = !!extras.persistent;
+    row.confirmed = false;
+    row.active = false;
+    return row;
+  }
+
+  /**
+   * GI-3 canonical review entry — never auto-confirms.
+   * Requires explicit action + authorized actor.
+   *
+   * @returns {{ ok, knowledge, event, auth, persistAllowed, error }}
+   */
+  function reviewCandidateGuestKnowledge(input) {
+    input = input || {};
+    var candidate = input.candidate || null;
+    var action = trimText(input.action || "").toLowerCase();
+    var actor = input.actor || {};
+    var reason = trimText(input.reason || "");
+    var now = trimText(input.now || "") || new Date().toISOString();
+    var existing = input.existingKnowledge || null;
+
+    if (!action || !REVIEW_ACTION[action]) {
+      return {
+        ok: false,
+        error: "invalid_action",
+        knowledge: null,
+        event: null,
+        auth: null,
+        persistAllowed: false
+      };
+    }
+
+    /* Candidates cannot self-confirm — missing actor or action blocked above. */
+    if (!candidate && !existing) {
+      return {
+        ok: false,
+        error: "missing_candidate_or_knowledge",
+        knowledge: null,
+        event: null,
+        auth: null,
+        persistAllowed: false
+      };
+    }
+
+    var subject = candidate || existing;
+    var auth = authorizeGuestKnowledgeReview(subject, actor, action);
+    if (!auth.ok) {
+      return {
+        ok: false,
+        error: auth.reasonCode,
+        knowledge: null,
+        event: null,
+        auth: auth,
+        persistAllowed: false
+      };
+    }
+
+    if (action === REVIEW_ACTION.confirm &&
+        (subject.sensitivity === SENSITIVITY.prohibited ||
+          subject.approvalRequirement === APPROVAL_REQUIREMENT.never_store ||
+          subject.lifecycleStatus === CANDIDATE_LIFECYCLE.prohibited)) {
+      return {
+        ok: false,
+        error: "prohibited_cannot_confirm",
+        knowledge: null,
+        event: null,
+        auth: auth,
+        persistAllowed: false
+      };
+    }
+
+    if (action === REVIEW_ACTION.confirm &&
+        subject.lifecycleStatus === CANDIDATE_LIFECYCLE.insufficient_evidence &&
+        !input.allowInsufficient) {
+      return {
+        ok: false,
+        error: "insufficient_evidence",
+        knowledge: null,
+        event: null,
+        auth: auth,
+        persistAllowed: false
+      };
+    }
+
+    var knowledge = existing
+      ? JSON.parse(JSON.stringify(existing))
+      : knowledgeFromCandidate(candidate, {
+        now: now,
+        persistent: auth.persistAllowed !== false && !actor.isDemoWorkspace,
+        id: input.knowledgeId
+      });
+
+    var previousStatus = knowledge.approvalStatus || KNOWLEDGE_APPROVAL_STATUS.proposed;
+    var newStatus = previousStatus;
+
+    if (action === REVIEW_ACTION.confirm) {
+      newStatus = KNOWLEDGE_APPROVAL_STATUS.confirmed;
+      knowledge.approvedBy = actor.userId;
+      knowledge.approvedAt = now;
+      knowledge.reviewAt = now;
+      knowledge.confirmed = true;
+      knowledge.active = true;
+      knowledge.preferencePromoted = false; /* confirmation ≠ preference promotion graph */
+      knowledge.persistent = auth.persistAllowed !== false && !actor.isDemoWorkspace;
+      if (actor.isDemoWorkspace || knowledge.workspaceId === "demo-workspace") {
+        knowledge.persistent = false;
+        knowledge.temporary = true;
+      }
+    } else if (action === REVIEW_ACTION.reject) {
+      newStatus = KNOWLEDGE_APPROVAL_STATUS.rejected;
+      knowledge.rejectedBy = actor.userId;
+      knowledge.rejectedAt = now;
+      knowledge.reviewAt = now;
+      knowledge.confirmed = false;
+      knowledge.active = false;
+    } else if (action === REVIEW_ACTION.supersede) {
+      newStatus = KNOWLEDGE_APPROVAL_STATUS.superseded;
+      knowledge.supersededBy = input.supersededBy || null;
+      knowledge.reviewAt = now;
+      knowledge.confirmed = false;
+      knowledge.active = false;
+    } else if (action === REVIEW_ACTION.expire) {
+      newStatus = KNOWLEDGE_APPROVAL_STATUS.expired;
+      knowledge.expiresAt = input.expiresAt || now;
+      knowledge.reviewAt = now;
+      knowledge.confirmed = false;
+      knowledge.active = false;
+    } else if (action === REVIEW_ACTION.propose) {
+      newStatus = KNOWLEDGE_APPROVAL_STATUS.proposed;
+      knowledge.confirmed = false;
+      knowledge.active = false;
+    }
+
+    knowledge.approvalStatus = newStatus;
+    knowledge.reviewReason = reason;
+    knowledge.updatedAt = now;
+    if (!knowledge.createdAt) knowledge.createdAt = now;
+
+    var event = createReviewEvent({
+      workspaceId: knowledge.workspaceId,
+      knowledgeId: knowledge.id,
+      actorUserId: actor.userId,
+      action: action,
+      previousStatus: previousStatus,
+      newStatus: newStatus,
+      reason: reason,
+      sourceCandidateIds: knowledge.sourceCandidateIds,
+      sourceObservationIds: knowledge.sourceObservationIds,
+      sourceFactIds: knowledge.sourceFactIds,
+      createdAt: now
+    });
+
+    var persistAllowed = auth.persistAllowed !== false &&
+      !actor.isDemoWorkspace &&
+      knowledge.workspaceId !== "demo-workspace";
+
+    if (actor.isDemoWorkspace || knowledge.workspaceId === "demo-workspace") {
+      if (!lastDemoKnowledge) lastDemoKnowledge = [];
+      if (!lastDemoReviewEvents) lastDemoReviewEvents = [];
+      lastDemoKnowledge.push(JSON.parse(JSON.stringify(knowledge)));
+      lastDemoReviewEvents.push(event);
+      persistAllowed = false;
+    }
+
+    return {
+      ok: true,
+      knowledge: knowledge,
+      event: event,
+      auth: auth,
+      persistAllowed: persistAllowed,
+      error: null
+    };
+  }
+
+  /**
+   * Persistence gate — GI-3 never writes Demo or unauthorized rows.
+   * Real DB writes happen only when a future store adapter calls this and persists.
+   */
+  function canPersistGuestKnowledge(knowledge, actor) {
+    if (!knowledge || !actor) return { ok: false, reasonCode: "missing_args" };
+    if (actor.isDemoWorkspace || knowledge.workspaceId === "demo-workspace") {
+      return { ok: false, reasonCode: "demo_cannot_persist" };
+    }
+    if (knowledge.sensitivity === SENSITIVITY.prohibited) {
+      return { ok: false, reasonCode: "prohibited_cannot_persist" };
+    }
+    if (knowledge.approvalStatus === KNOWLEDGE_APPROVAL_STATUS.confirmed &&
+        !knowledge.approvedBy) {
+      return { ok: false, reasonCode: "missing_reviewer" };
+    }
+    var auth = authorizeGuestKnowledgeReview(knowledge, actor, REVIEW_ACTION.confirm);
+    if (!auth.ok) return { ok: false, reasonCode: auth.reasonCode };
+    return { ok: true, reasonCode: "persist_allowed" };
+  }
+
+  function getLastDemoKnowledge() {
+    return lastDemoKnowledge ? lastDemoKnowledge.slice() : [];
+  }
+
+  function getLastDemoReviewEvents() {
+    return lastDemoReviewEvents ? lastDemoReviewEvents.slice() : [];
   }
 
   global.GuestIntelligence = {
@@ -1317,13 +1740,25 @@
     CANDIDATE_LIFECYCLE: CANDIDATE_LIFECYCLE,
     CONTRADICTION_STATE: CONTRADICTION_STATE,
     OBSERVATION_CANDIDATE_RULES: OBSERVATION_CANDIDATE_RULES,
+    KNOWLEDGE_APPROVAL_STATUS: KNOWLEDGE_APPROVAL_STATUS,
+    REVIEW_ACTION: REVIEW_ACTION,
+    MEMBER_ROLE: MEMBER_ROLE,
+    OWNER_ONLY_KNOWLEDGE_TYPES: OWNER_ONLY_KNOWLEDGE_TYPES,
     extractGuestObservations: extractGuestObservations,
     buildCandidateGuestKnowledge: buildCandidateGuestKnowledge,
+    reviewCandidateGuestKnowledge: reviewCandidateGuestKnowledge,
+    authorizeGuestKnowledgeReview: authorizeGuestKnowledgeReview,
+    canPersistGuestKnowledge: canPersistGuestKnowledge,
+    isActiveGuestKnowledge: isActiveGuestKnowledge,
+    knowledgeFromCandidate: knowledgeFromCandidate,
+    createEmptyConfirmedKnowledge: createEmptyConfirmedKnowledge,
     clearDemoObservations: clearDemoObservations,
     clearDemoCandidates: clearDemoCandidates,
     clearDemoGiState: clearDemoGiState,
     getLastDemoObservations: getLastDemoObservations,
     getLastDemoCandidates: getLastDemoCandidates,
+    getLastDemoKnowledge: getLastDemoKnowledge,
+    getLastDemoReviewEvents: getLastDemoReviewEvents,
     createEmptyObservation: createEmptyObservation,
     createEmptyCandidate: createEmptyCandidate,
     detectProhibited: detectProhibited
