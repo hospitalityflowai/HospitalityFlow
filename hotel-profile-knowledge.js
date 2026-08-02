@@ -1248,6 +1248,11 @@
     return { overall: overall, sections: sections, completed: done, total: total, isComplete: done === total && total > 0 };
   }
 
+  function hasActiveSaveError() {
+    var saveLine = document.getElementById('lastSavedLine');
+    return !!(saveLine && saveLine.classList.contains('is-error'));
+  }
+
   function updateEssentialProgressUI() {
     var progress = computeEssentialProgress();
     var panel = document.getElementById('essentialProgressPanel');
@@ -1257,35 +1262,45 @@
     var countEl = document.getElementById('essentialProgressCount');
     var messageEl = document.getElementById('essentialProgressMessage');
     var barEl = document.getElementById('essentialProgressBar');
+    var saveFailed = hasActiveSaveError();
 
     if (panel) {
       panel.classList.toggle('is-complete', progress.isComplete);
     }
     if (titleEl) {
-      titleEl.textContent = progress.isComplete
-        ? 'Core Setup Complete'
-        : 'Core Setup — ' + progress.completed + ' of ' + progress.total + ' complete';
+      titleEl.textContent = 'Core Setup';
     }
     if (pctEl) pctEl.textContent = progress.overall + '%';
     if (fillEl) fillEl.style.width = progress.overall + '%';
-    if (countEl) countEl.textContent = progress.completed + ' / ' + progress.total;
+    if (countEl) {
+      countEl.textContent = progress.isComplete
+        ? 'Ready for AI Shift Handover'
+        : 'Essential details needed';
+    }
     if (messageEl) {
       messageEl.textContent = progress.isComplete
-        ? 'Your Hotel Brain is ready to power AI Shift Handover.'
-        : 'Complete the core sections first. Knowledge sections can be added over time.';
+        ? ''
+        : 'Add hotel details, rooms, teams and policies to prepare AI Shift Handover.';
     }
     var brainStatusEl = document.getElementById('hotelBrainStatus');
     if (brainStatusEl) {
-      brainStatusEl.textContent = progress.isComplete ? 'Ready' : 'Building';
-      brainStatusEl.classList.toggle('progress-stat-value--ready', progress.isComplete);
-      brainStatusEl.classList.toggle('progress-stat-value--building', !progress.isComplete);
-      brainStatusEl.classList.remove('progress-stat-value--muted');
+      if (saveFailed) {
+        brainStatusEl.textContent = 'Save needed';
+        brainStatusEl.classList.remove('progress-stat-value--ready', 'progress-stat-value--building');
+        brainStatusEl.classList.add('is-error');
+      } else {
+        brainStatusEl.textContent = progress.isComplete ? 'Ready' : 'Building';
+        brainStatusEl.classList.toggle('progress-stat-value--ready', progress.isComplete);
+        brainStatusEl.classList.toggle('progress-stat-value--building', !progress.isComplete);
+        brainStatusEl.classList.remove('is-error', 'progress-stat-value--muted');
+      }
     }
     if (barEl) {
       barEl.setAttribute('aria-valuenow', String(progress.overall));
+      barEl.setAttribute('aria-valuemax', '100');
       barEl.setAttribute('aria-label', progress.isComplete
-        ? 'Core Setup complete'
-        : 'Core Setup ' + progress.overall + ' percent complete');
+        ? 'Core Setup ready for AI Shift Handover'
+        : 'Core Setup not ready — essential details needed');
     }
   }
 
@@ -1305,18 +1320,33 @@
     });
   }
 
+  function hotelKnowledgeFoundationLabel(progress) {
+    var foundationReady = !!(progress && progress.total && progress.completed >= progress.total);
+    return foundationReady ? 'Foundation complete' : 'Building foundation';
+  }
+
   function updateCompletionUI() {
     var progress = computeProfileProgress();
     var pctEl = document.getElementById('profileProgressPct');
     var fillEl = document.getElementById('profileProgressFill');
     var countEl = document.getElementById('profileProgressCount');
+    var messageEl = document.getElementById('profileProgressMessage');
     var barEl = document.getElementById('profileProgressBar');
+    var foundationLabel = hotelKnowledgeFoundationLabel(progress);
     if (pctEl) pctEl.textContent = progress.overall + '%';
     if (fillEl) fillEl.style.width = progress.overall + '%';
-    if (countEl) countEl.textContent = progress.completed + ' / ' + progress.total;
+    if (countEl) countEl.textContent = foundationLabel;
+    if (messageEl) {
+      messageEl.textContent = "Continue building your hotel's operational memory.";
+    }
     if (barEl) {
       barEl.setAttribute('aria-valuenow', String(progress.overall));
-      barEl.setAttribute('aria-label', 'Knowledge coverage ' + progress.overall + ' percent complete');
+      barEl.setAttribute(
+        'aria-label',
+        foundationLabel === 'Foundation complete'
+          ? 'Hotel Knowledge foundation complete — continue building operational memory'
+          : 'Hotel Knowledge foundation building — continue building operational memory'
+      );
     }
     updateSectionStatuses();
     updateEssentialProgressUI();
