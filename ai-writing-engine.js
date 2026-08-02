@@ -22,10 +22,13 @@
  *   Intelligence Engine classifyOperationalFact).
  * - Does NOT calculate OperationalContext (E4 Phase 1 — engine-owned via
  *   buildOperationalContext). May read engine-attached context for display.
+ * - Does NOT invent DecisionTrace reason codes, change priority/confidence,
+ *   invent nextAction, or infer departments (E4 Phase 2). May format
+ *   engine-provided reasonCodes / DecisionTrace into concise language only.
  * - Hospitality Intelligence Engine (shift-intelligence-engine.js) owns
- *   operational reasoning (OperationalContext, impact ranking, operational
- *   objects, snapshot KPI extraction). This module formats engine-ranked
- *   facts for display only.
+ *   operational reasoning (OperationalContext, DecisionTrace, impact ranking,
+ *   recommendations, operational objects, snapshot KPI extraction). This
+ *   module formats engine decisions for display only.
  * - Modules must not add a second recommendation system.
  */
 (function (global) {
@@ -5069,14 +5072,18 @@
     var fault = e.faultType || "maintenance issue";
     if (fault === "AC") fault = "AC fault";
     if (fault === "hot water") fault = "hot-water issue";
+    /* E4.2: accept engine nextAction codes mapped by briefing spec; do not invent kinds. */
+    var kind = spec.actionKind || "";
+    if (kind === "follow_up_until_resolved") kind = "follow_up_maintenance";
+    if (kind === "collect_before_departure") kind = "collect_payment";
 
-    if (spec.actionKind === "follow_up_maintenance") {
+    if (kind === "follow_up_maintenance") {
       return "Follow up " + (room ? room + " " : "") + fault +
         (spec.reasonKind === "before_departure_guest_impact"
           ? " before departure / further guest impact"
           : " before further guest impact");
     }
-    if (spec.actionKind === "collect_payment") {
+    if (kind === "collect_payment") {
       /*
        * Briefing summarises revenue attention — recommendation cards own the
        * exact "Collect …" duty instruction.
@@ -5091,11 +5098,11 @@
       }
       return "Revenue follow-up required for outstanding channel payment before departures";
     }
-    if (spec.actionKind === "post_or_collect_charge") {
+    if (kind === "post_or_collect_charge") {
       return "Revenue follow-up required for " + (room ? room + " " : "") +
         (e.amount || "outstanding") + " adapter charge before departures";
     }
-    if (spec.actionKind === "prepare_vip") {
+    if (kind === "prepare_vip") {
       var amenityBit = "";
       if (e.amenities && e.amenities.length) {
         amenityBit = " (" + joinNatural(e.amenities.filter(function (a) {
@@ -5107,7 +5114,7 @@
       }
       return "VIP readiness follow-up for " + (room || e.guestName || "arrival") + amenityBit;
     }
-    if (spec.actionKind === "complete_timed_actions") {
+    if (kind === "complete_timed_actions") {
       var bits = [];
       (e.times || []).forEach(function (t) {
         var when = normalizeTimelineTime(t.raw) || t.raw;
@@ -5117,14 +5124,14 @@
       if (!bits.length) return "Timed departure actions require attention" + (room ? " for " + room : "");
       return "Timed departure actions for " + (room ? room + ": " : "") + joinNatural(bits);
     }
-    if (spec.actionKind === "reserve_interconnect") {
+    if (kind === "reserve_interconnect") {
       if (e.room && spec.rooms && spec.rooms.length >= 2) {
         return "Reserve interconnecting Rooms " + spec.rooms[0] + " & " + spec.rooms[1] +
           (e.guestName ? " for " + e.guestName : "");
       }
       return "Reserve interconnecting rooms" + (e.guestName ? " for " + e.guestName : "");
     }
-    if (spec.actionKind === "guest_follow_up") {
+    if (kind === "guest_follow_up") {
       return "Follow up " + (room || "guest request");
     }
     return "";

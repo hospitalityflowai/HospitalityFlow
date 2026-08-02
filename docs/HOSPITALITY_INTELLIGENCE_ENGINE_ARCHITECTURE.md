@@ -291,7 +291,8 @@ Section layout for the UI may remain a Handover presentation mapping (`urgent` c
 | **Done: E2** | Shared canonical closure + metrics helpers; quiet-shift phrase + room normaliser shared; Brain fallback documented |
 | **Done: E3** | Engine-owned operational classification + adapters; Handover/M4 parity fallback; Brain fallback retained |
 | **Done: E4 Phase 1** | Canonical `OperationalContext` enrichment; scoring consumes context (single path) |
-| **E4 Phase 2 (next)** | Deeper priority/risk normalisation; recommendation routing from context; explainability surfacing |
+| **Done: E4 Phase 2** | DecisionTrace; context-driven recommendations; explainability; confidence gating |
+| **E4 Phase 3 (next)** | User-facing “Why?” surfacing; deeper rec/briefing parity polish; optional quiet-shift alignment |
 | **Later** | Conflicts / recurrence; Guest adapter; Brain fallback removal when load guarantees exist |
 | **Avoid** | Shared fact DB table until Guest Intelligence forces durable cross-tool history |
 
@@ -597,12 +598,129 @@ Helpers: `buildOperationalContext(fact, supportingContext)`, `createEmptyOperati
 | `scripts/test-intelligence-e4-operational-context.mjs` | E4.1 fixtures (Scenarios A–F + ownership + ranking) |
 | `docs/HOSPITALITY_INTELLIGENCE_ENGINE_ARCHITECTURE.md` | This record |
 
-### Recommended E4 Phase 2
+### Recommended E4 Phase 2 (completed — see §7E)
 
-1. Surface selected OperationalContext fields into recommendation `reasonCode` / explainability without changing rec product rules.
-2. Route `recommendationFromFact` department/priority from context where parity-safe.
-3. Optional quiet-shift suppress alignment with actionable open facts.
-4. Still no Guest Intelligence module; no cross-shift memory; no shared fact table.
+1. ~~Surface selected OperationalContext fields into recommendation `reasonCode` / explainability~~ → **Done (E4.2)**
+2. ~~Route `recommendationFromFact` department/priority from context~~ → **Done (E4.2)**
+3. Optional quiet-shift suppress alignment with actionable open facts → still later
+4. Still no Guest Intelligence module; no cross-shift memory; no shared fact table → holds
+
+---
+
+## 7E. E4 Phase 2 implementation record (Explainability & context-driven recommendations)
+
+**Status:** Implemented.  
+**Behaviour / DB:** No UI redesign. No migrations. No Guest Intelligence. No cross-shift memory. DecisionTrace is runtime-only (not persisted).
+
+### Purpose
+
+Make `OperationalContext` the authority behind recommendation generation, reason codes, priority explanations, and briefing/status/alert severity — so every important decision is explainable and traceable.
+
+### DecisionTrace contract
+
+| Field | Purpose |
+|-------|---------|
+| `sourceFactId` / `sourceFactIds` | Traceability to source facts / object members |
+| `objectType` | Operational object type |
+| `operationalContext` | Full E4.1 context snapshot |
+| `score` | Impact score from `scoreFromOperationalContext` |
+| `priority` | Legacy recommendation priority (`urgent\|high\|normal\|low`) |
+| `recommendationKind` / `nextAction` | Structured action code |
+| `reasonCodes` | Stable codes from context (no prose) |
+| `evidence` | Structured entities only (room, status, amount, timing, departments) |
+| `confidence` | Evidence-quality numeric 0–1 |
+| `supportingKnowledge` | Optional Hotel Brain enrichment links (source, knowledgeType, matchedSubject, matchReason) — not a competing authority |
+
+Helpers: `buildDecisionTrace`, `buildDecisionExplanation`, `reasonCodesFromContext`, `allowsOpenRecommendation`, `enrichRecommendationsWithHotelBrain`.
+
+`buildDecisionExplanation(trace)` returns structured explainability (`priority`, `reasonCodes`, `evidence`, `confidence`, impacts, departments, `supportingKnowledge`) — **no HTML, no polished prose**.
+
+### Recommendation generation path
+
+```text
+Current operational evidence
+  → OperationalFact / OperationalObject
+  → OperationalContext (+ DecisionTrace)
+  → recommendation candidate (fact/object only)
+  → Hotel Brain enrichment where specifically matched (optional)
+  → normalizeRecommendation
+```
+
+Hotel Brain is **supporting operational context**, not a recommendation authority:
+
+- Current operational evidence remains mandatory for normal shift recommendations.
+- Hotel Brain may enrich, constrain, or explain an existing fact/object recommendation when the match is specific and defensible (same room / guest / policy subject / operational action / payment|maintenance|request family).
+- Hotel Brain **cannot** create standalone normal Handover/Demo recommendations (`addCandidate` from matchedActions / room reminders is removed).
+- Unmatched knowledge is **ignored** by this phase (not added to recommendations, briefing, status, or alerts).
+- Future proactive “Hotel Brain reminders” product surface is **out of scope** for E4 Phase 2.
+- Priority and confidence remain engine-owned; enrichment may only add `hotel_brain_enrichment` reason code + `supportingKnowledge` entries.
+
+Subject/category shortcuts no longer decide *whether* to recommend when context exists. They may still shape **wording** after the context gate passes.
+
+### Confidence gating
+
+| Confidence | Gate |
+|------------|------|
+| `≥ 0.75` (high) | Normal open recommendation when `nextAction` set |
+| `≥ 0.45` (medium) | Cautious recommendation only when `nextAction` is explicit |
+| `< 0.45` (low) | No strong recommendation; retain informational/uncertain |
+| `nextAction` empty | No recommendation (even if high confidence) |
+| `completed` / `confirmed` | No open chase recommendation |
+| `weak_evidence` | No strong recommendation |
+
+Confidence remains **evidence quality**, not severity.
+
+### Briefing / status / alert integration
+
+- `buildPriorityActionSpec` attaches `decisionTrace` + prefers `context.nextAction`.
+- `statusLevelFromObjects` / `computeShiftAlertsFromObjects` prefer context impact/status fields; do not independently re-decide importance when context is present.
+- Writing still formats briefing prose from engine specs — must not re-rank or invent reasons.
+
+### Writing-layer boundaries
+
+| Writing may | Writing must not |
+|-------------|------------------|
+| Format action wording | Add reason codes |
+| Format reason codes into language | Change priority / confidence |
+| Combine room/name/time/amount | Invent nextAction |
+| Apply grammar/tone | Infer departments / decide that something matters |
+
+### Documented fallbacks
+
+| Fallback | When |
+|----------|------|
+| `legacyRecommendationFromSubject` wording | Context allows open rec; used for text shape only |
+| `recommendationTextFromNextAction` | Subject wording returned null |
+| Writing `impactRank` / `briefingRank` local scores | Engine script not loaded (unchanged from E4.1) |
+
+**Removed (E4.2 hard-gate):** standalone Hotel Brain `matchedActions` / `getRoomAttributeReminders` → `addCandidate` on the normal Handover/Demo recommendation path. No compatibility fallback remains for that injection. Hotel Brain retrieval outside recommendation generation (checklist / profile / VIP-rules text enrichment on an existing fact path) is unchanged.
+
+### Out of scope (E4 Phase 2)
+
+- Guest Intelligence
+- Cross-shift memory / historical patterns
+- Predictive maintenance
+- Database persistence of DecisionTrace
+- User-facing “Why?” UI
+- Quiet-shift suppress realignment
+- Proactive Hotel Brain reminders surface (unmatched knowledge ignored for now)
+
+### Files
+
+| File | Role |
+|------|------|
+| `shift-intelligence-engine.js` | DecisionTrace, gating, context-driven recs, Brain enrich-only, briefing/status/alert parity |
+| `ai-writing-engine.js` | Ownership comments (no reasoning ownership) |
+| `hotel-profile-operational.js` | Brain retrieval (unchanged; enrich-only consumer in engine) |
+| `scripts/test-intelligence-e4-decision-trace.mjs` | E4.2 fixtures (Scenarios A–G + Brain hard-gate) |
+| `docs/HOSPITALITY_INTELLIGENCE_ENGINE_ARCHITECTURE.md` | This record |
+
+### Recommended E4 Phase 3
+
+1. Optional user-facing “Why did HF prioritise this?” using `buildDecisionExplanation` (presentation only).
+2. Quiet-shift suppress alignment with `!hasActionableOpenFacts` behind fixtures.
+3. Optional separate “Hotel Brain reminders” product surface (not mixed into E4 recommendations).
+4. Still no Guest Intelligence; no cross-shift memory; no shared fact table; no trace persistence.
 
 ---
 

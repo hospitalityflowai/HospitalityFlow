@@ -46,6 +46,8 @@ sandbox.globalThis = sandbox;
 
 loadScript("hotel-profile-zetter-sample.js", sandbox);
 loadScript("hotel-profile-operational.js", sandbox);
+/* Writing engine required so VIP notes become OperationalFacts before Brain enrichment. */
+loadScript("ai-writing-engine.js", sandbox);
 loadScript("shift-intelligence-engine.js", sandbox);
 
 const HPO = sandbox.HotelProfileOperational;
@@ -129,7 +131,7 @@ const supplyLines = HPO.summarizeGuestImpactingSupplies(profile.supplies);
 assert(supplyLines.some((l) => /adapter/i.test(l)), "guest-impact inventory includes adapters");
 assert(supplyLines.every((l) => !/stationery|pen|sticky|cartridge/i.test(l)), "stationery / cartridges excluded from AI inventory context");
 
-console.log("\nVIP enrichment (facts preserved)");
+console.log("\nVIP enrichment (facts preserved; Brain enrich-only)");
 const classified = {
   _analyzed: [
     {
@@ -149,17 +151,30 @@ const analysis = SI.analyze({
   departments: ["Reception", "Front Office", "Duty Management"]
 });
 const vipRec = (analysis.recommendations || []).find((r) => /VIP/i.test(r.text));
-assert(!!vipRec, "VIP recommendation generated");
-assert(/champagne|quiet/i.test(vipRec.text), "VIP recommendation keeps shift-note facts");
-assert(/Hotel Brain:|Hotel VIP rules:/i.test(vipRec.text), "VIP recommendation enriched from Hotel Brain");
-
-const followRec = (analysis.recommendations || []).find((r) =>
-  /Hotel Brain:.*Confirm VIP room allocation|Hotel VIP rules:/i.test(r.text)
+assert(!!vipRec, "VIP recommendation generated from current VIP fact");
+assert(
+  /14:00|2:00\s*PM|Henderson|VIP room setup|VIP preparation/i.test(vipRec.text),
+  "VIP recommendation keeps shift-note facts (guest/time/setup)"
 );
-assert(!!followRec, "VIP recommendation is enriched with Hotel Brain follow-up / VIP rules");
+assert(
+  vipRec.sourceFactIds && vipRec.sourceFactIds.length > 0,
+  "VIP recommendation has non-empty sourceFactIds"
+);
+assert(!!vipRec.decisionTrace, "VIP recommendation has DecisionTrace");
+assert(
+  /Confirm VIP room allocation|welcome card|amenities/i.test(vipRec.text),
+  "VIP recommendation enriched with Hotel Brain follow-up on the fact path"
+);
 assert(
   (analysis.recommendations || []).filter((r) => /Confirm VIP room allocation/i.test(r.text)).length <= 1,
   "VIP follow-up is not duplicated as a separate recommendation"
+);
+assert(
+  !(analysis.recommendations || []).some((r) =>
+    r.decisionTrace &&
+    (!r.decisionTrace.sourceFactIds || !r.decisionTrace.sourceFactIds.length)
+  ),
+  "no standalone Hotel Brain recommendation without sourceFactIds"
 );
 
 console.log("\nResults: " + passed + " passed, " + failed + " failed");

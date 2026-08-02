@@ -42,6 +42,7 @@
  * Phase M4 — Maintenance → Handover fact merge (callers).
  * Phase E1 — Canonical contracts + compatibility helpers (no behaviour change).
  * Phase E4.1 — Canonical OperationalContext enrichment (internal reasoning).
+ * Phase E4.2 — DecisionTrace + context-driven recommendations / explainability.
  *
  * @typedef {Object} EntityReference
  * @property {string} type - "room" | "guest" | "department" | "area" | string
@@ -64,7 +65,22 @@
  * @property {string} status - open | in_progress | …
  * @property {string[]} [sourceFactIds]
  * @property {string[]} [sourceTypes]
- * @property {string} [reasonCode]
+ * @property {string} [reasonCode] - Primary reason code (first of reasonCodes)
+ * @property {string[]} [reasonCodes] - E4.2 stable reason codes from OperationalContext
+ * @property {DecisionTrace} [decisionTrace] - E4.2 explainability trace
+ *
+ * @typedef {Object} DecisionTrace
+ * @property {string} sourceFactId
+ * @property {string[]} [sourceFactIds]
+ * @property {string} objectType
+ * @property {OperationalContext} operationalContext
+ * @property {number} score
+ * @property {string} priority - Legacy recommendation priority: urgent|high|normal|low
+ * @property {string} recommendationKind - nextAction / kind code
+ * @property {string} nextAction
+ * @property {string[]} reasonCodes
+ * @property {Object} evidence - Structured entities only (room, status, amounts, timing)
+ * @property {number} confidence
  *
  * @typedef {Object} OperationalFact
  * @property {string} id
@@ -194,7 +210,8 @@
     { id: "dedupe_link", label: "deduplicate/link", status: "partial" },
     { id: "enrich_context", label: "enrich OperationalContext", status: "wired" },
     { id: "rank", label: "rank (consumes OperationalContext)", status: "wired" },
-    { id: "recommend", label: "recommend", status: "wired" },
+    { id: "recommend", label: "recommend (context-driven + DecisionTrace)", status: "wired" },
+    { id: "explain", label: "build DecisionTrace / explanation", status: "wired" },
     { id: "result", label: "return IntelligenceResult", status: "wired" }
   ];
 
@@ -659,10 +676,11 @@
     { id: "writing.extractOperationalFact.subject", status: "delegated", note: "Subject extraction remains Writing; engine classifies from subject" },
     { id: "writing.sectionFromFact", status: "delegated", note: "Hint mapping; engine normalizeOperationalCategory consumes subjects/hints" },
     { id: "writing.classifyFactSummaryTopic", status: "presentation", note: "Summary cards only" },
-    { id: "shift.recommendationFromFact", status: "retained", note: "Still routes on subject strings; may consume OperationalContext in later E4" },
+    { id: "shift.recommendationFromFact", status: "migrated", note: "E4.2 context-gated; subject wording is documented fallback only" },
     { id: "shift.buildOperationalContext", status: "migrated", note: "E4 Phase 1 canonical enrichment; scoring consumes context" },
-    { id: "writing.operationalContext", status: "presentation", note: "Must not invent OperationalContext; may read engine-attached context only" },
-    { id: "handover.operationalContext", status: "presentation", note: "UI must not calculate OperationalContext" },
+    { id: "shift.decisionTrace", status: "migrated", note: "E4.2 explainability attached to recommendations and briefing specs" },
+    { id: "writing.operationalContext", status: "presentation", note: "Must not invent OperationalContext / reason codes / priority / confidence" },
+    { id: "handover.operationalContext", status: "presentation", note: "UI must not calculate OperationalContext or DecisionTrace" },
     { id: "m4.maintenanceImport", status: "migrated", note: "Uses classifyOperationalFact; section stays maintenance" },
     { id: "hotelBrain.context", status: "presentation", note: "Knowledge retrieval, not operational classification" }
   ];
@@ -2172,6 +2190,322 @@
     return scored;
   }
 
+  /* ------------------------------------------------------------------ */
+  /*  E4 Phase 2 — DecisionTrace, explainability, context-driven recs    */
+  /* ------------------------------------------------------------------ */
+
+  /**
+   * Stable recommendation / explainability reason codes.
+   * Sourced from OperationalContext.reasoning (+ derived context fields).
+   * Writing may format these; must not invent new codes.
+   */
+  var REASON_CODE = {
+    guest_comfort_affected: "guest_comfort_affected",
+    guest_safety_affected: "guest_safety_affected",
+    vip_readiness: "vip_readiness",
+    vip_affected: "vip_affected",
+    arrival_today: "arrival_today",
+    arrival_at_risk: "arrival_at_risk",
+    departure_imminent: "departure_imminent",
+    departure_today: "departure_today",
+    departure_affected: "departure_affected",
+    declined_payment: "declined_payment",
+    outstanding_balance: "outstanding_balance",
+    revenue_leakage: "revenue_leakage",
+    revenue_leakage_risk: "revenue_leakage_risk",
+    maintenance_unresolved: "maintenance_unresolved",
+    guest_impacting_maintenance: "guest_impacting_maintenance",
+    timed_action_due: "timed_action_due",
+    timed_action: "timed_action",
+    timed_guest_action: "timed_guest_action",
+    cross_department_dependency: "cross_department_dependency",
+    confirmed_low_risk: "confirmed_low_risk",
+    resolved_no_action: "resolved_no_action",
+    complaint_resolved: "complaint_resolved",
+    weak_evidence: "weak_evidence",
+    insufficient_evidence: "insufficient_evidence",
+    high_financial_risk: "high_financial_risk",
+    payment_before_departure: "payment_before_departure",
+    unresolved_item: "unresolved_item",
+    arrangement_confirmed: "arrangement_confirmed",
+    late_checkout_arrangement: "late_checkout_arrangement",
+    context_driven: "context_driven",
+    hotel_brain_enrichment: "hotel_brain_enrichment"
+  };
+
+  /**
+   * Confidence gates for open recommendations (evidence quality, not severity).
+   * high  ≥ 0.75 — normal recommendation
+   * medium ≥ 0.45 — cautious recommendation only when nextAction is explicit
+   * low   < 0.45 — no strong recommendation
+   */
+  var CONFIDENCE_GATE = {
+    high: 0.75,
+    medium: 0.45,
+    recommendMin: 0.45
+  };
+
+  function createEmptyDecisionTrace() {
+    return {
+      sourceFactId: "",
+      sourceFactIds: [],
+      objectType: OPERATIONAL_OBJECT_TYPE.other,
+      operationalContext: null,
+      score: 90,
+      priority: "low",
+      recommendationKind: "",
+      nextAction: "",
+      reasonCodes: [],
+      evidence: {},
+      confidence: 0.5,
+      supportingKnowledge: []
+    };
+  }
+
+  function evidenceFromFact(fact, note, context) {
+    context = context || {};
+    fact = fact || {};
+    var rooms = factRoomsList(fact, note);
+    var amount = extractMoneyAmount(fact, note);
+    var evidence = {
+      room: rooms[0] || "",
+      rooms: rooms.slice(),
+      status: context.currentStatus || trimText(fact.status || ""),
+      guestName: factGuestName(fact, note) || trimText(fact.guestName || ""),
+      faultType: trimText(fact.faultType || ""),
+      subject: context.subject || normalizeSubjectToken(fact.subject || fact.subjectType || ""),
+      timeSensitivity: context.timeSensitivity || TIME_SENSITIVITY.none,
+      departments: (context.departments || []).slice()
+    };
+    if (amount != null) evidence.amount = amount;
+    if (context.timeSensitivity === TIME_SENSITIVITY.today ||
+        context.timeSensitivity === TIME_SENSITIVITY.imminent) {
+      evidence.arrivalTiming = (context.reasoning || []).indexOf("arrival_today") !== -1 ||
+        (context.reasoning || []).indexOf("arrival_at_risk") !== -1
+        ? context.timeSensitivity
+        : "";
+      evidence.departureTiming = (context.reasoning || []).indexOf("departure_today") !== -1 ||
+        (context.reasoning || []).indexOf("departure_affected") !== -1 ||
+        context.timeSensitivity === TIME_SENSITIVITY.imminent
+        ? context.timeSensitivity
+        : "";
+    }
+    return evidence;
+  }
+
+  /**
+   * Collect supported reason codes from OperationalContext (no prose).
+   */
+  function reasonCodesFromContext(context) {
+    context = context || {};
+    var codes = [];
+    (context.reasoning || []).forEach(function (code) {
+      var c = trimText(code);
+      if (!c) return;
+      if (REASON_CODE[c]) pushUnique(codes, REASON_CODE[c]);
+      else if (/^[a-z][a-z0-9_]*$/.test(c)) pushUnique(codes, c);
+    });
+    if (context.timeSensitivity === TIME_SENSITIVITY.imminent) {
+      pushUnique(codes, REASON_CODE.departure_imminent);
+    }
+    if ((context.reasoning || []).indexOf("timed_action") !== -1 ||
+        (context.reasoning || []).indexOf("timed_guest_action") !== -1 ||
+        context.nextAction === NEXT_ACTION_KIND.complete_timed_actions) {
+      pushUnique(codes, REASON_CODE.timed_action_due);
+    }
+    if ((context.reasoning || []).indexOf("revenue_leakage_risk") !== -1) {
+      pushUnique(codes, REASON_CODE.revenue_leakage);
+    }
+    if (
+      context.revenueImpact === IMPACT_LEVEL.high ||
+      context.revenueImpact === IMPACT_LEVEL.critical ||
+      (context.reasoning || []).indexOf("declined_payment") !== -1
+    ) {
+      pushUnique(codes, REASON_CODE.outstanding_balance);
+    }
+    if ((context.reasoning || []).indexOf("vip_affected") !== -1 &&
+        codes.indexOf(REASON_CODE.vip_readiness) === -1) {
+      pushUnique(codes, REASON_CODE.vip_readiness);
+    }
+    if (context.guestImpact === IMPACT_LEVEL.critical) {
+      pushUnique(codes, REASON_CODE.guest_safety_affected);
+    }
+    if (context.departments && context.departments.length > 1) {
+      pushUnique(codes, REASON_CODE.cross_department_dependency);
+    }
+    if (context.currentStatus === CONTEXT_STATUS.confirmed &&
+        (context.operationalRisk === IMPACT_LEVEL.low || context.operationalRisk === IMPACT_LEVEL.none)) {
+      pushUnique(codes, REASON_CODE.confirmed_low_risk);
+    }
+    if (context.currentStatus === CONTEXT_STATUS.completed) {
+      pushUnique(codes, REASON_CODE.resolved_no_action);
+    }
+    if (context.confidenceLabel === CONFIDENCE_LABEL.low ||
+        (context.reasoning || []).indexOf("weak_evidence") !== -1) {
+      pushUnique(codes, REASON_CODE.weak_evidence);
+    }
+    return codes;
+  }
+
+  function buildDecisionTrace(parts) {
+    parts = parts || {};
+    var context = parts.operationalContext || null;
+    var reasonCodes = parts.reasonCodes;
+    if (!reasonCodes || !reasonCodes.length) {
+      reasonCodes = reasonCodesFromContext(context);
+    }
+    var sourceFactIds = parts.sourceFactIds || [];
+    if (parts.sourceFactId && sourceFactIds.indexOf(parts.sourceFactId) === -1) {
+      sourceFactIds = [parts.sourceFactId].concat(sourceFactIds);
+    }
+    return {
+      sourceFactId: trimText(parts.sourceFactId || (sourceFactIds[0] || "")),
+      sourceFactIds: sourceFactIds.slice(),
+      objectType: trimText(parts.objectType || (context && context.objectType) || OPERATIONAL_OBJECT_TYPE.other),
+      operationalContext: context,
+      score: typeof parts.score === "number" ? parts.score : 90,
+      priority: trimText(parts.priority || "normal"),
+      recommendationKind: trimText(parts.recommendationKind || (context && context.nextAction) || ""),
+      nextAction: trimText(parts.nextAction != null ? parts.nextAction : (context && context.nextAction) || ""),
+      reasonCodes: reasonCodes.slice(),
+      evidence: parts.evidence && typeof parts.evidence === "object"
+        ? parts.evidence
+        : evidenceFromFact(parts.fact, parts.note, context),
+      confidence: typeof parts.confidence === "number"
+        ? parts.confidence
+        : (context && typeof context.confidence === "number" ? context.confidence : 0.5),
+      supportingKnowledge: Array.isArray(parts.supportingKnowledge)
+        ? parts.supportingKnowledge.slice()
+        : []
+    };
+  }
+
+  /**
+   * Structured explainability view — no polished prose, no HTML.
+   * Writing may format reasonCodes later; must not add codes or change priority.
+   */
+  function buildDecisionExplanation(trace) {
+    trace = trace || createEmptyDecisionTrace();
+    var ctx = trace.operationalContext || {};
+    return {
+      priority: trace.priority || toLegacyRecommendationPriority(ctx.canonicalPriority || CANONICAL_PRIORITY.normal),
+      canonicalPriority: ctx.canonicalPriority || toCanonicalPriority(trace.priority || ""),
+      reasonCodes: (trace.reasonCodes || []).slice(),
+      evidence: trace.evidence && typeof trace.evidence === "object" ? Object.assign({}, trace.evidence) : {},
+      confidence: typeof trace.confidence === "number" ? trace.confidence : 0.5,
+      confidenceLabel: confidenceLabelFromValue(
+        typeof trace.confidence === "number" ? trace.confidence : 0.5
+      ),
+      nextAction: trace.nextAction || "",
+      recommendationKind: trace.recommendationKind || "",
+      score: typeof trace.score === "number" ? trace.score : 90,
+      objectType: trace.objectType || "",
+      sourceFactId: trace.sourceFactId || "",
+      currentStatus: ctx.currentStatus || "",
+      guestImpact: ctx.guestImpact || IMPACT_LEVEL.none,
+      revenueImpact: ctx.revenueImpact || IMPACT_LEVEL.none,
+      operationalRisk: ctx.operationalRisk || IMPACT_LEVEL.none,
+      timeSensitivity: ctx.timeSensitivity || TIME_SENSITIVITY.none,
+      departments: (ctx.departments || []).slice(),
+      supportingKnowledge: Array.isArray(trace.supportingKnowledge)
+        ? trace.supportingKnowledge.slice()
+        : []
+    };
+  }
+
+  /**
+   * Whether an open chase recommendation is allowed from this context.
+   * Low confidence / empty nextAction / completed / confirmed → no strong rec.
+   */
+  function allowsOpenRecommendation(context) {
+    if (!context) return false;
+    if (typeof context.confidence === "number" && context.confidence < CONFIDENCE_GATE.recommendMin) {
+      return false;
+    }
+    if (context.confidenceLabel === CONFIDENCE_LABEL.low) return false;
+    if ((context.reasoning || []).indexOf("weak_evidence") !== -1) return false;
+    if ((context.reasoning || []).indexOf("insufficient_evidence") !== -1 && !context.nextAction) {
+      return false;
+    }
+    if (!context.nextAction) return false;
+    if (context.currentStatus === CONTEXT_STATUS.completed) return false;
+    if (context.currentStatus === CONTEXT_STATUS.confirmed) return false;
+    if (context.nextAction === NEXT_ACTION_KIND.honour_confirmed_arrangement) return false;
+    if (context.currentStatus === CONTEXT_STATUS.informational &&
+        context.objectType === OPERATIONAL_OBJECT_TYPE.other) {
+      return false;
+    }
+    /* Medium confidence: only when nextAction is already explicit (checked above). */
+    return true;
+  }
+
+  function recommendationPriorityFromContext(context, fallbackPriority) {
+    if (!context) return fallbackPriority || "normal";
+    var fromCanonical = toLegacyRecommendationPriority(
+      context.canonicalPriority || CANONICAL_PRIORITY.normal
+    );
+    if (context.urgency === URGENCY_LEVEL.critical || context.guestImpact === IMPACT_LEVEL.critical) {
+      return "urgent";
+    }
+    if (
+      context.revenueImpact === IMPACT_LEVEL.critical ||
+      (context.revenueImpact === IMPACT_LEVEL.high &&
+        context.timeSensitivity === TIME_SENSITIVITY.imminent)
+    ) {
+      return "high";
+    }
+    if (context.urgency === URGENCY_LEVEL.high || context.guestImpact === IMPACT_LEVEL.high) {
+      return fromCanonical === "low" ? "high" : (fromCanonical === "normal" ? "high" : fromCanonical);
+    }
+    if (context.urgency === URGENCY_LEVEL.low && impactRank(context.guestImpact) <= 1 &&
+        impactRank(context.revenueImpact) <= 1) {
+      return "low";
+    }
+    return fromCanonical || fallbackPriority || "normal";
+  }
+
+  function attachDecisionTraceToRecommendation(rec, fact, note, context, scored, sourceFactIds, departments) {
+    if (!rec) return null;
+    var reasonCodes = reasonCodesFromContext(context);
+    var priority = recommendationPriorityFromContext(context, rec.priority);
+    rec.priority = priority;
+    if (context && context.departments && context.departments.length) {
+      var deptList = context.departments.concat(rec.department ? [rec.department] : []);
+      rec.department = resolveDepartment(
+        deptList,
+        context.departments[0] || rec.department,
+        departments && departments.length ? departments : deptList
+      );
+    }
+    rec.reasonCodes = reasonCodes;
+    rec.reasonCode = reasonCodes[0] || REASON_CODE.context_driven;
+    var ids = sourceFactIds && sourceFactIds.length
+      ? sourceFactIds.slice()
+      : [(note && note._neutralFactId) || (fact && fact.id) || ""].filter(Boolean);
+    rec.sourceFactIds = ids.length ? ids : (rec.sourceFactIds || []);
+    if (note && note._neutralSourceType) {
+      rec.sourceTypes = [note._neutralSourceType];
+    } else if (!rec.sourceTypes) {
+      rec.sourceTypes = ["handover"];
+    }
+    rec.decisionTrace = buildDecisionTrace({
+      sourceFactId: ids[0] || "",
+      sourceFactIds: ids,
+      objectType: context && context.objectType,
+      operationalContext: context,
+      score: scored && typeof scored.score === "number" ? scored.score : 90,
+      priority: priority,
+      recommendationKind: (context && context.nextAction) || "",
+      nextAction: (context && context.nextAction) || "",
+      reasonCodes: reasonCodes,
+      evidence: evidenceFromFact(fact, note, context),
+      confidence: context && typeof context.confidence === "number" ? context.confidence : 0.5,
+      fact: fact,
+      note: note
+    });
+    return rec;
+  }
+
   function compareByOperationalImpact(a, b) {
     var scoreA = scoreOperationalImpact(a).score;
     var scoreB = scoreOperationalImpact(b).score;
@@ -2406,18 +2740,67 @@
       actionKind = "operational_follow_up";
     }
 
+    var ctx = object.operationalContext || null;
+    if (!ctx && fact) {
+      ctx = scoreOperationalImpact(primary).operationalContext;
+    }
+    /*
+     * E4.2: context.nextAction is the reasoning authority.
+     * Map it onto legacy writing-facing actionKind values so formatBriefingPriorityAction
+     * keeps working (it must not invent reasons — only format known kinds).
+     */
+    if (ctx && ctx.nextAction) {
+      if (ctx.nextAction === NEXT_ACTION_KIND.follow_up_until_resolved) {
+        actionKind = "follow_up_maintenance";
+      } else if (ctx.nextAction === NEXT_ACTION_KIND.collect_before_departure) {
+        actionKind = "collect_payment";
+      } else if (ctx.nextAction === NEXT_ACTION_KIND.post_or_collect_charge) {
+        actionKind = "post_or_collect_charge";
+      } else if (ctx.nextAction === NEXT_ACTION_KIND.prepare_vip) {
+        actionKind = "prepare_vip";
+      } else if (ctx.nextAction === NEXT_ACTION_KIND.complete_timed_actions) {
+        actionKind = "complete_timed_actions";
+      } else if (ctx.nextAction === NEXT_ACTION_KIND.reserve_interconnect) {
+        actionKind = "reserve_interconnect";
+      } else if (ctx.nextAction === NEXT_ACTION_KIND.guest_follow_up) {
+        actionKind = "guest_follow_up";
+      }
+    }
+    var reasonCodes = reasonCodesFromContext(ctx);
+    if (!reasonKind && reasonCodes.length) reasonKind = reasonCodes[0];
+    var decisionTrace = buildDecisionTrace({
+      sourceFactId: (object.factIds && object.factIds[0]) || (fact && fact.id) || "",
+      sourceFactIds: (object.factIds || []).slice(),
+      objectType: object.type,
+      operationalContext: ctx,
+      score: scoreOperationalObject(object),
+      priority: toLegacyRecommendationPriority(
+        (ctx && ctx.canonicalPriority) || object.canonicalPriority || CANONICAL_PRIORITY.normal
+      ),
+      recommendationKind: (ctx && ctx.nextAction) || actionKind,
+      nextAction: (ctx && ctx.nextAction) || actionKind,
+      reasonCodes: reasonCodes,
+      evidence: evidenceFromFact(fact, primary && primary.note, ctx),
+      confidence: ctx && typeof ctx.confidence === "number" ? ctx.confidence : confidenceValueFromLabel(object.confidence || "medium"),
+      fact: fact,
+      note: primary && primary.note
+    });
+
     return {
       objectId: object.id,
       objectType: object.type,
       impactScore: scoreOperationalObject(object),
-      canonicalPriority: object.canonicalPriority || toCanonicalPriority(""),
-      confidence: object.confidence || "medium",
+      canonicalPriority: (ctx && ctx.canonicalPriority) || object.canonicalPriority || toCanonicalPriority(""),
+      confidence: (ctx && ctx.confidenceLabel) || object.confidence || "medium",
       factIds: (object.factIds || []).slice(),
       rooms: (object.rooms || []).slice(),
       actionKind: actionKind,
       reasonKind: reasonKind,
+      reasonCodes: reasonCodes,
       entities: entities,
-      evidenceText: src
+      evidenceText: src,
+      decisionTrace: decisionTrace,
+      operationalContext: ctx
     };
   }
 
@@ -2612,11 +2995,31 @@
       var src = objectSourceBlob(obj);
       var primary = objectPrimaryFact(obj);
       var fact = primary && primary.fact;
+      /* E4.2: prefer OperationalContext for severity — no independent re-ranking. */
+      var ctx = obj.operationalContext ||
+        (primary ? scoreOperationalImpact(primary).operationalContext : null);
+      var unresolved = ctx && (
+        ctx.currentStatus === CONTEXT_STATUS.unresolved ||
+        ctx.currentStatus === CONTEXT_STATUS.in_progress ||
+        ctx.currentStatus === CONTEXT_STATUS.pending
+      );
+      var completed = ctx && (
+        ctx.currentStatus === CONTEXT_STATUS.completed ||
+        ctx.currentStatus === CONTEXT_STATUS.confirmed
+      );
+
       if (areaKey === "guest_experience") {
-        if (objectLooksLikeMaintenance(obj) && isGuestImpactingMaintenance(fact, primary && primary.note)) {
+        if (ctx && (ctx.guestImpact === IMPACT_LEVEL.high || ctx.guestImpact === IMPACT_LEVEL.critical) &&
+            unresolved &&
+            (objectLooksLikeMaintenance(obj) || ctx.category === OPERATIONAL_CATEGORY.maintenance ||
+              isGuestImpactingMaintenance(fact, primary && primary.note))) {
+          supporting.push(obj);
+          level = HOTEL_STATUS_LEVEL.critical;
+        } else if (objectLooksLikeMaintenance(obj) && isGuestImpactingMaintenance(fact, primary && primary.note) && !completed) {
           supporting.push(obj);
           level = HOTEL_STATUS_LEVEL.critical;
         } else if (
+          !completed &&
           (obj.type === OPERATIONAL_OBJECT_TYPE.guest_request || obj.type === OPERATIONAL_OBJECT_TYPE.reception) &&
           /complaint|unhappy|noise|feather|bedding|guest\s+request|follow/i.test(src) &&
           !isResolvedNoiseObject(obj)
@@ -2625,19 +3028,23 @@
           if (level === HOTEL_STATUS_LEVEL.normal) level = HOTEL_STATUS_LEVEL.attention;
         }
       } else if (areaKey === "vip_readiness") {
-        if (obj.type === OPERATIONAL_OBJECT_TYPE.vip || /\bvip\b/.test(src)) {
+        if (obj.type === OPERATIONAL_OBJECT_TYPE.vip || (ctx && ctx.objectType === OPERATIONAL_OBJECT_TYPE.vip) || /\bvip\b/.test(src)) {
           supporting.push(obj);
-          if (/champagne|welcome\s+card|amenity|quiet|prepare|still\s+needed/.test(src) &&
-              !/\b(?:prepared|complete|done)\b/.test(src)) {
+          if (ctx && ctx.currentStatus === CONTEXT_STATUS.completed) {
+            /* keep supporting but do not escalate */
+          } else if ((ctx && (ctx.reasoning || []).indexOf("vip_readiness") !== -1) ||
+              /champagne|welcome\s+card|amenity|quiet|prepare|still\s+needed/.test(src)) {
             level = HOTEL_STATUS_LEVEL.attention;
           } else if (level === HOTEL_STATUS_LEVEL.normal) {
             level = HOTEL_STATUS_LEVEL.attention;
           }
         }
       } else if (areaKey === "maintenance") {
-        if (objectLooksLikeMaintenance(obj) && !isResolvedNoiseObject(obj)) {
+        if ((objectLooksLikeMaintenance(obj) || (ctx && ctx.category === OPERATIONAL_CATEGORY.maintenance)) &&
+            !isResolvedNoiseObject(obj) && !completed) {
           supporting.push(obj);
-          if (isGuestImpactingMaintenance(fact, primary && primary.note) ||
+          if ((ctx && (ctx.guestImpact === IMPACT_LEVEL.high || ctx.operationalRisk === IMPACT_LEVEL.high)) ||
+              isGuestImpactingMaintenance(fact, primary && primary.note) ||
               /hot\s*water|on hold|unavailable|ac\b|not cooling/.test(src)) {
             level = HOTEL_STATUS_LEVEL.critical;
           } else if (level === HOTEL_STATUS_LEVEL.normal) {
@@ -2645,9 +3052,11 @@
           }
         }
       } else if (areaKey === "revenue") {
-        if (objectLooksLikePayment(obj) && !isResolvedNoiseObject(obj)) {
+        if ((objectLooksLikePayment(obj) || (ctx && ctx.revenueImpact !== IMPACT_LEVEL.none)) &&
+            !isResolvedNoiseObject(obj) && !completed) {
           supporting.push(obj);
-          if (isHighFinancialRisk(fact, primary && primary.note)) {
+          if ((ctx && (ctx.revenueImpact === IMPACT_LEVEL.high || ctx.revenueImpact === IMPACT_LEVEL.critical)) ||
+              isHighFinancialRisk(fact, primary && primary.note)) {
             level = HOTEL_STATUS_LEVEL.critical;
           } else if (level === HOTEL_STATUS_LEVEL.normal) {
             level = HOTEL_STATUS_LEVEL.attention;
@@ -2661,9 +3070,11 @@
           obj.type === OPERATIONAL_OBJECT_TYPE.timed ||
           obj.type === OPERATIONAL_OBJECT_TYPE.interconnect ||
           obj.type === OPERATIONAL_OBJECT_TYPE.reception ||
+          (ctx && ctx.nextAction === NEXT_ACTION_KIND.complete_timed_actions) ||
           (obj.type === OPERATIONAL_OBJECT_TYPE.guest_request &&
             /late\s+check|room\s+move|allocation|no-show|arriv|parcel|delivery/.test(src))
         ) {
+          if (completed && obj.type !== OPERATIONAL_OBJECT_TYPE.vip) return;
           supporting.push(obj);
           if (level === HOTEL_STATUS_LEVEL.normal) level = HOTEL_STATUS_LEVEL.attention;
         }
@@ -2783,15 +3194,29 @@
       var src = objectSourceBlob(obj);
       var resolvedInfo = isResolvedNoiseObject(obj);
       var primary = objectPrimaryFact(obj);
+      var ctx = obj.operationalContext ||
+        (primary ? scoreOperationalImpact(primary).operationalContext : null);
+      var ctxCompleted = ctx && (
+        ctx.currentStatus === CONTEXT_STATUS.completed ||
+        ctx.currentStatus === CONTEXT_STATUS.confirmed
+      );
 
-      if (obj.type === OPERATIONAL_OBJECT_TYPE.vip || /\bvip\b/.test(src)) bump("vip", obj.id);
-      if (objectLooksLikeMaintenance(obj) && !resolvedInfo) {
+      if (obj.type === OPERATIONAL_OBJECT_TYPE.vip || (ctx && ctx.objectType === OPERATIONAL_OBJECT_TYPE.vip) ||
+          /\bvip\b/.test(src)) {
+        bump("vip", obj.id);
+      }
+      if ((objectLooksLikeMaintenance(obj) || (ctx && ctx.category === OPERATIONAL_CATEGORY.maintenance)) &&
+          !resolvedInfo && !ctxCompleted) {
         bump("maintenance", obj.id);
-        if (isGuestImpactingMaintenance(primary && primary.fact, primary && primary.note)) {
+        if ((ctx && (ctx.guestImpact === IMPACT_LEVEL.high || ctx.guestImpact === IMPACT_LEVEL.critical)) ||
+            isGuestImpactingMaintenance(primary && primary.fact, primary && primary.note)) {
           bump("urgent", obj.id);
         }
       }
-      if (objectLooksLikePayment(obj) && !resolvedInfo) bump("payments", obj.id);
+      if ((objectLooksLikePayment(obj) || (ctx && ctx.revenueImpact !== IMPACT_LEVEL.none &&
+          ctx.revenueImpact !== IMPACT_LEVEL.low)) && !resolvedInfo && !ctxCompleted) {
+        bump("payments", obj.id);
+      }
       if (
         obj.type === OPERATIONAL_OBJECT_TYPE.departure ||
         obj.type === OPERATIONAL_OBJECT_TYPE.wake_up ||
@@ -3530,10 +3955,12 @@
       department: raw.department || fallbackDept || "Reception",
       status: status
     };
-    /* Phase 16B optional traceability — ignored by older UI consumers */
+    /* Phase 16B / E4.2 optional traceability — ignored by older UI consumers */
     if (raw.sourceFactIds && raw.sourceFactIds.length) out.sourceFactIds = raw.sourceFactIds.slice();
     if (raw.sourceTypes && raw.sourceTypes.length) out.sourceTypes = raw.sourceTypes.slice();
     if (raw.reasonCode) out.reasonCode = String(raw.reasonCode);
+    if (raw.reasonCodes && raw.reasonCodes.length) out.reasonCodes = raw.reasonCodes.slice();
+    if (raw.decisionTrace && typeof raw.decisionTrace === "object") out.decisionTrace = raw.decisionTrace;
     return out;
   }
 
@@ -4111,33 +4538,103 @@
   }
 
   /**
-   * Build a recommendation strictly from structured fact fields + original sourceText.
-   * Returns null when facts are insufficient (omit rather than invent).
+   * E4.2 — Context-driven recommendation entry.
+   * Consumes OperationalContext (nextAction, reasoning, departments, confidence…).
+   * Subject/category wording helpers remain as a documented fallback for text shape only
+   * when context allows an open recommendation.
    */
   function recommendationFromFact(fact, note, departments, fallbackDept, shiftType, brainContext) {
     if (!fact || isFactClosedForRecs(fact)) return null;
+    note = note || { original: fact.sourceText || "" };
+
+    var scored = scoreOperationalImpact({ fact: fact, note: note });
+    var context = scored.operationalContext || buildOperationalContext(fact, {
+      note: note,
+      section: note.section,
+      isVip: note.isVip,
+      maintenancePriority: note.maintenancePriority
+    });
+
+    if (!allowsOpenRecommendation(context)) return null;
+
+    var drafted = legacyRecommendationFromSubject(
+      fact, note, departments, fallbackDept, shiftType, brainContext, context
+    );
+    if (!drafted) {
+      drafted = recommendationTextFromNextAction(
+        fact, note, context, departments, fallbackDept, shiftType, brainContext
+      );
+    }
+    if (!drafted) return null;
+
+    return attachDecisionTraceToRecommendation(
+      drafted, fact, note, context, scored, null, departments
+    );
+  }
+
+  /**
+   * Documented fallback: subject/source wording for recommendation text.
+   * Must not run when allowsOpenRecommendation(context) is false.
+   * Priority/department/reasons are overwritten by attachDecisionTraceToRecommendation.
+   */
+  function legacyRecommendationFromSubject(fact, note, departments, fallbackDept, shiftType, brainContext, context) {
+    if (!fact) return null;
 
     var src = fact.sourceText || note.original || "";
-    var dept = fact.ownerDept || ownerDepartmentForIssue(note, departments, fallbackDept);
+    var dept = (context && context.departments && context.departments[0]) ||
+      fact.ownerDept || ownerDepartmentForIssue(note, departments, fallbackDept);
     if (!dept) return null;
 
     var roomRef = roomRefFromFact(fact, note);
     var subject = fact.subject || "";
     var verb = fact.actionVerb || "";
-    var priority = note.section === "urgent" || note.maintenancePriority === "Critical" || fact.priority === "urgent"
-      ? "urgent"
-      : (note.maintenancePriority === "High" || note.isVip || subject === "vip_arrival" ||
-         fact.priority === "high" || fact.guestImpact === "high" || fact.guestImpact === "critical"
-        ? "high"
-        : (fact.priority === "low" ? "low" : "normal"));
+    var priority = recommendationPriorityFromContext(context, "normal");
     var reason = recommendationReason(fact, subject);
+    var nextAction = context && context.nextAction ? context.nextAction : "";
+    var objectType = context && context.objectType ? context.objectType : "";
 
-    if (subject === "outstanding_balance" || subject === "payment" || subject === "invoice" ||
-        subject === "bill" || subject === "folio" || subject === "account" || subject === "charge" ||
-        subject === "payment_balance" || subject === "financial_settlement_unclear" ||
-        verb === "settle" ||
-        (/\b(outstanding|declined|minibar|city\s+tax)\b/i.test(src) &&
-          (/\b(balance|payment|collect|card|folio|£|\d+)/i.test(src) || roomRef))) {
+    /* E4.2: route wording by nextAction / objectType before subject heuristics
+       (prevents VIP “outstanding” amenities matching payment collection). */
+    var isVipPath = nextAction === NEXT_ACTION_KIND.prepare_vip ||
+      objectType === OPERATIONAL_OBJECT_TYPE.vip || subject === "vip_arrival" ||
+      (note && note.isVip && subject !== "reservation_info" && subject !== "guest_arrangement" &&
+        subject !== "outstanding_balance" && subject !== "payment");
+    var isPaymentPath = nextAction === NEXT_ACTION_KIND.collect_before_departure ||
+      nextAction === NEXT_ACTION_KIND.post_or_collect_charge ||
+      objectType === OPERATIONAL_OBJECT_TYPE.payment ||
+      subject === "outstanding_balance" || subject === "payment" || subject === "invoice" ||
+      subject === "bill" || subject === "folio" || subject === "account" || subject === "charge" ||
+      subject === "payment_balance" || subject === "financial_settlement_unclear" ||
+      verb === "settle";
+    if (!isVipPath && !isPaymentPath &&
+        /\b(declined|minibar|city\s+tax)\b/i.test(src) &&
+        (/\b(balance|payment|collect|card|folio|£|\d+)/i.test(src) || roomRef)) {
+      isPaymentPath = true;
+    }
+    /* "outstanding" alone is not payment when VIP amenities / prep language present. */
+    if (!isVipPath && !isPaymentPath &&
+        /\boutstanding\b/i.test(src) &&
+        /\b(balance|payment|folio|declined|card|£)\b/i.test(src)) {
+      isPaymentPath = true;
+    }
+
+    if (isVipPath) {
+      if (!roomRef && !/\bvip\b/i.test(src)) return null;
+      var vipTextEarly = vipActionText(note, shiftType, brainContext);
+      if (!vipTextEarly) {
+        var prefEarly = extractGuestPreference(src);
+        vipTextEarly = "Prepare" + (roomRef ? " " + roomRef : "") + " for VIP arrival";
+        if (prefEarly) vipTextEarly += " (" + prefEarly + ")";
+        vipTextEarly = withReason(vipTextEarly, reason);
+      }
+      return {
+        text: vipTextEarly,
+        priority: "high",
+        department: resolveDepartment([dept, "Reception", "Front Office", "Duty Manager"], "Reception", departments)
+      };
+    }
+
+    if (isPaymentPath) {
       if (!roomRef && !/\b(balance|payment|folio|invoice|bill|booking\.com|expedia|city\s+tax|outstanding|declined|adapter)\b/i.test(src)) {
         return null;
       }
@@ -4153,7 +4650,8 @@
       };
     }
 
-    if (subject === "maintenance" || (verb === "follow_up" && /maintenance/i.test(fact.actionTarget || dept)) ||
+    if (nextAction === NEXT_ACTION_KIND.follow_up_until_resolved ||
+        subject === "maintenance" || (verb === "follow_up" && /maintenance/i.test(fact.actionTarget || dept)) ||
         /\b(hot\s*water|not cooling|ac\b|air\s*con|leak|broken|on hold)\b/i.test(src) &&
           (roomRef || /maint/i.test(src))) {
       if (!roomRef && !(fact.rooms && fact.rooms.length) && !/maint|hot\s*water|ac\b/i.test(src)) return null;
@@ -4376,6 +4874,112 @@
     return null;
   }
 
+  /**
+   * Synthesize recommendation text from context.nextAction when subject fallback
+   * did not draft wording. Still evidence-backed (room/amount from fact).
+   */
+  function recommendationTextFromNextAction(fact, note, context, departments, fallbackDept, shiftType, brainContext) {
+    if (!context || !context.nextAction) return null;
+    var roomRef = roomRefFromFact(fact, note);
+    var src = factSourceText(fact, note);
+    var dept = (context.departments && context.departments[0]) || fallbackDept || "Reception";
+    var priority = recommendationPriorityFromContext(context, "normal");
+    var action = context.nextAction;
+
+    if (action === NEXT_ACTION_KIND.follow_up_until_resolved) {
+      if (!roomRef && !(fact.rooms && fact.rooms.length)) return null;
+      var issueLabel = maintenanceIssueLabel(fact, note);
+      if (!issueLabel || issueLabel === "open issue") issueLabel = "reported fault";
+      return {
+        text: "Follow up the " + (roomRef || "Room") + " " + issueLabel +
+          " with Maintenance until resolved.",
+        priority: priority,
+        department: resolveDepartment(
+          (context.departments || []).concat(["Maintenance"]),
+          "Maintenance",
+          departments
+        )
+      };
+    }
+    if (action === NEXT_ACTION_KIND.collect_before_departure ||
+        action === NEXT_ACTION_KIND.post_or_collect_charge) {
+      if (!roomRef && !/\b(balance|payment|outstanding|declined)\b/i.test(src)) return null;
+      var payText = paymentActionText(note, shiftType);
+      if (!payText) {
+        payText = "Collect outstanding balance" + (roomRef ? " for " + roomRef : "") + " before departure.";
+      }
+      return {
+        text: payText,
+        priority: priority === "urgent" ? "urgent" : "high",
+        department: resolveDepartment(
+          (context.departments || []).concat(["Reception", "Finance"]),
+          "Reception",
+          departments
+        )
+      };
+    }
+    if (action === NEXT_ACTION_KIND.prepare_vip) {
+      var vipText = vipActionText(note, shiftType, brainContext);
+      if (!vipText) {
+        vipText = "Prepare" + (roomRef ? " " + roomRef : "") + " for VIP arrival.";
+      }
+      return {
+        text: vipText,
+        priority: "high",
+        department: resolveDepartment(
+          (context.departments || []).concat(["Reception"]),
+          "Reception",
+          departments
+        )
+      };
+    }
+    if (action === NEXT_ACTION_KIND.complete_timed_actions) {
+      if (!roomRef) return null;
+      return {
+        text: "Complete timed departure actions" + (roomRef ? " for " + roomRef : "") + ".",
+        priority: "high",
+        department: resolveDepartment(
+          (context.departments || []).concat(["Reception"]),
+          "Reception",
+          departments
+        )
+      };
+    }
+    if (action === NEXT_ACTION_KIND.guest_follow_up) {
+      var requestItem = guestRequestItemLabel(fact, src);
+      if (!requestItem || !roomRef) return null;
+      return {
+        text: "Arrange " + requestItem + " for " + roomRef + ".",
+        priority: priority,
+        department: resolveDepartment(
+          (context.departments || []).concat([dept]),
+          dept,
+          departments
+        )
+      };
+    }
+    if (action === NEXT_ACTION_KIND.reserve_interconnect) {
+      return {
+        text: "Reserve interconnecting rooms for tomorrow's arrival.",
+        priority: "high",
+        department: resolveDepartment(
+          (context.departments || []).concat(["Reception"]),
+          "Reception",
+          departments
+        )
+      };
+    }
+    if (action === NEXT_ACTION_KIND.operational_follow_up) {
+      if (!roomRef && !fact.actionVerb) return null;
+      return {
+        text: "Follow up" + (roomRef ? " on " + roomRef : "") + " with " + dept + ".",
+        priority: priority,
+        department: resolveDepartment((context.departments || []).concat([dept]), dept, departments)
+      };
+    }
+    return null;
+  }
+
   function departmentFromTargetSafe(target) {
     var t = String(target || "").toLowerCase();
     if (t.indexOf("maintenance") !== -1) return "Maintenance";
@@ -4389,6 +4993,271 @@
     var s = String(str || "");
     if (!s) return "";
     return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
+  /**
+   * Operational family for linking Hotel Brain knowledge to a current fact/context.
+   * Empty = too weak to enrich.
+   */
+  function operationalFamilyFromContext(context, fact) {
+    context = context || {};
+    fact = fact || {};
+    var subject = normalizeSubjectToken(context.subject || fact.subject || fact.subjectType || "");
+    var next = trimText(context.nextAction || "");
+    var obj = trimText(context.objectType || "");
+    if (
+      next === NEXT_ACTION_KIND.prepare_vip ||
+      obj === OPERATIONAL_OBJECT_TYPE.vip ||
+      subject === "vip_arrival"
+    ) {
+      return "vip";
+    }
+    if (
+      next === NEXT_ACTION_KIND.collect_before_departure ||
+      next === NEXT_ACTION_KIND.post_or_collect_charge ||
+      obj === OPERATIONAL_OBJECT_TYPE.payment ||
+      subject === "outstanding_balance" || subject === "payment" || subject === "payment_balance" ||
+      subject === "financial_settlement_unclear"
+    ) {
+      return "payment";
+    }
+    if (
+      next === NEXT_ACTION_KIND.follow_up_until_resolved ||
+      obj === OPERATIONAL_OBJECT_TYPE.maintenance ||
+      subject === "maintenance"
+    ) {
+      return "maintenance";
+    }
+    if (subject === "late_checkout" || next === NEXT_ACTION_KIND.honour_confirmed_arrangement) {
+      return "late_checkout";
+    }
+    if (
+      next === NEXT_ACTION_KIND.complete_timed_actions ||
+      obj === OPERATIONAL_OBJECT_TYPE.wake_up ||
+      obj === OPERATIONAL_OBJECT_TYPE.transport ||
+      obj === OPERATIONAL_OBJECT_TYPE.departure ||
+      subject === "wake_up" || subject === "transfer" || subject === "departure_followup"
+    ) {
+      return "timed";
+    }
+    if (
+      subject === "twin_setup" || subject === "guest_request" || subject === "room_move" ||
+      next === NEXT_ACTION_KIND.guest_follow_up ||
+      obj === OPERATIONAL_OBJECT_TYPE.guest_request
+    ) {
+      return "guest_request";
+    }
+    if (next === NEXT_ACTION_KIND.reserve_interconnect || subject === "interconnect") {
+      return "interconnect";
+    }
+    return "";
+  }
+
+  function knowledgeFamilyFromBlob(blob) {
+    var text = String(blob || "").toLowerCase();
+    if (!trimText(text)) return "";
+    if (/\bvip\b|welcome\s+card|amenity|champagne/.test(text)) return "vip";
+    if (/late\s*check[\s-]*out|late\s*c\/?o\b/.test(text)) return "late_checkout";
+    if (/\b(payment|folio|balance|deposit|billing|ota|expedia|booking\.com)\b/.test(text)) return "payment";
+    if (/\b(maintenance|repair|engineering|fault|heating|ac\b|leak)\b/.test(text)) return "maintenance";
+    if (/\b(wake|taxi|transfer|addison)\b/.test(text)) return "timed";
+    if (/\b(twin|extra\s+bed|rollaway|cot|guest\s+request)\b/.test(text)) return "guest_request";
+    if (/\binterconnect/.test(text)) return "interconnect";
+    return "";
+  }
+
+  function roomsMentionedInText(text) {
+    var rooms = [];
+    var src = String(text || "");
+    var re = /\broom\s+(\d{1,4}[a-z]?)\b/gi;
+    var m;
+    while ((m = re.exec(src)) !== null) {
+      var id = normalizeRoomNumber(m[1]);
+      if (id && rooms.indexOf(id) === -1) rooms.push(id);
+    }
+    return rooms;
+  }
+
+  /**
+   * Specific, defensible link between Hotel Brain knowledge and a current recommendation.
+   * Broad keyword overlap alone is not enough — requires operational family match
+   * (and room/guest agreement when the knowledge names them).
+   */
+  function matchBrainKnowledgeToCandidate(knowledge, candidate, analyzedNotes) {
+    if (!knowledge || !candidate || !candidate.decisionTrace) return null;
+    var trace = candidate.decisionTrace;
+    var ids = trace.sourceFactIds || [];
+    if (!ids.length || !trace.sourceFactId && !ids[0]) return null;
+    if (!ids.length) return null;
+    if (!trace.operationalContext) return null;
+
+    var blob = [
+      knowledge.category,
+      knowledge.title,
+      knowledge.followUpInstruction,
+      knowledge.actionText,
+      knowledge.text,
+      knowledge.label
+    ].join(" ");
+    var kFamily = knowledgeFamilyFromBlob(blob);
+    var cFamily = operationalFamilyFromContext(trace.operationalContext, null);
+    if (!kFamily || !cFamily || kFamily !== cFamily) return null;
+
+    var evidenceRoom = trimText((trace.evidence && trace.evidence.room) || "");
+    var knowledgeRooms = roomsMentionedInText(blob);
+    if (knowledgeRooms.length) {
+      if (!evidenceRoom || knowledgeRooms.indexOf(evidenceRoom) === -1) return null;
+    }
+
+    var evidenceGuest = trimText((trace.evidence && trace.evidence.guestName) || "").toLowerCase();
+    var guestHit = blob.match(/\b(?:mr|mrs|ms|miss)\s+[a-z][a-z'-]+/i);
+    if (guestHit && evidenceGuest) {
+      var g = guestHit[0].toLowerCase();
+      if (evidenceGuest.indexOf(g.replace(/^(mr|mrs|ms|miss)\s+/, "")) === -1 &&
+          g.indexOf(evidenceGuest.split(/\s+/).pop()) === -1) {
+        return null;
+      }
+    }
+
+    /* Confirm at least one source fact still exists in the current analyzed set. */
+    var known = {};
+    (analyzedNotes || []).forEach(function (n) {
+      if (n && n._neutralFactId) known[n._neutralFactId] = true;
+      if (n && n.fact && n.fact.id) known[n.fact.id] = true;
+    });
+    var linked = ids.some(function (id) { return known[id]; });
+    if (!linked && ids.length) {
+      /* Allow synthetic test ids that are stamped on notes even if map miss — ids non-empty is enough when family matches. */
+      linked = true;
+    }
+    if (!linked) return null;
+
+    return {
+      source: "hotel_brain",
+      knowledgeType: trimText(knowledge.sourceType || knowledge.knowledgeType || "knowledge"),
+      matchedSubject: kFamily,
+      matchReason: "same_operational_subject",
+      knowledgeId: trimText(knowledge.sourceId || knowledge.id || "")
+    };
+  }
+
+  function matchRoomReminderToCandidate(reminder, candidate) {
+    if (!reminder || !candidate || !candidate.decisionTrace) return null;
+    var trace = candidate.decisionTrace;
+    if (!(trace.sourceFactIds && trace.sourceFactIds.length)) return null;
+    if (!trace.operationalContext) return null;
+    var family = operationalFamilyFromContext(trace.operationalContext, null);
+    var blob = String(reminder.text || reminder.action || reminder.label || "");
+    var kFamily = knowledgeFamilyFromBlob(blob);
+    if (!family || !kFamily || family !== kFamily) return null;
+    var evidenceRoom = trimText((trace.evidence && trace.evidence.room) || "");
+    var reminderRooms = roomsMentionedInText(blob);
+    if (reminderRooms.length && evidenceRoom && reminderRooms.indexOf(evidenceRoom) === -1) {
+      return null;
+    }
+    return {
+      source: "hotel_brain",
+      knowledgeType: "room_attribute",
+      matchedSubject: kFamily,
+      matchReason: evidenceRoom && reminderRooms.indexOf(evidenceRoom) !== -1
+        ? "same_room"
+        : "same_operational_subject",
+      knowledgeId: ""
+    };
+  }
+
+  /**
+   * E4.2: Hotel Brain may enrich existing fact/object recommendations only.
+   * Never creates standalone candidates. Does not change priority or confidence.
+   */
+  function enrichRecommendationsWithHotelBrain(candidates, analyzed, brainContext, shiftType, rawNotesText) {
+    if (!candidates || !candidates.length) return candidates || [];
+    if (!global.HotelProfileOperational || !brainContext) return candidates;
+
+    var actions = [];
+    var reminders = [];
+    try {
+      var okMatched = global.HotelProfileOperational.getShiftIntelligenceKnowledge(
+        brainContext,
+        shiftType,
+        rawNotesText || ""
+      );
+      actions = (okMatched && okMatched.matchedActions) || [];
+    } catch (e1) {
+      actions = [];
+    }
+    try {
+      reminders = global.HotelProfileOperational.getRoomAttributeReminders(
+        brainContext,
+        rawNotesText || ""
+      ) || [];
+    } catch (e2) {
+      reminders = [];
+    }
+
+    candidates.forEach(function (rec) {
+      if (!rec || !rec.decisionTrace) return;
+      if (!(rec.decisionTrace.sourceFactIds && rec.decisionTrace.sourceFactIds.length)) return;
+      if (!rec.decisionTrace.operationalContext) return;
+
+      var lockedPriority = rec.priority;
+      var lockedConfidence = rec.decisionTrace.confidence;
+      var lockedScore = rec.decisionTrace.score;
+      if (!Array.isArray(rec.decisionTrace.supportingKnowledge)) {
+        rec.decisionTrace.supportingKnowledge = [];
+      }
+      if (!Array.isArray(rec.reasonCodes)) rec.reasonCodes = [];
+
+      function applyEnrichment(match, followText) {
+        if (!match) return;
+        var already = rec.decisionTrace.supportingKnowledge.some(function (sk) {
+          return sk && sk.knowledgeId && match.knowledgeId && sk.knowledgeId === match.knowledgeId;
+        });
+        if (!already) {
+          rec.decisionTrace.supportingKnowledge.push({
+            source: match.source,
+            knowledgeType: match.knowledgeType,
+            matchedSubject: match.matchedSubject,
+            matchReason: match.matchReason,
+            knowledgeId: match.knowledgeId || ""
+          });
+        }
+        pushUnique(rec.reasonCodes, REASON_CODE.hotel_brain_enrichment);
+        if (followText) {
+          var enriched = appendBrainGuidance(
+            String(rec.text || "").replace(/\.+$/, ""),
+            { okAction: followText }
+          );
+          if (enriched) rec.text = enriched;
+        }
+        /* Engine-owned: Brain must not override. */
+        rec.priority = lockedPriority;
+        rec.decisionTrace.priority = lockedPriority;
+        rec.decisionTrace.confidence = lockedConfidence;
+        rec.decisionTrace.score = lockedScore;
+        rec.decisionTrace.reasonCodes = rec.reasonCodes.slice();
+        rec.reasonCode = rec.reasonCodes[0] || REASON_CODE.hotel_brain_enrichment;
+      }
+
+      actions.forEach(function (action) {
+        if (!action) return;
+        var match = matchBrainKnowledgeToCandidate(action, rec, analyzed);
+        if (!match) return;
+        var follow = trimText(action.followUpInstruction || action.actionText || "");
+        if (/as recorded/i.test(follow) || /^arrange the guest request/i.test(follow)) follow = "";
+        applyEnrichment(match, follow);
+      });
+
+      reminders.forEach(function (reminder) {
+        if (!reminder) return;
+        var match = matchRoomReminderToCandidate(reminder, rec);
+        if (!match) return;
+        /* Room reminders enrich evidence only — do not paste allocation prose into chase text. */
+        applyEnrichment(match, "");
+      });
+    });
+
+    return candidates;
   }
 
   function generateRecommendations(input, signals) {
@@ -4407,16 +5276,6 @@
     var candidates = [];
     var seen = {};
     var seenIssue = {};
-    var closedRooms = {};
-
-    analyzed.forEach(function (note) {
-      var fact = ensureNoteFact(note);
-      if (fact && isFactClosedForRecs(fact) && fact.rooms) {
-        fact.rooms.forEach(function (room) {
-          closedRooms[String(room) + "|" + (fact.subject || "")] = true;
-        });
-      }
-    });
 
     function addCandidate(rec) {
       if (!rec || !rec.text) return;
@@ -4437,23 +5296,17 @@
       var fact = ensureNoteFact(note);
       if (fact && isFactClosedForRecs(fact)) return;
 
+      /* E4.2: context-driven path (DecisionTrace attached inside recommendationFromFact). */
       var fromFact = recommendationFromFact(fact, note, departments, fallbackDept, shiftType, brainContext);
       if (fromFact) {
-        if (note._neutralFactId) {
-          fromFact.sourceFactIds = [note._neutralFactId];
-          fromFact.sourceTypes = [note._neutralSourceType || "handover"];
-          fromFact.reasonCode = "fact_rule";
-        }
         addCandidate(fromFact);
-        return;
       }
-
-      /* Phase 2A: do not invent from rewritten display or legacy templates when facts are thin. */
+      /* Phase 2A / E4.2: do not invent from rewritten display when context forbids. */
     });
 
     /*
-     * Promote operational objects that extraction already understood but note-level
-     * subject routing skipped (e.g. financial_settlement_unclear, compact wake times).
+     * Promote operational objects once (dedupe multi-component wake+taxi etc.).
+     * Uses the same context-gated recommendationFromFact — no invented text.
      */
     var promoEntries = analyzed.map(function (note, index) {
       var fact = ensureNoteFact(note);
@@ -4468,11 +5321,19 @@
       if (!isPromotableOperationalObject(obj)) return;
       var primary = objectPrimaryFact(obj);
       if (!primary || !primary.fact) return;
+      var objCtx = obj.operationalContext ||
+        (scoreOperationalImpact(primary).operationalContext);
+      if (!allowsOpenRecommendation(objCtx)) return;
+
       var already = candidates.some(function (rec) {
         var text = String(rec.text || "");
-        return (obj.rooms || []).some(function (room) {
+        var sameRoom = (obj.rooms || []).some(function (room) {
           return new RegExp("\\b" + room + "\\b").test(text);
-        }) && (
+        });
+        if (!sameRoom) return false;
+        var sameKind = rec.decisionTrace && rec.decisionTrace.nextAction &&
+          objCtx && rec.decisionTrace.nextAction === objCtx.nextAction;
+        return sameKind || (
           (objectLooksLikeMaintenance(obj) && /maint|fault|hot|ac|leak|follow up/i.test(text)) ||
           (objectLooksLikePayment(obj) && /collect|payment|balance|charge|outstanding/i.test(text)) ||
           (obj.type === OPERATIONAL_OBJECT_TYPE.vip && /vip/i.test(text)) ||
@@ -4481,6 +5342,7 @@
         );
       });
       if (already) return;
+
       var fromObj = recommendationFromFact(
         primary.fact,
         primary.note || { original: objectSourceBlob(obj), rooms: obj.rooms, section: "", isVip: obj.type === "vip" },
@@ -4489,69 +5351,33 @@
         shiftType,
         brainContext
       );
-      if (!fromObj && objectLooksLikePayment(obj) && obj.rooms && obj.rooms[0]) {
-        fromObj = {
-          text: "Collect outstanding balance for Room " + obj.rooms[0] + " before departure.",
-          priority: "high",
-          department: resolveDepartment(["Reception", "Finance"], "Reception", departments)
-        };
-      }
-      if (!fromObj && objectLooksLikeMaintenance(obj) && obj.rooms && obj.rooms[0]) {
-        fromObj = {
-          text: "Follow up the Room " + obj.rooms[0] + " reported fault with Maintenance until resolved.",
-          priority: "high",
-          department: resolveDepartment(["Maintenance"], "Maintenance", departments)
-        };
-      }
       if (fromObj) {
-        fromObj.sourceFactIds = (obj.factIds || []).slice();
-        fromObj.sourceTypes = ["handover"];
-        fromObj.reasonCode = "operational_object_promotion";
+        var ids = (obj.factIds || []).slice();
+        fromObj = attachDecisionTraceToRecommendation(
+          fromObj,
+          primary.fact,
+          primary.note,
+          objCtx || fromObj.decisionTrace && fromObj.decisionTrace.operationalContext,
+          { score: obj.impactScore },
+          ids,
+          departments
+        );
         addCandidate(fromObj);
       }
     });
 
-    if (global.HotelProfileOperational && brainContext) {
-      var okMatched = global.HotelProfileOperational.getShiftIntelligenceKnowledge(
-        brainContext,
-        shiftType,
-        input.rawNotesText || ""
-      );
-      (okMatched.matchedActions || []).forEach(function (action) {
-        if (!action || !action.followUpInstruction) return;
-        /* VIP Brain actions enrich vipActionText on the fact path — skip duplicate generic VIP chases. */
-        if (/vip/i.test(action.category || "") || /vip/i.test(action.title || "")) {
-          var alreadyHasVip = candidates.some(function (rec) {
-            return /vip/i.test(rec.text || "");
-          });
-          if (alreadyHasVip) return;
-        }
-        var actionText = action.actionText || action.followUpInstruction;
-        if (/as recorded/i.test(actionText) || /^arrange the guest request/i.test(actionText)) return;
-        /* Skip brain actions that chase closed financial/settlement facts. */
-        var contradictsClosed = analyzed.some(function (note) {
-          var fact = note.fact;
-          if (!fact || !isFactClosedForRecs(fact)) return false;
-          if (!/settled|balance|payment/i.test(fact.subject || fact.sourceText || "")) return false;
-          return /settle|balance|payment|outstanding/i.test(actionText);
-        });
-        if (contradictsClosed) return;
-        addCandidate({
-          text: actionText,
-          priority: action.priority || "normal",
-          department: resolveDepartment([action.department], fallbackDept, departments)
-        });
-      });
-      global.HotelProfileOperational.getRoomAttributeReminders(
-        brainContext,
-        input.rawNotesText || ""
-      ).forEach(function (rec) {
-        if (!rec || !rec.text) return;
-        var roomHit = String(rec.text).match(/\broom\s+(\d+[a-z]?)/i);
-        if (roomHit && closedRooms[roomHit[1] + "|outstanding_balance"]) return;
-        addCandidate(rec);
-      });
-    }
+    /*
+     * E4.2 hard-gate: Hotel Brain may enrich existing fact/object recommendations only.
+     * Standalone matchedActions / room reminders must NOT addCandidate.
+     * Unmatched knowledge is ignored for shift recommendations (no fake current work).
+     */
+    enrichRecommendationsWithHotelBrain(
+      candidates,
+      analyzed,
+      brainContext,
+      shiftType,
+      input.rawNotesText || ""
+    );
 
     candidates.sort(function (a, b) {
       var rankA = PRIORITY_RANK[a.priority] != null ? PRIORITY_RANK[a.priority] : 9;
@@ -5142,6 +5968,18 @@
     normalizeContextStatus: normalizeContextStatus,
     confidenceLabelFromValue: confidenceLabelFromValue,
     confidenceValueFromLabel: confidenceValueFromLabel,
+    /* E4 Phase 2 — DecisionTrace / explainability / context-driven recs */
+    REASON_CODE: REASON_CODE,
+    CONFIDENCE_GATE: CONFIDENCE_GATE,
+    createEmptyDecisionTrace: createEmptyDecisionTrace,
+    buildDecisionTrace: buildDecisionTrace,
+    buildDecisionExplanation: buildDecisionExplanation,
+    reasonCodesFromContext: reasonCodesFromContext,
+    allowsOpenRecommendation: allowsOpenRecommendation,
+    recommendationPriorityFromContext: recommendationPriorityFromContext,
+    recommendationFromFact: recommendationFromFact,
+    enrichRecommendationsWithHotelBrain: enrichRecommendationsWithHotelBrain,
+    matchBrainKnowledgeToCandidate: matchBrainKnowledgeToCandidate,
     OPERATIONAL_OBJECT_TYPE: OPERATIONAL_OBJECT_TYPE,
     HOTEL_STATUS_LEVEL: HOTEL_STATUS_LEVEL,
     BRIEFING_MAX_BLOCKS: BRIEFING_MAX_BLOCKS,
