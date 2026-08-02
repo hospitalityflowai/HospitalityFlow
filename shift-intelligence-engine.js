@@ -17,7 +17,7 @@
  * - Modules must NOT create new independent recommendation systems.
  *
  * ---------------------------------------------------------------------------
- * Intended engine pipeline (E1 + E4 Phase 1)
+ * Intended engine pipeline (E1–E4)
  * ---------------------------------------------------------------------------
  *   adapt input
  *   → normalise facts
@@ -25,19 +25,18 @@
  *   → determine lifecycle
  *   → deduplicate / link / group
  *   → enrich OperationalContext
- *   → impact / risk scoring (consumes OperationalContext)
+ *   → cross-shift OperationalMemory (enrich continuity only)
+ *   → impact / risk scoring (consumes current OperationalContext)
  *   → rank
- *   → recommend
+ *   → recommend + DecisionTrace
  *   → writing (presentation only)
  *   → return IntelligenceResult
  *
- * Wired today (safely): adapt, normalise (neutral facts), lifecycle flags,
- * M4 cross-dedupe when callers use it, OperationalContext enrichment,
- * rank (incl. operational impact), recommend, result shape, operational
- * object grouping, snapshot extract.
- * Not moved yet: Handover section classification, Writing same-source merge,
- * full EntityReference graphs, conflict detection.
- * E4.3: cross-shift OperationalMemory derived from prior-shift evidence (no new table).
+ * Wired today: adapt, normalise, lifecycle, M4 dedupe (callers), OperationalContext,
+ * OperationalMemory (derive-only), score/rank, context-driven recommend + DecisionTrace,
+ * Hotel Brain enrich-only, object grouping, briefing/status/alert models.
+ * Retained outside engine authority: Handover section placement (parity-checked),
+ * Writing same-source merge / fact-field extraction, full EntityReference graphs.
  *
  * Phase 16B — Thin shared intelligence foundation (runtime neutral facts).
  * Phase M4 — Maintenance → Handover fact merge (callers).
@@ -6821,13 +6820,38 @@
     var signals = buildSignals(input);
     var recommendations = generateRecommendations(input, signals);
     var checklist = generateChecklist(input, signals, recommendations);
+    /* GI-1: read-only temporary guest observations — no profile mutation / no recs. */
+    var guestObservations = [];
+    var guestObservationRejections = [];
+    if (global.GuestIntelligence &&
+        typeof global.GuestIntelligence.extractGuestObservations === "function") {
+      try {
+        var giResult = global.GuestIntelligence.extractGuestObservations({
+          facts: facts || [],
+          analyzedNotes: analyzed,
+          memories: (memoryIndex && memoryIndex.memories) || [],
+          operationalMemories: (memoryIndex && memoryIndex.memories) || [],
+          workspaceId: input.workspaceId || "",
+          reportId: input.currentReportId || input.reportId || "",
+          observedAt: input.currentOccurredAt || input.memoryNow || "",
+          isDemoData: !!(input.isDemoData || input.workspaceId === "demo-workspace")
+        });
+        guestObservations = (giResult && giResult.observations) || [];
+        guestObservationRejections = (giResult && giResult.rejections) || [];
+      } catch (giErr) {
+        guestObservations = [];
+        guestObservationRejections = [];
+      }
+    }
     return {
       engineVersion: ENGINE_VERSION,
       signals: signals,
       recommendations: recommendations,
       checklist: checklist,
       facts: facts || [],
-      operationalMemories: (memoryIndex && memoryIndex.memories) || []
+      operationalMemories: (memoryIndex && memoryIndex.memories) || [],
+      guestObservations: guestObservations,
+      guestObservationRejections: guestObservationRejections
     };
   }
 

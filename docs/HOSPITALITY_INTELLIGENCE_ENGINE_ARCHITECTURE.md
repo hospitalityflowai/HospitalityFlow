@@ -603,14 +603,14 @@ Helpers: `buildOperationalContext(fact, supportingContext)`, `createEmptyOperati
 1. ~~Surface selected OperationalContext fields into recommendation `reasonCode` / explainability~~ → **Done (E4.2)**
 2. ~~Route `recommendationFromFact` department/priority from context~~ → **Done (E4.2)**
 3. Optional quiet-shift suppress alignment with actionable open facts → still later
-4. Still no Guest Intelligence module; no cross-shift memory; no shared fact table → holds
+4. Cross-shift memory → **Done in E4 Phase 3 (§7F)**; still no Guest Intelligence module; no shared fact table
 
 ---
 
 ## 7E. E4 Phase 2 implementation record (Explainability & context-driven recommendations)
 
 **Status:** Implemented.  
-**Behaviour / DB:** No UI redesign. No migrations. No Guest Intelligence. No cross-shift memory. DecisionTrace is runtime-only (not persisted).
+**Behaviour / DB:** No UI redesign. No migrations. No Guest Intelligence. Cross-shift memory was out of scope for Phase 2 and is recorded in **§7F (Done)**. DecisionTrace is runtime-only (not persisted).
 
 ### Purpose
 
@@ -698,7 +698,7 @@ Confidence remains **evidence quality**, not severity.
 ### Out of scope (E4 Phase 2)
 
 - Guest Intelligence
-- Cross-shift memory / historical patterns
+- Cross-shift memory / historical patterns *(delivered later in §7F; long-term pattern recognition still out of scope)*
 - Predictive maintenance
 - Database persistence of DecisionTrace
 - User-facing “Why?” UI

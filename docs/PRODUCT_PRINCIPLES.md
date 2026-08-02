@@ -42,6 +42,8 @@ Individual modules present the conclusions.
 
 Never duplicate intelligence.
 
+Cross-shift continuity (recent OperationalMemory) is engine-owned. Guest Intelligence profiles and long-term preference learning are separate future work — not a second recommendation engine.
+
 ### 4. Guest impact comes first
 
 Prioritise guests before internal administration whenever operationally appropriate.

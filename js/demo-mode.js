@@ -197,6 +197,11 @@
     activeHandover = null;
     activeBrain = null;
     activePriorShiftHistory = null;
+    /* GI-1: Demo guest observations are session-only — never persisted. */
+    if (global.GuestIntelligence &&
+        typeof global.GuestIntelligence.clearDemoObservations === "function") {
+      global.GuestIntelligence.clearDemoObservations();
+    }
   }
 
   function getDemoIssues() {
