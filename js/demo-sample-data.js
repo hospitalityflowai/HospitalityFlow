@@ -764,6 +764,43 @@
   }
 
   /**
+   * Isolated Demo prior-shift history for E4.3 OperationalMemory.
+   * Never read from production/test workspaces. Reset with the Demo pack.
+   */
+  function buildPriorShiftHistory(pack) {
+    pack = pack || buildPack();
+    var day = pack.date || "2026-08-01";
+    return [
+      {
+        reportId: "demo-history-am-" + PACK_ID,
+        workspaceId: "demo-workspace",
+        shiftCode: "am",
+        shift: "AM",
+        handoverDate: day,
+        occurredAt: day + "T10:15:00.000Z",
+        sourceNotes: "Room 24 AC not working. Guest in-house. Maintenance informed.",
+        originalNotes: "Room 24 AC not working. Guest in-house. Maintenance informed.",
+        isDemoData: true,
+        memorySource: "demo",
+        sampleDataId: PACK_ID + ":history:am"
+      },
+      {
+        reportId: "demo-history-pm-" + PACK_ID,
+        workspaceId: "demo-workspace",
+        shiftCode: "pm",
+        shift: "PM",
+        handoverDate: day,
+        occurredAt: day + "T18:40:00.000Z",
+        sourceNotes: "Room 24 AC still unresolved. Waiting for engineer. Fan provided.",
+        originalNotes: "Room 24 AC still unresolved. Waiting for engineer. Fan provided.",
+        isDemoData: true,
+        memorySource: "demo",
+        sampleDataId: PACK_ID + ":history:pm"
+      }
+    ];
+  }
+
+  /**
    * Initial Demo Mode form state only.
    * Prefills messy notes + snapshot — never restores organised/generated output.
    * Visitors must click Generate to run the shared Intelligence Engine.
@@ -914,6 +951,7 @@
     getRoom: getRoom,
     buildPack: buildPack,
     buildHandoverRecord: buildHandoverRecord,
+    buildPriorShiftHistory: buildPriorShiftHistory,
     buildDraftPayload: buildDraftPayload,
     buildMaintenanceIssues: buildMaintenanceIssues,
     buildGuests: buildGuests,

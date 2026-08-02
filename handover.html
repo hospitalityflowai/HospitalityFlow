@@ -5971,7 +5971,69 @@
        */
       var lastMaintenanceFacts = [];
 
+      function resolveIntelligenceWorkspaceId() {
+        /* Prefer store sync context (set only after auth + platform access + membership).
+           Do not invent a workspace from raw localStorage when sync/auth context is absent. */
+        if (window.HFHandoverStore && typeof window.HFHandoverStore.getSyncStatus === "function") {
+          var status = window.HFHandoverStore.getSyncStatus();
+          if (status && status.workspaceId) return String(status.workspaceId);
+        }
+        if (window.HFWorkspace && typeof window.HFWorkspace.getCachedWorkspace === "function") {
+          var ws = window.HFWorkspace.getCachedWorkspace();
+          if (ws && ws.hotel && ws.hotel.id) return String(ws.hotel.id);
+        }
+        return "";
+      }
+
+      function collectPriorShiftHistoryForIntelligence() {
+        /* Demo: isolated sample history only — never production/test workspace reads. */
+        if (isDemoModeActive()) {
+          if (window.HFDemoMode && typeof window.HFDemoMode.getDemoPriorShiftHistory === "function") {
+            return window.HFDemoMode.getDemoPriorShiftHistory() || [];
+          }
+          return [];
+        }
+        var workspaceId = resolveIntelligenceWorkspaceId();
+        if (!workspaceId) return [];
+        var saved = [];
+        try {
+          if (window.HFHandoverStore && typeof window.HFHandoverStore.getSavedHandovers === "function") {
+            saved = window.HFHandoverStore.getSavedHandovers() || [];
+          }
+        } catch (err) {
+          saved = [];
+        }
+        var excludeId = editingSavedHandoverId
+          ? String(editingSavedHandoverId)
+          : "";
+        /* Bound at the call site; engine also applies ordering + lookback + dedupe. */
+        return (saved || []).slice(0, 12).map(function (rec) {
+          if (!rec || typeof rec !== "object") return null;
+          if (String(rec.status || "").toLowerCase() === "draft") return null;
+          var reportId = String(rec.id || rec.cloudId || "");
+          if (excludeId && reportId && reportId === excludeId) return null;
+          var notes = String(rec.originalNotes || "").replace(/\s+/g, " ").trim();
+          if (!notes) return null;
+          return {
+            reportId: reportId,
+            workspaceId: workspaceId,
+            shiftCode: rec.shift || "",
+            handoverDate: rec.date || "",
+            occurredAt: "",
+            createdAt: rec.timestamp || rec.createdAt || "",
+            updatedAt: rec.updatedAt || "",
+            sourceNotes: notes,
+            originalNotes: notes,
+            status: rec.status || "saved",
+            memorySource: "handover_history",
+            isDemoData: false
+          };
+        }).filter(Boolean);
+      }
+
       function buildIntelligenceInput(classified, rawNotesText) {
+        var demoActive = isDemoModeActive();
+        var workspaceId = demoActive ? "demo-workspace" : resolveIntelligenceWorkspaceId();
         return {
           shiftCode: selectedShift,
           shiftDisplayName: getShiftDisplayName(selectedShift),
@@ -5982,7 +6044,10 @@
           departments: configuredDepartments,
           selectedDepartment: getDefaultDepartment(),
           hotelSnapshot: getCommittedSnapshot(),
-          applyTextPreferences: applyRecommendationPreferences
+          applyTextPreferences: applyRecommendationPreferences,
+          workspaceId: workspaceId,
+          currentReportId: editingSavedHandoverId ? String(editingSavedHandoverId) : "",
+          priorShiftHistory: collectPriorShiftHistoryForIntelligence()
         };
       }
 

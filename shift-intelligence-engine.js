@@ -36,13 +36,15 @@
  * rank (incl. operational impact), recommend, result shape, operational
  * object grouping, snapshot extract.
  * Not moved yet: Handover section classification, Writing same-source merge,
- * full EntityReference graphs, conflict detection, cross-shift memory.
+ * full EntityReference graphs, conflict detection.
+ * E4.3: cross-shift OperationalMemory derived from prior-shift evidence (no new table).
  *
  * Phase 16B — Thin shared intelligence foundation (runtime neutral facts).
  * Phase M4 — Maintenance → Handover fact merge (callers).
  * Phase E1 — Canonical contracts + compatibility helpers (no behaviour change).
  * Phase E4.1 — Canonical OperationalContext enrichment (internal reasoning).
  * Phase E4.2 — DecisionTrace + context-driven recommendations / explainability.
+ * Phase E4.3 — Cross-shift OperationalMemory (read-only derivation over history).
  *
  * @typedef {Object} EntityReference
  * @property {string} type - "room" | "guest" | "department" | "area" | string
@@ -80,6 +82,25 @@
  * @property {string} nextAction
  * @property {string[]} reasonCodes
  * @property {Object} evidence - Structured entities only (room, status, amounts, timing)
+ * @property {number} confidence
+ * @property {Object[]} [supportingKnowledge]
+ * @property {Object} [memory] - E4.3 continuity snapshot (memoryId, lifecycleStatus, …)
+ *
+ * @typedef {Object} OperationalMemory
+ * @property {string} memoryId
+ * @property {string} workspaceId
+ * @property {Object} entityKeys - room, guest, family, amount, faultType, maintenanceIssueId
+ * @property {string} subject
+ * @property {string} category
+ * @property {string} firstSeenAt
+ * @property {string} lastSeenAt
+ * @property {number} shiftCount
+ * @property {string[]} sourceReportIds
+ * @property {string[]} sourceFactIds
+ * @property {string} lifecycleStatus - MEMORY_LIFECYCLE value
+ * @property {string} recurrenceState - RECURRENCE_STATE value (Phase 3: first_seen | repeated_cross_shift)
+ * @property {OperationalContext|null} latestContext
+ * @property {string[]} continuityReasonCodes
  * @property {number} confidence
  *
  * @typedef {Object} OperationalFact
@@ -209,6 +230,7 @@
     { id: "lifecycle", label: "determine lifecycle", status: "wired" },
     { id: "dedupe_link", label: "deduplicate/link", status: "partial" },
     { id: "enrich_context", label: "enrich OperationalContext", status: "wired" },
+    { id: "memory", label: "cross-shift OperationalMemory", status: "wired" },
     { id: "rank", label: "rank (consumes OperationalContext)", status: "wired" },
     { id: "recommend", label: "recommend (context-driven + DecisionTrace)", status: "wired" },
     { id: "explain", label: "build DecisionTrace / explanation", status: "wired" },
@@ -1480,8 +1502,24 @@
     return almostEmpty || vague || (noSubstance && src.split(/\s+/).filter(Boolean).length <= 4);
   }
 
+  function isMaintenanceAppointmentConfirmation(src, objectInfo) {
+    var text = String(src || "");
+    var type = "";
+    if (typeof objectInfo === "string") type = objectInfo;
+    else if (objectInfo && objectInfo.type) type = objectInfo.type;
+    if (type !== OPERATIONAL_OBJECT_TYPE.maintenance && type !== "maintenance") return false;
+    if (/\b(resolved|fixed|completed|working\s+again|guest\s+confirmed\s+quiet)\b/i.test(text)) {
+      return false;
+    }
+    return /\bconfirm(?:ed)?\s+attendance\b|\battendance\s+tomorrow\b|\beta\b.*\b(engineer|supplier|contractor)\b|\b(engineer|supplier)\b.*\beta\b/i.test(text);
+  }
+
   function inferContextStatus(fact, note, src, objectInfo, closed) {
     var rawStatus = trimText(fact && fact.status || "").toLowerCase().replace(/-/g, "_");
+    /* Supplier/engineer attendance confirmation is progress, not issue resolution. */
+    if (rawStatus === "confirmed" && isMaintenanceAppointmentConfirmation(src, objectInfo)) {
+      return CONTEXT_STATUS.in_progress;
+    }
     if (rawStatus === "confirmed") return CONTEXT_STATUS.confirmed;
     if (rawStatus === "done" || rawStatus === "resolved" || rawStatus === "completed" || rawStatus === "closed") {
       return CONTEXT_STATUS.completed;
@@ -2230,8 +2268,55 @@
     arrangement_confirmed: "arrangement_confirmed",
     late_checkout_arrangement: "late_checkout_arrangement",
     context_driven: "context_driven",
-    hotel_brain_enrichment: "hotel_brain_enrichment"
+    hotel_brain_enrichment: "hotel_brain_enrichment",
+    /* E4.3 continuity */
+    same_room_same_issue: "same_room_same_issue",
+    same_guest_same_request: "same_guest_same_request",
+    same_payment_open: "same_payment_open",
+    same_maintenance_issue: "same_maintenance_issue",
+    same_timed_service: "same_timed_service",
+    explicit_continuation: "explicit_continuation",
+    unresolved_previous_shift: "unresolved_previous_shift",
+    status_progressed: "status_progressed",
+    resolved_after_previous_shift: "resolved_after_previous_shift",
+    reopened_after_resolution: "reopened_after_resolution",
+    weak_continuity_evidence: "weak_continuity_evidence",
+    cross_shift_escalated: "cross_shift_escalated"
   };
+
+  /**
+   * E4.3 cross-shift lifecycle (controlled values).
+   */
+  var MEMORY_LIFECYCLE = {
+    new: "new",
+    continuing: "continuing",
+    escalated: "escalated",
+    resolved: "resolved",
+    reopened: "reopened",
+    uncertain: "uncertain"
+  };
+
+  /**
+   * E4.3 recurrence. Phase 3 implements first_seen + repeated_cross_shift only.
+   * repeated_same_shift / recurring_history are reserved — do not claim yet.
+   */
+  var RECURRENCE_STATE = {
+    first_seen: "first_seen",
+    repeated_same_shift: "repeated_same_shift",
+    repeated_cross_shift: "repeated_cross_shift",
+    recurring_history: "recurring_history"
+  };
+
+  var MEMORY_MATCH_MIN = 0.7;
+  var MEMORY_ESCALATE_MIN_SHIFTS = 3;
+  var MEMORY_ESCALATE_MIN_CONFIDENCE = 0.75;
+  /* Phase 3 v1 history window — bounded derivation, not long-term patterns. */
+  var MEMORY_HISTORY_MAX_REPORTS = 6;
+  var MEMORY_HISTORY_MAX_LOOKBACK_MS = 3 * 24 * 60 * 60 * 1000; /* 72h / ~3 calendar days */
+  var MEMORY_HISTORY_MAX_EVIDENCE_PER_REPORT = 40;
+  var MEMORY_HISTORY_MAX_EVIDENCE_TOTAL = 120;
+  var MEMORY_CONTENT_MATCH_MAX_GAP_MS = 3 * 24 * 60 * 60 * 1000;
+  var MEMORY_SHIFT_ORDER = { am: 0, pm: 1, night: 2 };
 
   /**
    * Confidence gates for open recommendations (evidence quality, not severity).
@@ -2258,7 +2343,35 @@
       reasonCodes: [],
       evidence: {},
       confidence: 0.5,
-      supportingKnowledge: []
+      supportingKnowledge: [],
+      memory: null
+    };
+  }
+
+  function createEmptyOperationalMemory() {
+    return {
+      memoryId: "",
+      workspaceId: "",
+      entityKeys: {
+        room: "",
+        guest: "",
+        family: "",
+        amount: null,
+        faultType: "",
+        maintenanceIssueId: ""
+      },
+      subject: "",
+      category: "",
+      firstSeenAt: "",
+      lastSeenAt: "",
+      shiftCount: 1,
+      sourceReportIds: [],
+      sourceFactIds: [],
+      lifecycleStatus: MEMORY_LIFECYCLE.new,
+      recurrenceState: RECURRENCE_STATE.first_seen,
+      latestContext: null,
+      continuityReasonCodes: [],
+      confidence: 0.5
     };
   }
 
@@ -2376,7 +2489,28 @@
         : (context && typeof context.confidence === "number" ? context.confidence : 0.5),
       supportingKnowledge: Array.isArray(parts.supportingKnowledge)
         ? parts.supportingKnowledge.slice()
-        : []
+        : [],
+      memory: parts.memory && typeof parts.memory === "object"
+        ? summarizeMemoryForTrace(parts.memory)
+        : null
+    };
+  }
+
+  function summarizeMemoryForTrace(memory) {
+    if (!memory || typeof memory !== "object") return null;
+    return {
+      memoryId: trimText(memory.memoryId || ""),
+      lifecycleStatus: trimText(memory.lifecycleStatus || ""),
+      shiftCount: typeof memory.shiftCount === "number" ? memory.shiftCount : 1,
+      firstSeenAt: trimText(memory.firstSeenAt || ""),
+      lastSeenAt: trimText(memory.lastSeenAt || ""),
+      continuityReasonCodes: Array.isArray(memory.continuityReasonCodes)
+        ? memory.continuityReasonCodes.slice()
+        : [],
+      recurrenceState: trimText(memory.recurrenceState || ""),
+      confidence: typeof memory.confidence === "number" ? memory.confidence : 0.5,
+      sourceReportIds: Array.isArray(memory.sourceReportIds) ? memory.sourceReportIds.slice() : [],
+      historicalFactIds: Array.isArray(memory.historicalFactIds) ? memory.historicalFactIds.slice() : []
     };
   }
 
@@ -2409,7 +2543,8 @@
       departments: (ctx.departments || []).slice(),
       supportingKnowledge: Array.isArray(trace.supportingKnowledge)
         ? trace.supportingKnowledge.slice()
-        : []
+        : [],
+      memory: trace.memory ? summarizeMemoryForTrace(trace.memory) : null
     };
   }
 
@@ -4452,7 +4587,17 @@
   }
 
   function isFactClosedForRecs(fact) {
-    return isOperationalFactClosed(fact);
+    if (!fact) return true;
+    if (!isOperationalFactClosed(fact)) return false;
+    var status = String(fact.status || "").toLowerCase().replace(/-/g, "_");
+    var src = String(fact.sourceText || "");
+    if (
+      status === "confirmed" &&
+      isMaintenanceAppointmentConfirmation(src, { type: OPERATIONAL_OBJECT_TYPE.maintenance })
+    ) {
+      return false;
+    }
+    return true;
   }
 
   function roomRefFromFact(fact, note) {
@@ -5042,6 +5187,7 @@
     }
     if (
       subject === "twin_setup" || subject === "guest_request" || subject === "room_move" ||
+      subject === "complaint" || subject === "noise_complaint" ||
       next === NEXT_ACTION_KIND.guest_follow_up ||
       obj === OPERATIONAL_OBJECT_TYPE.guest_request
     ) {
@@ -5076,6 +5222,798 @@
       if (id && rooms.indexOf(id) === -1) rooms.push(id);
     }
     return rooms;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /*  E4 Phase 3 — Cross-shift OperationalMemory (derive-only)          */
+  /* ------------------------------------------------------------------ */
+
+  function normalizePriorShiftHistoryEntry(entry) {
+    entry = entry || {};
+    var status = trimText(entry.status || "").toLowerCase();
+    var handoverDate = trimText(entry.handoverDate || entry.date || "");
+    var shiftCode = normalizeShiftType(entry.shiftCode || entry.shift || "");
+    var createdAt = trimText(entry.createdAt || entry.timestamp || "");
+    var updatedAt = trimText(entry.updatedAt || "");
+    var occurredAt = trimText(entry.occurredAt || "");
+    if (!occurredAt) {
+      /* Prefer operational date+shift over save/edit timestamps. */
+      if (handoverDate) {
+        var hour = shiftCode === "am" ? "10" : (shiftCode === "night" ? "23" : "18");
+        occurredAt = handoverDate + "T" + hour + ":00:00.000Z";
+      } else {
+        occurredAt = createdAt || updatedAt;
+      }
+    }
+    return {
+      reportId: trimText(entry.reportId || entry.id || entry.cloudId || ""),
+      workspaceId: trimText(entry.workspaceId || ""),
+      shiftCode: shiftCode,
+      handoverDate: handoverDate,
+      occurredAt: occurredAt,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+      sourceNotes: trimText(entry.sourceNotes || entry.originalNotes || entry.rawNotesText || ""),
+      facts: Array.isArray(entry.facts) ? entry.facts : null,
+      status: status,
+      isDemoData: !!entry.isDemoData,
+      memorySource: trimText(entry.memorySource || (entry.isDemoData ? "demo" : "handover_history"))
+    };
+  }
+
+  function operationalShiftKey(entry) {
+    entry = entry || {};
+    var day = trimText(entry.handoverDate || "").slice(0, 10);
+    if (!day && entry.occurredAt) day = String(entry.occurredAt).slice(0, 10);
+    return day + "|" + normalizeShiftType(entry.shiftCode || "");
+  }
+
+  function parseTimeMs(value) {
+    if (!value) return NaN;
+    var ms = Date.parse(String(value));
+    return isNaN(ms) ? NaN : ms;
+  }
+
+  function comparePriorShiftOperationalOrder(a, b) {
+    var da = trimText(a.handoverDate || "").slice(0, 10);
+    var db = trimText(b.handoverDate || "").slice(0, 10);
+    if (da && db && da !== db) return da < db ? -1 : 1;
+    var sa = MEMORY_SHIFT_ORDER[normalizeShiftType(a.shiftCode)] ;
+    var sb = MEMORY_SHIFT_ORDER[normalizeShiftType(b.shiftCode)];
+    if (sa == null) sa = 9;
+    if (sb == null) sb = 9;
+    if (sa !== sb) return sa - sb;
+    var ca = parseTimeMs(a.createdAt || a.occurredAt);
+    var cb = parseTimeMs(b.createdAt || b.occurredAt);
+    if (!isNaN(ca) && !isNaN(cb) && ca !== cb) return ca - cb;
+    return String(a.reportId || "").localeCompare(String(b.reportId || ""));
+  }
+
+  /**
+   * Bound, order, and sanitise prior-shift history before evidence extraction.
+   * Operational order: handoverDate → AM/PM/Night → created_at tie-break.
+   * Does not use updated_at as shift order (late edits must not reorder history).
+   */
+  function preparePriorShiftHistory(history, options) {
+    options = options || {};
+    var workspaceId = trimText(options.workspaceId || "");
+    var currentReportId = trimText(options.currentReportId || "");
+    var nowMs = parseTimeMs(options.now || "") || Date.now();
+    var maxReports = typeof options.maxReports === "number"
+      ? options.maxReports
+      : MEMORY_HISTORY_MAX_REPORTS;
+    var lookbackMs = typeof options.lookbackMs === "number"
+      ? options.lookbackMs
+      : MEMORY_HISTORY_MAX_LOOKBACK_MS;
+
+    var prepared = [];
+    var seenReportIds = {};
+    var seenShiftNotes = {};
+
+    (history || []).forEach(function (raw) {
+      if (!raw || typeof raw !== "object") return;
+      var entry = normalizePriorShiftHistoryEntry(raw);
+      if (entry.status === "draft") return;
+      if (currentReportId && entry.reportId && entry.reportId === currentReportId) return;
+      if (workspaceId) {
+        if (!entry.workspaceId || entry.workspaceId !== workspaceId) return;
+      }
+      if (!entry.sourceNotes && !(entry.facts && entry.facts.length)) return;
+      if (entry.reportId) {
+        if (seenReportIds[entry.reportId]) return;
+        seenReportIds[entry.reportId] = true;
+      }
+      var noteSig = operationalShiftKey(entry) + "::" +
+        String(entry.sourceNotes || "").toLowerCase().replace(/\s+/g, " ").slice(0, 160);
+      if (seenShiftNotes[noteSig]) return;
+      seenShiftNotes[noteSig] = true;
+
+      var occurredMs = parseTimeMs(entry.occurredAt);
+      if (!isNaN(occurredMs) && (nowMs - occurredMs) > lookbackMs) return;
+
+      prepared.push(entry);
+    });
+
+    prepared.sort(comparePriorShiftOperationalOrder);
+    if (prepared.length > maxReports) {
+      prepared = prepared.slice(prepared.length - maxReports);
+    }
+    return prepared;
+  }
+
+  function maintenanceIssueIdFromFact(fact, note) {
+    if (fact && fact.sourceType === "maintenance" && trimText(fact.sourceId)) {
+      return trimText(fact.sourceId);
+    }
+    if (note && (note.importedFromMaintenance || note._neutralSourceType === "maintenance")) {
+      return trimText(note.sourceId || note.id || "");
+    }
+    return "";
+  }
+
+  function entityKeysFromFact(fact, note) {
+    fact = fact || {};
+    note = note || {};
+    var ctx = buildOperationalContext(fact, {
+      note: note,
+      section: note.section || fact.sectionHint || "",
+      isVip: !!note.isVip
+    });
+    var family = operationalFamilyFromContext(ctx, fact);
+    if (!family) {
+      var subject = normalizeSubjectToken(fact.subject || fact.subjectType || ctx.subject || "");
+      if (subject === "complaint" || /noise|complaint/i.test(fact.sourceText || note.original || "")) {
+        family = "guest_request";
+      }
+    }
+    var rooms = factRoomsList(fact, note);
+    var amount = extractMoneyAmount(fact, note);
+    return {
+      room: rooms[0] || "",
+      rooms: rooms.slice(),
+      guest: trimText(factGuestName(fact, note) || ""),
+      family: family,
+      amount: amount,
+      faultType: trimText(fact.faultType || ""),
+      maintenanceIssueId: maintenanceIssueIdFromFact(fact, note),
+      subject: ctx.subject || normalizeSubjectToken(fact.subject || fact.subjectType || ""),
+      category: ctx.category || "",
+      status: ctx.currentStatus || normalizeContextStatus(fact.status || "")
+    };
+  }
+
+  function buildMemoryId(workspaceId, keys) {
+    keys = keys || {};
+    var parts = [
+      "mem",
+      trimText(workspaceId) || "local",
+      keys.maintenanceIssueId || "",
+      keys.family || "unknown",
+      keys.room || "",
+      String(keys.guest || "").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "").slice(0, 32),
+      keys.amount != null ? String(keys.amount) : "",
+      String(keys.faultType || "").toLowerCase().replace(/\s+/g, "_").slice(0, 24)
+    ];
+    return parts.filter(function (p, i) { return i < 2 || !!p; }).join(":");
+  }
+
+  function hasExplicitContinuationLanguage(text) {
+    return /\b(still|previous\s+shift|carried\s+over|from\s+earlier|remains?\s+unresolved|same\s+issue|continues?\b|waiting\s+for\s+(?:the\s+)?(?:same\s+)?(?:engineer|supplier|parts))\b/i.test(
+      String(text || "")
+    );
+  }
+
+  function guestsMatch(a, b) {
+    var ga = String(a || "").toLowerCase().replace(/^(mr|mrs|ms|miss)\s+/, "").trim();
+    var gb = String(b || "").toLowerCase().replace(/^(mr|mrs|ms|miss)\s+/, "").trim();
+    if (!ga || !gb) return false;
+    if (ga === gb) return true;
+    var ta = ga.split(/\s+/).pop();
+    var tb = gb.split(/\s+/).pop();
+    return !!(ta && tb && ta === tb && ta.length > 2);
+  }
+
+  function amountsMatch(a, b) {
+    if (a == null || b == null) return false;
+    return Number(a) === Number(b);
+  }
+
+  function faultTypesCompatible(a, b) {
+    var fa = String(a || "").toLowerCase().trim();
+    var fb = String(b || "").toLowerCase().trim();
+    if (!fa || !fb) return true;
+    if (fa === fb) return true;
+    if ((/ac|air\s*con|hvac/.test(fa) && /ac|air\s*con|hvac/.test(fb))) return true;
+    if ((/boiler|heating|hot\s*water/.test(fa) && /boiler|heating|hot\s*water/.test(fb))) return true;
+    if ((/leak|shower/.test(fa) && /leak|shower/.test(fb))) return true;
+    return false;
+  }
+
+  /**
+   * Strong entity match between current keys and prior evidence.
+   * Broad family/keyword alone is never enough.
+   */
+  function matchContinuityEvidence(currentKeys, priorKeys, currentText, priorClosed) {
+    currentKeys = currentKeys || {};
+    priorKeys = priorKeys || {};
+    var reasons = [];
+    var confidence = 0;
+
+    if (
+      currentKeys.maintenanceIssueId &&
+      priorKeys.maintenanceIssueId &&
+      currentKeys.maintenanceIssueId === priorKeys.maintenanceIssueId
+    ) {
+      pushUnique(reasons, REASON_CODE.same_maintenance_issue);
+      confidence = Math.max(confidence, 0.95);
+    }
+
+    var sameRoom = !!(currentKeys.room && priorKeys.room && currentKeys.room === priorKeys.room);
+    var sameFamily = !!(currentKeys.family && priorKeys.family && currentKeys.family === priorKeys.family);
+
+    if (sameRoom && sameFamily && currentKeys.family === "maintenance") {
+      if (!faultTypesCompatible(currentKeys.faultType, priorKeys.faultType)) {
+        return null;
+      }
+      pushUnique(reasons, REASON_CODE.same_room_same_issue);
+      confidence = Math.max(confidence, 0.88);
+    } else if (sameRoom && sameFamily && currentKeys.family === "payment") {
+      if (amountsMatch(currentKeys.amount, priorKeys.amount)) {
+        pushUnique(reasons, REASON_CODE.same_payment_open);
+        confidence = Math.max(confidence, 0.9);
+      } else if (currentKeys.amount == null || priorKeys.amount == null) {
+        /* Same room open balance — amount may be omitted on a later shift note. */
+        pushUnique(reasons, REASON_CODE.same_payment_open);
+        confidence = Math.max(confidence, 0.8);
+      } else {
+        /* Amount changed on the same room folio — keep continuity; current amount owns context. */
+        pushUnique(reasons, REASON_CODE.same_payment_open);
+        confidence = Math.max(confidence, 0.78);
+      }
+    } else if (sameRoom && sameFamily && currentKeys.family === "timed") {
+      pushUnique(reasons, REASON_CODE.same_timed_service);
+      confidence = Math.max(confidence, 0.86);
+    } else if (sameRoom && sameFamily &&
+        (currentKeys.family === "vip" || currentKeys.family === "guest_request" ||
+         currentKeys.family === "late_checkout")) {
+      if (currentKeys.guest && priorKeys.guest && !guestsMatch(currentKeys.guest, priorKeys.guest)) {
+        return null; /* guest name collision on same room/family — refuse */
+      }
+      if (guestsMatch(currentKeys.guest, priorKeys.guest)) {
+        pushUnique(reasons, REASON_CODE.same_guest_same_request);
+        pushUnique(reasons, REASON_CODE.same_room_same_issue);
+        confidence = Math.max(confidence, 0.88);
+      } else {
+        /* Same room + family without guest names is enough; guest-only is not. */
+        pushUnique(reasons, REASON_CODE.same_room_same_issue);
+        confidence = Math.max(confidence, 0.8);
+      }
+    }
+    /* Guest-name-only matches (no room / no maintenance id) are not allowed —
+       common names must not create continuity without additional entity evidence. */
+
+    if (hasExplicitContinuationLanguage(currentText) && confidence >= 0.7) {
+      pushUnique(reasons, REASON_CODE.explicit_continuation);
+      confidence = Math.min(0.98, confidence + 0.03);
+    }
+
+    if (confidence < MEMORY_MATCH_MIN) {
+      if (sameFamily && !sameRoom && !guestsMatch(currentKeys.guest, priorKeys.guest) &&
+          !currentKeys.maintenanceIssueId) {
+        return {
+          matched: false,
+          uncertain: true,
+          confidence: 0.35,
+          reasons: [REASON_CODE.weak_continuity_evidence]
+        };
+      }
+      return null;
+    }
+
+    if (!priorClosed) {
+      pushUnique(reasons, REASON_CODE.unresolved_previous_shift);
+    }
+
+    return {
+      matched: true,
+      uncertain: false,
+      confidence: confidence,
+      reasons: reasons
+    };
+  }
+
+  function deriveLifecycleStatus(currentClosed, priorHadOpen, priorHadResolved, match, shiftCount, context) {
+    if (match && match.uncertain) return MEMORY_LIFECYCLE.uncertain;
+    if (!match || !match.matched) {
+      return currentClosed ? MEMORY_LIFECYCLE.resolved : MEMORY_LIFECYCLE.new;
+    }
+    if (priorHadResolved && !currentClosed) {
+      return MEMORY_LIFECYCLE.reopened;
+    }
+    if (currentClosed) {
+      return MEMORY_LIFECYCLE.resolved;
+    }
+    if (
+      shiftCount >= MEMORY_ESCALATE_MIN_SHIFTS &&
+      match.confidence >= MEMORY_ESCALATE_MIN_CONFIDENCE &&
+      context &&
+      (
+        impactRank(context.guestImpact) >= 3 ||
+        impactRank(context.revenueImpact) >= 3 ||
+        impactRank(context.operationalRisk) >= 3
+      )
+    ) {
+      return MEMORY_LIFECYCLE.escalated;
+    }
+    if (priorHadOpen || shiftCount > 1) {
+      return MEMORY_LIFECYCLE.continuing;
+    }
+    return MEMORY_LIFECYCLE.new;
+  }
+
+  function statusProgressed(priorKeys, currentKeys, priorText, currentText) {
+    var prior = String(priorText || "").toLowerCase();
+    var cur = String(currentText || "").toLowerCase();
+    if (!prior || !cur) return false;
+    if (/contacted|informed|waiting/.test(prior) &&
+        /confirm(?:ed)?|attendance|eta|tomorrow|parts\s+ordered|engineer/.test(cur) &&
+        !/resolved|completed|fixed|working\s+again/.test(cur)) {
+      return true;
+    }
+    if (priorKeys && currentKeys &&
+        priorKeys.status && currentKeys.status &&
+        priorKeys.status !== currentKeys.status &&
+        currentKeys.status !== CONTEXT_STATUS.completed &&
+        currentKeys.status !== CONTEXT_STATUS.confirmed) {
+      return true;
+    }
+    return false;
+  }
+
+  function extractPriorShiftEvidence(history, workspaceId, options) {
+    options = options || {};
+    var evidence = [];
+    var ws = trimText(workspaceId || "");
+    var prepared = preparePriorShiftHistory(history, {
+      workspaceId: ws,
+      currentReportId: options.currentReportId,
+      now: options.now,
+      maxReports: options.maxReports,
+      lookbackMs: options.lookbackMs
+    });
+
+    prepared.forEach(function (entry, index) {
+      /* Strict tenancy: active workspace required on every prior entry. */
+      if (ws && entry.workspaceId !== ws) return;
+      var perReport = 0;
+
+      function pushEvidence(item) {
+        if (evidence.length >= MEMORY_HISTORY_MAX_EVIDENCE_TOTAL) return false;
+        if (perReport >= MEMORY_HISTORY_MAX_EVIDENCE_PER_REPORT) return false;
+        evidence.push(item);
+        perReport += 1;
+        return true;
+      }
+
+      if (entry.facts && entry.facts.length) {
+        entry.facts.forEach(function (fact, fi) {
+          if (evidence.length >= MEMORY_HISTORY_MAX_EVIDENCE_TOTAL) return;
+          if (perReport >= MEMORY_HISTORY_MAX_EVIDENCE_PER_REPORT) return;
+          var note = {
+            original: fact.sourceText || fact.detail || "",
+            rooms: fact.room ? [normalizeRoomNumber(fact.room)] : [],
+            section: fact.sectionHint || "",
+            isVip: /vip/i.test(fact.subjectType || fact.subject || ""),
+            sourceId: fact.sourceId || "",
+            importedFromMaintenance: fact.sourceType === "maintenance",
+            _neutralFactId: fact.id || ("prior-" + index + "-" + fi),
+            _neutralSourceType: fact.sourceType || "handover"
+          };
+          var ensured = fact;
+          if (!fact.subject && !fact.subjectType && global.AiWritingEngine) {
+            ensured = global.AiWritingEngine.extractOperationalFact(note.original, {
+              rooms: note.rooms,
+              section: note.section,
+              isVip: note.isVip
+            }) || fact;
+          }
+          var keys = entityKeysFromFact(ensured, note);
+          pushEvidence({
+            evidenceId: (entry.reportId || "prior") + ":f:" + fi,
+            reportId: entry.reportId || ("prior-" + index),
+            workspaceId: entry.workspaceId,
+            shiftCode: entry.shiftCode,
+            handoverDate: entry.handoverDate,
+            occurredAt: entry.occurredAt || entry.handoverDate,
+            shiftKey: operationalShiftKey(entry),
+            sourceText: note.original,
+            fact: ensured,
+            note: note,
+            entityKeys: keys,
+            closed: isOperationalFactClosed(ensured) || isFactClosedForRecs(ensured),
+            memorySource: entry.memorySource
+          });
+        });
+        return;
+      }
+      /* Organised snapshot without source_notes is not used — fail safe (no confident continuity). */
+      if (!entry.sourceNotes || !global.AiWritingEngine ||
+          typeof global.AiWritingEngine.extractOperationalFact !== "function") {
+        return;
+      }
+      var lines = String(entry.sourceNotes).split(/\n+/);
+      lines.forEach(function (line, li) {
+        if (evidence.length >= MEMORY_HISTORY_MAX_EVIDENCE_TOTAL) return;
+        if (perReport >= MEMORY_HISTORY_MAX_EVIDENCE_PER_REPORT) return;
+        var text = trimText(line);
+        if (!text || text.length < 10) return;
+        if (/^[-*•]/.test(text)) text = text.replace(/^[-*•]\s*/, "");
+        var rooms = global.AiWritingEngine.extractRoomNumbers
+          ? global.AiWritingEngine.extractRoomNumbers(text)
+          : [];
+        var section = "";
+        if (/maintenance|ac |not working|boiler|leak|fault/i.test(text)) section = "maintenance";
+        else if (/balance|payment|declined|outstanding|folio/i.test(text)) section = "payments";
+        else if (/\bvip\b/i.test(text)) section = "vip";
+        else if (/wake|taxi|transfer/i.test(text)) section = "tasks";
+        else if (/noise|complaint/i.test(text)) section = "guest";
+        var isVip = /\bvip\b/i.test(text);
+        var fact = global.AiWritingEngine.extractOperationalFact(text, {
+          rooms: rooms,
+          section: section,
+          isVip: isVip
+        });
+        if (!fact) return;
+        var note = {
+          original: text,
+          rooms: rooms,
+          section: section,
+          isVip: isVip,
+          fact: fact,
+          _neutralFactId: (entry.reportId || "prior") + ":l:" + li,
+          _neutralSourceType: "handover"
+        };
+        var keys = entityKeysFromFact(fact, note);
+        if (!keys.family && !keys.room && !keys.maintenanceIssueId) {
+          return; /* too weak — guest-only / keyword-only ignored */
+        }
+        pushEvidence({
+          evidenceId: (entry.reportId || "prior") + ":l:" + li,
+          reportId: entry.reportId || ("prior-" + index),
+          workspaceId: entry.workspaceId,
+          shiftCode: entry.shiftCode,
+          handoverDate: entry.handoverDate,
+          occurredAt: entry.occurredAt || entry.handoverDate,
+          shiftKey: operationalShiftKey(entry),
+          sourceText: text,
+          fact: fact,
+          note: note,
+          entityKeys: keys,
+          closed: isOperationalFactClosed(fact) || isFactClosedForRecs(fact),
+          memorySource: entry.memorySource
+        });
+      });
+    });
+    return evidence;
+  }
+
+  function buildOperationalMemory(parts) {
+    var base = createEmptyOperationalMemory();
+    parts = parts || {};
+    var keys = parts.entityKeys || base.entityKeys;
+    base.memoryId = trimText(parts.memoryId || buildMemoryId(parts.workspaceId, keys));
+    base.workspaceId = trimText(parts.workspaceId || "");
+    base.entityKeys = {
+      room: trimText(keys.room || ""),
+      guest: trimText(keys.guest || ""),
+      family: trimText(keys.family || ""),
+      amount: keys.amount != null ? keys.amount : null,
+      faultType: trimText(keys.faultType || ""),
+      maintenanceIssueId: trimText(keys.maintenanceIssueId || "")
+    };
+    base.subject = trimText(parts.subject || keys.subject || "");
+    base.category = trimText(parts.category || keys.category || "");
+    base.firstSeenAt = trimText(parts.firstSeenAt || "");
+    base.lastSeenAt = trimText(parts.lastSeenAt || "");
+    base.shiftCount = typeof parts.shiftCount === "number" ? parts.shiftCount : 1;
+    base.sourceReportIds = Array.isArray(parts.sourceReportIds) ? parts.sourceReportIds.slice() : [];
+    base.sourceFactIds = Array.isArray(parts.sourceFactIds) ? parts.sourceFactIds.slice() : [];
+    base.lifecycleStatus = trimText(parts.lifecycleStatus || MEMORY_LIFECYCLE.new);
+    base.recurrenceState = trimText(parts.recurrenceState || RECURRENCE_STATE.first_seen);
+    base.latestContext = parts.latestContext || null;
+    base.continuityReasonCodes = Array.isArray(parts.continuityReasonCodes)
+      ? parts.continuityReasonCodes.slice()
+      : [];
+    base.confidence = typeof parts.confidence === "number" ? parts.confidence : 0.5;
+    return base;
+  }
+
+  function priorEvidenceCandidates(index, keys) {
+    var out = [];
+    var seen = {};
+    function add(list) {
+      (list || []).forEach(function (pe) {
+        if (!pe || !pe.evidenceId || seen[pe.evidenceId]) return;
+        seen[pe.evidenceId] = true;
+        out.push(pe);
+      });
+    }
+    if (keys.maintenanceIssueId) add(index.byMaint[keys.maintenanceIssueId]);
+    if (keys.room && keys.family) add(index.byRoomFamily[keys.room + "|" + keys.family]);
+    if (keys.room) add(index.byRoom[keys.room]);
+    return out;
+  }
+
+  function buildPriorEvidenceIndex(prior) {
+    var index = { byMaint: {}, byRoomFamily: {}, byRoom: {} };
+    (prior || []).forEach(function (pe) {
+      if (!pe || !pe.entityKeys) return;
+      var k = pe.entityKeys;
+      if (k.maintenanceIssueId) {
+        if (!index.byMaint[k.maintenanceIssueId]) index.byMaint[k.maintenanceIssueId] = [];
+        index.byMaint[k.maintenanceIssueId].push(pe);
+      }
+      if (k.room && k.family) {
+        var rf = k.room + "|" + k.family;
+        if (!index.byRoomFamily[rf]) index.byRoomFamily[rf] = [];
+        index.byRoomFamily[rf].push(pe);
+      }
+      if (k.room) {
+        if (!index.byRoom[k.room]) index.byRoom[k.room] = [];
+        index.byRoom[k.room].push(pe);
+      }
+    });
+    return index;
+  }
+
+  /**
+   * Build OperationalMemory records for current facts against prior-shift evidence.
+   * Current context always owns latestContext / impact — prior evidence is continuity only.
+   */
+  function buildOperationalMemories(currentEntries, priorEvidence, workspaceId, options) {
+    options = options || {};
+    var memories = [];
+    var byFactId = {};
+    var ws = trimText(workspaceId || "");
+    var prior = (priorEvidence || []).filter(function (pe) {
+      if (!pe) return false;
+      if (ws && pe.workspaceId !== ws) return false;
+      return true;
+    });
+    var index = buildPriorEvidenceIndex(prior);
+    var nowMs = parseTimeMs(options.now || "") || Date.now();
+    var currentOccurredAt = trimText(options.currentOccurredAt || "");
+
+    (currentEntries || []).forEach(function (entry) {
+      if (!entry || !entry.fact) return;
+      var fact = entry.fact;
+      var note = entry.note || {};
+      var factId = entry.factId || note._neutralFactId || fact.id || "";
+      var context = entry.context || buildOperationalContext(fact, {
+        note: note,
+        section: note.section,
+        isVip: note.isVip
+      });
+      var keys = entityKeysFromFact(fact, note);
+      var currentText = fact.sourceText || note.original || "";
+      var currentClosed = context.currentStatus === CONTEXT_STATUS.completed ||
+        (isFactClosedForRecs(fact) && context.currentStatus !== CONTEXT_STATUS.in_progress) ||
+        (context.currentStatus === CONTEXT_STATUS.confirmed &&
+          !isMaintenanceAppointmentConfirmation(currentText, { type: context.objectType || keys.family }));
+
+      var matchedPriors = [];
+      var allReasons = [];
+      var bestConfidence = 0;
+      var priorHadOpen = false;
+      var priorHadResolved = false;
+      var progressed = false;
+      var candidates = priorEvidenceCandidates(index, keys);
+
+      candidates.forEach(function (pe) {
+        if (!pe || !pe.entityKeys) return;
+        if (ws && pe.workspaceId !== ws) return;
+
+        /* Content matches older than the continuity gap become new issues (not one uninterrupted thread).
+           Durable maintenanceIssueId may still link within the loaded history window. */
+        var priorMs = parseTimeMs(pe.occurredAt);
+        var gapOk = true;
+        if (!isNaN(priorMs) && !keys.maintenanceIssueId) {
+          gapOk = (nowMs - priorMs) <= MEMORY_CONTENT_MATCH_MAX_GAP_MS;
+        }
+        if (!gapOk) return;
+
+        var match = matchContinuityEvidence(keys, pe.entityKeys, currentText, pe.closed);
+        if (!match) return;
+        if (match.uncertain && !match.matched) {
+          if (!matchedPriors.length) {
+            matchedPriors.push({ evidence: pe, match: match });
+            bestConfidence = Math.max(bestConfidence, match.confidence);
+            (match.reasons || []).forEach(function (r) { pushUnique(allReasons, r); });
+          }
+          return;
+        }
+        if (!match.matched) return;
+        matchedPriors = matchedPriors.filter(function (m) {
+          return m.match && m.match.matched;
+        });
+        matchedPriors.push({ evidence: pe, match: match });
+        bestConfidence = Math.max(bestConfidence, match.confidence);
+        (match.reasons || []).forEach(function (r) { pushUnique(allReasons, r); });
+        if (pe.closed) priorHadResolved = true;
+        else priorHadOpen = true;
+        if (statusProgressed(pe.entityKeys, keys, pe.sourceText, currentText)) {
+          progressed = true;
+        }
+      });
+
+      var reportIds = [];
+      var shiftKeys = {};
+      var historicalFactIds = [];
+      matchedPriors.forEach(function (m) {
+        if (!m.evidence) return;
+        if (m.evidence.reportId) pushUnique(reportIds, m.evidence.reportId);
+        var sk = m.evidence.shiftKey || operationalShiftKey(m.evidence);
+        if (sk && sk !== "|") shiftKeys[sk] = true;
+        if (m.evidence.evidenceId) pushUnique(historicalFactIds, m.evidence.evidenceId);
+      });
+      /* Distinct operational shifts/reports — not duplicate notes or multi-fact components. */
+      var priorShiftDistinct = Object.keys(shiftKeys).length || reportIds.length;
+      var shiftCount = priorShiftDistinct + 1;
+      var strong = matchedPriors.some(function (m) { return m.match && m.match.matched; });
+      var onlyUncertain = !strong && matchedPriors.some(function (m) {
+        return m.match && m.match.uncertain;
+      });
+
+      if (progressed && strong) {
+        pushUnique(allReasons, REASON_CODE.status_progressed);
+      }
+      if (currentClosed && strong && priorHadOpen) {
+        pushUnique(allReasons, REASON_CODE.resolved_after_previous_shift);
+      }
+      if (!currentClosed && priorHadResolved && strong) {
+        pushUnique(allReasons, REASON_CODE.reopened_after_resolution);
+      }
+
+      var matchStub = strong
+        ? { matched: true, uncertain: false, confidence: bestConfidence, reasons: allReasons }
+        : (onlyUncertain
+          ? { matched: false, uncertain: true, confidence: bestConfidence, reasons: allReasons }
+          : null);
+
+      var lifecycle = deriveLifecycleStatus(
+        currentClosed, priorHadOpen, priorHadResolved, matchStub, shiftCount, context
+      );
+      if (lifecycle === MEMORY_LIFECYCLE.escalated) {
+        pushUnique(allReasons, REASON_CODE.cross_shift_escalated);
+      }
+
+      var times = matchedPriors.map(function (m) {
+        return m.evidence && m.evidence.occurredAt;
+      }).filter(Boolean).sort();
+      var firstSeen = times[0] || "";
+      var lastSeen = currentOccurredAt || "";
+      var recurrence = strong && shiftCount > 1
+        ? RECURRENCE_STATE.repeated_cross_shift
+        : RECURRENCE_STATE.first_seen;
+
+      if (!strong && !onlyUncertain) {
+        lifecycle = currentClosed ? MEMORY_LIFECYCLE.resolved : MEMORY_LIFECYCLE.new;
+        shiftCount = 1;
+        reportIds = [];
+        historicalFactIds = [];
+        allReasons = [];
+        bestConfidence = typeof context.confidence === "number" ? context.confidence : 0.5;
+        recurrence = RECURRENCE_STATE.first_seen;
+        firstSeen = lastSeen || "";
+      } else if (onlyUncertain) {
+        lifecycle = MEMORY_LIFECYCLE.uncertain;
+        shiftCount = 1;
+        reportIds = [];
+        historicalFactIds = [];
+        recurrence = RECURRENCE_STATE.first_seen;
+        firstSeen = "";
+      }
+
+      var memory = buildOperationalMemory({
+        workspaceId: ws,
+        entityKeys: keys,
+        subject: context.subject || keys.subject,
+        category: context.category || keys.category,
+        firstSeenAt: firstSeen,
+        lastSeenAt: lastSeen || firstSeen,
+        shiftCount: shiftCount,
+        sourceReportIds: reportIds,
+        sourceFactIds: factId ? [factId] : [],
+        lifecycleStatus: lifecycle,
+        recurrenceState: recurrence,
+        latestContext: context,
+        continuityReasonCodes: allReasons,
+        confidence: strong ? bestConfidence : (onlyUncertain ? bestConfidence : (context.confidence || 0.5))
+      });
+      memory.historicalFactIds = historicalFactIds;
+
+      memories.push(memory);
+      if (factId) byFactId[factId] = memory;
+    });
+
+    return { memories: memories, byFactId: byFactId };
+  }
+
+  function memoryAllowsEscalation(memory, context) {
+    if (!memory || !context) return false;
+    if (memory.lifecycleStatus === MEMORY_LIFECYCLE.resolved) return false;
+    if (memory.lifecycleStatus === MEMORY_LIFECYCLE.uncertain) return false;
+    if (memory.lifecycleStatus !== MEMORY_LIFECYCLE.escalated &&
+        memory.lifecycleStatus !== MEMORY_LIFECYCLE.continuing &&
+        memory.lifecycleStatus !== MEMORY_LIFECYCLE.reopened) {
+      return false;
+    }
+    if (memory.shiftCount < MEMORY_ESCALATE_MIN_SHIFTS) return false;
+    if (memory.confidence < MEMORY_ESCALATE_MIN_CONFIDENCE) return false;
+    return (
+      impactRank(context.guestImpact) >= 3 ||
+      impactRank(context.revenueImpact) >= 3 ||
+      impactRank(context.operationalRisk) >= 3
+    );
+  }
+
+  /**
+   * Apply safe escalation to recommendation priority from memory.
+   * Never escalate from text repetition alone; current impact must support it.
+   */
+  function applyMemoryPriority(priority, memory, context) {
+    if (!memoryAllowsEscalation(memory, context) &&
+        !(memory && memory.lifecycleStatus === MEMORY_LIFECYCLE.escalated)) {
+      return priority;
+    }
+    if (memory && memory.lifecycleStatus === MEMORY_LIFECYCLE.escalated) {
+      if (priority === "low" || priority === "normal") return "high";
+      if (priority === "high") return "urgent";
+    }
+    return priority;
+  }
+
+  function enrichRecommendationsWithMemory(candidates, memoryByFactId) {
+    if (!candidates || !candidates.length || !memoryByFactId) return candidates || [];
+    candidates.forEach(function (rec) {
+      if (!rec || !rec.decisionTrace) return;
+      var ids = rec.decisionTrace.sourceFactIds || rec.sourceFactIds || [];
+      var memory = null;
+      for (var i = 0; i < ids.length; i++) {
+        if (memoryByFactId[ids[i]]) {
+          memory = memoryByFactId[ids[i]];
+          break;
+        }
+      }
+      if (!memory) return;
+      if (memory.lifecycleStatus === MEMORY_LIFECYCLE.uncertain) {
+        /* Do not claim continuity on the recommendation. */
+        return;
+      }
+      rec.decisionTrace.memory = summarizeMemoryForTrace(memory);
+      (memory.continuityReasonCodes || []).forEach(function (code) {
+        pushUnique(rec.reasonCodes, code);
+      });
+      if (rec.decisionTrace.reasonCodes) {
+        rec.decisionTrace.reasonCodes = (rec.reasonCodes || []).slice();
+      }
+      var ctx = rec.decisionTrace.operationalContext;
+      var nextPriority = applyMemoryPriority(rec.priority, memory, ctx);
+      rec.priority = nextPriority;
+      rec.decisionTrace.priority = nextPriority;
+      if (
+        (memory.lifecycleStatus === MEMORY_LIFECYCLE.continuing ||
+          memory.lifecycleStatus === MEMORY_LIFECYCLE.escalated ||
+          memory.lifecycleStatus === MEMORY_LIFECYCLE.reopened) &&
+        !/previous shift|reopened after/i.test(rec.text || "")
+      ) {
+        var suffix = memory.lifecycleStatus === MEMORY_LIFECYCLE.reopened
+          ? " Reopened after prior resolution."
+          : " Still unresolved from previous shift.";
+        rec.text = String(rec.text || "").replace(/\.+$/, "") + "." + suffix;
+      }
+    });
+    return candidates;
   }
 
   /**
@@ -5379,6 +6317,19 @@
       input.rawNotesText || ""
     );
 
+    /*
+     * E4.3: Cross-shift OperationalMemory — enrich DecisionTrace / priority only.
+     * Does not invent recommendations from history alone.
+     */
+    var memoryIndex = input._memoryIndex || null;
+    if (!memoryIndex && (input.priorShiftHistory || input.priorShiftEvidence)) {
+      memoryIndex = buildMemoryIndexForInput(input, analyzed);
+      input._memoryIndex = memoryIndex;
+    }
+    if (memoryIndex && memoryIndex.byFactId) {
+      enrichRecommendationsWithMemory(candidates, memoryIndex.byFactId);
+    }
+
     candidates.sort(function (a, b) {
       var rankA = PRIORITY_RANK[a.priority] != null ? PRIORITY_RANK[a.priority] : 9;
       var rankB = PRIORITY_RANK[b.priority] != null ? PRIORITY_RANK[b.priority] : 9;
@@ -5388,6 +6339,44 @@
     return candidates.slice(0, MAX_RECOMMENDATIONS).map(function (rec) {
       rec.text = applyText(rec.text);
       return rec;
+    });
+  }
+
+  function buildMemoryIndexForInput(input, analyzed) {
+    input = input || {};
+    analyzed = analyzed || (input.classified && input.classified._analyzed) || input.analyzedNotes || [];
+    var workspaceId = trimText(input.workspaceId || "");
+    var historyOpts = {
+      currentReportId: input.currentReportId || "",
+      now: input.memoryNow || input.now || "",
+      maxReports: MEMORY_HISTORY_MAX_REPORTS,
+      lookbackMs: MEMORY_HISTORY_MAX_LOOKBACK_MS
+    };
+    var priorEvidence = Array.isArray(input.priorShiftEvidence)
+      ? input.priorShiftEvidence.filter(function (pe) {
+          return pe && (!workspaceId || pe.workspaceId === workspaceId);
+        }).slice(0, MEMORY_HISTORY_MAX_EVIDENCE_TOTAL)
+      : extractPriorShiftEvidence(input.priorShiftHistory || [], workspaceId, historyOpts);
+
+    var currentEntries = analyzed.map(function (note, index) {
+      var fact = ensureNoteFact(note);
+      if (!fact) return null;
+      var context = buildOperationalContext(fact, {
+        note: note,
+        section: note.section,
+        isVip: note.isVip
+      });
+      return {
+        fact: fact,
+        note: note,
+        factId: note._neutralFactId || fact.id || ("current-" + index),
+        context: context
+      };
+    }).filter(Boolean);
+
+    return buildOperationalMemories(currentEntries, priorEvidence, workspaceId, {
+      now: historyOpts.now,
+      currentOccurredAt: trimText(input.currentOccurredAt || input.memoryNow || "")
     });
   }
 
@@ -5826,6 +6815,9 @@
   }
 
   function analyzeCore(input, facts) {
+    var analyzed = (input.classified && input.classified._analyzed) || input.analyzedNotes || [];
+    var memoryIndex = buildMemoryIndexForInput(input, analyzed);
+    input._memoryIndex = memoryIndex;
     var signals = buildSignals(input);
     var recommendations = generateRecommendations(input, signals);
     var checklist = generateChecklist(input, signals, recommendations);
@@ -5834,7 +6826,8 @@
       signals: signals,
       recommendations: recommendations,
       checklist: checklist,
-      facts: facts || []
+      facts: facts || [],
+      operationalMemories: (memoryIndex && memoryIndex.memories) || []
     };
   }
 
@@ -5869,7 +6862,9 @@
       hotelSnapshot: input.hotelSnapshot || {},
       applyTextPreferences: input.applyTextPreferences,
       workspaceId: input.workspaceId,
-      facts: facts
+      facts: facts,
+      priorShiftHistory: input.priorShiftHistory || null,
+      priorShiftEvidence: input.priorShiftEvidence || null
     };
 
     return analyzeCore(legacyInput, facts);
@@ -5980,6 +6975,23 @@
     recommendationFromFact: recommendationFromFact,
     enrichRecommendationsWithHotelBrain: enrichRecommendationsWithHotelBrain,
     matchBrainKnowledgeToCandidate: matchBrainKnowledgeToCandidate,
+    /* E4 Phase 3 — Cross-shift OperationalMemory */
+    MEMORY_LIFECYCLE: MEMORY_LIFECYCLE,
+    RECURRENCE_STATE: RECURRENCE_STATE,
+    MEMORY_HISTORY_MAX_REPORTS: MEMORY_HISTORY_MAX_REPORTS,
+    MEMORY_HISTORY_MAX_LOOKBACK_MS: MEMORY_HISTORY_MAX_LOOKBACK_MS,
+    MEMORY_HISTORY_MAX_EVIDENCE_PER_REPORT: MEMORY_HISTORY_MAX_EVIDENCE_PER_REPORT,
+    MEMORY_HISTORY_MAX_EVIDENCE_TOTAL: MEMORY_HISTORY_MAX_EVIDENCE_TOTAL,
+    createEmptyOperationalMemory: createEmptyOperationalMemory,
+    buildOperationalMemory: buildOperationalMemory,
+    buildOperationalMemories: buildOperationalMemories,
+    preparePriorShiftHistory: preparePriorShiftHistory,
+    extractPriorShiftEvidence: extractPriorShiftEvidence,
+    matchContinuityEvidence: matchContinuityEvidence,
+    entityKeysFromFact: entityKeysFromFact,
+    operationalShiftKey: operationalShiftKey,
+    enrichRecommendationsWithMemory: enrichRecommendationsWithMemory,
+    summarizeMemoryForTrace: summarizeMemoryForTrace,
     OPERATIONAL_OBJECT_TYPE: OPERATIONAL_OBJECT_TYPE,
     HOTEL_STATUS_LEVEL: HOTEL_STATUS_LEVEL,
     BRIEFING_MAX_BLOCKS: BRIEFING_MAX_BLOCKS,

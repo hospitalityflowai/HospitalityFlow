@@ -292,8 +292,8 @@ Section layout for the UI may remain a Handover presentation mapping (`urgent` c
 | **Done: E3** | Engine-owned operational classification + adapters; Handover/M4 parity fallback; Brain fallback retained |
 | **Done: E4 Phase 1** | Canonical `OperationalContext` enrichment; scoring consumes context (single path) |
 | **Done: E4 Phase 2** | DecisionTrace; context-driven recommendations; explainability; confidence gating |
-| **E4 Phase 3 (next)** | User-facing “Why?” surfacing; deeper rec/briefing parity polish; optional quiet-shift alignment |
-| **Later** | Conflicts / recurrence; Guest adapter; Brain fallback removal when load guarantees exist |
+| **Done: E4 Phase 3** | Cross-shift OperationalMemory (derive-only over saved history + maintenance IDs) |
+| **Later** | Optional “Why?” UI; quiet-shift alignment; durable memory table if derivation limits are hit; Guest adapter |
 | **Avoid** | Shared fact DB table until Guest Intelligence forces durable cross-tool history |
 
 ---
@@ -715,12 +715,138 @@ Confidence remains **evidence quality**, not severity.
 | `scripts/test-intelligence-e4-decision-trace.mjs` | E4.2 fixtures (Scenarios A–G + Brain hard-gate) |
 | `docs/HOSPITALITY_INTELLIGENCE_ENGINE_ARCHITECTURE.md` | This record |
 
-### Recommended E4 Phase 3
+### Recommended follow-ons (post E4.3)
 
 1. Optional user-facing “Why did HF prioritise this?” using `buildDecisionExplanation` (presentation only).
 2. Quiet-shift suppress alignment with `!hasActionableOpenFacts` behind fixtures.
 3. Optional separate “Hotel Brain reminders” product surface (not mixed into E4 recommendations).
-4. Still no Guest Intelligence; no cross-shift memory; no shared fact table; no trace persistence.
+4. Durable OperationalMemory table only if derivation from `handover_reports` proves insufficient — schema proposal required before apply.
+5. Still no Guest Intelligence; no weekly/monthly pattern recognition; no automatic Hotel Brain learning.
+
+---
+
+## 7F. E4 Phase 3 — Cross-shift Operational Memory
+
+**Status:** Implemented (derive-only v1).  
+**Behaviour:** Continuity enrichment on recommendations / DecisionTrace when prior-shift evidence is supplied. No UI redesign. No production schema change applied. No Guest Intelligence.
+
+### Audit summary (existing continuity data)
+
+| Source | Available across shifts? | Notes |
+|--------|--------------------------|-------|
+| `handover_reports` (`source_notes`, `generated_handover`) | Yes — workspace-scoped documents | Re-extract facts from notes; not a fact registry |
+| Maintenance `maintenance_issues.id` + `maintenance_updates` | Yes — durable ticket UUID | Strongest continuity key when imported |
+| Runtime `OperationalFact` / object ids / DecisionTrace | No — one generation | Content-derived / generation-local |
+| Demo Mode saved history | No public archive | Isolated in-memory sample prior history for memory only |
+
+### Storage approach selected
+
+**A + B (preferred):** Read-only derivation over existing saved handover history + maintenance issue IDs.  
+**C (not applied):** New persistence table — **not required for v1**. Schema proposal deferred until derivation limits are proven.
+
+Caller supplies `priorShiftHistory` (or pre-extracted `priorShiftEvidence`). Engine never uses service-role browser reads. Workspace mismatch / missing workspaceId drops history entries.
+
+### Phase 3 v1 history window and limits
+
+| Limit | Value | Purpose |
+|-------|-------|---------|
+| Max prior reports | 6 | Bound retrieval / generation |
+| Lookback | 72 hours (~3 calendar days) | Prevent months-later false continuity |
+| Evidence / report | 40 | Cap re-extraction |
+| Evidence total | 120 | Cap matching work |
+| Content-match gap | 72 hours | Same-room faults after a long gap start new (unless durable maintenance ID in window) |
+| Ordering | `handoverDate` → AM→PM→Night → `created_at` tie-break | Not `updated_at` (late edits) |
+| shiftCount | Distinct operational shift keys (`date\|shift`) + current | Not duplicate notes / multi-fact components |
+
+Drafts, empty `source_notes`, organised-only snapshots, foreign workspace rows, and the report currently being edited are excluded. Matching uses a room/family/maintenance index (not unbounded O(all×all)).
+
+### OperationalMemory contract
+
+Serializable, engine-owned, no polished prose / HTML:
+
+| Field | Purpose |
+|-------|---------|
+| `memoryId` | Deterministic id from workspace + entity keys |
+| `workspaceId` | Tenant scope |
+| `entityKeys` | room, guest, family, amount, faultType, maintenanceIssueId |
+| `subject` / `category` | From current OperationalContext |
+| `firstSeenAt` / `lastSeenAt` | Continuity window |
+| `shiftCount` | Distinct prior reports + current |
+| `sourceReportIds` / `sourceFactIds` | Traceability |
+| `lifecycleStatus` | `new` \| `continuing` \| `escalated` \| `resolved` \| `reopened` \| `uncertain` |
+| `recurrenceState` | Phase 3: `first_seen` \| `repeated_cross_shift` only |
+| `latestContext` | **Current** OperationalContext (owns impact/risk) |
+| `continuityReasonCodes` | Why records were linked |
+| `confidence` | Match confidence 0–1 |
+
+### Matching authority
+
+Strong evidence required. Broad keywords alone never create continuity.
+
+Allowed examples: same maintenance issue ID; same room + operational family (+ fault compatible); same payment room/amount; same guest + VIP/request family; same timed service + room; explicit continuation language **with** entity match.
+
+Rejected: different rooms same family; generic “supplier delayed” without entity; weak family-only overlap → `uncertain` / separate.
+
+### Enrichment pipeline
+
+```text
+Current notes → Fact/Object → OperationalContext
+  → retrieve prior-shift evidence (caller-supplied, workspace-filtered)
+  → match continuity → OperationalMemory
+  → enrich DecisionTrace.memory
+  → optional safe escalation → recommend / write
+```
+
+One active issue → one current recommendation (history does not spawn duplicates).
+
+### Escalation rules
+
+- Open across ≥3 shifts **and** strong match (≥0.75) **and** meaningful current guest/revenue/operational impact → may mark `escalated` and raise priority one step.
+- Never escalate from text repetition alone.
+- Resolved history reduces urgency (no open rec) unless `reopened`.
+
+### DecisionTrace integration
+
+```text
+decisionTrace.memory = {
+  memoryId, lifecycleStatus, shiftCount,
+  firstSeenAt, lastSeenAt, continuityReasonCodes,
+  recurrenceState, confidence
+}
+```
+
+### Demo isolation
+
+- `HFDemoSampleData.buildPriorShiftHistory` + `HFDemoMode.getDemoPriorShiftHistory`
+- No production/test workspace reads while Demo enabled (`getSavedHandovers` already returns `[]`)
+- Reset restores sample memory; exit clears Demo memory pack
+- Same engine memory logic; separate persistence source (`memorySource: "demo"`)
+
+### Security
+
+- History filtered by `workspaceId`
+- Reuses existing RLS on `handover_reports` / maintenance (membership + active platform access)
+- No anonymous / cross-hotel / suspended-access reads introduced
+- No service-role history reads in the browser
+
+### Out of scope (E4 Phase 3)
+
+- Guest Intelligence profiles / long-term preferences
+- Weekly/monthly pattern recognition / seasonal learning
+- Predictive maintenance
+- Automatic Hotel Brain learning
+- User-facing memory timeline redesign
+- Applied DB migration for a memory table
+
+### Files
+
+| File | Role |
+|------|------|
+| `shift-intelligence-engine.js` | OperationalMemory contract, matching, enrichment, escalation |
+| `handover.html` | Passes workspace-scoped prior history into analyze (no UI redesign) |
+| `js/demo-sample-data.js` / `js/demo-mode.js` | Isolated Demo prior history |
+| `scripts/test-intelligence-e4-operational-memory.mjs` | Scenarios A–H + tenancy/Demo proofs |
+| `docs/HOSPITALITY_INTELLIGENCE_ENGINE_ARCHITECTURE.md` | This record |
 
 ---
 

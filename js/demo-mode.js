@@ -39,6 +39,7 @@
   var activeDraft = null;
   var activeHandover = null;
   var activeBrain = null;
+  var activePriorShiftHistory = null;
 
   var overlaysInstalled = false;
   var originalBrain = null;
@@ -175,7 +176,7 @@
   }
 
   function ensurePack() {
-    if (activePack && activeDraft && activeHandover && activeBrain) {
+    if (activePack && activeDraft && activeHandover && activeBrain && activePriorShiftHistory) {
       return activePack;
     }
     if (!global.HFDemoSampleData) return null;
@@ -184,6 +185,9 @@
     activeDraft = global.HFDemoSampleData.buildDraftPayload(pack);
     activeHandover = global.HFDemoSampleData.buildHandoverRecord(pack);
     activeBrain = pack.hotelBrainProfile || global.HFDemoSampleData.buildHotelBrainProfile();
+    activePriorShiftHistory = typeof global.HFDemoSampleData.buildPriorShiftHistory === "function"
+      ? global.HFDemoSampleData.buildPriorShiftHistory(pack)
+      : [];
     return pack;
   }
 
@@ -192,6 +196,7 @@
     activeDraft = null;
     activeHandover = null;
     activeBrain = null;
+    activePriorShiftHistory = null;
   }
 
   function getDemoIssues() {
@@ -214,6 +219,22 @@
   function getDemoBrain() {
     ensurePack();
     return clone(activeBrain);
+  }
+
+  /**
+   * Isolated Demo prior-shift history for OperationalMemory.
+   * Never reads production/test workspace history. Cleared on exit/reset.
+   */
+  function getDemoPriorShiftHistory() {
+    if (!isEnabled()) return [];
+    ensurePack();
+    if (!activePriorShiftHistory) {
+      activePriorShiftHistory = global.HFDemoSampleData &&
+        typeof global.HFDemoSampleData.buildPriorShiftHistory === "function"
+        ? global.HFDemoSampleData.buildPriorShiftHistory(activePack || resolveScope())
+        : [];
+    }
+    return clone(activePriorShiftHistory) || [];
   }
 
   function mergeIssues(real, demo) {
@@ -1057,6 +1078,7 @@
     getDemoDraft: getDemoDraft,
     getDemoHandover: getDemoHandover,
     getDemoBrain: getDemoBrain,
+    getDemoPriorShiftHistory: getDemoPriorShiftHistory,
     ensurePack: ensurePack,
     installOverlays: installOverlays,
     uninstallOverlays: uninstallOverlays,
