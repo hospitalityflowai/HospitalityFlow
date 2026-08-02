@@ -290,7 +290,8 @@ Section layout for the UI may remain a Handover presentation mapping (`urgent` c
 | **Done: E1** | Canonical contracts, enums, compatibility helpers, responsibility docs — **no behaviour change** |
 | **Done: E2** | Shared canonical closure + metrics helpers; quiet-shift phrase + room normaliser shared; Brain fallback documented |
 | **Done: E3** | Engine-owned operational classification + adapters; Handover/M4 parity fallback; Brain fallback retained |
-| **E4 (next)** | Canonical priority and risk scoring only |
+| **Done: E4 Phase 1** | Canonical `OperationalContext` enrichment; scoring consumes context (single path) |
+| **E4 Phase 2 (next)** | Deeper priority/risk normalisation; recommendation routing from context; explainability surfacing |
 | **Later** | Conflicts / recurrence; Guest adapter; Brain fallback removal when load guarantees exist |
 | **Avoid** | Shared fact DB table until Guest Intelligence forces durable cross-tool history |
 
@@ -483,7 +484,7 @@ Classification output includes: `category`, `subject`, `classificationSource`, `
 
 None forced as product changes. Expected residual mismatches when keyword sectioning disagrees with Writing `fact.subject` (e.g. maintenance subject vs payments section) — **legacy wins** for rendered section.
 
-### Recommended E4 scope
+### Recommended E4 scope (original)
 
 Focus **only** on canonical **priority and risk scoring**:
 
@@ -491,6 +492,117 @@ Focus **only** on canonical **priority and risk scoring**:
 2. Adapters from Handover/Maintenance/Writing priority fields; parity with current recommendation urgency labels.
 3. Do **not** rewrite recommendation product rules, UI, or classification in E4.
 4. Still no Guest Intelligence; no shared fact table; Brain fallback removal only when load guarantees + tests allow.
+
+---
+
+## 7D. E4 Phase 1 implementation record (Canonical Operational Context)
+
+**Status:** Implemented.  
+**Behaviour / DB:** No intentional user-visible Handover/Maintenance layout, Demo Mode, save/history/PDF, or payload changes. No migrations. No Guest Intelligence. No new modules.
+
+### Purpose
+
+Create one canonical **`OperationalContext`** object for every operational fact — the shared reasoning layer used later by AI Shift Handover, Guest Intelligence, Maintenance Intelligence, Hotel Brain operational memory, Analytics, and AI Search.
+
+The engine decides what a fact means and why it matters. The writing layer only presents those decisions.
+
+### Pipeline (ownership)
+
+```text
+Raw note
+  → fact extraction          (AiWritingEngine)
+  → classification           (E3 classifyOperationalFact)
+  → entity linking/grouping  (operational objects)
+  → OperationalContext       (E4.1 buildOperationalContext)  ← NEW
+  → impact/risk scoring      (scoreOperationalImpact consumes context)
+  → ranking
+  → recommendations
+  → writing                  (presentation only — must not invent context)
+  → UI                       (must not calculate context)
+```
+
+`ENGINE_PIPELINE` includes `enrich_context` (wired). Ranking is documented as consuming OperationalContext.
+
+### OperationalContext contract
+
+| Field | Purpose | Controlled values |
+|-------|---------|-------------------|
+| `subject` | Normalised operational subject token | Existing subject vocabulary |
+| `category` | E3 operational category | `OPERATIONAL_CATEGORY` |
+| `guestImpact` | Is a guest currently / imminently affected? | `none\|low\|medium\|high\|critical` |
+| `revenueImpact` | Balance, declined payment, leakage, compensation | `none\|low\|medium\|high\|critical` |
+| `operationalRisk` | Combined operational exposure | `none\|low\|medium\|high\|critical` |
+| `timeSensitivity` | Deadline pressure vs evidence | `none\|later\|today\|imminent\|overdue` |
+| `urgency` | Comparable chase urgency | `low\|medium\|high\|critical` |
+| `confidence` | Numeric certainty | `0–1` |
+| `confidenceLabel` | Label form of confidence | `low\|medium\|high` |
+| `departments` / `dependencies` | Departments that must act or be aware | Controlled names (`Reception`, `Housekeeping`, `Maintenance`, `Finance`, `Food & Beverage`, …) |
+| `currentStatus` | Operational status for reasoning | `pending\|confirmed\|in_progress\|completed\|unresolved\|informational` |
+| `nextAction` | Structured action code when evidence supports one | `NEXT_ACTION_KIND` or `""` |
+| `reasoning` | Machine-readable reason codes | Stable codes (e.g. `guest_comfort_affected`, `declined_payment`) |
+| `objectType` | Linked operational-object type | `OPERATIONAL_OBJECT_TYPE` |
+| `canonicalPriority` | Derived E1 priority for consumers | `critical\|high\|normal\|low` |
+
+Helpers: `buildOperationalContext(fact, supportingContext)`, `createEmptyOperationalContext()`, normalisers for impact / time / urgency / context status.
+
+### Overlaps resolved (not duplicated)
+
+| Existing field | Relationship to OperationalContext |
+|----------------|--------------------------------------|
+| Writing `guestImpact` | Input signal; context re-infers controlled `guestImpact` |
+| E1 `CANONICAL_PRIORITY` / ranking scores | Scoring **consumes** context; numeric bands preserved |
+| E1 `CANONICAL_STATUS` / Writing `confirmed`→resolved | **Distinct:** `CONTEXT_STATUS.confirmed` means arrangement confirmed; E2 closure still maps Writing `confirmed` → canonical `resolved` for chase skip |
+| `department` / `ownerDept` | Single owner; context `departments[]` is multi-dept dependency list |
+| `action` / `actionVerb` / recommendation `actionKind` | Presentation / rec routing; context `nextAction` is a structured code, empty when unsupported |
+| Impact `reasons[]` | Aligned with context `reasoning` codes; score result attaches full `operationalContext` |
+| E3 `category` / `confidence` | Reused; not re-owned by Writing or UI |
+
+### Ranking integration
+
+- Canonical fact-ranking path: `OperationalFact` → `buildOperationalContext` → `scoreFromOperationalContext` → `rankByOperationalImpact` / object grouping.
+- `scoreOperationalImpact` is the sole public entry that builds context then scores.
+- Existing numeric bands preserved (guest-impacting AC ≈ 10, high finance ≈ 20, VIP ≈ 30, …).
+- No parallel legacy vs E4 scoring authorities for fact impact.
+- Result includes `operationalContext` + `reasons` so the engine can explain rank.
+
+### Confidence semantics
+
+- `confidence` (0–1) measures **evidence quality**, not severity.
+- `confidenceLabel` is always derived from the numeric value (`≥0.75` high, `≥0.45` medium, else low).
+- Critical/high impact with thin evidence stays low confidence; confirmed low-risk items with clear room/status evidence can be high confidence.
+
+### Compatibility fallback (not a second authority)
+
+- `AiWritingEngine` `impactRank` / `briefingRank` still contain a local numeric fallback.
+- That fallback runs **only** when `ShiftIntelligenceEngine.scoreOperationalImpact` is unavailable (script not loaded).
+- Normal Handover / Demo Mode loads both engines, so execution uses the E4 context path.
+- Recommendation list ordering by `PRIORITY_RANK` on recommendation.priority remains recommendation-list UX after generation — not a competing fact-impact scorer.
+
+### Out of scope (E4 Phase 1)
+
+- Cross-shift memory / persistence of OperationalContext
+- Historical pattern recognition
+- Guest Intelligence profiles
+- Predictive maintenance
+- Long-term Hotel Brain learning
+- UI redesign / new modules / DB schema changes
+- Rewriting recommendation product copy or section layout
+
+### Files
+
+| File | Role |
+|------|------|
+| `shift-intelligence-engine.js` | Contract, enums, `buildOperationalContext`, scoring integration, exports |
+| `ai-writing-engine.js` | Responsibility comment only — must not calculate OperationalContext |
+| `scripts/test-intelligence-e4-operational-context.mjs` | E4.1 fixtures (Scenarios A–F + ownership + ranking) |
+| `docs/HOSPITALITY_INTELLIGENCE_ENGINE_ARCHITECTURE.md` | This record |
+
+### Recommended E4 Phase 2
+
+1. Surface selected OperationalContext fields into recommendation `reasonCode` / explainability without changing rec product rules.
+2. Route `recommendationFromFact` department/priority from context where parity-safe.
+3. Optional quiet-shift suppress alignment with actionable open facts.
+4. Still no Guest Intelligence module; no cross-shift memory; no shared fact table.
 
 ---
 

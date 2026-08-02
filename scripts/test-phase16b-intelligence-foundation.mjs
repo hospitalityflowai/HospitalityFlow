@@ -320,7 +320,11 @@ assert(!/ShiftIntelligenceEngine|analyzeFacts|factsFromMaintenance/i.test(maintH
 
 const migrationsDir = path.join(ROOT, "supabase", "migrations");
 const migrationFiles = fs.readdirSync(migrationsDir).filter(function (f) { return f.endsWith(".sql"); });
-assert(!migrationFiles.some(function (f) { return /phase16|shared_fact|operational_fact/i.test(f); }), "no Phase 16 / shared-fact migration added");
+/* Guardrail: no durable shared operational-fact table. phase16_operator_* product
+   migrations are unrelated and must not trip this check. */
+assert(!migrationFiles.some(function (f) {
+  return /shared_fact|operational_fact|intelligence_fact/i.test(f);
+}), "no shared-fact / operational-fact migration added");
 
 console.log("\n=== Results: " + passed + " passed, " + failed + " failed ===\n");
 if (failed) process.exit(1);

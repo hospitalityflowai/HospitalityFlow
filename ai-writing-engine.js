@@ -14,15 +14,18 @@
  *
  * Rule-based v1 — modular surface for a future LLM backend.
  *
- * E1 responsibility boundary:
+ * E1 / E4 responsibility boundary:
  * - Owns extraction support, structured operational-fact field parsing,
  *   wording and presentation prose.
  * - Does NOT own cross-module recommendations, ranking, or conflict reasoning.
  * - Does NOT own final operational category classification (E3+ — Hospitality
  *   Intelligence Engine classifyOperationalFact).
+ * - Does NOT calculate OperationalContext (E4 Phase 1 — engine-owned via
+ *   buildOperationalContext). May read engine-attached context for display.
  * - Hospitality Intelligence Engine (shift-intelligence-engine.js) owns
- *   operational reasoning (impact ranking, operational objects, snapshot KPI
- *   extraction). This module formats engine-ranked facts for display only.
+ *   operational reasoning (OperationalContext, impact ranking, operational
+ *   objects, snapshot KPI extraction). This module formats engine-ranked
+ *   facts for display only.
  * - Modules must not add a second recommendation system.
  */
 (function (global) {
@@ -2809,6 +2812,8 @@
     });
 
     function impactRank(entry) {
+      /* E4: prefer engine OperationalContext scoring. Local fallback runs only
+         when ShiftIntelligenceEngine is not loaded (unit isolation / unload). */
       if (global.ShiftIntelligenceEngine &&
           typeof global.ShiftIntelligenceEngine.scoreOperationalImpact === "function") {
         return global.ShiftIntelligenceEngine.scoreOperationalImpact(entry).score;
@@ -4993,7 +4998,8 @@
 
   /**
    * Briefing sort key — delegates to Hospitality Intelligence Engine impact
-   * scoring when loaded; local fallback preserves prior Duty Manager order.
+   * scoring when loaded (E4 OperationalContext path). Local fallback preserves
+   * prior Duty Manager order only when the engine script is not loaded.
    */
   function briefingRank(entry) {
     if (global.ShiftIntelligenceEngine &&

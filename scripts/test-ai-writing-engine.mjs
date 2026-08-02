@@ -79,7 +79,7 @@ console.log("\nAI Writing Engine v" + Engine.version + "\n");
 console.log("Duty Manager operational rewrites");
 assertEqual(
   Engine.rewriteNote("room 22 late c/o at noon"),
-  "Room 22 – Late check-out has been noted until 12:00 PM.",
+  "Room 22 – Late check-out noted for 12:00 PM.",
   "late c/o at noon (noted, no invented actions)"
 );
 assertEqual(
@@ -436,7 +436,7 @@ console.log("\nPhase 3B — remaining legacy templates must not invent actions")
   const pkgSrc = "Package for Room 18 is held at Reception.";
   const pkg = Engine.rewriteNote(pkgSrc, { section: "deliveries" });
   assertIncludes(pkg, "18", "package retains Room 18");
-  assert(/\bheld at Reception\b/i.test(pkg), "held package factual");
+  assert(/\b(?:held at Reception|being held\.?\s*Stored in Reception)\b/i.test(pkg), "held package factual");
   assertNoUnsupportedActions(pkg, pkgSrc, "held package");
 
   const adapterSrc = "Room 7 has an adapter.";

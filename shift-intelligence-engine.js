@@ -17,26 +17,31 @@
  * - Modules must NOT create new independent recommendation systems.
  *
  * ---------------------------------------------------------------------------
- * Intended engine pipeline (E1)
+ * Intended engine pipeline (E1 + E4 Phase 1)
  * ---------------------------------------------------------------------------
  *   adapt input
  *   → normalise facts
  *   → classify
  *   → determine lifecycle
- *   → deduplicate / link
+ *   → deduplicate / link / group
+ *   → enrich OperationalContext
+ *   → impact / risk scoring (consumes OperationalContext)
  *   → rank
  *   → recommend
+ *   → writing (presentation only)
  *   → return IntelligenceResult
  *
  * Wired today (safely): adapt, normalise (neutral facts), lifecycle flags,
- * M4 cross-dedupe when callers use it, rank (incl. operational impact),
- * recommend, result shape, operational object grouping, snapshot extract.
+ * M4 cross-dedupe when callers use it, OperationalContext enrichment,
+ * rank (incl. operational impact), recommend, result shape, operational
+ * object grouping, snapshot extract.
  * Not moved yet: Handover section classification, Writing same-source merge,
- * full EntityReference graphs, conflict detection.
+ * full EntityReference graphs, conflict detection, cross-shift memory.
  *
  * Phase 16B — Thin shared intelligence foundation (runtime neutral facts).
  * Phase M4 — Maintenance → Handover fact merge (callers).
  * Phase E1 — Canonical contracts + compatibility helpers (no behaviour change).
+ * Phase E4.1 — Canonical OperationalContext enrichment (internal reasoning).
  *
  * @typedef {Object} EntityReference
  * @property {string} type - "room" | "guest" | "department" | "area" | string
@@ -92,6 +97,25 @@
  * @property {string[]} [evidence]
  * @property {string[]} [relatedFactIds]
  * @property {Object} [metadata]
+ * @property {OperationalContext} [operationalContext] - E4 Phase 1 (internal)
+ *
+ * @typedef {Object} OperationalContext
+ * @property {string} subject - Normalised operational subject token
+ * @property {string} category - OPERATIONAL_CATEGORY value
+ * @property {string} guestImpact - IMPACT_LEVEL
+ * @property {string} revenueImpact - IMPACT_LEVEL
+ * @property {string} operationalRisk - IMPACT_LEVEL
+ * @property {string} timeSensitivity - TIME_SENSITIVITY
+ * @property {string} urgency - URGENCY_LEVEL
+ * @property {number} confidence - 0–1
+ * @property {string} confidenceLabel - low|medium|high
+ * @property {string[]} departments - Dependent departments (controlled names)
+ * @property {string[]} dependencies - Same as departments (alias for consumers)
+ * @property {string} currentStatus - CONTEXT_STATUS (operational, not UI)
+ * @property {string} nextAction - NEXT_ACTION_KIND code, or "" when unsupported
+ * @property {string[]} reasoning - Stable reason codes (machine-readable)
+ * @property {string} [objectType] - OPERATIONAL_OBJECT_TYPE when known
+ * @property {string} [canonicalPriority] - Derived E1 priority (critical|high|normal|low)
  *
  * @typedef {Object} IntelligenceInput
  * @property {OperationalFact[]} [facts]
@@ -168,7 +192,8 @@
     { id: "classify", label: "classify", status: "wired" },
     { id: "lifecycle", label: "determine lifecycle", status: "wired" },
     { id: "dedupe_link", label: "deduplicate/link", status: "partial" },
-    { id: "rank", label: "rank", status: "wired" },
+    { id: "enrich_context", label: "enrich OperationalContext", status: "wired" },
+    { id: "rank", label: "rank (consumes OperationalContext)", status: "wired" },
     { id: "recommend", label: "recommend", status: "wired" },
     { id: "result", label: "return IntelligenceResult", status: "wired" }
   ];
@@ -430,6 +455,16 @@
     var source = sourceReference(f.sourceType, f.sourceId, f.workspaceId);
     var evidence = [];
     if (f.sourceText) evidence.push(f.sourceText);
+    var classification = classifyOperationalFact(f, {
+      section: f.sectionHint || (f.metadata && f.metadata.section) || "",
+      sourceType: f.sourceType,
+      sourceFactId: f.id
+    });
+    var operationalContext = buildOperationalContext(f, {
+      section: f.sectionHint || (f.metadata && f.metadata.section) || "",
+      sourceType: f.sourceType,
+      subject: f.subjectType || ""
+    });
     return {
       id: f.id,
       source: source,
@@ -461,11 +496,8 @@
       evidence: evidence,
       relatedFactIds: [],
       metadata: f.metadata || {},
-      classification: classifyOperationalFact(f, {
-        section: f.sectionHint || (f.metadata && f.metadata.section) || "",
-        sourceType: f.sourceType,
-        sourceFactId: f.id
-      })
+      classification: classification,
+      operationalContext: operationalContext
     };
   }
 
@@ -627,7 +659,10 @@
     { id: "writing.extractOperationalFact.subject", status: "delegated", note: "Subject extraction remains Writing; engine classifies from subject" },
     { id: "writing.sectionFromFact", status: "delegated", note: "Hint mapping; engine normalizeOperationalCategory consumes subjects/hints" },
     { id: "writing.classifyFactSummaryTopic", status: "presentation", note: "Summary cards only" },
-    { id: "shift.recommendationFromFact", status: "retained", note: "Still routes on subject strings; E4+ may consume category" },
+    { id: "shift.recommendationFromFact", status: "retained", note: "Still routes on subject strings; may consume OperationalContext in later E4" },
+    { id: "shift.buildOperationalContext", status: "migrated", note: "E4 Phase 1 canonical enrichment; scoring consumes context" },
+    { id: "writing.operationalContext", status: "presentation", note: "Must not invent OperationalContext; may read engine-attached context only" },
+    { id: "handover.operationalContext", status: "presentation", note: "UI must not calculate OperationalContext" },
     { id: "m4.maintenanceImport", status: "migrated", note: "Uses classifyOperationalFact; section stays maintenance" },
     { id: "hotelBrain.context", status: "presentation", note: "Knowledge retrieval, not operational classification" }
   ];
@@ -682,7 +717,8 @@
     if (s === "maintenance") return OPERATIONAL_CATEGORY.maintenance;
     if (
       s === "outstanding_balance" || s === "payment" || s === "invoice" || s === "bill" ||
-      s === "folio" || s === "account" || s === "charge" || s === "payment_balance"
+      s === "folio" || s === "account" || s === "charge" || s === "payment_balance" ||
+      s === "financial_settlement_unclear"
     ) {
       return OPERATIONAL_CATEGORY.payment;
     }
@@ -1212,107 +1248,878 @@
     return false;
   }
 
-  /**
-   * Combined operational impact (lower = higher priority).
-   * Considers guest impact, financial risk, VIP readiness, timed actions,
-   * unresolved maintenance and departure dependency — not note order.
-   *
-   * @returns {{ score: number, canonicalPriority: string, objectType: string, confidence: string, reasons: string[] }}
-   */
-  function scoreOperationalImpact(factOrEntry, note) {
-    var entry = factOrEntry && factOrEntry.fact ? factOrEntry : null;
-    var fact = entry ? entry.fact : (factOrEntry || {});
-    var hostNote = note || (entry && entry.note) || null;
-    var topic = entry && entry.topic ? String(entry.topic) : "";
-    var subject = normalizeSubjectToken(fact.subject || fact.subjectType || "");
-    var impact = trimText(fact.guestImpact || "").toLowerCase();
-    var priority = toCanonicalPriority(
-      fact.priority || fact.canonicalPriority ||
-      (hostNote && hostNote.maintenancePriority) || ""
-    );
-    var src = factSourceText(fact, hostNote).toLowerCase();
-    var objectInfo = classifyOperationalObject(fact, hostNote);
-    var reasons = [];
-    var score = 90;
-    var confidence = objectInfo.confidence || "medium";
-    var amount = extractMoneyAmount(fact, hostNote);
-    var guestMaint = isGuestImpactingMaintenance(fact, hostNote);
-    var highFinance = (
-      objectInfo.type === OPERATIONAL_OBJECT_TYPE.payment ||
-      subject === "payment" || subject === "outstanding_balance" || subject === "payment_balance" ||
-      topic === "payment"
-    ) && isHighFinancialRisk(fact, hostNote);
+  /* ------------------------------------------------------------------ */
+  /*  E4 Phase 1 — Canonical OperationalContext                          */
+  /* ------------------------------------------------------------------ */
 
-    if (topic === "critical" || impact === "critical" || priority === CANONICAL_PRIORITY.critical) {
-      score = 0;
-      reasons.push("critical_impact");
-    } else if (guestMaint) {
-      var fault = trimText(fact.faultType || "").toLowerCase();
-      if (fault === "ac" || fault === "hot water" || /hot\s*water|not cooling|\bac\b|air\s*con/.test(src)) {
-        score = 10;
-        reasons.push("guest_impacting_maintenance");
-      } else if (/on hold|unavailable/.test(src) || fault === "safe") {
-        score = 16;
-        reasons.push("room_unavailable_maintenance");
-      } else {
-        score = 14;
-        reasons.push("guest_impacting_maintenance");
+  /**
+   * Controlled impact scale shared by guestImpact / revenueImpact / operationalRisk.
+   * Reuses Writing guestImpact vocabulary (critical|high|medium|low) plus none.
+   */
+  var IMPACT_LEVEL = {
+    none: "none",
+    low: "low",
+    medium: "medium",
+    high: "high",
+    critical: "critical"
+  };
+
+  /** Time pressure relative to the current shift / day. */
+  var TIME_SENSITIVITY = {
+    none: "none",
+    later: "later",
+    today: "today",
+    imminent: "imminent",
+    overdue: "overdue"
+  };
+
+  /**
+   * Operational urgency (comparable). Distinct from legacy recommendation
+   * priority keys (urgent|normal) and E1 CANONICAL_PRIORITY (critical|normal).
+   */
+  var URGENCY_LEVEL = {
+    low: "low",
+    medium: "medium",
+    high: "high",
+    critical: "critical"
+  };
+
+  /**
+   * Operational current-status for reasoning (not UI copy).
+   * Distinct from E1 CANONICAL_STATUS: Writing "confirmed" means arrangement
+   * confirmed (CONTEXT_STATUS.confirmed), while E2 closure maps confirmed→resolved.
+   */
+  var CONTEXT_STATUS = {
+    pending: "pending",
+    confirmed: "confirmed",
+    in_progress: "in_progress",
+    completed: "completed",
+    unresolved: "unresolved",
+    informational: "informational"
+  };
+
+  var CONFIDENCE_LABEL = {
+    low: "low",
+    medium: "medium",
+    high: "high"
+  };
+
+  /** Structured next-action codes — empty when source does not support an action. */
+  var NEXT_ACTION_KIND = {
+    none: "",
+    follow_up_until_resolved: "follow_up_until_resolved",
+    collect_before_departure: "collect_before_departure",
+    prepare_vip: "prepare_vip",
+    honour_confirmed_arrangement: "honour_confirmed_arrangement",
+    complete_timed_actions: "complete_timed_actions",
+    guest_follow_up: "guest_follow_up",
+    post_or_collect_charge: "post_or_collect_charge",
+    reserve_interconnect: "reserve_interconnect",
+    operational_follow_up: "operational_follow_up"
+  };
+
+  var DEPARTMENT_NAME = {
+    reception: "Reception",
+    housekeeping: "Housekeeping",
+    maintenance: "Maintenance",
+    finance: "Finance",
+    food_beverage: "Food & Beverage",
+    duty_manager: "Duty Manager"
+  };
+
+  function normalizeImpactLevel(value, fallback) {
+    var v = trimText(value).toLowerCase();
+    if (IMPACT_LEVEL[v]) return IMPACT_LEVEL[v];
+    if (v === "urgent") return IMPACT_LEVEL.critical;
+    if (v === "normal") return IMPACT_LEVEL.medium;
+    return fallback != null ? fallback : IMPACT_LEVEL.none;
+  }
+
+  function normalizeTimeSensitivity(value) {
+    var v = trimText(value).toLowerCase();
+    return TIME_SENSITIVITY[v] || TIME_SENSITIVITY.none;
+  }
+
+  function normalizeUrgencyLevel(value) {
+    var v = trimText(value).toLowerCase();
+    if (v === "urgent") return URGENCY_LEVEL.critical;
+    if (v === "normal") return URGENCY_LEVEL.medium;
+    return URGENCY_LEVEL[v] || URGENCY_LEVEL.low;
+  }
+
+  function normalizeContextStatus(value) {
+    var v = trimText(value).toLowerCase().replace(/-/g, "_");
+    if (CONTEXT_STATUS[v]) return CONTEXT_STATUS[v];
+    if (v === "open" || v === "requested") return CONTEXT_STATUS.pending;
+    if (v === "done" || v === "resolved" || v === "closed" || v === "complete") {
+      return CONTEXT_STATUS.completed;
+    }
+    if (v === "unknown") return CONTEXT_STATUS.informational;
+    return CONTEXT_STATUS.informational;
+  }
+
+  function confidenceValueFromLabel(label) {
+    var l = trimText(label).toLowerCase();
+    if (l === CONFIDENCE_LABEL.high) return 0.9;
+    if (l === CONFIDENCE_LABEL.medium) return 0.6;
+    if (l === CONFIDENCE_LABEL.low) return 0.3;
+    return 0.5;
+  }
+
+  function confidenceLabelFromValue(value) {
+    var n = typeof value === "number" ? value : parseFloat(value);
+    if (isNaN(n)) return CONFIDENCE_LABEL.medium;
+    if (n >= 0.75) return CONFIDENCE_LABEL.high;
+    if (n >= 0.45) return CONFIDENCE_LABEL.medium;
+    return CONFIDENCE_LABEL.low;
+  }
+
+  function pushUnique(list, value) {
+    if (!value) return;
+    if (list.indexOf(value) === -1) list.push(value);
+  }
+
+  function createEmptyOperationalContext() {
+    return {
+      subject: "",
+      category: OPERATIONAL_CATEGORY.unknown,
+      guestImpact: IMPACT_LEVEL.none,
+      revenueImpact: IMPACT_LEVEL.none,
+      operationalRisk: IMPACT_LEVEL.none,
+      timeSensitivity: TIME_SENSITIVITY.none,
+      urgency: URGENCY_LEVEL.low,
+      confidence: 0.5,
+      confidenceLabel: CONFIDENCE_LABEL.medium,
+      departments: [],
+      dependencies: [],
+      currentStatus: CONTEXT_STATUS.informational,
+      nextAction: NEXT_ACTION_KIND.none,
+      reasoning: [],
+      objectType: OPERATIONAL_OBJECT_TYPE.other,
+      canonicalPriority: CANONICAL_PRIORITY.low
+    };
+  }
+
+  function impactRank(level) {
+    var order = {
+      none: 0,
+      low: 1,
+      medium: 2,
+      high: 3,
+      critical: 4
+    };
+    return order[normalizeImpactLevel(level, IMPACT_LEVEL.none)] || 0;
+  }
+
+  function maxImpact() {
+    var best = IMPACT_LEVEL.none;
+    for (var i = 0; i < arguments.length; i += 1) {
+      if (impactRank(arguments[i]) > impactRank(best)) best = normalizeImpactLevel(arguments[i], IMPACT_LEVEL.none);
+    }
+    return best;
+  }
+
+  function hasArrivalCue(src) {
+    return /\barriv(?:al|ing|es)?\b|\bdue\b|\bcheck[\s-]?in\b/.test(src);
+  }
+
+  function hasDepartureCue(src) {
+    return /\bdepart(?:ure|ing|s)?\b|\bcheck[\s-]?out\b|\bbefore\s+departure\b|\bb4\s+checkout\b/.test(src);
+  }
+
+  function hasTodayCue(src) {
+    return /\btoday\b|\bthis\s+shift\b|\btonight\b|\bthis\s+evening\b|\bin[\s-]?house\b|\bstay(?:ing|over)?\b/.test(src);
+  }
+
+  function hasImminentCue(src) {
+    return /\bimminent\b|\basap\b|\burgent\b|\bnow\b|\bbefore\s+(?:departure|checkout|check[\s-]?out)\b|\bdeparts?\s+today\b/.test(src) ||
+      hasDeclinedPaymentEvidence({ sourceText: src }, null);
+  }
+
+  function hasTomorrowCue(src) {
+    return /\btomorrow\b|\btmrw\b/.test(src);
+  }
+
+  function hasOverdueCue(src) {
+    /* Status "unresolved" is not by itself overdue — require explicit lateness cues. */
+    return /\boverdue\b|\bstill\s+(?:open|outstanding|unresolved)\b|\bnot\s+yet\s+(?:fixed|resolved|done|informed)\b|\bpast\s+due\b/.test(src);
+  }
+
+  function hasVipCue(fact, note, src) {
+    var subject = normalizeSubjectToken(fact && (fact.subject || fact.subjectType) || "");
+    if (subject === "vip_arrival") return true;
+    if (note && note.isVip) return true;
+    if (trimText(fact && fact.guestType || "").toLowerCase() === "vip") return true;
+    return /\bvip\b/.test(src);
+  }
+
+  function hasWeakEvidence(fact, note, src, subject, objectInfo) {
+    var rooms = factRoomsList(fact, note);
+    var thin = !subject || subject === "follow_up";
+    var vague = /guest\s+mentioned|mentioned\s+room|something\s+earlier|asked\s+for\s+something/i.test(src);
+    var noSubstance = thin && !rooms.length && objectInfo.type === OPERATIONAL_OBJECT_TYPE.other;
+    var almostEmpty = !trimText(src) && !subject;
+    return almostEmpty || vague || (noSubstance && src.split(/\s+/).filter(Boolean).length <= 4);
+  }
+
+  function inferContextStatus(fact, note, src, objectInfo, closed) {
+    var rawStatus = trimText(fact && fact.status || "").toLowerCase().replace(/-/g, "_");
+    if (rawStatus === "confirmed") return CONTEXT_STATUS.confirmed;
+    if (rawStatus === "done" || rawStatus === "resolved" || rawStatus === "completed" || rawStatus === "closed") {
+      return CONTEXT_STATUS.completed;
+    }
+    if (rawStatus === "in_progress" || rawStatus === "waiting_parts" || rawStatus === "waiting_contractor") {
+      return CONTEXT_STATUS.in_progress;
+    }
+    if (rawStatus === "requested" || rawStatus === "open" || rawStatus === "pending") {
+      if (
+        objectInfo.type === OPERATIONAL_OBJECT_TYPE.maintenance ||
+        objectInfo.type === OPERATIONAL_OBJECT_TYPE.payment ||
+        isGuestImpactingMaintenance(fact, note) ||
+        isHighFinancialRisk(fact, note)
+      ) {
+        return CONTEXT_STATUS.unresolved;
       }
-      if (/depart|check[\s-]?out|extended\s+check/.test(src)) reasons.push("departure_dependency");
-    } else if (highFinance) {
-      score = 20;
-      reasons.push("high_financial_risk");
-      if (hasDeclinedPaymentEvidence(fact, hostNote)) reasons.push("declined_payment");
-      if (/depart|check[\s-]?out|before\s+departure/.test(src)) reasons.push("departure_dependency");
-    } else if (objectInfo.type === OPERATIONAL_OBJECT_TYPE.vip || subject === "vip_arrival") {
-      score = 30;
-      reasons.push("vip_readiness");
-      if (/champagne|welcome\s+card|amenity|quiet/.test(src)) reasons.push("outstanding_vip_prep");
-    } else if (
+      return CONTEXT_STATUS.pending;
+    }
+    if (closed) {
+      if (/\bconfirm(?:ed)?\b/.test(src) && !/\bunresolved|still|outstanding|needed\b/.test(src)) {
+        return CONTEXT_STATUS.confirmed;
+      }
+      return CONTEXT_STATUS.completed;
+    }
+    if (/\bunresolved\b|\bstill\s+open\b|\bnot\s+yet\b|\bmaint(?:enance)?\s+(?:informed|aware)\b/.test(src) &&
+        !/\bresolved|fixed|completed|apologis/.test(src)) {
+      return CONTEXT_STATUS.unresolved;
+    }
+    if (/\bconfirm(?:ed)?\b/.test(src) && (objectInfo.type === OPERATIONAL_OBJECT_TYPE.guest_request ||
+        normalizeSubjectToken(fact && (fact.subject || fact.subjectType) || "") === "late_checkout")) {
+      return CONTEXT_STATUS.confirmed;
+    }
+    if (/\bin\s+progress\b|\bworking\s+on\b|\binformed\b|\baware\b/.test(src) &&
+        !/\bresolved|fixed|completed\b/.test(src)) {
+      if (objectInfo.type === OPERATIONAL_OBJECT_TYPE.maintenance || objectInfo.type === OPERATIONAL_OBJECT_TYPE.payment) {
+        return CONTEXT_STATUS.unresolved;
+      }
+      return CONTEXT_STATUS.in_progress;
+    }
+    if (/\bapologis|resolved|quiet\s+afterwards|sorted|settled|completed|done\b/.test(src) &&
+        !/\bstill|unresolved|outstanding|needed|follow\b/.test(src)) {
+      return CONTEXT_STATUS.completed;
+    }
+    if (objectInfo.type === OPERATIONAL_OBJECT_TYPE.vip ||
+        objectInfo.type === OPERATIONAL_OBJECT_TYPE.guest_request ||
+        normalizeSubjectToken(fact && (fact.subject || fact.subjectType) || "") === "late_checkout") {
+      return CONTEXT_STATUS.pending;
+    }
+    if (objectInfo.type === OPERATIONAL_OBJECT_TYPE.maintenance || objectInfo.type === OPERATIONAL_OBJECT_TYPE.payment) {
+      return CONTEXT_STATUS.unresolved;
+    }
+    if (!normalizeSubjectToken(fact && (fact.subject || fact.subjectType) || "") && !trimText(src)) {
+      return CONTEXT_STATUS.informational;
+    }
+    return CONTEXT_STATUS.informational;
+  }
+
+  function inferDepartments(fact, note, src, objectInfo, subject) {
+    var deps = [];
+    var owner = trimText(fact && (fact.ownerDept || fact.department || fact.ownerDepartment) || "");
+    if (owner) pushUnique(deps, owner);
+
+    if (
+      objectInfo.type === OPERATIONAL_OBJECT_TYPE.maintenance ||
+      subject === "maintenance" ||
+      isGuestImpactingMaintenance(fact, note)
+    ) {
+      pushUnique(deps, DEPARTMENT_NAME.maintenance);
+      pushUnique(deps, DEPARTMENT_NAME.reception);
+      if (/arriv|prep|linen|housekeeping|dirty|clean/.test(src)) {
+        pushUnique(deps, DEPARTMENT_NAME.housekeeping);
+      }
+    }
+    if (
+      objectInfo.type === OPERATIONAL_OBJECT_TYPE.payment ||
+      subject === "outstanding_balance" || subject === "payment" || subject === "payment_balance" ||
+      isHighFinancialRisk(fact, note)
+    ) {
+      pushUnique(deps, DEPARTMENT_NAME.reception);
+      pushUnique(deps, DEPARTMENT_NAME.finance);
+    }
+    if (objectInfo.type === OPERATIONAL_OBJECT_TYPE.vip || subject === "vip_arrival") {
+      pushUnique(deps, DEPARTMENT_NAME.reception);
+      if (/champagne|welcome\s+card|amenity|fruit|flowers|turn[\s-]?down/.test(src)) {
+        pushUnique(deps, DEPARTMENT_NAME.housekeeping);
+        if (/champagne|amenity|fruit|flowers/.test(src)) {
+          pushUnique(deps, DEPARTMENT_NAME.food_beverage);
+        }
+      }
+    }
+    if (subject === "late_checkout" || /late\s+check[\s-]?out/.test(src)) {
+      pushUnique(deps, DEPARTMENT_NAME.reception);
+      pushUnique(deps, DEPARTMENT_NAME.housekeeping);
+    }
+    if (
+      objectInfo.type === OPERATIONAL_OBJECT_TYPE.wake_up ||
+      objectInfo.type === OPERATIONAL_OBJECT_TYPE.transport ||
+      objectInfo.type === OPERATIONAL_OBJECT_TYPE.departure ||
+      subject === "wake_up" || subject === "transfer" || subject === "departure_followup"
+    ) {
+      pushUnique(deps, DEPARTMENT_NAME.reception);
+    }
+    if (subject === "guest_request" || objectInfo.type === OPERATIONAL_OBJECT_TYPE.guest_request) {
+      pushUnique(deps, DEPARTMENT_NAME.reception);
+      if (/bed|pillow|towel|iron|linen|housekeeping/.test(src)) {
+        pushUnique(deps, DEPARTMENT_NAME.housekeeping);
+      }
+    }
+    if (objectInfo.type === OPERATIONAL_OBJECT_TYPE.interconnect || subject === "interconnect") {
+      pushUnique(deps, DEPARTMENT_NAME.reception);
+      pushUnique(deps, DEPARTMENT_NAME.housekeeping);
+    }
+    if ((note && note.components) || (objectInfo.components && objectInfo.components.length)) {
+      (objectInfo.components || []).forEach(function (c) {
+        if (c === "payment") {
+          pushUnique(deps, DEPARTMENT_NAME.reception);
+          pushUnique(deps, DEPARTMENT_NAME.finance);
+        }
+        if (c === "wake_up" || c === "transport") pushUnique(deps, DEPARTMENT_NAME.reception);
+      });
+    }
+    return deps;
+  }
+
+  function inferNextAction(fact, note, src, objectInfo, subject, currentStatus, weak) {
+    if (weak) return NEXT_ACTION_KIND.none;
+    if (currentStatus === CONTEXT_STATUS.completed) return NEXT_ACTION_KIND.none;
+    if (currentStatus === CONTEXT_STATUS.informational && objectInfo.type === OPERATIONAL_OBJECT_TYPE.other) {
+      return NEXT_ACTION_KIND.none;
+    }
+    if (currentStatus === CONTEXT_STATUS.confirmed) {
+      if (subject === "late_checkout" || /late\s+check[\s-]?out/.test(src)) {
+        return NEXT_ACTION_KIND.honour_confirmed_arrangement;
+      }
+      return NEXT_ACTION_KIND.none;
+    }
+    if (
+      objectInfo.type === OPERATIONAL_OBJECT_TYPE.maintenance ||
+      subject === "maintenance" ||
+      isGuestImpactingMaintenance(fact, note)
+    ) {
+      return NEXT_ACTION_KIND.follow_up_until_resolved;
+    }
+    if (
+      objectInfo.type === OPERATIONAL_OBJECT_TYPE.payment ||
+      subject === "outstanding_balance" || subject === "payment" || subject === "payment_balance" ||
+      isHighFinancialRisk(fact, note)
+    ) {
+      if (/\badapter\b/.test(src) && !/\bdeclined|outstanding|balance\b/.test(src)) {
+        return NEXT_ACTION_KIND.post_or_collect_charge;
+      }
+      return NEXT_ACTION_KIND.collect_before_departure;
+    }
+    if (objectInfo.type === OPERATIONAL_OBJECT_TYPE.vip || subject === "vip_arrival") {
+      return NEXT_ACTION_KIND.prepare_vip;
+    }
+    if (
       objectInfo.type === OPERATIONAL_OBJECT_TYPE.wake_up ||
       objectInfo.type === OPERATIONAL_OBJECT_TYPE.transport ||
       objectInfo.type === OPERATIONAL_OBJECT_TYPE.departure ||
       objectInfo.type === OPERATIONAL_OBJECT_TYPE.timed ||
+      subject === "wake_up" || subject === "transfer" || subject === "departure_followup"
+    ) {
+      return NEXT_ACTION_KIND.complete_timed_actions;
+    }
+    if (objectInfo.type === OPERATIONAL_OBJECT_TYPE.interconnect || subject === "interconnect") {
+      return NEXT_ACTION_KIND.reserve_interconnect;
+    }
+    if (
+      objectInfo.type === OPERATIONAL_OBJECT_TYPE.guest_request ||
+      subject === "guest_request" || subject === "room_move" || subject === "lost_property"
+    ) {
+      var actionVerb = trimText(fact && fact.actionVerb || "");
+      var requestItem = trimText(fact && fact.requestItem || "");
+      if (!actionVerb && !requestItem && !/\bextra\s+bed|pillow|towel|iron|adapter|request/.test(src)) {
+        return NEXT_ACTION_KIND.none;
+      }
+      return NEXT_ACTION_KIND.guest_follow_up;
+    }
+    if (fact && (fact.actionVerb || fact.action)) {
+      return NEXT_ACTION_KIND.operational_follow_up;
+    }
+    return NEXT_ACTION_KIND.none;
+  }
+
+  /**
+   * Build the canonical OperationalContext for one operational fact.
+   * Deterministic, serializable, explainable. No HTML / presentation wording.
+   *
+   * @param {Object} fact - Writing OperationalFact, neutral fact, or contract view
+   * @param {Object} [supportingContext] - note, isVip, section, maintenancePriority,
+   *   brainContext, linkedComponents, topic, objectInfo
+   * @returns {OperationalContext}
+   */
+  function buildOperationalContext(fact, supportingContext) {
+    supportingContext = supportingContext || {};
+    fact = fact || {};
+    var note = supportingContext.note || null;
+    var ctx = createEmptyOperationalContext();
+    var src = factSourceText(fact, note).toLowerCase();
+    var subject = normalizeSubjectToken(fact.subject || fact.subjectType || supportingContext.subject || "");
+    var objectInfo = supportingContext.objectInfo || classifyOperationalObject(fact, note);
+    var classification = classifyOperationalFact(fact, {
+      section: supportingContext.section || (note && note.section) || fact.sectionHint || "",
+      sourceType: fact.sourceType || supportingContext.sourceType || "",
+      isVip: supportingContext.isVip || (note && note.isVip) || false,
+      maintenancePriority: supportingContext.maintenancePriority || (note && note.maintenancePriority) || "",
+      guestImpact: fact.guestImpact || "",
+      ownerDept: fact.ownerDept || fact.department || "",
+      status: fact.status || "",
+      sourceFactId: fact.id || ""
+    });
+    var amount = extractMoneyAmount(fact, note);
+    var declined = hasDeclinedPaymentEvidence(fact, note);
+    var guestMaint = isGuestImpactingMaintenance(fact, note);
+    var vip = hasVipCue(fact, note, src) || classification.category === OPERATIONAL_CATEGORY.guest &&
+      (subject === "vip_arrival" || (note && note.isVip));
+    var closed = isOperationalFactClosed(fact);
+    var weak = hasWeakEvidence(fact, note, src, subject, objectInfo);
+    var topic = trimText(supportingContext.topic || "").toLowerCase();
+    var factGuestImpact = normalizeImpactLevel(fact.guestImpact, "");
+    var reasoning = [];
+
+    ctx.subject = subject || classification.subject || "";
+    ctx.category = classification.category || OPERATIONAL_CATEGORY.unknown;
+    ctx.objectType = objectInfo.type || OPERATIONAL_OBJECT_TYPE.other;
+
+    /* --- G. Weak evidence: do not invent category / action / urgency --- */
+    if (weak) {
+      ctx.guestImpact = IMPACT_LEVEL.none;
+      ctx.revenueImpact = IMPACT_LEVEL.none;
+      ctx.operationalRisk = IMPACT_LEVEL.none;
+      ctx.timeSensitivity = TIME_SENSITIVITY.none;
+      ctx.urgency = URGENCY_LEVEL.low;
+      ctx.confidence = 0.25;
+      ctx.confidenceLabel = confidenceLabelFromValue(ctx.confidence);
+      ctx.currentStatus = CONTEXT_STATUS.informational;
+      ctx.nextAction = NEXT_ACTION_KIND.none;
+      ctx.departments = [];
+      ctx.dependencies = [];
+      ctx.reasoning = ["weak_evidence"];
+      if (!subject && !src) ctx.reasoning.push("insufficient_evidence");
+      if (ctx.category !== OPERATIONAL_CATEGORY.unknown && !subject) {
+        ctx.category = OPERATIONAL_CATEGORY.unknown;
+      }
+      ctx.canonicalPriority = CANONICAL_PRIORITY.low;
+      return ctx;
+    }
+
+    /* --- A. Guest impact --- */
+    var guestImpact = IMPACT_LEVEL.none;
+    if (topic === "critical" || factGuestImpact === IMPACT_LEVEL.critical || /\bcritical|evacuat|unsafe|fire|flood\b/.test(src)) {
+      guestImpact = IMPACT_LEVEL.critical;
+      pushUnique(reasoning, "critical_impact");
+    } else if (guestMaint) {
+      guestImpact = IMPACT_LEVEL.high;
+      pushUnique(reasoning, "guest_comfort_affected");
+      if (/\bin[\s-]?house\b|\bstay(?:ing|over)?\b|\bguest\s+(?:in|occup)/.test(src) || factRoomsList(fact, note).length) {
+        pushUnique(reasoning, "guest_in_house");
+      }
+      var fault = trimText(fact.faultType || "").toLowerCase();
+      if (fault === "ac" || fault === "hot water" || /hot\s*water|not cooling|\bac\b|air\s*con/.test(src)) {
+        pushUnique(reasoning, "guest_impacting_maintenance");
+      }
+      if (/on hold|unavailable/.test(src) || fault === "safe") {
+        pushUnique(reasoning, "room_unavailable_maintenance");
+      }
+    } else if (vip) {
+      guestImpact = IMPACT_LEVEL.high;
+      pushUnique(reasoning, "vip_affected");
+      if (/champagne|welcome\s+card|amenity|quiet/.test(src)) pushUnique(reasoning, "vip_readiness");
+    } else if (
+      factGuestImpact === IMPACT_LEVEL.high ||
+      subject === "outstanding_balance" ||
+      declined
+    ) {
+      guestImpact = IMPACT_LEVEL.high;
+      if (declined || subject === "outstanding_balance") pushUnique(reasoning, "guest_service_payment_risk");
+    } else if (
+      subject === "late_checkout" ||
+      subject === "guest_request" ||
+      subject === "room_move" ||
+      objectInfo.type === OPERATIONAL_OBJECT_TYPE.guest_request ||
+      factGuestImpact === IMPACT_LEVEL.medium
+    ) {
+      guestImpact = subject === "late_checkout" ? IMPACT_LEVEL.low : IMPACT_LEVEL.medium;
+      if (subject === "late_checkout") pushUnique(reasoning, "late_checkout_arrangement");
+      else pushUnique(reasoning, "guest_follow_up");
+    } else if (factGuestImpact === IMPACT_LEVEL.low) {
+      guestImpact = IMPACT_LEVEL.low;
+    } else if (
+      objectInfo.type === OPERATIONAL_OBJECT_TYPE.wake_up ||
+      objectInfo.type === OPERATIONAL_OBJECT_TYPE.transport ||
+      objectInfo.type === OPERATIONAL_OBJECT_TYPE.departure
+    ) {
+      guestImpact = IMPACT_LEVEL.medium;
+      pushUnique(reasoning, "timed_guest_action");
+    }
+    if (hasArrivalCue(src) && (vip || guestMaint || /prep|ready|amenity/.test(src))) {
+      pushUnique(reasoning, "arrival_at_risk");
+    }
+    if (hasDepartureCue(src) && (guestMaint || declined || amount != null)) {
+      pushUnique(reasoning, "departure_affected");
+    }
+
+    /* --- B. Revenue impact --- */
+    var revenueImpact = IMPACT_LEVEL.none;
+    var paymentLike = (
+      objectInfo.type === OPERATIONAL_OBJECT_TYPE.payment ||
+      subject === "payment" || subject === "outstanding_balance" || subject === "payment_balance" ||
+      subject === "financial_settlement_unclear" || topic === "payment" ||
+      (/\badapter\b/.test(src) && amount != null)
+    );
+    if (paymentLike || declined || amount != null) {
+      if (declined && (amount == null || amount >= 50 || hasDepartureCue(src) || hasTodayCue(src))) {
+        revenueImpact = amount != null && amount >= 100 ? IMPACT_LEVEL.critical : IMPACT_LEVEL.high;
+        pushUnique(reasoning, "declined_payment");
+      } else if (amount != null && amount >= 100) {
+        revenueImpact = IMPACT_LEVEL.high;
+        pushUnique(reasoning, "outstanding_balance");
+      } else if (amount != null && amount > 0) {
+        revenueImpact = IMPACT_LEVEL.medium;
+        pushUnique(reasoning, "outstanding_balance");
+      } else if (paymentLike) {
+        revenueImpact = IMPACT_LEVEL.medium;
+        pushUnique(reasoning, "payment_before_departure");
+      }
+      if (/\brefund|compensation|comp(?:ed)?\b/.test(src)) {
+        revenueImpact = maxImpact(revenueImpact, IMPACT_LEVEL.medium);
+        pushUnique(reasoning, "compensation_exposure");
+      }
+      if (/\bnot\s+posted|missing\s+charge|revenue\s+leak/.test(src)) {
+        revenueImpact = maxImpact(revenueImpact, IMPACT_LEVEL.medium);
+        pushUnique(reasoning, "revenue_leakage_risk");
+      }
+    }
+
+    /* --- E. Current status --- */
+    var currentStatus = inferContextStatus(fact, note, src, objectInfo, closed);
+    if (currentStatus === CONTEXT_STATUS.unresolved) {
+      pushUnique(reasoning, "maintenance_unresolved");
+      if (!guestMaint && !paymentLike) {
+        /* keep code only when maintenance-like; payment uses outstanding */
+        if (objectInfo.type !== OPERATIONAL_OBJECT_TYPE.maintenance && subject !== "maintenance") {
+          reasoning = reasoning.filter(function (r) { return r !== "maintenance_unresolved"; });
+          pushUnique(reasoning, "unresolved_item");
+        }
+      } else if (paymentLike && !guestMaint) {
+        reasoning = reasoning.filter(function (r) { return r !== "maintenance_unresolved"; });
+        pushUnique(reasoning, "unresolved_item");
+      }
+    }
+    if (currentStatus === CONTEXT_STATUS.completed) {
+      pushUnique(reasoning, "complaint_resolved");
+      guestImpact = maxImpact(guestImpact, IMPACT_LEVEL.none);
+      if (impactRank(guestImpact) > impactRank(IMPACT_LEVEL.low)) {
+        guestImpact = IMPACT_LEVEL.low;
+      }
+      revenueImpact = IMPACT_LEVEL.none;
+    }
+    if (currentStatus === CONTEXT_STATUS.confirmed) {
+      pushUnique(reasoning, "arrangement_confirmed");
+    }
+
+    /* --- C. Time sensitivity --- */
+    var timeSensitivity = TIME_SENSITIVITY.none;
+    if (currentStatus === CONTEXT_STATUS.completed) {
+      timeSensitivity = TIME_SENSITIVITY.none;
+    } else if (hasOverdueCue(src) && currentStatus === CONTEXT_STATUS.unresolved) {
+      timeSensitivity = TIME_SENSITIVITY.overdue;
+      pushUnique(reasoning, "overdue_or_unresolved");
+    } else if (
+      hasImminentCue(src) ||
+      (declined && hasDepartureCue(src)) ||
+      (paymentLike && hasDepartureCue(src) && hasTodayCue(src)) ||
+      (/\bdeparts?\s+today\b|\bdepart(?:ure|ing).*\btoday\b|\btoday\b.*\bdepart/.test(src))
+    ) {
+      timeSensitivity = TIME_SENSITIVITY.imminent;
+      pushUnique(reasoning, "departure_today");
+    } else if (
+      hasTodayCue(src) ||
+      hasArrivalCue(src) ||
+      hasDepartureCue(src) ||
+      objectInfo.type === OPERATIONAL_OBJECT_TYPE.vip ||
+      objectInfo.type === OPERATIONAL_OBJECT_TYPE.wake_up ||
+      objectInfo.type === OPERATIONAL_OBJECT_TYPE.transport ||
+      objectInfo.type === OPERATIONAL_OBJECT_TYPE.departure ||
+      subject === "late_checkout" ||
+      guestMaint
+    ) {
+      timeSensitivity = TIME_SENSITIVITY.today;
+      if (hasArrivalCue(src) || objectInfo.type === OPERATIONAL_OBJECT_TYPE.vip) {
+        pushUnique(reasoning, "arrival_today");
+      }
+      if (guestMaint) pushUnique(reasoning, "timed_action");
+    } else if (hasTomorrowCue(src) || objectInfo.type === OPERATIONAL_OBJECT_TYPE.interconnect) {
+      timeSensitivity = TIME_SENSITIVITY.later;
+      pushUnique(reasoning, "tomorrow_prep");
+    } else if (fact.dueAt || /\b\d{1,2}[:.]\d{2}\b|\b\d{3,4}\b/.test(src)) {
+      timeSensitivity = TIME_SENSITIVITY.today;
+      pushUnique(reasoning, "timed_action");
+    } else {
+      pushUnique(reasoning, "no_deadline_evidence");
+    }
+
+    /* --- Operational risk --- */
+    var operationalRisk = IMPACT_LEVEL.none;
+    if (currentStatus === CONTEXT_STATUS.completed) {
+      operationalRisk = IMPACT_LEVEL.low;
+    } else if (guestImpact === IMPACT_LEVEL.critical || revenueImpact === IMPACT_LEVEL.critical) {
+      operationalRisk = IMPACT_LEVEL.critical;
+    } else if (guestMaint && currentStatus === CONTEXT_STATUS.unresolved) {
+      operationalRisk = IMPACT_LEVEL.high;
+    } else if (revenueImpact === IMPACT_LEVEL.high || (declined && currentStatus !== CONTEXT_STATUS.completed)) {
+      operationalRisk = IMPACT_LEVEL.high;
+    } else if (vip && currentStatus !== CONTEXT_STATUS.completed && currentStatus !== CONTEXT_STATUS.confirmed) {
+      operationalRisk = IMPACT_LEVEL.medium;
+    } else if (currentStatus === CONTEXT_STATUS.confirmed && subject === "late_checkout") {
+      operationalRisk = IMPACT_LEVEL.low;
+    } else if (paymentLike || guestMaint) {
+      operationalRisk = IMPACT_LEVEL.medium;
+    } else if (objectInfo.type !== OPERATIONAL_OBJECT_TYPE.other) {
+      operationalRisk = IMPACT_LEVEL.low;
+    }
+
+    /* --- Urgency (from impact + time; not free text) --- */
+    var urgency = URGENCY_LEVEL.low;
+    if (guestImpact === IMPACT_LEVEL.critical || revenueImpact === IMPACT_LEVEL.critical) {
+      urgency = URGENCY_LEVEL.critical;
+    } else if (
+      (guestImpact === IMPACT_LEVEL.high && currentStatus === CONTEXT_STATUS.unresolved) ||
+      (revenueImpact === IMPACT_LEVEL.high && timeSensitivity === TIME_SENSITIVITY.imminent) ||
+      timeSensitivity === TIME_SENSITIVITY.overdue
+    ) {
+      urgency = URGENCY_LEVEL.high;
+    } else if (
+      guestImpact === IMPACT_LEVEL.high ||
+      revenueImpact === IMPACT_LEVEL.high ||
+      timeSensitivity === TIME_SENSITIVITY.imminent ||
+      (vip && timeSensitivity === TIME_SENSITIVITY.today)
+    ) {
+      urgency = URGENCY_LEVEL.high;
+    } else if (
+      timeSensitivity === TIME_SENSITIVITY.today ||
+      guestImpact === IMPACT_LEVEL.medium ||
+      revenueImpact === IMPACT_LEVEL.medium
+    ) {
+      urgency = URGENCY_LEVEL.medium;
+    } else {
+      urgency = URGENCY_LEVEL.low;
+    }
+    if (currentStatus === CONTEXT_STATUS.completed) {
+      urgency = URGENCY_LEVEL.low;
+    }
+
+    /* --- D. Departments / dependencies --- */
+    var departments = inferDepartments(fact, note, src, objectInfo, subject);
+    if (supportingContext.linkedComponents && supportingContext.linkedComponents.length) {
+      supportingContext.linkedComponents.forEach(function (c) {
+        if (c === "housekeeping") pushUnique(departments, DEPARTMENT_NAME.housekeeping);
+        if (c === "maintenance") pushUnique(departments, DEPARTMENT_NAME.maintenance);
+        if (c === "finance") pushUnique(departments, DEPARTMENT_NAME.finance);
+        if (c === "reception") pushUnique(departments, DEPARTMENT_NAME.reception);
+      });
+    }
+
+    /* --- F. Next action (evidence-backed only) --- */
+    var nextAction = inferNextAction(fact, note, src, objectInfo, subject, currentStatus, false);
+
+    /*
+     * Confidence = evidence quality (not severity).
+     * Numeric is canonical; confidenceLabel is derived from the numeric value.
+     * A critical-risk fact with thin evidence stays low confidence; a confirmed
+     * low-risk arrangement with clear room/status evidence can be high confidence.
+     */
+    var confidence = 0.55;
+    var rooms = factRoomsList(fact, note);
+    var objectConf = trimText(objectInfo.confidence || "").toLowerCase();
+    if (objectConf === CONFIDENCE_LABEL.high) confidence = 0.85;
+    else if (objectConf === CONFIDENCE_LABEL.medium) confidence = 0.6;
+    else if (objectConf === CONFIDENCE_LABEL.low) confidence = 0.35;
+
+    if (typeof fact.confidence === "number" && !isNaN(fact.confidence)) {
+      confidence = Math.max(0, Math.min(1, fact.confidence));
+    } else if (fact.confidence === CONFIDENCE_LABEL.low) {
+      confidence = Math.min(confidence, 0.3);
+    } else if (fact.confidence === CONFIDENCE_LABEL.medium) {
+      confidence = Math.min(Math.max(confidence, 0.55), 0.7);
+    } else if (fact.confidence === CONFIDENCE_LABEL.high) {
+      confidence = Math.max(confidence, 0.85);
+    }
+
+    if (subject && rooms.length) confidence = Math.max(confidence, 0.75);
+    if (subject && (amount != null || declined || guestMaint || vip || currentStatus === CONTEXT_STATUS.confirmed)) {
+      confidence = Math.max(confidence, 0.85);
+    }
+    if (currentStatus === CONTEXT_STATUS.completed && /\bapologis|quiet\s+afterwards|resolved\b/.test(src)) {
+      confidence = Math.max(confidence, 0.85);
+      pushUnique(reasoning, "resolved_with_evidence");
+    }
+    if (!subject || objectTypeIsThin(objectInfo)) {
+      confidence = Math.min(confidence, 0.55);
+    }
+    if (!trimText(src) && !subject) confidence = 0.25;
+    confidence = Math.max(0, Math.min(1, Math.round(confidence * 100) / 100));
+    var confidenceLabel = confidenceLabelFromValue(confidence);
+
+    /* Canonical priority for consumers (aligned with existing score bands). */
+    var canonicalPriority = CANONICAL_PRIORITY.normal;
+    if (urgency === URGENCY_LEVEL.critical || guestImpact === IMPACT_LEVEL.critical) {
+      canonicalPriority = CANONICAL_PRIORITY.critical;
+    } else if (
+      (guestMaint && currentStatus === CONTEXT_STATUS.unresolved) ||
+      revenueImpact === IMPACT_LEVEL.critical ||
+      (revenueImpact === IMPACT_LEVEL.high && timeSensitivity === TIME_SENSITIVITY.imminent)
+    ) {
+      canonicalPriority = CANONICAL_PRIORITY.critical;
+    } else if (
+      urgency === URGENCY_LEVEL.high ||
+      guestImpact === IMPACT_LEVEL.high ||
+      revenueImpact === IMPACT_LEVEL.high ||
+      vip
+    ) {
+      canonicalPriority = CANONICAL_PRIORITY.high;
+    } else if (urgency === URGENCY_LEVEL.low && impactRank(guestImpact) <= 1 && impactRank(revenueImpact) <= 1) {
+      canonicalPriority = CANONICAL_PRIORITY.low;
+    }
+
+    ctx.guestImpact = guestImpact;
+    ctx.revenueImpact = revenueImpact;
+    ctx.operationalRisk = operationalRisk;
+    ctx.timeSensitivity = timeSensitivity;
+    ctx.urgency = urgency;
+    ctx.confidence = confidence;
+    ctx.confidenceLabel = confidenceLabel;
+    ctx.departments = departments;
+    ctx.dependencies = departments.slice();
+    ctx.currentStatus = currentStatus;
+    ctx.nextAction = nextAction;
+    ctx.reasoning = reasoning;
+    ctx.canonicalPriority = canonicalPriority;
+    return ctx;
+  }
+
+  function objectTypeIsThin(objectInfo) {
+    return !objectInfo || objectInfo.type === OPERATIONAL_OBJECT_TYPE.other;
+  }
+
+  /**
+   * Map OperationalContext → legacy numeric impact score (lower = higher priority).
+   * Single scoring authority: consumes context fields; preserves existing bands.
+   */
+  function scoreFromOperationalContext(context, fact, note, topic) {
+    context = context || createEmptyOperationalContext();
+    fact = fact || {};
+    note = note || null;
+    topic = trimText(topic || "").toLowerCase();
+    var src = factSourceText(fact, note).toLowerCase();
+    var subject = context.subject || normalizeSubjectToken(fact.subject || fact.subjectType || "");
+    var objectType = context.objectType || OPERATIONAL_OBJECT_TYPE.other;
+    var amount = extractMoneyAmount(fact, note);
+    var reasons = (context.reasoning || []).slice();
+    var score = 90;
+    var confidence = context.confidenceLabel || CONFIDENCE_LABEL.medium;
+
+    if (
+      topic === "critical" ||
+      context.guestImpact === IMPACT_LEVEL.critical
+    ) {
+      score = 0;
+      pushUnique(reasons, "critical_impact");
+    } else if (
+      context.guestImpact === IMPACT_LEVEL.high &&
+      (objectType === OPERATIONAL_OBJECT_TYPE.maintenance || subject === "maintenance" ||
+        isGuestImpactingMaintenance(fact, note)) &&
+      context.currentStatus !== CONTEXT_STATUS.completed
+    ) {
+      var fault = trimText(fact.faultType || "").toLowerCase();
+      if (fault === "ac" || fault === "hot water" || /hot\s*water|not cooling|\bac\b|air\s*con/.test(src)) {
+        score = 10;
+        pushUnique(reasons, "guest_impacting_maintenance");
+      } else if (/on hold|unavailable/.test(src) || fault === "safe") {
+        score = 16;
+        pushUnique(reasons, "room_unavailable_maintenance");
+      } else {
+        score = 14;
+        pushUnique(reasons, "guest_impacting_maintenance");
+      }
+      if (/depart|check[\s-]?out|extended\s+check/.test(src)) pushUnique(reasons, "departure_dependency");
+    } else if (
+      (context.revenueImpact === IMPACT_LEVEL.high || context.revenueImpact === IMPACT_LEVEL.critical) &&
+      context.currentStatus !== CONTEXT_STATUS.completed
+    ) {
+      score = 20;
+      pushUnique(reasons, "high_financial_risk");
+      if (hasDeclinedPaymentEvidence(fact, note)) pushUnique(reasons, "declined_payment");
+      if (/depart|check[\s-]?out|before\s+departure/.test(src)) pushUnique(reasons, "departure_dependency");
+    } else if (objectType === OPERATIONAL_OBJECT_TYPE.vip || subject === "vip_arrival") {
+      score = 30;
+      pushUnique(reasons, "vip_readiness");
+      if (/champagne|welcome\s+card|amenity|quiet/.test(src)) pushUnique(reasons, "outstanding_vip_prep");
+    } else if (
+      objectType === OPERATIONAL_OBJECT_TYPE.wake_up ||
+      objectType === OPERATIONAL_OBJECT_TYPE.transport ||
+      objectType === OPERATIONAL_OBJECT_TYPE.departure ||
+      objectType === OPERATIONAL_OBJECT_TYPE.timed ||
       subject === "wake_up" || subject === "departure_followup" || subject === "transfer"
     ) {
       score = 40;
-      reasons.push("timed_guest_action");
+      pushUnique(reasons, "timed_guest_action");
     } else if (
-      objectInfo.type === OPERATIONAL_OBJECT_TYPE.payment ||
+      objectType === OPERATIONAL_OBJECT_TYPE.payment ||
       subject === "payment" || subject === "outstanding_balance" || subject === "payment_balance" ||
       topic === "payment" ||
       (/\badapter\b/.test(src) && amount != null)
     ) {
       score = 50;
-      reasons.push("payment_before_departure");
+      pushUnique(reasons, "payment_before_departure");
     } else if (
-      objectInfo.type === OPERATIONAL_OBJECT_TYPE.interconnect ||
+      objectType === OPERATIONAL_OBJECT_TYPE.interconnect ||
       subject === "interconnect" || subject === "guest_preparation" ||
+      context.timeSensitivity === TIME_SENSITIVITY.later ||
       /tomorrow|tmrw/.test(src)
     ) {
       score = 60;
-      reasons.push("tomorrow_prep");
-    } else if (subject === "maintenance" || objectInfo.type === OPERATIONAL_OBJECT_TYPE.maintenance) {
+      pushUnique(reasons, "tomorrow_prep");
+    } else if (subject === "maintenance" || objectType === OPERATIONAL_OBJECT_TYPE.maintenance) {
       score = 70;
-      reasons.push("maintenance_follow_up");
+      pushUnique(reasons, "maintenance_follow_up");
     } else if (
       topic === "guest" || subject === "guest_request" || subject === "lost_property" ||
       subject === "late_checkout" || subject === "room_move" ||
-      objectInfo.type === OPERATIONAL_OBJECT_TYPE.guest_request
+      objectType === OPERATIONAL_OBJECT_TYPE.guest_request
     ) {
       score = 80;
-      reasons.push("guest_follow_up");
-    } else if (objectInfo.type === OPERATIONAL_OBJECT_TYPE.reception) {
+      pushUnique(reasons, "guest_follow_up");
+    } else if (objectType === OPERATIONAL_OBJECT_TYPE.reception) {
       score = 85;
-      reasons.push("reception_ops");
+      pushUnique(reasons, "reception_ops");
     } else {
-      confidence = confidence === "high" ? "medium" : confidence;
+      confidence = confidence === CONFIDENCE_LABEL.high ? CONFIDENCE_LABEL.medium : confidence;
       if (!subject && !src) {
-        confidence = "low";
-        reasons.push("insufficient_evidence");
+        confidence = CONFIDENCE_LABEL.low;
+        pushUnique(reasons, "insufficient_evidence");
       } else {
-        reasons.push("general");
+        pushUnique(reasons, "general");
       }
+    }
+
+    if (context.currentStatus === CONTEXT_STATUS.completed) {
+      score = Math.max(score, 88);
+      confidence = context.confidenceLabel || confidence;
+    }
+    if (context.confidenceLabel === CONFIDENCE_LABEL.low) {
+      confidence = CONFIDENCE_LABEL.low;
+      score = Math.max(score, 85);
     }
 
     var canonicalPriority = CANONICAL_PRIORITY.normal;
@@ -1324,12 +2131,45 @@
     return {
       score: score,
       canonicalPriority: canonicalPriority,
-      objectType: objectInfo.type,
-      components: objectInfo.components || [],
+      objectType: objectType,
+      components: (context.components || []).slice ? (context.components || []).slice() : [],
       confidence: confidence,
       reasons: reasons,
-      moneyAmount: amount
+      moneyAmount: amount,
+      operationalContext: context
     };
+  }
+
+  /**
+   * Combined operational impact (lower = higher priority).
+   * Builds OperationalContext first, then scores from it — one canonical path.
+   *
+   * @returns {{ score: number, canonicalPriority: string, objectType: string, confidence: string, reasons: string[], operationalContext: OperationalContext }}
+   */
+  function scoreOperationalImpact(factOrEntry, note) {
+    var entry = factOrEntry && factOrEntry.fact ? factOrEntry : null;
+    var fact = entry ? entry.fact : (factOrEntry || {});
+    var hostNote = note || (entry && entry.note) || null;
+    var topic = entry && entry.topic ? String(entry.topic) : "";
+    var objectInfo = classifyOperationalObject(fact, hostNote);
+    var context = buildOperationalContext(fact, {
+      note: hostNote,
+      section: hostNote && hostNote.section,
+      isVip: hostNote && hostNote.isVip,
+      maintenancePriority: hostNote && hostNote.maintenancePriority,
+      topic: topic,
+      objectInfo: objectInfo,
+      linkedComponents: objectInfo.components || []
+    });
+    context.objectType = objectInfo.type;
+    var scored = scoreFromOperationalContext(context, fact, hostNote, topic);
+    scored.components = objectInfo.components || [];
+    scored.operationalContext = context;
+    scored.operationalContext.canonicalPriority = scored.canonicalPriority;
+    if (fact && typeof fact === "object") {
+      fact.operationalContext = context;
+    }
+    return scored;
   }
 
   function compareByOperationalImpact(a, b) {
@@ -1403,7 +2243,9 @@
           impactScore: impact.score,
           canonicalPriority: impact.canonicalPriority,
           confidence: impact.confidence,
-          reasons: impact.reasons.slice()
+          reasons: impact.reasons.slice(),
+          /* Inherited from highest-impact member — not independently re-reasoned. */
+          operationalContext: impact.operationalContext || null
         };
         order.push(key);
       }
@@ -1415,6 +2257,7 @@
       if (impact.score < group.impactScore) {
         group.impactScore = impact.score;
         group.canonicalPriority = impact.canonicalPriority;
+        if (impact.operationalContext) group.operationalContext = impact.operationalContext;
       }
       if (impact.confidence === "low") group.confidence = "low";
       else if (impact.confidence === "medium" && group.confidence === "high") {
@@ -4283,12 +5126,28 @@
     classifyOperationalFacts: classifyOperationalFacts,
     compareClassificationParity: compareClassificationParity,
     applyEngineClassificationToNote: applyEngineClassificationToNote,
-    /* Phase 1 / E4 — Operational impact, objects, snapshot */
+    /* E4 Phase 1 — OperationalContext + impact / objects / snapshot */
+    IMPACT_LEVEL: IMPACT_LEVEL,
+    TIME_SENSITIVITY: TIME_SENSITIVITY,
+    URGENCY_LEVEL: URGENCY_LEVEL,
+    CONTEXT_STATUS: CONTEXT_STATUS,
+    CONFIDENCE_LABEL: CONFIDENCE_LABEL,
+    NEXT_ACTION_KIND: NEXT_ACTION_KIND,
+    DEPARTMENT_NAME: DEPARTMENT_NAME,
+    createEmptyOperationalContext: createEmptyOperationalContext,
+    buildOperationalContext: buildOperationalContext,
+    normalizeImpactLevel: normalizeImpactLevel,
+    normalizeTimeSensitivity: normalizeTimeSensitivity,
+    normalizeUrgencyLevel: normalizeUrgencyLevel,
+    normalizeContextStatus: normalizeContextStatus,
+    confidenceLabelFromValue: confidenceLabelFromValue,
+    confidenceValueFromLabel: confidenceValueFromLabel,
     OPERATIONAL_OBJECT_TYPE: OPERATIONAL_OBJECT_TYPE,
     HOTEL_STATUS_LEVEL: HOTEL_STATUS_LEVEL,
     BRIEFING_MAX_BLOCKS: BRIEFING_MAX_BLOCKS,
     classifyOperationalObject: classifyOperationalObject,
     scoreOperationalImpact: scoreOperationalImpact,
+    scoreFromOperationalContext: scoreFromOperationalContext,
     compareByOperationalImpact: compareByOperationalImpact,
     groupIntoOperationalObjects: groupIntoOperationalObjects,
     rankByOperationalImpact: rankByOperationalImpact,
