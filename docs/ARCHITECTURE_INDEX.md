@@ -17,22 +17,28 @@ Hospitality Flow helps independent and boutique hotels run better shifts through
 | **Hotel Brain** | Durable hotel knowledge and operational context |
 | **AI Shift Handover** | Shift communication, facts, and recommendations |
 | **Maintenance** | Issue tracking with optional handover contribution |
-| **Guest Intelligence** | Planned — guest-impact layer on the shared engine |
+| **Guest Intelligence** | Planned — hotel-specific guest memory on the shared engine ([GI-0 architecture](GUEST_INTELLIGENCE_ARCHITECTURE.md)) |
 | **Operator / Pilot Lab** | Platform administration and operator sandbox |
 
 ### How modules connect
 
 ```text
-Hotel Brain (context)
+Hotel Brain (supporting knowledge)
         │
         ▼
-Hospitality Intelligence Engine  ◄── Maintenance facts (opt-in)
+Hospitality Intelligence Engine
+  OperationalFact → OperationalContext → OperationalMemory
+  → DecisionTrace → score/rank → recommendations
         │
+        ├── Maintenance facts (opt-in)
+        ├── Prior-shift history (derive-only, workspace-scoped)
+        └── Guest Intelligence enrichment (planned; supporting only)
         ▼
 AI Shift Handover (presentation + saved reports)
 
-Guest Intelligence (planned) → same engine contracts, not a parallel brain
+Guest Intelligence (GI-0 architecture done) → same engine contracts, not a parallel brain
 ```
+
 
 Shared reasoning belongs in the intelligence layer; modules present conclusions. Security (Auth, platform access, membership, RLS) wraps all real workspaces — see [Security](#4-security).
 
@@ -55,7 +61,8 @@ Detailed canonical security architecture lives in [security/SECURITY_ARCHITECTUR
 | Document | Description |
 |----------|-------------|
 | [PRODUCT_PRINCIPLES.md](PRODUCT_PRINCIPLES.md) | Product principles and mission |
-| [HOSPITALITY_INTELLIGENCE_ENGINE_ARCHITECTURE.md](HOSPITALITY_INTELLIGENCE_ENGINE_ARCHITECTURE.md) | Shared intelligence engine design |
+| [HOSPITALITY_INTELLIGENCE_ENGINE_ARCHITECTURE.md](HOSPITALITY_INTELLIGENCE_ENGINE_ARCHITECTURE.md) | Shared intelligence engine design (E1–E4) |
+| [GUEST_INTELLIGENCE_ARCHITECTURE.md](GUEST_INTELLIGENCE_ARCHITECTURE.md) | Guest Intelligence GI-0 — architecture only |
 | [HOSPITALITY_INTELLIGENCE_ARCHITECTURE_AUDIT.md](HOSPITALITY_INTELLIGENCE_ARCHITECTURE_AUDIT.md) | Intelligence architecture audit / roadmap context |
 | [PHASE_16B_INTELLIGENCE_FOUNDATION.md](PHASE_16B_INTELLIGENCE_FOUNDATION.md) | Phase 16B shared foundation |
 
@@ -68,7 +75,7 @@ Detailed canonical security architecture lives in [security/SECURITY_ARCHITECTUR
 | **Hotel Brain** | Dedicated architecture document not yet created. Covered in intelligence docs above; UI at `hotel-profile.html`. |
 | **AI Shift Handover** | Dedicated architecture document not yet created. Covered in intelligence docs above; UI at `handover.html`. |
 | **Maintenance** | [MAINTENANCE_V1_SPEC.md](MAINTENANCE_V1_SPEC.md), [MAINTENANCE_UI_V1.md](MAINTENANCE_UI_V1.md) |
-| **Guest Intelligence** | Dedicated architecture document not yet created. Referenced as planned in intelligence architecture docs. |
+| **Guest Intelligence** | [GUEST_INTELLIGENCE_ARCHITECTURE.md](GUEST_INTELLIGENCE_ARCHITECTURE.md) (GI-0 architecture only; not implemented) |
 | **Operator / Pilot Lab** | [OPERATOR_INVITE.md](OPERATOR_INVITE.md), [operator/PILOT_LAB_ACCOUNT_SETUP.md](operator/PILOT_LAB_ACCOUNT_SETUP.md) |
 
 Pilot validation (ops/research, not core architecture): [pilot-validation/README.md](pilot-validation/README.md).
@@ -132,11 +139,11 @@ Live suites must run **only** against the dedicated non-production project `hosp
 | Security Launch Gate #2 (Auth lifecycle) | **PASS** |
 | Security Launch Gate #3 (Authorization) | **PASS** |
 | Production Security v0.9 rollout | **Pending** controlled deployment |
-| Hospitality Intelligence Engine | Active development |
-| Hotel Brain | Active development |
+| Hospitality Intelligence Engine | **E1–E4 complete** (contracts, lifecycle, classification, OperationalContext, DecisionTrace, OperationalMemory); further hardening continues |
+| Hotel Brain | Active development (enrich-only for shift recommendations) |
 | AI Shift Handover | Active development |
 | Maintenance | Active development |
-| Guest Intelligence | Planned / early — no module implementation or dedicated architecture doc yet |
+| Guest Intelligence | **GI-0 architecture done** — no module implementation yet; must reuse E4 contracts, not a parallel brain |
 
 ---
 
@@ -146,5 +153,6 @@ Live suites must run **only** against the dedicated non-production project `hosp
 2. [ARCHITECTURE_INDEX.md](ARCHITECTURE_INDEX.md) (this file)
 3. [security/SECURITY_ARCHITECTURE.md](security/SECURITY_ARCHITECTURE.md)
 4. [HOSPITALITY_INTELLIGENCE_ENGINE_ARCHITECTURE.md](HOSPITALITY_INTELLIGENCE_ENGINE_ARCHITECTURE.md)
-5. Module-specific docs (Maintenance specs; Operator invite / Pilot Lab; others when written)
-6. Production rollout docs ([SECURITY_RELEASE_V0.9.md](releases/SECURITY_RELEASE_V0.9.md), [SECURITY_V0.9_PRODUCTION_ROLLOUT.md](security/SECURITY_V0.9_PRODUCTION_ROLLOUT.md))
+5. [GUEST_INTELLIGENCE_ARCHITECTURE.md](GUEST_INTELLIGENCE_ARCHITECTURE.md) (before any Guest Intelligence implementation)
+6. Module-specific docs (Maintenance specs; Operator invite / Pilot Lab; others when written)
+7. Production rollout docs ([SECURITY_RELEASE_V0.9.md](releases/SECURITY_RELEASE_V0.9.md), [SECURITY_V0.9_PRODUCTION_ROLLOUT.md](security/SECURITY_V0.9_PRODUCTION_ROLLOUT.md))
