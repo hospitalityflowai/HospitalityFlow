@@ -179,14 +179,24 @@ function main() {
   }
 
   // Mixed-role: hotel membership + operator keeps workspace and shows Operator section
+  // (authoritative definition lives in the suspend-authoritative migration after Audit 2 Step 1).
+  const accessRpcSql = [
+    "supabase/migrations/20260802140000_platform_suspend_authoritative.sql",
+    "supabase/migrations/phase15_operator_capability_flag.sql"
+  ]
+    .map((p) => {
+      try {
+        return read(p);
+      } catch {
+        return "";
+      }
+    })
+    .join("\n");
+
   const mixedRoleOk =
     /setOperatorSectionVisible\(!!access\.isOperator/.test(workspaceJsBody) &&
-    /has_membership',\s*true[\s\S]*'is_operator',\s*v_is_operator/i.test(
-      read("supabase/migrations/phase15_operator_capability_flag.sql")
-    ) &&
-    /access_status',\s*'active'/.test(
-      read("supabase/migrations/phase15_operator_capability_flag.sql")
-    );
+    /has_membership',\s*true[\s\S]*'is_operator',\s*v_is_operator/i.test(accessRpcSql) &&
+    /access_status',\s*'active'/.test(accessRpcSql);
 
   if (!mixedRoleOk) {
     ok = fail("Mixed hotel-owner + platform-operator must keep active workspace and show Operator") && ok;
@@ -222,7 +232,10 @@ function main() {
     ok = pass("operator.html initialises operator dashboard") && ok;
   }
 
-  if (!/access\.isOperator !== true/.test(operatorJsBody)) {
+  if (
+    !/access\.isOperator !== true/.test(operatorJsBody) &&
+    !/access\.reason === "SUSPENDED"/.test(operatorJsBody)
+  ) {
     ok = fail("operator.html must fail closed unless isOperator === true") && ok;
   } else {
     ok = pass("operator.html fails closed for non-operators") && ok;

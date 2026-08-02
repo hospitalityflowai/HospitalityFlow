@@ -77,6 +77,24 @@ function main() {
     ok = pass("Submit function saves application server-side") && ok;
   }
 
+  if (!/validateSubmitBody/.test(submitFn) || !/checkSubmitRateLimit/.test(submitFn)) {
+    ok = fail("Submit function missing shared validation / rate-limit wiring") && ok;
+  } else {
+    ok = pass("Submit function uses shared validation and rate limiting") && ok;
+  }
+
+  const edgeOnlyMigration = "supabase/migrations/20260802180000_early_access_submit_edge_only.sql";
+  if (!fs.existsSync(path.join(ROOT, edgeOnlyMigration))) {
+    ok = fail("Missing Edge-only submit migration (F-A03)") && ok;
+  } else {
+    const mig = read(edgeOnlyMigration);
+    if (!/TO service_role/.test(mig) || !/FROM anon, authenticated/.test(mig)) {
+      ok = fail("Edge-only migration must revoke client EXECUTE and grant service_role") && ok;
+    } else {
+      ok = pass("Edge-only migration revokes public RPC execute") && ok;
+    }
+  }
+
   if (!/X-Early-Access-Internal-Secret/.test(submitFn)) {
     ok = fail("Submit function missing internal secret header for email dispatch") && ok;
   } else {

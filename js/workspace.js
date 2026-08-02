@@ -95,6 +95,11 @@
     if (/update_hotel_workspace|function.*does not exist|42883/i.test(msg)) {
       return "Database setup incomplete. Run supabase/migrations/phase5_hotel_workspace_edit.sql in Supabase.";
     }
+    if (/platform access is suspended|access has been suspended/i.test(msg)) {
+      return global.HFPlatformAccess && global.HFPlatformAccess.SUSPENDED_MESSAGE
+        ? global.HFPlatformAccess.SUSPENDED_MESSAGE
+        : "Your Hospitality Flow access has been suspended.";
+    }
     if (/platform access has not been approved/i.test(msg)) {
       return global.HFPlatformAccess && global.HFPlatformAccess.NOT_APPROVED_MESSAGE
         ? global.HFPlatformAccess.NOT_APPROVED_MESSAGE
@@ -114,29 +119,53 @@
 
   function getUserWorkspace() {
     return ensureClient().then(function (client) {
-      return client.auth.getUser().then(function (result) {
-        var user = result.data.user;
-        if (!user) return null;
+      // Fresh platform-access check — suspension clears/ignores cached workspace
+      // even when a hotel_members row still exists. JWT alone cannot override.
+      var accessPromise = global.HFPlatformAccess && global.HFPlatformAccess.checkPlatformAccess
+        ? global.HFPlatformAccess.checkPlatformAccess()
+        : Promise.resolve({ allowed: false, reason: "MODULE_MISSING" });
 
-        return client
-          .from("hotel_members")
-          .select("role, hotel_id, created_at, hotels ( id, name, property_type, number_of_rooms, city, country, created_at )")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: true })
-          .limit(1)
-          .then(function (response) {
-            if (response.error) {
-              return Promise.reject(response.error);
+      return accessPromise.then(function (access) {
+        if (!access || access.allowed !== true) {
+          clearCachedWorkspace();
+          if (global.HFPlatformAccess && global.HFPlatformAccess.clearWorkspaceIdentity) {
+            global.HFPlatformAccess.clearWorkspaceIdentity();
+          } else if (global.HFTenantStorage && global.HFTenantStorage.readTenantContext) {
+            var deniedCtx = global.HFTenantStorage.readTenantContext();
+            if (deniedCtx && deniedCtx.userId && global.HFTenantStorage.writeTenantContext) {
+              global.HFTenantStorage.writeTenantContext({
+                userId: deniedCtx.userId,
+                workspaceId: null
+              });
             }
+          }
+          return null;
+        }
 
-            var row = response.data && response.data.length ? response.data[0] : null;
-            var workspace = normalizeMembershipRow(row);
-            cachedWorkspace = workspace;
-            if (global.HFTenantStorage && workspace && workspace.hotel && workspace.hotel.id) {
-              global.HFTenantStorage.updateTenantWorkspace(workspace.hotel.id);
-            }
-            return workspace;
-          });
+        return client.auth.getUser().then(function (result) {
+          var user = result.data.user;
+          if (!user) return null;
+
+          return client
+            .from("hotel_members")
+            .select("role, hotel_id, created_at, hotels ( id, name, property_type, number_of_rooms, city, country, created_at )")
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: true })
+            .limit(1)
+            .then(function (response) {
+              if (response.error) {
+                return Promise.reject(response.error);
+              }
+
+              var row = response.data && response.data.length ? response.data[0] : null;
+              var workspace = normalizeMembershipRow(row);
+              cachedWorkspace = workspace;
+              if (global.HFTenantStorage && workspace && workspace.hotel && workspace.hotel.id) {
+                global.HFTenantStorage.updateTenantWorkspace(workspace.hotel.id);
+              }
+              return workspace;
+            });
+        });
       });
     });
   }
@@ -445,7 +474,7 @@
     if (headingEl) headingEl.textContent = "Create your hotel workspace";
   }
 
-  function renderAccessPendingPanel(alertEl) {
+  function renderAccessPendingPanel(alertEl, access) {
     setWorkspacePanelVisible(document.getElementById("workspace-create"), false);
     setWorkspacePanelVisible(document.getElementById("workspace-dashboard"), false);
     setWorkspacePanelVisible(document.getElementById("operator-pilot-lab-create"), false);
@@ -454,21 +483,37 @@
     setWorkspacePanelVisible(document.getElementById("operator-account"), false);
     setWorkspacePanelVisible(document.getElementById("account-signout"), true);
 
+    if (global.HFPlatformAccess && global.HFPlatformAccess.clearWorkspaceIdentity) {
+      global.HFPlatformAccess.clearWorkspaceIdentity();
+    } else {
+      clearCachedWorkspace();
+    }
+
     var pendingEl = document.getElementById("access-pending");
     if (pendingEl) {
       setWorkspacePanelVisible(pendingEl, true);
     }
 
-    var headingEl = document.getElementById("account-heading");
-    if (headingEl) headingEl.textContent = "Access pending approval";
+    var suspended =
+      access &&
+      (access.reason === "SUSPENDED" || access.accessStatus === "suspended");
 
-    showAlert(
-      alertEl,
-      "error",
-      global.HFPlatformAccess && global.HFPlatformAccess.NOT_APPROVED_MESSAGE
-        ? global.HFPlatformAccess.NOT_APPROVED_MESSAGE
-        : "Your Hospitality Flow access has not been approved yet."
-    );
+    var headingEl = document.getElementById("account-heading");
+    if (headingEl) {
+      headingEl.textContent = suspended
+        ? "Access suspended"
+        : "Access pending approval";
+    }
+
+    var message = suspended && global.HFPlatformAccess && global.HFPlatformAccess.SUSPENDED_MESSAGE
+      ? global.HFPlatformAccess.SUSPENDED_MESSAGE
+      : global.HFPlatformAccess && global.HFPlatformAccess.denyMessage
+        ? global.HFPlatformAccess.denyMessage(access)
+        : global.HFPlatformAccess && global.HFPlatformAccess.NOT_APPROVED_MESSAGE
+          ? global.HFPlatformAccess.NOT_APPROVED_MESSAGE
+          : "Your Hospitality Flow access has not been approved yet.";
+
+    showAlert(alertEl, "error", message);
   }
 
   /**
@@ -626,7 +671,7 @@
           if (!access.allowed) {
             if (loadingEl) loadingEl.classList.add("hidden");
             if (contentEl) contentEl.classList.remove("hidden");
-            renderAccessPendingPanel(alertEl);
+            renderAccessPendingPanel(alertEl, access);
             bindLogoutButton(logoutBtn, alertEl);
             return;
           }

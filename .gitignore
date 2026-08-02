@@ -29,6 +29,9 @@ Thumbs.db
 .vscode/
 .idea/
 
+# Supabase CLI local state (linked project ref, cached versions) — not deployment config
+supabase/.temp/
+
 # Build output
 dist/
 build/

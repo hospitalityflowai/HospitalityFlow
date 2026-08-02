@@ -38,13 +38,49 @@
     return origin + basePath + filename;
   }
 
-  function getRedirectTarget(fallback) {
+  function getSafeRedirectApi() {
+    return global.HFSafeRedirect || null;
+  }
+
+  /**
+   * Validate ?redirect= against the shared allowlist.
+   * Operator route requires options.isOperator === true from a fresh access check.
+   */
+  function getRedirectTarget(fallback, options) {
+    options = options || {};
     var params = new URLSearchParams(global.location.search);
     var target = params.get("redirect");
-    if (!target || target.indexOf("login.html") !== -1 || target.indexOf("signup.html") !== -1) {
-      return fallback || ROUTES.account;
+    var api = getSafeRedirectApi();
+    var safeFallback = fallback || ROUTES.account;
+
+    if (!api || typeof api.resolveInternalRedirect !== "function") {
+      return ROUTES.account;
     }
-    return target;
+
+    return api.resolveInternalRedirect(target, {
+      fallback: safeFallback,
+      isOperator: options.isOperator === true
+    });
+  }
+
+  /**
+   * Resolve post-login redirect using a fresh platform-access / operator check.
+   */
+  function resolvePostAuthRedirect(fallback) {
+    var safeFallback = fallback || ROUTES.account;
+    var accessPromise =
+      global.HFPlatformAccess && global.HFPlatformAccess.checkPlatformAccess
+        ? global.HFPlatformAccess.checkPlatformAccess()
+        : Promise.resolve({ allowed: false, isOperator: false });
+
+    return accessPromise
+      .then(function (access) {
+        var isOperator = !!(access && access.allowed && access.isOperator);
+        return getRedirectTarget(safeFallback, { isOperator: isOperator });
+      })
+      .catch(function () {
+        return getRedirectTarget(safeFallback, { isOperator: false });
+      });
   }
 
   function ensureClient() {
@@ -115,8 +151,10 @@
   function requireGuest() {
     return getSession().then(function (session) {
       if (session) {
-        redirect(getRedirectTarget(ROUTES.account));
-        return true;
+        return resolvePostAuthRedirect(ROUTES.account).then(function (target) {
+          redirect(target);
+          return true;
+        });
       }
       return false;
     }).catch(function () {
@@ -154,7 +192,11 @@
     }
 
     return ensureClient().then(function (client) {
-      var redirectTo = getPageUrl(ROUTES.account);
+      var api = getSafeRedirectApi();
+      var redirectTo =
+        api && typeof api.buildAbsoluteAuthCallbackUrl === "function"
+          ? api.buildAbsoluteAuthCallbackUrl(global.location.origin, ROUTES.account)
+          : "https://hospitalityflow.co.uk/account.html";
 
       return client.auth.signUp({
         email: email,
@@ -231,7 +273,15 @@
   }
 
   function getPasswordResetRedirectUrl() {
-    return getPageUrl(ROUTES.resetPassword);
+    var api = getSafeRedirectApi();
+    if (api && typeof api.buildAbsoluteAuthCallbackUrl === "function") {
+      return api.buildAbsoluteAuthCallbackUrl(
+        global.location.origin,
+        ROUTES.resetPassword
+      );
+    }
+    // Fail closed to production reset landing if the shared module failed to load.
+    return "https://hospitalityflow.co.uk/reset-password.html";
   }
 
   function markRecoveryActive() {
@@ -403,6 +453,11 @@
     if (/valid email/i.test(msg)) {
       return "Please enter a valid email address.";
     }
+    if (/platform access is suspended|access has been suspended/i.test(msg)) {
+      return global.HFPlatformAccess && global.HFPlatformAccess.SUSPENDED_MESSAGE
+        ? global.HFPlatformAccess.SUSPENDED_MESSAGE
+        : "Your Hospitality Flow access has been suspended.";
+    }
     if (/platform access has not been approved/i.test(msg)) {
       return global.HFPlatformAccess && global.HFPlatformAccess.NOT_APPROVED_MESSAGE
         ? global.HFPlatformAccess.NOT_APPROVED_MESSAGE
@@ -510,9 +565,11 @@
             : Promise.resolve();
 
           preloadPromise.finally(function () {
-            setTimeout(function () {
-              redirect(getRedirectTarget(ROUTES.account));
-            }, 400);
+            resolvePostAuthRedirect(ROUTES.account).then(function (target) {
+              setTimeout(function () {
+                redirect(target);
+              }, 400);
+            });
           });
         }).catch(function (err) {
           showAlert(alertEl, "error", formatError(err));
@@ -1000,6 +1057,9 @@
     requestPasswordReset: requestPasswordReset,
     updatePassword: updatePassword,
     validateNewPassword: validateNewPassword,
+    getRedirectTarget: getRedirectTarget,
+    resolvePostAuthRedirect: resolvePostAuthRedirect,
+    getPasswordResetRedirectUrl: getPasswordResetRedirectUrl,
     formatError: formatError,
     showAlert: showAlert,
     hideAlert: hideAlert,

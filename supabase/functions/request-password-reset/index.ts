@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { corsHeaders, jsonResponse } from "../_shared/cors.ts";
+import { resolvePasswordResetRedirectTo } from "../_shared/safe-redirect.ts";
 
 const NEUTRAL_SUCCESS_MESSAGE =
   "If this email is eligible, a reset link will be sent shortly.";
@@ -148,7 +149,11 @@ Deno.serve(async (req) => {
     }
 
     const email = normalizeEmail(body.email);
-    const redirectTo = typeof body.redirectTo === "string" ? body.redirectTo.trim() : "";
+    // Never pass a user-controlled URL through to Auth. Rebuild from SITE_URL /
+    // HF_ALLOWED_REDIRECT_ORIGINS + allowlisted reset-password.html path.
+    const redirectTo = resolvePasswordResetRedirectTo(
+      typeof body.redirectTo === "string" ? body.redirectTo : "",
+    );
     const devRelaxed = isDevRelaxedRequest(req);
 
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {

@@ -1,69 +1,15 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { corsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { readInternalSecretEnv } from "../_shared/internal-auth.ts";
+import {
+  checkSubmitRateLimit,
+  clientRateLimitKey,
+  validateSubmitBody,
+  type EarlyAccessSubmitBody,
+} from "../_shared/early-access-submit.ts";
 
 const INTERNAL_SECRET_ENV = "EARLY_ACCESS_EMAILS_INTERNAL_SECRET";
 const EMAIL_FUNCTION_NAME = "send-early-access-emails";
-const MAX_FIELD_LENGTH = 200;
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-type SubmitBody = {
-  firstName?: string;
-  email?: string;
-  propertyName?: string;
-  propertyType?: string;
-  roomCount?: number | string | null;
-  role?: string;
-  source?: string;
-};
-
-function trimField(value: unknown, maxLength = MAX_FIELD_LENGTH): string {
-  return String(value == null ? "" : value).trim().slice(0, maxLength);
-}
-
-function normalizeEmail(value: unknown): string {
-  return trimField(value, 320).toLowerCase();
-}
-
-function parseRoomCount(value: unknown): number | null {
-  if (value == null || value === "") return null;
-  const parsed = typeof value === "number" ? value : parseInt(String(value), 10);
-  if (!Number.isFinite(parsed) || parsed < 0 || parsed > 10000) {
-    return null;
-  }
-  return parsed;
-}
-
-function validateSubmitBody(body: SubmitBody) {
-  const firstName = trimField(body.firstName);
-  const email = normalizeEmail(body.email);
-  const propertyName = trimField(body.propertyName);
-  const propertyType = trimField(body.propertyType);
-  const role = trimField(body.role);
-  const source = trimField(body.source || "early-access-programme") ||
-    "early-access-programme";
-  const roomCount = parseRoomCount(body.roomCount);
-
-  if (!firstName || !email || !propertyName || !propertyType || !role) {
-    return { error: "Missing required application fields." };
-  }
-
-  if (!EMAIL_RE.test(email)) {
-    return { error: "A valid email address is required." };
-  }
-
-  return {
-    value: {
-      firstName,
-      email,
-      propertyName,
-      propertyType,
-      role,
-      source,
-      roomCount,
-    },
-  };
-}
 
 function createServiceClient() {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -89,7 +35,14 @@ async function invokeInternalEmailFunction(
 ) {
   const internalSecret = readInternalSecretEnv(INTERNAL_SECRET_ENV);
   if (!internalSecret) {
-    throw new Error("Internal email secret is not configured.");
+    // Application row is already saved — do not fail the submit path.
+    console.error(
+      "[submit-early-access-application] Internal email secret missing; skipping email dispatch",
+    );
+    return {
+      status: 503,
+      payload: { ok: false, error: "Email dispatch not configured." },
+    };
   }
 
   const response = await fetch(
@@ -125,7 +78,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    let body: SubmitBody;
+    let body: EarlyAccessSubmitBody;
     try {
       body = await req.json();
     } catch {
@@ -133,12 +86,62 @@ Deno.serve(async (req) => {
     }
 
     const validated = validateSubmitBody(body);
-    if (validated.error || !validated.value) {
-      return jsonResponse({ error: validated.error || "Invalid application." }, 400);
+    if ("error" in validated) {
+      return jsonResponse({ error: validated.error }, 400);
     }
 
     const input = validated.value;
     const { client, supabaseUrl, serviceRoleKey } = createServiceClient();
+
+    // Durable rate limit (DB) — survives Edge isolate restarts.
+    // Limit both per-email and per-IP so bursts are capped even when egress IP varies.
+    const compositeKey = clientRateLimitKey(req, input.email);
+    const emailKey = `email:${input.email}`;
+    const memoryRate = checkSubmitRateLimit(compositeKey);
+
+    const emailLimit = await client.rpc("check_early_access_submit_rate_limit", {
+      p_rate_key: emailKey,
+      p_window_seconds: 600,
+      p_max_hits: 8,
+    });
+    const ipLimit = await client.rpc("check_early_access_submit_rate_limit", {
+      p_rate_key: compositeKey,
+      p_window_seconds: 600,
+      p_max_hits: 8,
+    });
+
+    if (emailLimit.error || ipLimit.error) {
+      console.error(
+        "[submit-early-access-application] Rate-limit RPC failed:",
+        emailLimit.error || ipLimit.error,
+      );
+      return jsonResponse({ ok: false, error: "Application could not be saved." }, 500);
+    }
+
+    if (!memoryRate.allowed || emailLimit.data !== true || ipLimit.data !== true) {
+      console.warn("[submit-early-access-application] Rate limit hit", {
+        emailDomain: input.email.includes("@")
+          ? input.email.split("@")[1]
+          : "unknown",
+        memoryAllowed: memoryRate.allowed,
+        emailAllowed: emailLimit.data === true,
+        ipAllowed: ipLimit.data === true,
+      });
+      return new Response(
+        JSON.stringify({
+          ok: false,
+          error: "Too many application attempts. Please try again later.",
+        }),
+        {
+          status: 429,
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json",
+            "Retry-After": String(memoryRate.retryAfterSec || 60),
+          },
+        },
+      );
+    }
 
     const { data: applicationId, error: submitError } = await client.rpc(
       "submit_early_access_application",
@@ -160,6 +163,11 @@ Deno.serve(async (req) => {
       );
       return jsonResponse({ ok: false, error: "Application could not be saved." }, 500);
     }
+
+    console.log("[submit-early-access-application] Application saved", {
+      applicationId,
+      emailDomain: input.email.includes("@") ? input.email.split("@")[1] : "unknown",
+    });
 
     const emailResult = await invokeInternalEmailFunction(
       supabaseUrl,

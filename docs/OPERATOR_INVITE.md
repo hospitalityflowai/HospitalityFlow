@@ -11,7 +11,7 @@ Authorised operators (`platform_operators`) can review applications and invite f
 `operator.html`
 
 1. Sign in with an operator account.
-2. Open **Account** — an **Operator** section appears whenever `get_my_platform_access` returns `is_operator: true` (including users who are also hotel members with `access_status: "active"`).
+2. Open **Account** — an **Operator** section appears whenever `get_my_platform_access` returns `is_operator: true` and the account is **not** suspended (including users who are also hotel members with `access_status: "active"`). Suspension is a global deny — see [`docs/security/PLATFORM_SUSPEND_AND_REVOKE.md`](security/PLATFORM_SUSPEND_AND_REVOKE.md).
 3. Open the operator dashboard.
 4. Review pending applications and click **Approve & Send Invite**.
 5. Confirm in the modal. The page calls `invite-pilot-applicant` with `{ applicationId }` using your session JWT.

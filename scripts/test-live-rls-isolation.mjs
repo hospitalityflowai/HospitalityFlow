@@ -288,7 +288,9 @@ async function seedFixture(admin, sessions) {
 }
 
 async function resolveFrontendWorkspace(userClient, userId) {
-  // Mirrors js/workspace.js getUserWorkspace(): oldest membership + hotel join.
+  // Membership query used by frontend workspace resolution (oldest membership + hotel join).
+  // App-level suspension gating is covered by test-platform-suspend-authoritative.mjs;
+  // this suite proves RLS after membership deletion (Launch Gate #1).
   return userClient.select("hotel_members", {
     select: "role,hotel_id,created_at,hotels(id,name,property_type,number_of_rooms,city,country,created_at)",
     user_id: `eq.${userId}`,
@@ -695,6 +697,280 @@ async function runLiveProofs(config) {
     "empty set or RLS denial",
     await a.select("hotel_brain_profiles", { hotel_id: `eq.${fx.opLab.id}` })
   );
+
+  // ── D2. PLATFORM SUSPENSION (data-plane / same JWT) ─────────────
+  // Requires migration 20260802153000_rls_require_active_platform_access.sql
+  {
+    const helperProbe = await a.rpc("has_active_platform_access");
+    if (!helperProbe.ok || helperProbe.body !== true) {
+      throw new HarnessSetupError(
+        "has_active_platform_access() unavailable or returned false for active Hotel A owner. Apply supabase/migrations/20260802153000_rls_require_active_platform_access.sql on the non-production test project before running this suite.",
+        helperProbe.summary || JSON.stringify(helperProbe.body)
+      );
+    }
+    reporter.pass(
+      "S0. has_active_platform_access helper available for active member",
+      "rpc returns true",
+      "true"
+    );
+  }
+
+  await expectOkRows(
+    "S1. Active member can read Hotel A Brain before suspend",
+    "≥1 brain row",
+    await a.select("hotel_brain_profiles", { hotel_id: `eq.${fx.hotelA.id}` })
+  );
+  await expectOkRows(
+    "S1b. Active member can read Hotel A handovers before suspend",
+    "≥1 handover row",
+    await a.select("handover_reports", { workspace_id: `eq.${fx.hotelA.id}` })
+  );
+  await expectOkRows(
+    "S1c. Active member can read Hotel A maintenance before suspend",
+    "≥1 issue row",
+    await a.select("maintenance_issues", { workspace_id: `eq.${fx.hotelA.id}` })
+  );
+
+  // Capture the SAME JWT client before suspension (no re-login afterward).
+  const suspendedMemberClient = a;
+  const suspendedMemberUserId = sessions.hotelAOwner.user.id;
+
+  await admin.adminEnsurePlatformAccess(
+    suspendedMemberUserId,
+    config.accounts.hotelAOwner.email,
+    "suspended"
+  );
+  reporter.pass(
+    "S2. Admin sets Hotel A owner platform_access to suspended",
+    "access_status=suspended",
+    "suspended"
+  );
+
+  {
+    const accessRpc = await suspendedMemberClient.rpc("get_my_platform_access");
+    const denied =
+      accessRpc.ok &&
+      accessRpc.body &&
+      accessRpc.body.allowed === false &&
+      accessRpc.body.reason === "SUSPENDED";
+    reporter.assert(
+      "S3. Same JWT get_my_platform_access returns SUSPENDED",
+      "allowed=false reason=SUSPENDED",
+      accessRpc.ok
+        ? JSON.stringify({
+            allowed: accessRpc.body && accessRpc.body.allowed,
+            reason: accessRpc.body && accessRpc.body.reason
+          })
+        : accessRpc.summary,
+      denied
+    );
+  }
+
+  {
+    const helper = await suspendedMemberClient.rpc("has_active_platform_access");
+    reporter.assert(
+      "S3b. Same JWT has_active_platform_access is false",
+      "false",
+      helper.ok ? String(helper.body) : helper.summary,
+      helper.ok && helper.body === false
+    );
+  }
+
+  await expectDenied(
+    "S4a. Suspended member SELECT Hotel Brain denied (same JWT)",
+    "empty set or RLS denial",
+    await suspendedMemberClient.select("hotel_brain_profiles", {
+      hotel_id: `eq.${fx.hotelA.id}`
+    })
+  );
+  await expectDenied(
+    "S4b. Suspended member SELECT handovers denied (same JWT)",
+    "empty set or RLS denial",
+    await suspendedMemberClient.select("handover_reports", {
+      workspace_id: `eq.${fx.hotelA.id}`
+    })
+  );
+  await expectDenied(
+    "S4c. Suspended member SELECT maintenance denied (same JWT)",
+    "empty set or RLS denial",
+    await suspendedMemberClient.select("maintenance_issues", {
+      workspace_id: `eq.${fx.hotelA.id}`
+    })
+  );
+  await expectDenied(
+    "S4d. Suspended member INSERT handover denied (same JWT)",
+    "RLS denial",
+    await suspendedMemberClient.insert("handover_reports", {
+      workspace_id: fx.hotelA.id,
+      user_id: suspendedMemberUserId,
+      hotel_name: "suspended-write",
+      department: "Front Office",
+      shift: "AM",
+      handover_date: new Date().toISOString().slice(0, 10),
+      prepared_by: "suspended",
+      metrics: {},
+      source_notes: "suspended",
+      generated_handover: {},
+      checklist_state: [],
+      recommendation_state: [],
+      status: "saved"
+    })
+  );
+  await expectDenied(
+    "S4e. Suspended member UPDATE Brain denied (same JWT)",
+    "empty update / RLS denial",
+    await suspendedMemberClient.update(
+      "hotel_brain_profiles",
+      { hotel_id: `eq.${fx.hotelA.id}` },
+      { profile_data: { suspended: true } }
+    )
+  );
+  await expectDenied(
+    "S4f. Suspended member UPDATE handover denied (same JWT)",
+    "empty update / RLS denial",
+    await suspendedMemberClient.update(
+      "handover_reports",
+      { id: `eq.${fx.handoverA.id}` },
+      { prepared_by: "suspended-hack" }
+    )
+  );
+  await expectDenied(
+    "S4g. Suspended member DELETE handover denied (same JWT)",
+    "empty delete / RLS denial",
+    await suspendedMemberClient.delete("handover_reports", {
+      id: `eq.${fx.handoverA.id}`
+    })
+  );
+  await expectDenied(
+    "S4h. Suspended member UPDATE maintenance denied (same JWT)",
+    "empty update / RLS denial",
+    await suspendedMemberClient.update(
+      "maintenance_issues",
+      { id: `eq.${fx.issueA.id}` },
+      { title: "suspended-hack" }
+    )
+  );
+  await expectDenied(
+    "S4i. Suspended member DELETE maintenance denied (same JWT)",
+    "empty delete / RLS denial (no member DELETE policy)",
+    await suspendedMemberClient.delete("maintenance_issues", {
+      id: `eq.${fx.issueA.id}`
+    })
+  );
+  await expectDenied(
+    "S4j. Suspended member SELECT hotels row denied (same JWT)",
+    "empty set or RLS denial",
+    await suspendedMemberClient.select("hotels", { id: `eq.${fx.hotelA.id}` })
+  );
+  await expectDenied(
+    "S4k. Suspended member SELECT hotel_members denied (same JWT)",
+    "empty set or RLS denial",
+    await suspendedMemberClient.select("hotel_members", {
+      hotel_id: `eq.${fx.hotelA.id}`,
+      user_id: `eq.${suspendedMemberUserId}`
+    })
+  );
+
+  // Hotel B isolation must remain intact while A is suspended.
+  await expectOkRows(
+    "S5. Hotel B owner still reads Hotel B Brain while A is suspended",
+    "≥1 row",
+    await b.select("hotel_brain_profiles", { hotel_id: `eq.${fx.hotelB.id}` })
+  );
+
+  // Operator suspension: OpLab membership remains, but platform_access suspended.
+  await admin.adminEnsurePlatformAccess(
+    sessions.operator.user.id,
+    config.accounts.operator.email,
+    "suspended"
+  );
+  await expectDenied(
+    "S6. Suspended operator cannot read own OpLab Brain (same JWT)",
+    "empty set or RLS denial",
+    await op.select("hotel_brain_profiles", { hotel_id: `eq.${fx.opLab.id}` })
+  );
+  await admin.adminEnsurePlatformAccess(
+    sessions.operator.user.id,
+    config.accounts.operator.email,
+    "active"
+  );
+  await expectOkRows(
+    "S6b. Unsuspended operator regains OpLab Brain with membership",
+    "≥1 OpLab brain row",
+    await op.select("hotel_brain_profiles", { hotel_id: `eq.${fx.opLab.id}` })
+  );
+
+  // Unsuspend Hotel A owner — membership still present → access returns.
+  await admin.adminEnsurePlatformAccess(
+    suspendedMemberUserId,
+    config.accounts.hotelAOwner.email,
+    "active"
+  );
+  await expectOkRows(
+    "S7. Unsuspend with membership restores Hotel Brain SELECT (same JWT)",
+    "≥1 brain row",
+    await suspendedMemberClient.select("hotel_brain_profiles", {
+      hotel_id: `eq.${fx.hotelA.id}`
+    })
+  );
+  await expectOkRows(
+    "S7b. Unsuspend with membership restores handovers SELECT",
+    "≥1 handover row",
+    await suspendedMemberClient.select("handover_reports", {
+      workspace_id: `eq.${fx.hotelA.id}`
+    })
+  );
+  await expectOkRows(
+    "S7c. Unsuspend with membership restores maintenance SELECT",
+    "≥1 issue row",
+    await suspendedMemberClient.select("maintenance_issues", {
+      workspace_id: `eq.${fx.hotelA.id}`
+    })
+  );
+
+  // Unsuspend without membership does not restore data access (revoked user path).
+  await admin.adminEnsurePlatformAccess(
+    sessions.revoked.user.id,
+    config.accounts.revoked.email,
+    "active"
+  );
+  await expectOkRows(
+    "S8. Revoked fixture (still member, active) can read Hotel A Brain",
+    "≥1 brain row",
+    await rev.select("hotel_brain_profiles", { hotel_id: `eq.${fx.hotelA.id}` })
+  );
+  const dropRevokedMembership = await admin.delete("hotel_members", {
+    hotel_id: `eq.${fx.hotelA.id}`,
+    user_id: `eq.${sessions.revoked.user.id}`
+  });
+  if (!dropRevokedMembership.ok) {
+    throw new HarnessSetupError(
+      "Failed to delete revoked-user membership for unsuspend-without-membership scenario.",
+      dropRevokedMembership.summary || "unknown error"
+    );
+  }
+  await admin.adminEnsurePlatformAccess(
+    sessions.revoked.user.id,
+    config.accounts.revoked.email,
+    "active"
+  );
+  await expectDenied(
+    "S9. Active platform_access without membership does not restore Hotel A Brain",
+    "empty set or RLS denial",
+    await rev.select("hotel_brain_profiles", { hotel_id: `eq.${fx.hotelA.id}` })
+  );
+  // Re-attach revoked membership for the classic membership-removal block below.
+  const reattach = await admin.insert("hotel_members", {
+    hotel_id: fx.hotelA.id,
+    user_id: sessions.revoked.user.id,
+    role: "member"
+  });
+  if (!reattach.ok) {
+    throw new HarnessSetupError(
+      "Failed to re-attach revoked-user membership before membership-removal scenarios.",
+      reattach.summary || "unknown error"
+    );
+  }
 
   // ── E. MEMBERSHIP REMOVAL ───────────────────────────────────────
   await expectOkRows(

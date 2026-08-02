@@ -678,9 +678,34 @@
         }
 
         return global.HFPlatformAccess.checkPlatformAccess().then(function (access) {
-          // Fail closed: operator privilege is independent of hotel access_status.
-          // Server-side Edge Functions still re-check platform_operators.
-          if (!access.allowed || access.isOperator !== true) {
+          // Fail closed: suspension is a global deny (including operators).
+          // Server-side Edge Functions re-check platform_operators + suspension.
+          if (
+            access.reason === "SUSPENDED" ||
+            access.accessStatus === "suspended" ||
+            !access.allowed
+          ) {
+            if (global.HFPlatformAccess.clearWorkspaceIdentity) {
+              global.HFPlatformAccess.clearWorkspaceIdentity();
+            }
+            var suspendedMsg =
+              global.HFPlatformAccess.SUSPENDED_MESSAGE ||
+              "Your Hospitality Flow access has been suspended.";
+            showAccessDenied(
+              access.reason === "SUSPENDED" || access.accessStatus === "suspended"
+                ? suspendedMsg
+                : "Access denied. Operator privileges are required."
+            );
+            global.setTimeout(function () {
+              global.location.href =
+                access.reason === "SUSPENDED" || access.accessStatus === "suspended"
+                  ? "account.html?access=suspended"
+                  : "account.html";
+            }, 1200);
+            return null;
+          }
+
+          if (access.isOperator !== true) {
             showAccessDenied("Access denied. Operator privileges are required.");
             // Soft redirect for non-operators with a short delay so the message is visible.
             global.setTimeout(function () {

@@ -480,12 +480,15 @@ After saving, the workspace card updates immediately. Handover and SOP use the w
 
 ## 13. Founding Pilot applications & transactional email (Resend)
 
-The landing page (`index.html`) submits applications through the public **`submit-early-access-application`** Edge Function, which saves the row via RPC and calls **`send-early-access-emails` internally** (protected by `EARLY_ACCESS_EMAILS_INTERNAL_SECRET`). The browser must **not** call `send-early-access-emails` directly. Resend API keys live only in Supabase secrets — never in browser code.
+The landing page (`index.html`) submits applications through the public **`submit-early-access-application`** Edge Function only. That function validates input, applies abuse rate limiting, saves via the **`submit_early_access_application`** RPC as **service_role**, and calls **`send-early-access-emails` internally** (protected by `EARLY_ACCESS_EMAILS_INTERNAL_SECRET`).
+
+The browser must **not** call `send-early-access-emails` or invoke `submit_early_access_application` via PostgREST. After migration `20260802180000_early_access_submit_edge_only.sql`, anon/authenticated cannot `EXECUTE` that RPC or `INSERT` into `early_access_applications` directly. Resend API keys live only in Supabase secrets — never in browser code.
 
 ### Run the migrations (required once)
 
 1. Supabase → **SQL Editor** → run [`phase6_early_access_applications.sql`](supabase/migrations/phase6_early_access_applications.sql) if not already applied.
 2. Run [`phase9_early_access_email_tracking.sql`](supabase/migrations/phase9_early_access_email_tracking.sql) (adds email delivery timestamps and `submit_early_access_application` RPC).
+3. Run [`20260802180000_early_access_submit_edge_only.sql`](supabase/migrations/20260802180000_early_access_submit_edge_only.sql) (Edge-only grants + hardened validation; closes direct INSERT bypass).
 
 ### Deploy Edge Functions (required)
 
@@ -555,8 +558,8 @@ supabase secrets set EARLY_ACCESS_EMAILS_INTERNAL_SECRET=<long-random-string>
 
 | Step | What happens |
 |------|----------------|
-| Applicant submits form | Row inserted via `submit_early_access_application` RPC |
-| Edge Function invoked | Loads row by ID (service role), sends applicant + owner emails via Resend |
+| Applicant submits form | Browser → `submit-early-access-application` Edge Function only |
+| Edge Function | Validates + rate-limits; RPC save as service_role; internal email dispatch |
 | Both emails succeed | Success message shown; `applicant_email_sent_at` / `owner_email_sent_at` updated |
 | Email delivery fails | Application is **not** lost; failure logged in function logs; user sees success with an email delivery notice |
 | Retry / duplicate invoke | Idempotent — already-sent emails are skipped using timestamp columns |

@@ -77,5 +77,49 @@ export async function requirePlatformOperator(
     return { ok: false, status: 403, error: "Caller is not an authorised operator." };
   }
 
+  // Suspension is a global deny — no emergency operator bypass.
+  const email = (user.email || "").trim().toLowerCase();
+  let accessStatus: string | null = null;
+
+  const { data: byUser, error: byUserError } = await serviceClient
+    .from("platform_access")
+    .select("access_status")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (byUserError) {
+    console.error("[operator-auth] platform_access user lookup failed:", byUserError);
+    return { ok: false, status: 500, error: "Could not verify operator access." };
+  }
+
+  if (byUser?.access_status) {
+    accessStatus = String(byUser.access_status);
+  } else if (email) {
+    const { data: byEmail, error: byEmailError } = await serviceClient
+      .from("platform_access")
+      .select("access_status")
+      .eq("email", email)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (byEmailError) {
+      console.error("[operator-auth] platform_access email lookup failed:", byEmailError);
+      return { ok: false, status: 500, error: "Could not verify operator access." };
+    }
+
+    if (byEmail?.access_status) {
+      accessStatus = String(byEmail.access_status);
+    }
+  }
+
+  if (accessStatus === "suspended") {
+    return {
+      ok: false,
+      status: 403,
+      error: "Operator platform access is suspended.",
+    };
+  }
+
   return { ok: true, user, serviceClient };
 }

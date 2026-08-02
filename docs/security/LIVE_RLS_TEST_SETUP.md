@@ -23,7 +23,10 @@ Destructive operations only touch hotels named `HF_RLS_TEST_*` created by the su
 ## 1. Create a non-production Supabase project
 
 1. Create a new Supabase project (e.g. `hospitality-flow-rls-test`).
-2. Apply the same migrations from `supabase/migrations/` (SQL Editor or CLI) so RLS matches production intent.
+2. Apply the same migrations from `supabase/migrations/` (SQL Editor or CLI) so RLS matches production intent. For Audit 2 F-01, ensure these are applied on the **test** project before the live suite:
+   - `20260802140000_platform_suspend_authoritative.sql`
+   - `20260802153000_rls_require_active_platform_access.sql`
+   The suite’s **D2. PLATFORM SUSPENSION** block (S0–S9) proves same-JWT data-plane denial.
 3. Copy the project **URL**, **anon** key, and **service_role** key from Project Settings → API.
 
 Do **not** reuse the production project.

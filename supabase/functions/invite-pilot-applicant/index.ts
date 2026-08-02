@@ -8,6 +8,7 @@
  */
 import { corsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { requirePlatformOperator } from "../_shared/operator-auth.ts";
+import { resolveInviteRedirectTo } from "../_shared/safe-redirect.ts";
 
 type InviteBody = {
   applicationId?: string;
@@ -17,14 +18,7 @@ const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function getInviteRedirectTo(): string {
-  const configured = (Deno.env.get("PILOT_INVITE_REDIRECT_TO") || "").trim();
-  if (configured) return configured;
-
-  const siteUrl = (Deno.env.get("SITE_URL") || "https://hospitalityflow.co.uk").replace(
-    /\/$/,
-    "",
-  );
-  return `${siteUrl}/account.html`;
+  return resolveInviteRedirectTo();
 }
 
 function isAlreadyRegisteredError(error: unknown): boolean {

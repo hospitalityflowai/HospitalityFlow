@@ -178,17 +178,26 @@ function main() {
     ok = pass("Operators allowed via get_my_platform_access without hotel membership") && ok;
   }
 
+  const accessLatest = (() => {
+    try {
+      return read("supabase/migrations/20260802140000_platform_suspend_authoritative.sql");
+    } catch {
+      return phase15;
+    }
+  })();
+
   const mixedCapabilityOk =
-    /v_is_operator/.test(phase15) &&
-    /'is_operator',\s*v_is_operator/.test(phase15) &&
-    /'access_status',\s*'active'/.test(phase15) &&
-    /'has_membership',\s*true/.test(phase15) &&
-    /hotel_members/.test(phase15);
+    /v_is_operator/.test(accessLatest) &&
+    /'is_operator',\s*v_is_operator/.test(accessLatest) &&
+    /'access_status',\s*'active'/.test(accessLatest) &&
+    /'has_membership',\s*true/.test(accessLatest) &&
+    /hotel_members/.test(accessLatest) &&
+    /SUSPENDED/.test(accessLatest);
 
   if (!mixedCapabilityOk) {
-    ok = fail("Phase 15 must report is_operator independently while hotel members stay access_status active") && ok;
+    ok = fail("Access RPC must report is_operator independently, keep members active when not suspended, and deny SUSPENDED") && ok;
   } else {
-    ok = pass("Phase 15 keeps hotel access active and reports is_operator independently") && ok;
+    ok = pass("Access RPC keeps hotel active (when not suspended), reports is_operator, denies SUSPENDED") && ok;
   }
 
   // Operator status must not be added to workspace-create allow-list in phase14/15.
