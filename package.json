@@ -4,7 +4,8 @@
   "description": "Hospitality Flow — static HTML tools for independent and boutique hotels",
   "scripts": {
     "dev": "serve . -l 5500",
-    "build": "node scripts/generate-supabase-config.js"
+    "build": "node scripts/generate-supabase-config.js",
+    "test:live-rls": "node scripts/test-live-rls-isolation.mjs"
   },
   "devDependencies": {
     "serve": "^14.2.4"
