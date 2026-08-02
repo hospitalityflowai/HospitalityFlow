@@ -4635,9 +4635,15 @@
         if (el.closest('.profile-sidebar')) return true;
         if (el.closest('.sidebar')) return true;
         if (el.closest('.section-nav')) return true;
+        if (el.closest('.mobile-nav')) return true;
+        if (el.closest('.profile-card-header[data-collapse-toggle]')) return true;
         if (el.hasAttribute && el.hasAttribute('data-profile-nav')) return true;
         if (el.classList && el.classList.contains('disclosure-card-toggle')) return true;
         if (el.classList && el.classList.contains('supply-item-toggle')) return true;
+        if (el.classList && el.classList.contains('collapse-toggle')) return true;
+        if (el.classList && el.classList.contains('section-nav-group-toggle')) return true;
+        if (el.classList && el.classList.contains('section-nav-link')) return true;
+        if (el.classList && el.classList.contains('mobile-nav-link')) return true;
         return false;
       }
 

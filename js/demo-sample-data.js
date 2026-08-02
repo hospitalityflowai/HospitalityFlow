@@ -148,6 +148,11 @@
     ].join("\n");
   }
 
+  /**
+   * REFERENCE PACK ONLY — not rendered in Demo Mode UI.
+   * Live Generate uses the shared Intelligence Engine + HandoverGeneratedView.
+   * Kept for pack validation / regression fixtures.
+   */
   function buildOrganisedHandover() {
     var tomorrow = tomorrowLabel();
     return {
@@ -442,6 +447,10 @@
     ];
   }
 
+  /**
+   * REFERENCE PACK ONLY — not rendered in Demo Mode UI.
+   * Today's Briefing is produced live by the Intelligence Engine on Generate.
+   */
   function buildAiSummary() {
     return "Busy Night handoff. Room 24 AC still open (fan given). Whitmore VIP due 11:00 into Room 42. Clear Room 22 £42.50 before 10:15 transfer. Two arrivals left tonight. Adapters 15 + 16 outstanding. Room 11 on hold for safe parts.";
   }
@@ -548,6 +557,7 @@
       },
       guestServices: {
         airportTransfers: "Record transfer time, supplier and guest details. Pass unresolved transfers to the next shift.",
+        preferredTaxi: "Addison Lee preferred for airport and local transfers.",
         wakeUpCalls: "Record requested time. Review during shift takeover.",
         guestItemLoans: "Track adapters by room. Confirm return at checkout. Adapter charge/deposit £20.",
         specialOccasions: "Review packages, balloons and birthdays.",
@@ -566,12 +576,29 @@
         { type: "bookingCom", label: "Booking.com", specialInstructions: "Prepaid bookings common; verify open balances and city tax." }
       ],
       policiesStructured: {
+        guest: {
+          earlyCheckIn: {
+            title: "Early check-in",
+            summary: "Cannot be guaranteed; offer when rooms are ready.",
+            instructions: "Early check-in is not guaranteed. Offer when a clean room is available, or suggest booking the night before."
+          },
+          lateCheckOut: {
+            title: "Late check-out",
+            summary: "Subject to occupancy and Duty Manager approval.",
+            instructions: "Approve late check-out when occupancy allows. Record the approved time on the handover."
+          }
+        },
         operational: {
           physicalKeys: {
             title: "Physical keys",
             summary: "Issue, track and follow up unreturned keys.",
             instructions: "Issue keys at check-in. Track unreturned keys. Replacement charge £150.",
             charge: "£150"
+          },
+          smoking: {
+            title: "Smoking",
+            summary: "Prohibited throughout the hotel.",
+            instructions: "Smoking is prohibited throughout the hotel. Report room smoking to Duty Manager and follow cleaning charge procedure."
           }
         }
       },

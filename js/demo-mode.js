@@ -1016,13 +1016,6 @@
     if (isEnabled()) installOverlays();
     document.documentElement.classList.toggle("hf-demo-active", isEnabled());
     document.documentElement.classList.toggle("hf-demo-workspace", isEnabled());
-    if (isEnabled()) {
-      requestAnimationFrame(function () {
-        document.documentElement.classList.add("hf-demo-reveal");
-      });
-    } else {
-      document.documentElement.classList.remove("hf-demo-reveal");
-    }
     return getState();
   }
 

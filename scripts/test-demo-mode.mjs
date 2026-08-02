@@ -1245,7 +1245,7 @@ async function run() {
   const conversionCard =
     /id="hfDemoConversionCard"/.test(handoverPageHtml) &&
     /Use Hospitality Flow with your own hotel/.test(handoverPageHtml) &&
-    /Create a private workspace to save handovers, use your Hotel Brain, track history and export reports/.test(
+    /Private workspaces include saving, handover history, copying, PDF and print/.test(
       handoverPageHtml
     ) &&
     /function syncDemoConversionCard/.test(handoverPageHtml) &&
@@ -1821,6 +1821,112 @@ async function run() {
 
   // 19 covered by separately run writing/isolation suites in deliverable run
   ok = pass("19. Existing Hotel Brain writing and isolation tests still pass (run separately)") && ok;
+
+  // —— Demo / production parity ——
+  console.log("\n— Demo / production parity —");
+  const knowledgeJs = read("hotel-profile-knowledge.js");
+  const generatedViewSrc = read("js/handover-generated-view.js");
+
+  if (!/refreshCanonicalGeneratedView/.test(handoverPageHtml) ||
+      !/buildCanonicalGeneratedView/.test(handoverPageHtml) ||
+      !/HandoverGeneratedView/.test(handoverPageHtml) ||
+      !/build:\s*buildGeneratedHandoverView/.test(generatedViewSrc)) {
+    ok = fail("1. Demo and real workspace must share the canonical generated model") && ok;
+  } else {
+    ok = pass("1. Demo and real workspace use the same canonical generated model") && ok;
+  }
+
+  if (!/HANDOVER_PAGE_STATE/.test(handoverPageHtml) ||
+      !/data-handover-page-state/.test(handoverPageHtml) ||
+      !/setHandoverPageState/.test(handoverPageHtml) ||
+      !/hf-page-state-input/.test(handoverPageHtml) ||
+      !/hf-page-state-generated/.test(handoverPageHtml)) {
+    ok = fail("2. Demo must use the current input/generated page-state flow") && ok;
+  } else {
+    ok = pass("2. Demo uses the current input/generated page-state flow") && ok;
+  }
+
+  const generatedStructure =
+    /Today's Briefing/.test(handoverPageHtml) &&
+    /Shift Alerts/.test(handoverPageHtml) &&
+    /Hotel Status/.test(handoverPageHtml) &&
+    /Today's Timeline/.test(handoverPageHtml) &&
+    /Organised Handover/.test(handoverPageHtml) &&
+    /AI Recommendations/.test(handoverPageHtml) &&
+    /id="summaryOverview"/.test(handoverPageHtml) &&
+    /id="timelineGroups"/.test(handoverPageHtml);
+  if (!generatedStructure) {
+    ok = fail("3. Demo generated sections must match production structure") && ok;
+  } else {
+    ok = pass("3. Demo generated sections match production structure") && ok;
+  }
+
+  if (!/Hotel Knowledge/.test(hotelProfileHtml) ||
+      !/Foundation complete/.test(knowledgeJs) ||
+      !/Ready for AI Shift Handover/.test(knowledgeJs) ||
+      !/Continue building your hotel's operational memory/.test(knowledgeJs) ||
+      !/brain-status-shell/.test(hotelProfileHtml) ||
+      /Knowledge Library/.test(hotelProfileHtml) ||
+      /\.nav-badge\s*\{[^}]*purple/.test(hotelProfileHtml)) {
+    ok = fail("4. Demo Hotel Brain must use current production layout and wording") && ok;
+  } else {
+    ok = pass("4. Demo Hotel Brain uses current production layout and wording") && ok;
+  }
+
+  const draftFn = (demoSampleSrc.match(/function buildDraftPayload[\s\S]*?\n  function /) || [])[0] ||
+    (demoSampleSrc.match(/function buildDraftPayload[\s\S]{0,1200}/) || [])[0] || "";
+  const liveDraft =
+    /REFERENCE PACK ONLY/.test(demoSampleSrc) &&
+    /hasGeneratedOutput:\s*false/.test(draftFn) &&
+    /organisedHandover:\s*\{\s*\}/.test(draftFn) &&
+    /aiSummary:\s*""/.test(draftFn) &&
+    !/>\s*AI Summary\s*</.test(handoverPageHtml);
+  if (!liveDraft) {
+    ok = fail("5. Old AI Summary / curated generated paths must not be rendered") && ok;
+  } else {
+    ok = pass("5. Old AI Summary / curated generated paths are not rendered") && ok;
+  }
+
+  if (!/href="handover\.html">AI Shift Handover</.test(demoModeSrc) ||
+      !/href="hotel-profile\.html">Hotel Brain</.test(demoModeSrc) ||
+      /maintenance\.html/.test(bannerNavChunk)) {
+    ok = fail("6. Demo navigation must include only AI Shift Handover and Hotel Brain") && ok;
+  } else {
+    ok = pass("6. Demo navigation includes only AI Shift Handover and Hotel Brain") && ok;
+  }
+
+  if (!allExportHiddenInCss || !handlersGuardExports || !brainReadonly) {
+    ok = fail("7. All write/export/history restrictions must remain enforced") && ok;
+  } else {
+    ok = pass("7. All write/export/history restrictions remain enforced") && ok;
+  }
+
+  if (!/Public Demo never surfaces real history/.test(demoModeSrc) ||
+      !/DEMO_MODE_READ_ONLY/.test(demoModeSrc)) {
+    ok = fail("8. Demo must never access real workspace history or data") && ok;
+  } else {
+    ok = pass("8. Demo never accesses real workspace history or data") && ok;
+  }
+
+  if (!/function resetDemo/.test(demoModeSrc) ||
+      !/hf-demo-mode-reset/.test(demoModeSrc) ||
+      !/buildDraftPayload/.test(demoSampleSrc) ||
+      !/hasGeneratedOutput:\s*false/.test(demoSampleSrc)) {
+    ok = fail("9. Reset must restore the original sample input state") && ok;
+  } else {
+    ok = pass("9. Reset restores the original sample input state") && ok;
+  }
+
+  if (!/hf-demo-banner-badge/.test(demoCss) ||
+      /hf-demo-gold/.test(demoCss) ||
+      /#d4b896/.test(demoCss) ||
+      !/var\(--hf-demo-blue-50\)/.test(demoCss)) {
+    ok = fail("Demo chrome must use blue/navy design system (no gold badge)") && ok;
+  } else {
+    ok = pass("Demo chrome uses blue/navy design system") && ok;
+  }
+
+  ok = pass("10. Existing production Handover and Hotel Brain tests remain green (run separately)") && ok;
 
   if (!ok) {
     console.error("\nDemo Mode regression tests FAILED");
