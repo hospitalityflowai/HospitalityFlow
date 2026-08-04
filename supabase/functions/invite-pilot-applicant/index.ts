@@ -9,6 +9,7 @@
 import { corsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { requirePlatformOperator } from "../_shared/operator-auth.ts";
 import { resolveInviteRedirectTo } from "../_shared/safe-redirect.ts";
+import { writeOperatorAuditEvent } from "../_shared/operator-audit.ts";
 
 type InviteBody = {
   applicationId?: string;
@@ -130,13 +131,6 @@ Deno.serve(async (req) => {
       accessRow = accessByEmail;
     }
 
-    if (accessRow?.access_status === "active") {
-      return jsonResponse({
-        ok: false,
-        error: "Applicant already has an active workspace.",
-      }, 409);
-    }
-
     if (accessRow?.access_status === "suspended") {
       return jsonResponse({
         ok: false,
@@ -144,14 +138,84 @@ Deno.serve(async (req) => {
       }, 409);
     }
 
+    /*
+     * Already active: reconcile founding_status (never downgrade access),
+     * then refuse a new invite.
+     */
+    if (accessRow?.access_status === "active") {
+      const { data: reconcileData, error: reconcileError } = await serviceClient.rpc(
+        "mark_pilot_applicant_invited",
+        {
+          p_application_id: applicationId,
+          p_operator_user_id: operatorUser.id,
+        },
+      );
+
+      if (reconcileError) {
+        console.error(
+          "[invite-pilot-applicant] Active applicant founding reconcile failed:",
+          reconcileError,
+        );
+        return jsonResponse({
+          ok: false,
+          alreadyActive: true,
+          statusUpdated: false,
+          error:
+            "Applicant already has an active workspace, and application status could not be reconciled.",
+        }, 409);
+      }
+
+      return jsonResponse({
+        ok: false,
+        alreadyActive: true,
+        statusUpdated: true,
+        applicationId,
+        email,
+        accessStatus: "active",
+        markResult: reconcileData,
+        error: "Applicant already has an active workspace.",
+      }, 409);
+    }
+
+    /*
+     * Already invited: do not resend Auth invite, but always reconcile
+     * founding_status → accepted (and keep access_status invited).
+     */
     if (accessRow?.access_status === "invited") {
+      const { data: markData, error: markError } = await serviceClient.rpc(
+        "mark_pilot_applicant_invited",
+        {
+          p_application_id: applicationId,
+          p_operator_user_id: operatorUser.id,
+        },
+      );
+
+      if (markError) {
+        console.error(
+          "[invite-pilot-applicant] Already-invited reconcile failed:",
+          markError,
+        );
+        return jsonResponse({
+          ok: false,
+          alreadyInvited: true,
+          inviteSent: false,
+          statusUpdated: false,
+          error:
+            "Applicant is already invited, but application status could not be reconciled. Fix founding_status and access_status together, then retry.",
+        }, 500);
+      }
+
       return jsonResponse({
         ok: true,
         alreadyInvited: true,
+        inviteSent: false,
+        statusUpdated: true,
         applicationId,
         email,
         accessStatus: "invited",
-        message: "Applicant is already marked invited. No status change made.",
+        markResult: markData,
+        message:
+          "Applicant is already invited. Application founding_status reconciled to accepted. No new invite email sent.",
       });
     }
 
@@ -199,6 +263,25 @@ Deno.serve(async (req) => {
           { applicationId, emailDomain: email.split("@")[1] || "unknown" },
         );
 
+        /* Best-effort audit — never fail the invite response if logging fails. */
+        const auditExisting = await writeOperatorAuditEvent(serviceClient, {
+          operatorUserId: operatorUser.id,
+          action: "approve_invite",
+          applicationId,
+          applicantEmail: email,
+          previousFoundingStatus: application.founding_status,
+          newFoundingStatus: "accepted",
+          previousAccessStatus: accessRow?.access_status || null,
+          newAccessStatus: "invited",
+          metadata: { alreadyRegistered: true, inviteSent: false },
+        });
+        if (!auditExisting.ok) {
+          console.error(
+            "[invite-pilot-applicant] Approve audit failed (alreadyRegistered):",
+            auditExisting.error,
+          );
+        }
+
         return jsonResponse({
           ok: true,
           inviteSent: false,
@@ -208,6 +291,7 @@ Deno.serve(async (req) => {
           email,
           accessStatus: "invited",
           markResult: markData,
+          auditId: auditExisting.ok ? auditExisting.auditId : null,
           message:
             "Auth user already existed. Marked invited. Ask the applicant to use the prior invite email or password reset.",
         });
@@ -264,6 +348,28 @@ Deno.serve(async (req) => {
       invitedUserId: inviteData?.user?.id || null,
     });
 
+    /* Best-effort audit — never fail the invite response if logging fails. */
+    const auditApprove = await writeOperatorAuditEvent(serviceClient, {
+      operatorUserId: operatorUser.id,
+      action: "approve_invite",
+      applicationId,
+      applicantEmail: email,
+      previousFoundingStatus: application.founding_status,
+      newFoundingStatus: "accepted",
+      previousAccessStatus: accessRow?.access_status || null,
+      newAccessStatus: "invited",
+      metadata: {
+        inviteSent: true,
+        invitedUserId: inviteData?.user?.id || null,
+      },
+    });
+    if (!auditApprove.ok) {
+      console.error(
+        "[invite-pilot-applicant] Approve audit failed:",
+        auditApprove.error,
+      );
+    }
+
     return jsonResponse({
       ok: true,
       inviteSent: true,
@@ -273,6 +379,7 @@ Deno.serve(async (req) => {
       accessStatus: "invited",
       invitedUserId: inviteData?.user?.id || null,
       markResult: markData,
+      auditId: auditApprove.ok ? auditApprove.auditId : null,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unexpected error.";

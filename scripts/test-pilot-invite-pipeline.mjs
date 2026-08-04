@@ -29,10 +29,12 @@ function stripComments(src) {
     .replace(/^\s*\/\/.*$/gm, "");
 }
 
-function inviteBeforeMark(src) {
+function inviteSuccessPathMarksAfterInvite(src) {
   const inviteIdx = src.search(/inviteUserByEmail/);
-  const markIdx = src.search(/mark_pilot_applicant_invited/);
-  return inviteIdx !== -1 && markIdx !== -1 && inviteIdx < markIdx;
+  if (inviteIdx === -1) return false;
+  /* Fresh invite path: after Auth invite succeeds, mark_pilot_applicant_invited runs. */
+  const afterInvite = src.slice(inviteIdx);
+  return /mark_pilot_applicant_invited/.test(afterInvite);
 }
 
 function main() {
@@ -98,10 +100,33 @@ function main() {
     ok = pass("Invite function uses Auth Admin inviteUserByEmail") && ok;
   }
 
-  if (!inviteBeforeMark(inviteFnBody)) {
-    ok = fail("inviteUserByEmail must run before mark_pilot_applicant_invited") && ok;
+  if (!inviteSuccessPathMarksAfterInvite(inviteFnBody)) {
+    ok = fail("Fresh invite path must call mark_pilot_applicant_invited after inviteUserByEmail") && ok;
   } else {
-    ok = pass("Status mark runs only after Auth invite attempt") && ok;
+    ok = pass("Fresh invite path marks status after Auth invite attempt") && ok;
+  }
+
+  const alreadyInvitedBlock = inviteFnBody.match(
+    /access_status === ["']invited["'][\s\S]{0,1200}/,
+  );
+  if (!alreadyInvitedBlock || !/mark_pilot_applicant_invited/.test(alreadyInvitedBlock[0])) {
+    ok = fail("Already-invited path must reconcile via mark_pilot_applicant_invited") && ok;
+  } else {
+    ok = pass("Already-invited path reconciles founding_status") && ok;
+  }
+
+  const consistencyMigration = "supabase/migrations/20260804120000_early_access_status_consistency.sql";
+  let consistencySrc = "";
+  try {
+    consistencySrc = read(consistencyMigration);
+  } catch {
+    consistencySrc = "";
+  }
+  if (!/create_hotel_workspace/i.test(consistencySrc) ||
+      !/founding_status = 'accepted'/i.test(consistencySrc)) {
+    ok = fail("Status consistency migration must accept founding_status on hotel create") && ok;
+  } else {
+    ok = pass("Status consistency migration covers hotel-create founding reconcile") && ok;
   }
 
   if (!/Invitation email could not be sent\. Application left pending/.test(inviteFn)) {

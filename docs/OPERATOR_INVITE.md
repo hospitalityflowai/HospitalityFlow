@@ -20,7 +20,9 @@ Hotel workspace access and operator privileges are **separate**. For the pre-pil
 
 The dashboard loads applications only through the read-only Edge Function `list-pilot-applications` (operator JWT required). Browser roles still cannot `SELECT` from `early_access_applications`.
 
-**Not in this release:** Decline button, resend invitation.
+**UI not in this release yet (Phase 3):** Decline / Resend / Restore / Delete buttons on the dashboard.
+
+**Server layer ready (Phase 2):** Edge Functions `decline-pilot-applicant`, `resend-pilot-invite`, `restore-pilot-applicant`, `delete-pilot-applicant` plus RPCs and `operator_audit_log`. Do not call these from the browser until Phase 3 wires the dashboard.
 
 ## Flow (end-to-end)
 
@@ -148,14 +150,21 @@ Invoke-RestMethod `
 
 | Response | Meaning | What you should do |
 |----------|---------|-------------------|
-| `ok: true`, `inviteSent: true`, `statusUpdated: true` | Invite email sent; status is `invited` | Done — tell hotel to check email |
-| `ok: true`, `alreadyInvited: true` | Already invited | No change; resend only via Auth if needed |
-| `ok: true`, `alreadyRegistered: true`, `statusUpdated: true` | Auth user already existed; now marked `invited` | Ask hotel to use prior invite or password reset |
+| `ok: true`, `inviteSent: true`, `statusUpdated: true` | Invite email sent; `founding_status = accepted`, `access_status = invited` | Done — tell hotel to check email |
+| `ok: true`, `alreadyInvited: true`, `statusUpdated: true` | Already invited; founding status reconciled to `accepted` | No new email; resend only via Auth if needed |
+| `ok: true`, `alreadyRegistered: true`, `statusUpdated: true` | Auth user already existed; now marked `invited` + `accepted` | Ask hotel to use prior invite or password reset |
 | `ok: false`, `inviteSent: false`, `statusUpdated: false` | Invite email failed | Status stays pending — fix Auth/email, retry |
-| `ok: false`, `inviteSent: true`, `statusUpdated: false` | Email sent but status update failed | Re-run the function, or manually set `platform_access.access_status = 'invited'` |
+| `ok: false`, `inviteSent: true`, `statusUpdated: false` | Email sent but status update failed | Re-run the function (preferred). If you must repair manually, update **both** status fields together (see below) |
+| `ok: false`, `alreadyActive: true` | Applicant already has an active workspace; founding status reconciled if possible | Do not invite again |
 | `401` / `403` | Not signed in as an authorised operator | Refresh JWT; confirm `platform_operators` row |
 
 **Rule:** a failed invitation must leave the applicant **pending**, not `invited`.
+
+**Rule:** never update only `platform_access`. Application approval and platform access must stay reconciled:
+
+- `early_access_applications.founding_status = accepted` means the application was approved
+- `platform_access.access_status = invited` means the invitation was issued
+- `platform_access.access_status = active` means the hotel workspace is active
 
 ### E. Verify in the database
 
@@ -169,14 +178,64 @@ FROM public.platform_access
 WHERE early_access_application_id = '<application-id>';
 ```
 
-Expect: `founding_status = accepted`, `access_status = invited`.
+Expect after invite: `founding_status = accepted`, `access_status = invited`.  
+Expect after hotel creation: `founding_status = accepted`, `access_status = active`.
 
+### F. Manual recovery (both fields)
+
+If invite email succeeded but status update failed, **prefer re-running** `invite-pilot-applicant` — the already-invited path reconciles `founding_status` without sending a new email and without downgrading an active account.
+
+If you must repair in SQL, update **both** rows in the same recovery step:
+
+```sql
+-- Invited but founding still pending (or unknown)
+UPDATE public.early_access_applications
+SET founding_status = 'accepted'
+WHERE id = '<application-id>'
+  AND founding_status IS DISTINCT FROM 'declined';
+
+UPDATE public.platform_access
+SET access_status = 'invited',
+    early_access_application_id = coalesce(early_access_application_id, '<application-id>'::uuid),
+    updated_at = now()
+WHERE (
+    early_access_application_id = '<application-id>'
+    OR lower(email) = lower('<applicant-email>')
+  )
+  AND access_status IS DISTINCT FROM 'active'
+  AND access_status IS DISTINCT FROM 'suspended';
+```
+
+If the applicant is already **active**, only reconcile founding status — do **not** set access back to `invited`:
+
+```sql
+UPDATE public.early_access_applications
+SET founding_status = 'accepted'
+WHERE id = '<application-id>'
+  AND founding_status IS DISTINCT FROM 'declined';
+
+-- Leave platform_access.access_status = 'active' unchanged.
+```
+
+Do **not** instruct or perform a recovery that updates only `platform_access.access_status`.
 ---
 
-## Deferred (intentional)
+## Deferred UI (Phase 3)
 
-- **Decline** from the dashboard — no secure decline Edge Function/RPC yet; use SQL/Table Editor if needed.
-- **Resend invitation** — `invite-pilot-applicant` returns `alreadyInvited` without resending. Use Supabase Auth admin tools if a resend is required.
+Dashboard buttons for Decline / Resend / Restore / Permanent Delete are not wired yet.
+
+Server-side (Phase 2) — deploy after migrations:
+
+| Action | Edge Function | Notes |
+|--------|---------------|--------|
+| Decline | `decline-pilot-applicant` | pending/invited → `declined` + `suspended`; Auth user preserved |
+| Resend | `resend-pilot-invite` | accepted + invited only; updates `invite_resent_at` |
+| Restore | `restore-pilot-applicant` | declined + suspended → pending + `pending_application`; no invite |
+| Delete test app | `delete-pilot-applicant` | declined only; requires `confirm: "DELETE"`; blocked if operational data exists |
+
+```powershell
+node scripts/test-operator-application-management.mjs
+```
 
 ---
 
@@ -205,6 +264,8 @@ Expect: `founding_status = accepted`, `access_status = invited`.
 
 ```powershell
 node scripts/test-pilot-invite-pipeline.mjs
+node scripts/test-early-access-status-consistency.mjs
+node scripts/test-operator-application-management.mjs
 node scripts/test-operator-dashboard.mjs
 node scripts/test-platform-access-invitation-only.mjs
 ```
