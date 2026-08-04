@@ -302,11 +302,114 @@ function main() {
     ok = pass("Invite failure shows error without local status mutation") && ok;
   }
 
-  // Decline / resend intentionally deferred
-  if (/Decline|decline-pilot|resend/.test(operatorHtml) && /data-decline|Resend invitation/.test(operatorHtml)) {
-    ok = fail("Decline/resend UI must remain deferred") && ok;
+  // ── Phase 3 minimal management UI ────────────────────────────────────────
+
+  if (!/decline-pilot-applicant/.test(operatorJsBody) ||
+      !/data-decline-id/.test(operatorJsBody) ||
+      !/decline-confirm-modal/.test(operatorHtml)) {
+    ok = fail("Pending/invited Decline must call decline-pilot-applicant via confirm modal") && ok;
   } else {
-    ok = pass("Decline and resend remain deferred") && ok;
+    ok = pass("Decline UI wired to decline-pilot-applicant") && ok;
+  }
+
+  if (!/decline-confirm-error/.test(operatorHtml) ||
+      !/showDeclineModalError/.test(operatorJsBody) ||
+      !/Keep modal open — page alerts sit under the overlay/.test(operatorJs) ||
+      !/formatDeclineFailureMessage/.test(operatorJsBody)) {
+    ok = fail("Decline errors must surface inside the confirm modal") && ok;
+  } else {
+    ok = pass("Decline errors surface inside the confirm modal") && ok;
+  }
+
+  if (!/DECLINE_FUNCTION[\s\S]*applicationId:\s*applicationId/.test(operatorJs) &&
+      !/decline-pilot-applicant[\s\S]*applicationId:\s*applicationId/.test(operatorJsBody)) {
+    ok = fail("Decline invoke payload must send applicationId") && ok;
+  } else {
+    ok = pass("Decline invoke payload uses applicationId") && ok;
+  }
+
+  if (!/declineApplication[\s\S]*Authorization:\s*["']Bearer ["']\s*\+\s*accessToken/.test(operatorJsBody) &&
+      !/declineApplication[\s\S]*getSession[\s\S]*Authorization:\s*["']Bearer/.test(operatorJsBody)) {
+    ok = fail("Decline invoke must include the signed-in operator JWT") && ok;
+  } else {
+    ok = pass("Decline invoke includes signed-in operator JWT") && ok;
+  }
+
+  if (!/eventsBound/.test(operatorJsBody) || !/if \(eventsBound\) return/.test(operatorJsBody)) {
+    ok = fail("Operator dashboard must prevent duplicate event handler binding") && ok;
+  } else {
+    ok = pass("Duplicate event handlers prevented via eventsBound guard") && ok;
+  }
+
+  if (!/operator-dashboard\.js\?v=/.test(operatorHtml)) {
+    ok = fail("operator.html must cache-bust operator-dashboard.js") && ok;
+  } else {
+    ok = pass("operator-dashboard.js is cache-busted in operator.html") && ok;
+  }
+
+  if (!/canDecline/.test(operatorJsBody) ||
+      !/status === "pending" \|\| status === "invited"/.test(operatorJsBody)) {
+    ok = fail("Decline must be limited to pending and invited applications") && ok;
+  } else {
+    ok = pass("Decline limited to pending and invited") && ok;
+  }
+
+  if (!/delete-pilot-applicant/.test(operatorJsBody) ||
+      !/data-delete-id/.test(operatorJsBody) ||
+      !/delete-confirm-modal/.test(operatorHtml) ||
+      !/confirm:\s*["']DELETE["']/.test(operatorJsBody)) {
+    ok = fail("Declined permanent delete must call delete-pilot-applicant with confirm DELETE") && ok;
+  } else {
+    ok = pass("Permanent delete UI wired to delete-pilot-applicant with typed DELETE") && ok;
+  }
+
+  if (!/delete-confirm-input/.test(operatorHtml) ||
+      !/typed !== "DELETE"/.test(operatorJsBody)) {
+    ok = fail("Delete confirm button must stay disabled until DELETE is typed") && ok;
+  } else {
+    ok = pass("Delete requires typed DELETE confirmation") && ok;
+  }
+
+  if (!/delete-confirm-error/.test(operatorHtml) ||
+      !/showDeleteModalError/.test(operatorJsBody) ||
+      !/Keep modal open and show the error here/.test(operatorJs)) {
+    ok = fail("Delete errors must surface inside the confirm modal (not only under the overlay)") && ok;
+  } else {
+    ok = pass("Delete errors surface inside the confirm modal") && ok;
+  }
+
+  if (!/applicationId:\s*applicationId,\s*confirm:\s*["']DELETE["']/.test(operatorJsBody)) {
+    ok = fail("Delete invoke payload must send applicationId and confirm DELETE") && ok;
+  } else {
+    ok = pass("Delete invoke payload uses applicationId + confirm DELETE") && ok;
+  }
+
+  if (!/Workspace active/.test(operatorJsBody) ||
+      /Invitation not available \(active\)/.test(operatorJsBody)) {
+    ok = fail("Active hotels must show Workspace active instead of invitation-unavailable copy") && ok;
+  } else {
+    ok = pass("Active hotels show Workspace active") && ok;
+  }
+
+  if (/resend-pilot-invite|data-resend|Resend Invite|restore-pilot-applicant|data-restore/.test(operatorJsBody) ||
+      /resend-pilot-invite|Resend Invite|Restore to Pending/.test(operatorHtml)) {
+    ok = fail("Resend and Restore UI must remain out of this Phase 3 minimal release") && ok;
+  } else {
+    ok = pass("Resend and Restore UI remain deferred") && ok;
+  }
+
+  if (!/declineBusy|deleteBusy|anyActionBusy|Declining…|Deleting…/.test(operatorJsBody)) {
+    ok = fail("Decline/Delete UI must disable controls while requests are running") && ok;
+  } else {
+    ok = pass("Decline/Delete disable controls while running") && ok;
+  }
+
+  if (!/Application declined for/.test(operatorJsBody) ||
+      !/permanently deleted/.test(operatorJsBody) ||
+      !/refreshApplications\(\{[\s\S]*successMessage/.test(operatorJs)) {
+    ok = fail("Decline/Delete success must refresh the application list") && ok;
+  } else {
+    ok = pass("Decline/Delete refresh list after success") && ok;
   }
 
   // No service-role in frontend

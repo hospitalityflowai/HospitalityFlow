@@ -231,6 +231,46 @@ main {
   transform: none;
 }
 
+.btn-warning {
+  background: rgba(212, 160, 72, 0.16);
+  color: #f0c878;
+  border: 1px solid rgba(212, 160, 72, 0.42);
+  width: 100%;
+}
+
+.btn-warning:hover,
+.btn-warning:focus-visible {
+  background: rgba(212, 160, 72, 0.24);
+  border-color: rgba(212, 160, 72, 0.55);
+  outline: 2px solid rgba(212, 160, 72, 0.45);
+  outline-offset: 2px;
+}
+
+.btn-warning:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.btn-danger {
+  background: rgba(224, 122, 122, 0.16);
+  color: #f0a0a0;
+  border: 1px solid rgba(224, 122, 122, 0.42);
+  width: 100%;
+}
+
+.btn-danger:hover,
+.btn-danger:focus-visible {
+  background: rgba(224, 122, 122, 0.26);
+  border-color: rgba(224, 122, 122, 0.58);
+  outline: 2px solid rgba(224, 122, 122, 0.45);
+  outline-offset: 2px;
+}
+
+.btn-danger:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .btn-secondary {
   background: transparent;
   color: var(--white);
@@ -565,6 +605,12 @@ main {
   word-break: break-word;
 }
 
+.operator-app-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .operator-app-actions .btn {
   width: 100%;
 }
@@ -573,6 +619,52 @@ main {
   font-size: 0.88rem;
   color: var(--gray-400);
   margin: 0;
+}
+
+.operator-delete-label {
+  display: block;
+  margin-top: 14px;
+  margin-bottom: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gray-400);
+}
+
+.operator-delete-input {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(224, 122, 122, 0.35);
+  background: rgba(10, 20, 40, 0.65);
+  color: var(--white);
+  font: inherit;
+  letter-spacing: 0.04em;
+}
+
+.operator-delete-input:focus {
+  outline: 2px solid rgba(224, 122, 122, 0.45);
+  outline-offset: 1px;
+  border-color: rgba(224, 122, 122, 0.55);
+}
+
+.operator-modal-error {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(224, 122, 122, 0.4);
+  background: rgba(224, 122, 122, 0.12);
+  color: #f0a0a0;
+  font-size: 0.86rem;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.modal-actions .btn-warning,
+.modal-actions .btn-danger {
+  width: auto;
 }
 
 .operator-empty {

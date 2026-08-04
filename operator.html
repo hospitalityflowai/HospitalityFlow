@@ -37,7 +37,7 @@
         </div>
 
         <div id="operator-dashboard" class="hidden" hidden>
-          <p class="auth-lead">Review Founding Pilot applications and send invitations. Decline and resend are not available in this release.</p>
+          <p class="auth-lead">Review Founding Pilot applications, send invitations, decline unsuitable applicants, and remove declined test applications.</p>
 
           <section class="auth-card operator-pilot-lab-card" id="operator-pilot-lab-card" aria-labelledby="operator-pilot-lab-title">
             <p class="account-panel-label">Internal Workspace</p>
@@ -129,6 +129,41 @@
     </div>
   </div>
 
+  <div class="modal-root hidden" id="decline-confirm-modal" hidden>
+    <div class="modal-backdrop" data-close-modal="decline"></div>
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="decline-confirm-title">
+      <h2 id="decline-confirm-title">Decline application</h2>
+      <p id="decline-confirm-text">Decline this Founding Pilot application?</p>
+      <p id="decline-confirm-error" class="operator-modal-error hidden" hidden role="alert"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" id="decline-cancel-btn" data-close-modal="decline">Cancel</button>
+        <button type="button" class="btn btn-warning" id="decline-confirm-btn" data-decline-confirm>Decline</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-root hidden" id="delete-confirm-modal" hidden>
+    <div class="modal-backdrop" data-close-modal="delete"></div>
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="delete-confirm-title">
+      <h2 id="delete-confirm-title">Permanently delete test application</h2>
+      <p id="delete-confirm-text">This permanently removes a declined test or invalid application. Type DELETE to confirm.</p>
+      <label class="operator-delete-label" for="delete-confirm-input">Type DELETE (exact, uppercase)</label>
+      <input
+        type="text"
+        id="delete-confirm-input"
+        class="operator-delete-input"
+        autocomplete="off"
+        spellcheck="false"
+        aria-describedby="delete-confirm-text delete-confirm-error"
+      />
+      <p id="delete-confirm-error" class="operator-modal-error hidden" hidden role="alert"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" id="delete-cancel-btn" data-close-modal="delete">Cancel</button>
+        <button type="button" class="btn btn-danger" id="delete-confirm-btn" data-delete-confirm disabled>Permanently Delete</button>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="js/supabase-config.js"></script>
   <script src="js/supabase-client.js"></script>
@@ -137,7 +172,7 @@
   <script src="js/auth.js"></script>
   <script src="js/platform-access.js"></script>
   <script src="js/workspace.js"></script>
-  <script src="js/operator-dashboard.js"></script>
+  <script src="js/operator-dashboard.js?v=20260804-decline2"></script>
   <script>HFOperatorDashboard.initOperatorPage();</script>
 </body>
 </html>

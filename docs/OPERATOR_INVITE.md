@@ -20,9 +20,9 @@ Hotel workspace access and operator privileges are **separate**. For the pre-pil
 
 The dashboard loads applications only through the read-only Edge Function `list-pilot-applications` (operator JWT required). Browser roles still cannot `SELECT` from `early_access_applications`.
 
-**UI not in this release yet (Phase 3):** Decline / Resend / Restore / Delete buttons on the dashboard.
+**Dashboard (minimal Phase 3):** Decline on Pending/Invited; Permanently Delete Test Application on Declined (typed `DELETE`). Resend and Restore UI remain deferred.
 
-**Server layer ready (Phase 2):** Edge Functions `decline-pilot-applicant`, `resend-pilot-invite`, `restore-pilot-applicant`, `delete-pilot-applicant` plus RPCs and `operator_audit_log`. Do not call these from the browser until Phase 3 wires the dashboard.
+**Server layer:** Edge Functions `decline-pilot-applicant`, `resend-pilot-invite`, `restore-pilot-applicant`, `delete-pilot-applicant` plus RPCs and `operator_audit_log`.
 
 ## Flow (end-to-end)
 
@@ -220,11 +220,11 @@ WHERE id = '<application-id>'
 Do **not** instruct or perform a recovery that updates only `platform_access.access_status`.
 ---
 
-## Deferred UI (Phase 3)
+## Deferred UI
 
-Dashboard buttons for Decline / Resend / Restore / Permanent Delete are not wired yet.
+Resend Invite and Restore to Pending are not wired on the dashboard yet.
 
-Server-side (Phase 2) — deploy after migrations:
+Server-side management functions:
 
 | Action | Edge Function | Notes |
 |--------|---------------|--------|

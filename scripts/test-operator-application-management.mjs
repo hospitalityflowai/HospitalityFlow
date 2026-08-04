@@ -370,17 +370,23 @@ function main() {
     ok = pass("Status fields remain synchronised on resend") && ok;
   }
 
-  /* Phase 2 must not modify Operator Dashboard UI */
-  if (/decline-pilot-applicant|resend-pilot-invite|restore-pilot-applicant|delete-pilot-applicant/.test(dashboardJs)) {
-    ok = fail("Phase 2 must not wire new management actions into operator-dashboard.js yet") && ok;
+  /* Phase 3 minimal UI may wire decline/delete only — not resend/restore */
+  if (!/decline-pilot-applicant/.test(dashboardJs) || !/delete-pilot-applicant/.test(dashboardJs)) {
+    ok = fail("Operator dashboard must wire decline-pilot-applicant and delete-pilot-applicant") && ok;
   } else {
-    ok = pass("Operator Dashboard UI left unmodified (Phase 3)") && ok;
+    ok = pass("Operator dashboard wires decline and delete Edge Functions") && ok;
   }
 
-  if (!/Decline and resend are not available in this release/.test(operatorHtml)) {
-    ok = fail("operator.html deferred copy unexpectedly removed in Phase 2") && ok;
+  if (/resend-pilot-invite|restore-pilot-applicant/.test(dashboardJs)) {
+    ok = fail("Operator dashboard must not wire Resend/Restore in this minimal Phase 3") && ok;
   } else {
-    ok = pass("operator.html still deferred for Phase 3 UI work") && ok;
+    ok = pass("Resend/Restore remain unwired in dashboard JS") && ok;
+  }
+
+  if (!/decline-confirm-modal/.test(operatorHtml) || !/delete-confirm-modal/.test(operatorHtml)) {
+    ok = fail("operator.html must include decline and delete confirm modals") && ok;
+  } else {
+    ok = pass("operator.html includes decline and delete confirm modals") && ok;
   }
 
   /* No service_role in frontend */

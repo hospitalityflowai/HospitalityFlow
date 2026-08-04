@@ -1,7 +1,8 @@
 /**
  * Hospitality Flow — Operator Dashboard (Founding Pilot applications)
  * Fail-closed: only users with isOperator (platform_operators) may load private data.
- * Lists via list-pilot-applications; invites via invite-pilot-applicant.
+ * Lists via list-pilot-applications.
+ * Mutations via invite-pilot-applicant, decline-pilot-applicant, delete-pilot-applicant.
  * Never queries early_access_applications / platform_access directly.
  */
 (function (global) {
@@ -9,11 +10,22 @@
 
   var LIST_FUNCTION = "list-pilot-applications";
   var INVITE_FUNCTION = "invite-pilot-applicant";
+  var DECLINE_FUNCTION = "decline-pilot-applicant";
+  var DELETE_FUNCTION = "delete-pilot-applicant";
 
   var inviteBusy = false;
+  var declineBusy = false;
+  var deleteBusy = false;
   var pendingInviteApp = null;
+  var pendingDeclineApp = null;
+  var pendingDeleteApp = null;
   var pilotLabBusy = false;
   var pilotLabBound = false;
+  var eventsBound = false;
+
+  function anyActionBusy() {
+    return inviteBusy || declineBusy || deleteBusy || pilotLabBusy;
+  }
 
   function escapeHtml(text) {
     var div = document.createElement("div");
@@ -67,6 +79,15 @@
   function canInvite(app) {
     var status = resolveDisplayStatus(app);
     return status === "pending";
+  }
+
+  function canDecline(app) {
+    var status = resolveDisplayStatus(app);
+    return status === "pending" || status === "invited";
+  }
+
+  function canDeleteTestApplication(app) {
+    return resolveDisplayStatus(app) === "declined";
   }
 
   function sectionKey(app) {
@@ -317,21 +338,72 @@
     return data || { ok: false, error: "Empty response from server." };
   }
 
+  function coercePayloadObject(value) {
+    if (value == null) return null;
+    if (typeof value === "object") return value;
+    if (typeof value !== "string") return null;
+    var trimmed = value.trim();
+    if (!trimmed) return null;
+    try {
+      var parsed = JSON.parse(trimmed);
+      return parsed && typeof parsed === "object" ? parsed : { error: trimmed };
+    } catch (e) {
+      return { error: trimmed };
+    }
+  }
+
+  function extractHttpStatus(result) {
+    if (!result || !result.error) return null;
+    var err = result.error;
+    if (typeof err.status === "number") return err.status;
+    if (err.context && typeof err.context.status === "number") return err.context.status;
+    return null;
+  }
+
   function extractErrorPayload(result) {
     var fallback = {
       ok: false,
       error: (result.error && result.error.message) || "Request failed."
     };
 
+    function enrich(body) {
+      var parsed = coercePayloadObject(body);
+      if (!parsed) return fallback;
+      var message = parsed.error || parsed.message || fallback.error;
+      if (Array.isArray(parsed.blockers) && parsed.blockers.length) {
+        message += " (" + parsed.blockers.join(", ") + ")";
+      }
+      return Object.assign({}, parsed, { ok: false, error: message });
+    }
+
+    // supabase-js may already expose the non-2xx JSON on result.data.
+    var fromData = coercePayloadObject(result && result.data);
+    if (fromData && (fromData.error || fromData.message || fromData.code)) {
+      return Promise.resolve(enrich(fromData));
+    }
+
     if (!result.error || !result.error.context) {
       return Promise.resolve(fallback);
     }
 
     var context = result.error.context;
+
     if (typeof context.json === "function") {
-      return context.json().then(function (body) {
-        if (body && typeof body === "object") return body;
+      return context.json().then(enrich).catch(function () {
+        if (typeof context.text === "function") {
+          return context.text().then(function (text) {
+            return text ? enrich(text) : fallback;
+          }).catch(function () {
+            return fallback;
+          });
+        }
         return fallback;
+      });
+    }
+
+    if (typeof context.text === "function") {
+      return context.text().then(function (text) {
+        return text ? enrich(text) : fallback;
       }).catch(function () {
         return fallback;
       });
@@ -357,31 +429,99 @@
     });
   }
 
-  function inviteApplication(applicationId) {
+  function formatOperatorError(payload, fallbackError, httpStatus) {
+    var message = (payload && (payload.error || payload.message)) || fallbackError;
+    var parts = [message];
+    if (payload && payload.code) {
+      parts.push("code=" + payload.code);
+    }
+    if (httpStatus != null && httpStatus !== "") {
+      parts.push("status=" + httpStatus);
+    }
+    if (payload && Array.isArray(payload.blockers) && payload.blockers.length) {
+      parts.push("blockers=" + payload.blockers.join(","));
+    }
+    return parts.join(" | ");
+  }
+
+  function invokeOperatorFunction(functionName, body, fallbackError, invokeOptions) {
+    var options = invokeOptions || {};
     return global.HFAuth.ensureClient().then(function (client) {
-      return client.functions.invoke(INVITE_FUNCTION, {
-        body: { applicationId: applicationId }
-      }).then(function (result) {
+      var invokeArgs = { body: body };
+      if (options.headers) {
+        invokeArgs.headers = options.headers;
+      }
+
+      return client.functions.invoke(functionName, invokeArgs).then(function (result) {
+        var httpStatus = extractHttpStatus(result);
+
         if (result.error) {
           return extractErrorPayload(result).then(function (payload) {
-            // alreadyInvited can still arrive as ok:true on 200; non-2xx stays an error.
             if (payload && payload.ok === true) return payload;
-            return Promise.reject(Object.assign(
-              new Error(payload.error || "Invitation failed."),
-              { payload: payload }
-            ));
+            if (httpStatus == null && payload && typeof payload.statusCode === "number") {
+              httpStatus = payload.statusCode;
+            }
+            var message = formatOperatorError(payload, fallbackError, httpStatus);
+            return Promise.reject(Object.assign(new Error(message), {
+              payload: payload,
+              httpStatus: httpStatus
+            }));
           });
         }
 
         var payload = parseSuccessPayload(result.data);
         if (payload && payload.ok === false) {
-          return Promise.reject(Object.assign(new Error(payload.error || "Invitation failed."), {
-            payload: payload
+          var errMessage = formatOperatorError(payload, fallbackError, httpStatus);
+          return Promise.reject(Object.assign(new Error(errMessage), {
+            payload: payload,
+            httpStatus: httpStatus
           }));
         }
         return payload;
       });
     });
+  }
+
+  function inviteApplication(applicationId) {
+    return invokeOperatorFunction(
+      INVITE_FUNCTION,
+      { applicationId: applicationId },
+      "Invitation failed."
+    );
+  }
+
+  function declineApplication(applicationId) {
+    return global.HFAuth.getSession().then(function (session) {
+      var accessToken = session && session.access_token ? session.access_token : "";
+      if (!accessToken) {
+        return Promise.reject(Object.assign(
+          new Error("Not signed in. Sign in again, then retry Decline."),
+          {
+            payload: { ok: false, error: "Not signed in.", code: "NO_SESSION" },
+            httpStatus: null
+          }
+        ));
+      }
+
+      return invokeOperatorFunction(
+        DECLINE_FUNCTION,
+        { applicationId: applicationId },
+        "Decline failed.",
+        {
+          headers: {
+            Authorization: "Bearer " + accessToken
+          }
+        }
+      );
+    });
+  }
+
+  function deleteApplication(applicationId) {
+    return invokeOperatorFunction(
+      DELETE_FUNCTION,
+      { applicationId: applicationId, confirm: "DELETE" },
+      "Delete failed."
+    );
   }
 
   function renderEmpty(container, label) {
@@ -391,27 +531,57 @@
 
   function renderApplicationCard(app) {
     var status = resolveDisplayStatus(app);
-    var inviteAction = "";
+    var actions = [];
 
     if (canInvite(app)) {
-      inviteAction =
+      actions.push(
         '<button type="button" class="btn btn-primary operator-invite-btn" data-invite-id="' +
-        escapeHtml(app.id) +
-        '" data-invite-email="' +
-        escapeHtml(app.email || "") +
-        '">Approve &amp; Send Invite</button>';
-    } else if (status === "invited") {
-      inviteAction = '<p class="operator-already">Already invited</p>';
-    } else if (status === "active" || status === "suspended") {
-      inviteAction =
-        '<p class="operator-already">Invitation not available (' +
-        escapeHtml(status) +
-        ")</p>";
+          escapeHtml(app.id) +
+          '" data-invite-email="' +
+          escapeHtml(app.email || "") +
+          '">Approve &amp; Send Invite</button>'
+      );
+    }
+
+    if (status === "invited") {
+      actions.push('<p class="operator-already">Already invited</p>');
+    }
+
+    if (status === "active") {
+      actions.push('<p class="operator-already">Workspace active</p>');
+    } else if (status === "suspended") {
+      actions.push('<p class="operator-already">Access suspended</p>');
+    }
+
+    if (canDecline(app)) {
+      actions.push(
+        '<button type="button" class="btn btn-warning operator-decline-btn" data-decline-id="' +
+          escapeHtml(app.id) +
+          '" data-decline-email="' +
+          escapeHtml(app.email || "") +
+          '" data-decline-property="' +
+          escapeHtml(app.property_name || "") +
+          '">Decline</button>'
+      );
+    }
+
+    if (canDeleteTestApplication(app)) {
+      actions.push(
+        '<button type="button" class="btn btn-danger operator-delete-btn" data-delete-id="' +
+          escapeHtml(app.id) +
+          '" data-delete-email="' +
+          escapeHtml(app.email || "") +
+          '" data-delete-property="' +
+          escapeHtml(app.property_name || "") +
+          '">Permanently Delete Test Application</button>'
+      );
     }
 
     return (
       '<article class="operator-app-card" data-application-id="' +
       escapeHtml(app.id) +
+      '" data-display-status="' +
+      escapeHtml(status) +
       '">' +
       '<div class="operator-app-header">' +
       '<div class="operator-app-title">' +
@@ -447,7 +617,7 @@
       "</dd></div>" +
       "</dl>" +
       '<div class="operator-app-actions">' +
-      inviteAction +
+      actions.join("") +
       "</div>" +
       "</article>"
     );
@@ -522,26 +692,138 @@
       });
   }
 
-  function openInviteModal(app) {
-    pendingInviteApp = app;
-    var modal = document.getElementById("invite-confirm-modal");
-    var textEl = document.getElementById("invite-confirm-text");
-    if (textEl) {
-      textEl.textContent =
-        "Send a Hospitality Flow invitation to " + (app.email || "this applicant") + "?";
-    }
+  function openModal(modalId) {
+    var modal = document.getElementById(modalId);
     if (modal) {
       modal.hidden = false;
       modal.classList.remove("hidden");
     }
   }
 
-  function closeInviteModal() {
-    pendingInviteApp = null;
-    var modal = document.getElementById("invite-confirm-modal");
+  function closeModal(modalId) {
+    var modal = document.getElementById(modalId);
     if (modal) {
       modal.hidden = true;
       modal.classList.add("hidden");
+    }
+  }
+
+  function openInviteModal(app) {
+    pendingInviteApp = app;
+    var textEl = document.getElementById("invite-confirm-text");
+    if (textEl) {
+      textEl.textContent =
+        "Send a Hospitality Flow invitation to " + (app.email || "this applicant") + "?";
+    }
+    openModal("invite-confirm-modal");
+  }
+
+  function closeInviteModal() {
+    pendingInviteApp = null;
+    closeModal("invite-confirm-modal");
+  }
+
+  function showDeclineModalError(message) {
+    var errorEl = document.getElementById("decline-confirm-error");
+    if (!errorEl) return;
+    errorEl.textContent = message || "Decline failed.";
+    errorEl.hidden = false;
+    errorEl.classList.remove("hidden");
+  }
+
+  function hideDeclineModalError() {
+    var errorEl = document.getElementById("decline-confirm-error");
+    if (!errorEl) return;
+    errorEl.textContent = "";
+    errorEl.hidden = true;
+    errorEl.classList.add("hidden");
+  }
+
+  function openDeclineModal(app) {
+    pendingDeclineApp = app;
+    var textEl = document.getElementById("decline-confirm-text");
+    if (textEl) {
+      textEl.textContent =
+        "Decline the application for " +
+        (app.property || "this property") +
+        " (" +
+        (app.email || "no email") +
+        ")? The applicant will be blocked from platform access. Their Auth account is preserved.";
+    }
+    hideDeclineModalError();
+    openModal("decline-confirm-modal");
+  }
+
+  function closeDeclineModal() {
+    pendingDeclineApp = null;
+    hideDeclineModalError();
+    closeModal("decline-confirm-modal");
+  }
+
+  function syncDeleteConfirmButton() {
+    var input = document.getElementById("delete-confirm-input");
+    var confirmBtn = document.getElementById("delete-confirm-btn");
+    if (!confirmBtn) return;
+    var typed = input ? String(input.value || "").trim() : "";
+    confirmBtn.disabled = deleteBusy || typed !== "DELETE";
+  }
+
+  function showDeleteModalError(message) {
+    var errorEl = document.getElementById("delete-confirm-error");
+    if (!errorEl) return;
+    errorEl.textContent = message || "Delete failed.";
+    errorEl.hidden = false;
+    errorEl.classList.remove("hidden");
+  }
+
+  function hideDeleteModalError() {
+    var errorEl = document.getElementById("delete-confirm-error");
+    if (!errorEl) return;
+    errorEl.textContent = "";
+    errorEl.hidden = true;
+    errorEl.classList.add("hidden");
+  }
+
+  function openDeleteModal(app) {
+    pendingDeleteApp = app;
+    var textEl = document.getElementById("delete-confirm-text");
+    var input = document.getElementById("delete-confirm-input");
+    if (textEl) {
+      textEl.textContent =
+        "Permanently delete the declined test application for " +
+        (app.property || "this property") +
+        " (" +
+        (app.email || "no email") +
+        ")? This cannot be undone. Type DELETE (exact, uppercase) to confirm.";
+    }
+    if (input) input.value = "";
+    hideDeleteModalError();
+    syncDeleteConfirmButton();
+    openModal("delete-confirm-modal");
+    if (input) input.focus();
+  }
+
+  function closeDeleteModal() {
+    pendingDeleteApp = null;
+    var input = document.getElementById("delete-confirm-input");
+    if (input) input.value = "";
+    hideDeleteModalError();
+    syncDeleteConfirmButton();
+    closeModal("delete-confirm-modal");
+  }
+
+  function setActionButtonsDisabled(disabled) {
+    var selectors = [
+      ".operator-invite-btn",
+      ".operator-decline-btn",
+      ".operator-delete-btn",
+      "#operator-refresh-btn"
+    ];
+    for (var s = 0; s < selectors.length; s++) {
+      var nodes = document.querySelectorAll(selectors[s]);
+      for (var i = 0; i < nodes.length; i++) {
+        nodes[i].disabled = disabled;
+      }
     }
   }
 
@@ -554,11 +836,31 @@
       confirmBtn.textContent = processing ? "Sending…" : "Approve & Send Invite";
     }
     if (cancelBtn) cancelBtn.disabled = processing;
+    setActionButtonsDisabled(anyActionBusy());
+  }
 
-    var inviteButtons = document.querySelectorAll(".operator-invite-btn");
-    for (var i = 0; i < inviteButtons.length; i++) {
-      inviteButtons[i].disabled = processing;
+  function setDeclineProcessing(processing) {
+    declineBusy = processing;
+    var confirmBtn = document.getElementById("decline-confirm-btn");
+    var cancelBtn = document.getElementById("decline-cancel-btn");
+    if (confirmBtn) {
+      confirmBtn.disabled = processing;
+      confirmBtn.textContent = processing ? "Declining…" : "Decline";
     }
+    if (cancelBtn) cancelBtn.disabled = processing;
+    setActionButtonsDisabled(anyActionBusy());
+  }
+
+  function setDeleteProcessing(processing) {
+    deleteBusy = processing;
+    var cancelBtn = document.getElementById("delete-cancel-btn");
+    var confirmBtn = document.getElementById("delete-confirm-btn");
+    if (cancelBtn) cancelBtn.disabled = processing;
+    if (confirmBtn) {
+      confirmBtn.textContent = processing ? "Deleting…" : "Permanently Delete";
+    }
+    syncDeleteConfirmButton();
+    setActionButtonsDisabled(anyActionBusy());
   }
 
   function handleInviteConfirm() {
@@ -599,42 +901,201 @@
       });
   }
 
+  function formatDeclineFailureMessage(err) {
+    var message = (err && err.message) || "Decline failed.";
+    var status = err && err.httpStatus;
+    var payload = err && err.payload;
+    var code = payload && payload.code;
+
+    if (
+      status === 404 ||
+      code === "NOT_FOUND" ||
+      /requested function was not found/i.test(message) ||
+      /function not found/i.test(message)
+    ) {
+      return (
+        "decline-pilot-applicant is not deployed on this Supabase project " +
+        "(HTTP 404). Deploy that Edge Function, hard-refresh, then retry. " +
+        "Server: " +
+        message
+      );
+    }
+
+    return message;
+  }
+
+  function handleDeclineConfirm() {
+    if (declineBusy) return;
+
+    if (!pendingDeclineApp) {
+      showDeclineModalError("Decline session expired. Close this dialog and click Decline again.");
+      return;
+    }
+
+    var applicationId = pendingDeclineApp.id;
+    var email = pendingDeclineApp.email || "";
+    if (!applicationId) {
+      showDeclineModalError("Missing application id. Close this dialog and try again.");
+      return;
+    }
+
+    setDeclineProcessing(true);
+    hideDeclineModalError();
+    hideAlert();
+
+    declineApplication(applicationId)
+      .then(function (payload) {
+        closeDeclineModal();
+        setDeclineProcessing(false);
+        return refreshApplications({
+          successMessage:
+            "Application declined for " +
+            (email || (payload && payload.email) || "applicant") +
+            ". Access suspended."
+        });
+      })
+      .catch(function (err) {
+        setDeclineProcessing(false);
+        var message = formatDeclineFailureMessage(err);
+        console.error("[operator-dashboard] decline-pilot-applicant rejected:", {
+          message: message,
+          httpStatus: (err && err.httpStatus) || null,
+          payload: (err && err.payload) || null
+        });
+        // Keep modal open — page alerts sit under the overlay.
+        showDeclineModalError(message);
+        showAlert("error", message);
+      });
+  }
+
+  function handleDeleteConfirm() {
+    if (deleteBusy || !pendingDeleteApp) return;
+    var input = document.getElementById("delete-confirm-input");
+    if (!input || String(input.value || "").trim() !== "DELETE") {
+      showDeleteModalError("Type DELETE exactly (uppercase) to enable permanent deletion.");
+      return;
+    }
+
+    var applicationId = pendingDeleteApp.id;
+    var email = pendingDeleteApp.email || "";
+    if (!applicationId) {
+      showDeleteModalError("Missing application id. Close this dialog and try again.");
+      return;
+    }
+
+    setDeleteProcessing(true);
+    hideDeleteModalError();
+    hideAlert();
+
+    deleteApplication(applicationId)
+      .then(function () {
+        closeDeleteModal();
+        setDeleteProcessing(false);
+        return refreshApplications({
+          successMessage:
+            "Test application permanently deleted for " + (email || "applicant") + "."
+        });
+      })
+      .catch(function (err) {
+        setDeleteProcessing(false);
+        var message = err.message || "Delete failed.";
+        // Keep modal open and show the error here — page alerts sit under the overlay.
+        showDeleteModalError(message);
+        showAlert("error", message);
+      });
+  }
+
   function bindEvents() {
+    if (eventsBound) return;
+    eventsBound = true;
+
     var listRoot = document.getElementById("operator-dashboard");
     if (listRoot) {
       listRoot.addEventListener("click", function (event) {
-        var button = event.target.closest("[data-invite-id]");
-        if (!button || inviteBusy) return;
+        if (anyActionBusy()) return;
 
-        openInviteModal({
-          id: button.getAttribute("data-invite-id"),
-          email: button.getAttribute("data-invite-email")
-        });
+        var inviteButton = event.target.closest("[data-invite-id]");
+        if (inviteButton) {
+          openInviteModal({
+            id: inviteButton.getAttribute("data-invite-id"),
+            email: inviteButton.getAttribute("data-invite-email")
+          });
+          return;
+        }
+
+        var declineButton = event.target.closest("[data-decline-id]");
+        if (declineButton) {
+          openDeclineModal({
+            id: declineButton.getAttribute("data-decline-id"),
+            email: declineButton.getAttribute("data-decline-email"),
+            property: declineButton.getAttribute("data-decline-property")
+          });
+          return;
+        }
+
+        var deleteButton = event.target.closest("[data-delete-id]");
+        if (deleteButton) {
+          openDeleteModal({
+            id: deleteButton.getAttribute("data-delete-id"),
+            email: deleteButton.getAttribute("data-delete-email"),
+            property: deleteButton.getAttribute("data-delete-property")
+          });
+        }
       });
     }
 
     var refreshBtn = document.getElementById("operator-refresh-btn");
     if (refreshBtn) {
       refreshBtn.addEventListener("click", function () {
-        if (inviteBusy) return;
+        if (anyActionBusy()) return;
         refreshApplications();
       });
     }
 
-    var confirmBtn = document.getElementById("invite-confirm-btn");
-    if (confirmBtn) {
-      confirmBtn.addEventListener("click", handleInviteConfirm);
+    var inviteConfirmBtn = document.getElementById("invite-confirm-btn");
+    if (inviteConfirmBtn) {
+      inviteConfirmBtn.addEventListener("click", handleInviteConfirm);
     }
 
-    var modal = document.getElementById("invite-confirm-modal");
-    if (modal) {
-      modal.addEventListener("click", function (event) {
-        var closer = event.target.closest("[data-close-modal]");
-        if (closer && !inviteBusy) {
-          closeInviteModal();
+    var declineConfirmBtn = document.getElementById("decline-confirm-btn");
+    if (declineConfirmBtn) {
+      declineConfirmBtn.addEventListener("click", function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        handleDeclineConfirm();
+      });
+    }
+
+    var deleteConfirmBtn = document.getElementById("delete-confirm-btn");
+    if (deleteConfirmBtn) {
+      deleteConfirmBtn.addEventListener("click", handleDeleteConfirm);
+    }
+
+    var deleteInput = document.getElementById("delete-confirm-input");
+    if (deleteInput) {
+      deleteInput.addEventListener("input", syncDeleteConfirmButton);
+      deleteInput.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          handleDeleteConfirm();
         }
       });
     }
+
+    ["invite-confirm-modal", "decline-confirm-modal", "delete-confirm-modal"].forEach(
+      function (modalId) {
+        var modal = document.getElementById(modalId);
+        if (!modal) return;
+        modal.addEventListener("click", function (event) {
+          var closer = event.target.closest("[data-close-modal]");
+          if (!closer || anyActionBusy()) return;
+          var which = closer.getAttribute("data-close-modal");
+          if (which === "invite") closeInviteModal();
+          if (which === "decline") closeDeclineModal();
+          if (which === "delete") closeDeleteModal();
+        });
+      }
+    );
 
     var logoutBtn = document.getElementById("logout-btn");
     if (logoutBtn) {
@@ -729,11 +1190,17 @@
     initOperatorPage: initOperatorPage,
     listApplications: listApplications,
     inviteApplication: inviteApplication,
+    declineApplication: declineApplication,
+    deleteApplication: deleteApplication,
     loadPilotLabState: loadPilotLabState,
     refreshOperatorState: refreshOperatorState,
     resolveDisplayStatus: resolveDisplayStatus,
     canInvite: canInvite,
+    canDecline: canDecline,
+    canDeleteTestApplication: canDeleteTestApplication,
     LIST_FUNCTION: LIST_FUNCTION,
-    INVITE_FUNCTION: INVITE_FUNCTION
+    INVITE_FUNCTION: INVITE_FUNCTION,
+    DECLINE_FUNCTION: DECLINE_FUNCTION,
+    DELETE_FUNCTION: DELETE_FUNCTION
   };
 })(window);
