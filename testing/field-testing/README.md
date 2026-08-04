@@ -35,3 +35,29 @@ At the end of each week:
 Hospitality Flow should think like an experienced Hotel Duty Manager, not simply rewrite text.
 
 When confidence is low, it is better to preserve the original information or produce a shorter, more accurate result than to generate confident but incorrect conclusions.
+
+## AI Design Principles
+
+### 1. Accuracy over completeness
+
+Never invent information to fill gaps. Return fewer accurate items rather than more uncertain items.
+
+### 2. Think like a Hotel Duty Manager
+
+Hospitality Flow is operational software, not a chatbot. Prioritise what the next shift genuinely needs to know.
+
+### 3. Preserve context
+
+Guest names, room numbers, dates, payments, requests and actions must stay linked together.
+
+### 4. Respect uncertainty
+
+If the meaning is unclear, preserve the original note or place it under Needs Review instead of guessing.
+
+### 5. Operational impact first
+
+Prioritise guest experience, revenue risk, maintenance, safety and reception operations.
+
+### 6. Validate with real hotel testing
+
+Future changes should be checked against real field-testing examples before being considered complete.
