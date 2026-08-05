@@ -241,16 +241,19 @@ assert(!/ensureExplainWritingButton/.test(profileHtml), "Explain Briefly UI help
 const knowledgeJs = fs.readFileSync(path.join(ROOT, "hotel-profile-knowledge.js"), "utf8");
 assert(knowledgeJs.includes("Knowledge"), "Knowledge nav group present");
 assert(knowledgeJs.includes("Core Setup"), "Core Setup nav group present");
-assert(knowledgeJs.includes("Shift Procedures"), "Shift Procedures label present");
+assert(!knowledgeJs.includes("shortLabel: 'Shift Procedures'"), "Shift Procedures removed from sidebar nav");
+assert(knowledgeJs.includes("guestKnowledge"), "guest knowledge field supported in knowledge layer");
 assert(knowledgeJs.includes('label: \'Settings\''), "Settings nav group present");
 assert(!/\blabel: 'Advanced'/.test(knowledgeJs), "Advanced nav group renamed to Settings");
 assert(!/id: 'operations'/.test(knowledgeJs), "Daily Trackers removed from sidebar PROFILE_SECTIONS");
-assert(profileHtml.includes('id="operations"'), "Daily Trackers id preserved inside Settings");
-assert(profileHtml.includes("Daily Trackers"), "Daily Trackers page heading present");
-assert(profileHtml.includes('data-settings-group="operations"'), "Daily Trackers nested in Settings accordion");
+assert(!/PROGRESS_SECTIONS\s*=\s*\[[^\]]*operations/.test(knowledgeJs.replace(/\n/g, " ")), "Daily Trackers removed from progress tracking");
+assert(profileHtml.includes('id="operations"'), "Daily Trackers markup preserved for future module");
+assert(/id="operations"[^>]*\bhidden\b/.test(profileHtml), "Daily Trackers hidden from Settings UX");
+assert(profileHtml.includes("future Operations Trackers"), "future Operations Trackers reservation noted");
 assert(profileHtml.includes('data-general-group="branding"'), "Branding lives in General");
+assert(profileHtml.includes('data-general-group="more"'), "More details lives in General");
 assert(profileHtml.includes('data-settings-group="regional"'), "Regional Settings moved to Settings");
-assert(!profileHtml.includes('data-general-group="regional"'), "Regional Settings removed from General");
+assert(/data-settings-group="extended"[^>]*\bhidden\b/.test(profileHtml), "Extended details removed from Settings UX");
 assert(!knowledgeJs.includes("Optional Modules"), "Optional Modules label removed");
 assert(!knowledgeJs.includes("Knowledge Library"), "Knowledge Library label renamed");
 assert(!/"Operational Knowledge"/.test(knowledgeJs), "Operational Knowledge nav label renamed");
@@ -258,11 +261,17 @@ assert(!knowledgeJs.includes("nav-progress"), "sidebar progress metrics removed"
 assert(!/Configured/.test(knowledgeJs.replace(/configuredCount/g, "")), "Configured status labels removed from knowledge JS");
 assert(!profileHtml.includes("nav-progress"), "sidebar progress CSS removed");
 assert(profileHtml.includes("nav-trailing"), "future-ready nav trailing slot present");
-assert(profileHtml.includes("Shift Procedures"), "Shift Procedures page heading present");
-assert(profileHtml.includes("Daily Trackers"), "Daily Trackers heading retained");
+assert(profileHtml.includes("Guest Intelligence"), "Guest Intelligence heading present");
+assert(profileHtml.includes("Hotel Terminology"), "Hotel Terminology heading present");
+assert(profileHtml.includes('id="operational-knowledge"'), "legacy Shift Procedures markup retained hidden");
+assert(profileHtml.includes("Regional Settings"), "Regional Settings retained in Settings");
+assert(profileHtml.includes("AI preferences"), "AI preferences retained in Settings");
 assert(profileHtml.includes("isAlreadyHotelBrainProfessional"), "professional gate wired for no-improvements");
-assert(profileHtml.includes("Set how Hospitality Flow should write, prioritise and interpret"),
-  "AI instructions helper text present");
+assert(
+  profileHtml.includes("AI Instructions") ||
+    profileHtml.includes("Set how Hospitality Flow should write, prioritise and interpret"),
+  "AI instructions helper text present"
+);
 assert(profileHtml.includes('id="improveWritingModal"'), "preview confirmation modal present");
 assert(profileHtml.includes("No improvements needed."), "no-change status copy present");
 assert(profileHtml.includes("Writing improved. Save Hotel Brain to keep the change."),

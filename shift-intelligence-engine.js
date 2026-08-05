@@ -4342,7 +4342,8 @@
       hasHotelStandards: !!(input.brainContext && input.brainContext.hotelKnowledge &&
         trimText(input.brainContext.hotelKnowledge.hotelStandards)),
       hasVipRules: !!(input.brainContext && input.brainContext.hotelKnowledge &&
-        trimText(input.brainContext.hotelKnowledge.vipRules)),
+        (trimText(input.brainContext.hotelKnowledge.guestKnowledge) ||
+          trimText(input.brainContext.hotelKnowledge.vipRules))),
       hasOperationalNotes: !!(input.brainContext && input.brainContext.hotelKnowledge &&
         trimText(input.brainContext.hotelKnowledge.operationalNotes))
     };
@@ -4474,17 +4475,17 @@
     var hk = brainContext.hotelKnowledge || {};
     topic = String(topic || "").toLowerCase();
 
-    if (topic === "vip") {
-      result.vipRules = trimBrainText(hk.vipRules);
+    if (topic === "vip" || topic === "guest") {
+      result.vipRules = trimBrainText(hk.guestKnowledge) || trimBrainText(hk.vipRules);
       result.rules = result.vipRules;
     } else if (topic === "payment" || topic === "folio" || topic === "balance") {
       result.rules = trimBrainText(hk.paymentRules || hk.operationalNotes);
     } else if (topic === "maintenance") {
-      result.rules = trimBrainText(hk.maintenanceRules || hk.hotelStandards || hk.operationalNotes);
+      result.rules = trimBrainText(hk.maintenanceRules || hk.operationalNotes || hk.hotelStandards);
     } else if (topic === "inventory" || topic === "adapter") {
       result.rules = trimBrainText(hk.inventoryRules || hk.operationalNotes);
     } else {
-      result.rules = trimBrainText(hk.operationalNotes || hk.hotelStandards);
+      result.rules = trimBrainText(hk.operationalNotes || hk.guestKnowledge || hk.hotelStandards);
     }
 
     var topicRe = topic === "vip" ? /vip/i

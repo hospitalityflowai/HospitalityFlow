@@ -10,15 +10,56 @@
   var PROFILE_SECTIONS = [
     { id: 'general', label: 'General Hotel Details', shortLabel: 'General', icon: 'home', layer: 'essential' },
     { id: 'rooms-facilities', label: 'Rooms & Facilities', shortLabel: 'Rooms & Facilities', icon: 'grid', layer: 'essential' },
-    { id: 'departments-shifts', label: 'Departments & Shifts', shortLabel: 'Departments', icon: 'users', layer: 'essential' },
+    { id: 'departments-shifts', label: 'Departments', shortLabel: 'Departments', icon: 'users', layer: 'essential' },
     { id: 'policies', label: 'Policies', shortLabel: 'Policies', icon: 'document', layer: 'essential' },
     { id: 'hotel-knowledge', label: 'Hotel Knowledge', shortLabel: 'Hotel Knowledge', icon: 'knowledge', layer: 'optional' },
-    { id: 'operational-knowledge', label: 'Shift Procedures', shortLabel: 'Shift Procedures', icon: 'activity', layer: 'optional' },
-    { id: 'reservations-payments', label: 'Reservations & Payments', shortLabel: 'Reservations & Payments', icon: 'card', layer: 'optional' },
+    { id: 'reservations-payments', label: 'Booking Channels', shortLabel: 'Booking Channels', icon: 'card', layer: 'optional' },
     { id: 'guest-services', label: 'Guest Services', shortLabel: 'Guest Services', icon: 'concierge', layer: 'optional' },
     { id: 'inventory', label: 'Inventory', shortLabel: 'Inventory', icon: 'box', layer: 'optional' },
     { id: 'advanced-settings', label: 'Settings', shortLabel: 'Settings', icon: 'settings', layer: 'settings' }
   ];
+
+  var DEFAULT_DEPARTMENTS = [
+    { name: 'Reception', head: '', contact: '', email: '', instructions: '' },
+    { name: 'Housekeeping', head: '', contact: '', email: '', instructions: '' },
+    { name: 'Maintenance', head: '', contact: '', email: '', instructions: '' },
+    { name: 'Food & Beverage', head: '', contact: '', email: '', instructions: '' },
+    { name: 'Night Team', head: '', contact: '', email: '', instructions: '' },
+    { name: 'Management', head: '', contact: '', email: '', instructions: '' }
+  ];
+
+  var POLICY_NOTES_GROUPS = [
+    {
+      id: 'guest',
+      label: 'Guest Policies',
+      items: [
+        { key: 'checkInOut', label: 'Check-in and Check-out', placeholder: 'e.g. Late check-out depends on occupancy.\nEarly check-in is offered when rooms are ready.' },
+        { key: 'cancellationsNoShows', label: 'Cancellations and No-shows', placeholder: 'e.g. Cancellations within 24 hours are charged one night.\nNo-shows follow the same charge unless Management approves a waiver.' },
+        { key: 'visitorsSecurity', label: 'Visitors and Security', placeholder: 'e.g. Visitors must sign in at Reception after 22:00.\nRoom keys are never issued to unregistered visitors.' },
+        { key: 'petsSmoking', label: 'Pets and Smoking', placeholder: 'e.g. Pets allowed in Deluxe rooms only with prior approval.\nSmoking is prohibited throughout the hotel.' },
+        { key: 'lostPropertyLoans', label: 'Lost Property and Loan Items', placeholder: 'e.g. Lost property is held for 90 days.\nAdapters are loaned with a £20 deposit.' },
+        { key: 'otherGuestPolicies', label: 'Other Guest Policies', placeholder: 'Anything else guests should know — house rules, luggage, children, compensation.' }
+      ]
+    },
+    {
+      id: 'payment',
+      label: 'Payments and Front Office Policies',
+      items: [
+        { key: 'deposits', label: 'Deposits', placeholder: 'e.g. A deposit equal to the first night is taken at booking for direct reservations.' },
+        { key: 'refunds', label: 'Refunds', placeholder: 'e.g. Refunds are processed within 5–7 working days after Duty Manager approval.' },
+        { key: 'preAuthorisations', label: 'Pre-authorisations', placeholder: 'e.g. Pre-authorise one night plus £50 incidentals for walk-in guests.' },
+        { key: 'cashHandling', label: 'Cash Handling', placeholder: 'e.g. Cash float is £200 and must be counted each shift.' },
+        { key: 'invoicing', label: 'Invoicing', placeholder: 'e.g. Corporate invoices are emailed within 24 hours of departure.' },
+        { key: 'otherPaymentNotes', label: 'Other Payment Notes', placeholder: 'Anything else about payments, city tax, compensation limits or front-office money handling.' }
+      ]
+    }
+  ];
+
+  var POLICY_NOTES_SECTIONS = POLICY_NOTES_GROUPS.reduce(function (list, group) {
+    return list.concat(group.items);
+  }, []);
+
+  var LEGACY_POLICY_NOTE_KEYS = ['paymentsOta', 'guestPolicies', 'otherNotes'];
 
   var NAV_LAYERS = [
     { id: 'essential', label: 'Core Setup', defaultExpanded: true },
@@ -31,8 +72,8 @@
   ];
 
   var PROGRESS_SECTIONS = [
-    'general', 'rooms-facilities', 'departments-shifts', 'policies', 'operational-knowledge',
-    'reservations-payments', 'guest-services', 'inventory', 'operations'
+    'general', 'rooms-facilities', 'departments-shifts', 'policies',
+    'reservations-payments', 'guest-services', 'inventory'
   ];
 
   var SECTION_ICONS = {
@@ -71,10 +112,11 @@
   ];
 
   var RESERVATION_CHANNELS = [
-    { type: 'bookingCom', label: 'Booking.com' },
-    { type: 'expedia', label: 'Expedia' },
-    { type: 'direct', label: 'Direct bookings' },
-    { type: 'corporate', label: 'Corporate bookings' }
+    { type: 'bookingCom', label: 'Booking.com', placeholder: 'e.g. Virtual cards activate after 05:00 on arrival day.\nPay at Hotel reservations are charged at check-in.\nAlways check whether breakfast remains after a booking modification.' },
+    { type: 'expedia', label: 'Expedia', placeholder: 'e.g. Expedia virtual cards activate after 05:00.\nVerify commission and cancellation rules before amending stays.' },
+    { type: 'direct', label: 'Direct Bookings', placeholder: 'e.g. Direct bookings are prepaid or guaranteed by card.\nOffer members the preferred rate when available.' },
+    { type: 'corporate', label: 'Corporate Bookings', placeholder: 'e.g. Corporate accounts are invoiced weekly.\nConfirm purchase order numbers at check-in.' },
+    { type: 'other', label: 'Other Channels', placeholder: 'e.g. Agency or wholesale bookings — note payment timing and special instructions.' }
   ];
 
   var POLICY_GROUPS = [
@@ -155,12 +197,298 @@
     return { title: title || '', summary: '', instructions: '', approvalLevel: '', charge: '', escalation: '', lastUpdated: '' };
   }
 
+  function emptyPoliciesNotes() {
+    var out = {};
+    POLICY_NOTES_SECTIONS.forEach(function (sec) { out[sec.key] = ''; });
+    LEGACY_POLICY_NOTE_KEYS.forEach(function (key) { out[key] = ''; });
+    return out;
+  }
+
+  function fillIfEmpty(target, key, value) {
+    if (!target || !key) return;
+    if (String(target[key] || '').trim()) return;
+    if (!String(value || '').trim()) return;
+    target[key] = String(value).trim();
+  }
+
+  function expandPoliciesNotes(notes, structured, legacy) {
+    notes = notes || emptyPoliciesNotes();
+    var base = emptyPoliciesNotes();
+    Object.keys(base).forEach(function (key) {
+      if (notes[key] == null) notes[key] = '';
+    });
+
+    var fromStructured = buildPoliciesNotesFromStructured(structured, legacy);
+    Object.keys(base).forEach(function (key) {
+      fillIfEmpty(notes, key, fromStructured[key]);
+    });
+
+    /* Previous 4-box model → finer boxes (never overwrite existing text) */
+    var guestFineEmpty = !(
+      notes.cancellationsNoShows || notes.visitorsSecurity || notes.petsSmoking ||
+      notes.lostPropertyLoans || notes.otherGuestPolicies
+    );
+    if (guestFineEmpty) fillIfEmpty(notes, 'otherGuestPolicies', notes.guestPolicies);
+    fillIfEmpty(notes, 'otherGuestPolicies', notes.otherNotes);
+
+    var paymentFineEmpty = !(
+      notes.deposits || notes.refunds || notes.preAuthorisations ||
+      notes.cashHandling || notes.invoicing || notes.otherPaymentNotes
+    );
+    if (paymentFineEmpty) fillIfEmpty(notes, 'otherPaymentNotes', notes.paymentsOta);
+
+    return notes;
+  }
+
+  function policyEntryText(entry) {
+    if (!entry || typeof entry !== 'object') return '';
+    return String(entry.instructions || entry.summary || '').trim();
+  }
+
+  function joinPolicyTexts(parts) {
+    return (parts || []).map(function (p) { return String(p || '').trim(); }).filter(Boolean).join('\n\n');
+  }
+
+  function buildPoliciesNotesFromStructured(structured, legacy) {
+    var notes = emptyPoliciesNotes();
+    structured = structured || {};
+    legacy = legacy || {};
+    var guest = structured.guest || {};
+    var payment = structured.payment || {};
+    var operational = structured.operational || {};
+    var custom = structured.custom || {};
+
+    notes.checkInOut = joinPolicyTexts([
+      policyEntryText(guest.earlyCheckIn) ? 'Early check-in: ' + policyEntryText(guest.earlyCheckIn) : '',
+      policyEntryText(guest.lateCheckOut) ? 'Late check-out: ' + policyEntryText(guest.lateCheckOut) : '',
+      legacy.earlyCheckIn ? 'Early check-in: ' + legacy.earlyCheckIn : '',
+      legacy.lateCheckOut ? 'Late check-out: ' + legacy.lateCheckOut : ''
+    ]);
+
+    notes.cancellationsNoShows = joinPolicyTexts([
+      policyEntryText(guest.cancellation) ? 'Cancellation: ' + policyEntryText(guest.cancellation) : '',
+      policyEntryText(guest.noShow) ? 'No-show: ' + policyEntryText(guest.noShow) : '',
+      legacy.cancellation ? 'Cancellation: ' + legacy.cancellation : '',
+      legacy.noShow ? 'No-show: ' + legacy.noShow : ''
+    ]);
+
+    notes.visitorsSecurity = joinPolicyTexts([
+      policyEntryText(guest.visitors) ? 'Visitors: ' + policyEntryText(guest.visitors) : '',
+      policyEntryText(operational.physicalKeys) ? 'Keys / key cards: ' + policyEntryText(operational.physicalKeys) : '',
+      legacy.visitors ? 'Visitors: ' + legacy.visitors : '',
+      legacy.keysOrCards ? 'Keys / key cards: ' + legacy.keysOrCards : ''
+    ]);
+
+    notes.petsSmoking = joinPolicyTexts([
+      policyEntryText(guest.pets) ? 'Pets: ' + policyEntryText(guest.pets) : '',
+      policyEntryText(guest.smoking) ? 'Smoking: ' + policyEntryText(guest.smoking) : '',
+      legacy.pets ? 'Pets: ' + legacy.pets : '',
+      legacy.smoking ? 'Smoking: ' + legacy.smoking : ''
+    ]);
+
+    notes.lostPropertyLoans = joinPolicyTexts([
+      policyEntryText(operational.lostProperty) ? 'Lost property: ' + policyEntryText(operational.lostProperty) : '',
+      policyEntryText(guest.luggageStorage) ? 'Luggage storage: ' + policyEntryText(guest.luggageStorage) : '',
+      legacy.lostProperty ? 'Lost property: ' + legacy.lostProperty : '',
+      legacy.guestLoanItems ? 'Loan items: ' + legacy.guestLoanItems : ''
+    ]);
+
+    notes.deposits = joinPolicyTexts([
+      policyEntryText(payment.deposit) ? policyEntryText(payment.deposit) : '',
+      legacy.deposit || ''
+    ]);
+    notes.refunds = joinPolicyTexts([
+      policyEntryText(payment.refund) ? policyEntryText(payment.refund) : '',
+      legacy.refund || ''
+    ]);
+    notes.preAuthorisations = policyEntryText(payment.preAuthorisation);
+    notes.cashHandling = policyEntryText(payment.cashHandling);
+    notes.invoicing = policyEntryText(payment.corporateBilling);
+
+    var otherPayment = [
+      policyEntryText(payment.guestCompensation) ? 'Compensation limits: ' + policyEntryText(payment.guestCompensation) : '',
+      legacy.guestCompensation ? 'Compensation: ' + legacy.guestCompensation : ''
+    ];
+    notes.otherPaymentNotes = joinPolicyTexts(otherPayment);
+
+    var otherGuest = [
+      policyEntryText(guest.children) ? 'Children: ' + policyEntryText(guest.children) : '',
+      policyEntryText(operational.complaints) ? 'Complaints: ' + policyEntryText(operational.complaints) : '',
+      legacy.customNotes || ''
+    ];
+    Object.keys(custom).forEach(function (key) {
+      var entry = custom[key];
+      var text = policyEntryText(entry);
+      if (!text) return;
+      /* Skip keys that already map to new notes fields */
+      if (POLICY_NOTES_SECTIONS.some(function (sec) { return sec.key === key; })) return;
+      if (LEGACY_POLICY_NOTE_KEYS.indexOf(key) !== -1) return;
+      var title = (entry && entry.title) ? entry.title : 'Custom policy';
+      otherGuest.push(title + ': ' + text);
+    });
+    notes.otherGuestPolicies = joinPolicyTexts(otherGuest);
+
+    /* Keep legacy aggregate keys populated for older consumers */
+    notes.guestPolicies = joinPolicyTexts([
+      notes.checkInOut, notes.cancellationsNoShows, notes.visitorsSecurity,
+      notes.petsSmoking, notes.lostPropertyLoans, notes.otherGuestPolicies
+    ]);
+    notes.paymentsOta = joinPolicyTexts([
+      notes.deposits, notes.refunds, notes.preAuthorisations,
+      notes.cashHandling, notes.invoicing, notes.otherPaymentNotes
+    ]);
+    notes.otherNotes = notes.otherGuestPolicies;
+    return notes;
+  }
+
+  function syncStructuredFromPoliciesNotes(notes) {
+    notes = notes || emptyPoliciesNotes();
+    var custom = {};
+    POLICY_NOTES_SECTIONS.forEach(function (sec) {
+      var text = notes[sec.key] || '';
+      custom[sec.key] = Object.assign(emptyPolicyEntry(sec.label), {
+        title: sec.label,
+        instructions: text,
+        summary: String(text).substring(0, 120)
+      });
+    });
+    return {
+      guest: {
+        earlyCheckIn: Object.assign(emptyPolicyEntry('Check-in and Check-out'), { instructions: notes.checkInOut || '', summary: String(notes.checkInOut || '').substring(0, 120) }),
+        lateCheckOut: Object.assign(emptyPolicyEntry('Check-in and Check-out'), { instructions: notes.checkInOut || '', summary: String(notes.checkInOut || '').substring(0, 120) }),
+        cancellation: Object.assign(emptyPolicyEntry('Cancellations and No-shows'), { instructions: notes.cancellationsNoShows || '', summary: String(notes.cancellationsNoShows || '').substring(0, 120) }),
+        noShow: Object.assign(emptyPolicyEntry('Cancellations and No-shows'), { instructions: notes.cancellationsNoShows || '', summary: String(notes.cancellationsNoShows || '').substring(0, 120) }),
+        smoking: Object.assign(emptyPolicyEntry('Pets and Smoking'), { instructions: notes.petsSmoking || '', summary: String(notes.petsSmoking || '').substring(0, 120) }),
+        pets: Object.assign(emptyPolicyEntry('Pets and Smoking'), { instructions: notes.petsSmoking || '', summary: String(notes.petsSmoking || '').substring(0, 120) })
+      },
+      payment: {
+        deposit: Object.assign(emptyPolicyEntry('Deposits'), { instructions: notes.deposits || '', summary: String(notes.deposits || '').substring(0, 120) }),
+        refund: Object.assign(emptyPolicyEntry('Refunds'), { instructions: notes.refunds || '', summary: String(notes.refunds || '').substring(0, 120) }),
+        preAuthorisation: Object.assign(emptyPolicyEntry('Pre-authorisations'), { instructions: notes.preAuthorisations || '', summary: String(notes.preAuthorisations || '').substring(0, 120) }),
+        cashHandling: Object.assign(emptyPolicyEntry('Cash Handling'), { instructions: notes.cashHandling || '', summary: String(notes.cashHandling || '').substring(0, 120) }),
+        corporateBilling: Object.assign(emptyPolicyEntry('Invoicing'), { instructions: notes.invoicing || '', summary: String(notes.invoicing || '').substring(0, 120) })
+      },
+      operational: {
+        lostProperty: Object.assign(emptyPolicyEntry('Lost Property and Loan Items'), { instructions: notes.lostPropertyLoans || '', summary: String(notes.lostPropertyLoans || '').substring(0, 120) })
+      },
+      custom: custom
+    };
+  }
+
+  function collectPoliciesNotes(root) {
+    var out = emptyPoliciesNotes();
+    var scope = root || document.getElementById('policyNotesRoot') || document;
+    POLICY_NOTES_SECTIONS.forEach(function (sec) {
+      var el = scope.querySelector('[data-policy-note="' + sec.key + '"]') || document.getElementById('policyNote_' + sec.key);
+      out[sec.key] = el ? el.value : '';
+    });
+    /* Maintain legacy aggregate keys for older AI / export consumers */
+    out.guestPolicies = joinPolicyTexts([
+      out.checkInOut, out.cancellationsNoShows, out.visitorsSecurity,
+      out.petsSmoking, out.lostPropertyLoans, out.otherGuestPolicies
+    ]);
+    out.paymentsOta = joinPolicyTexts([
+      out.deposits, out.refunds, out.preAuthorisations,
+      out.cashHandling, out.invoicing, out.otherPaymentNotes
+    ]);
+    out.otherNotes = out.otherGuestPolicies;
+    return out;
+  }
+
+  function renderPolicyNotesUI(root, data) {
+    if (!root) return;
+    var notes = expandPoliciesNotes(
+      (data && data.policiesNotes) || emptyPoliciesNotes(),
+      (data && data.policiesStructured) || {},
+      (data && data.policies) || {}
+    );
+    root.innerHTML = '';
+    var stack = document.createElement('div');
+    stack.className = 'policy-notes-stack';
+    POLICY_NOTES_GROUPS.forEach(function (group) {
+      var groupWrap = document.createElement('div');
+      groupWrap.className = 'policy-notes-group';
+      groupWrap.innerHTML = '<h3 class="subsection-heading">' + esc(group.label) + '</h3>';
+      var groupStack = document.createElement('div');
+      groupStack.className = 'disclosure-stack';
+      group.items.forEach(function (sec) {
+        var value = notes[sec.key] || '';
+        var hasContent = !!String(value).trim();
+        var card = document.createElement('div');
+        card.className = 'disclosure-card disclosure-card--collapsed policy-notes-card' + (hasContent ? ' disclosure-card--filled' : '');
+        card.setAttribute('data-policy-note-card', sec.key);
+        card.innerHTML =
+          '<button type="button" class="disclosure-card-toggle" aria-expanded="false">' +
+          '<span class="tracker-group-label">' + esc(sec.label) + '</span>' +
+          '<span class="disclosure-card-meta">' + (hasContent ? 'Notes added' : 'Write naturally — AI will organise this') + '</span>' +
+          disclosureChevron() +
+          '</button>' +
+          '<div class="disclosure-card-body" hidden>' +
+          '<div class="knowledge-field">' +
+          '<label class="form-label visually-hidden" for="policyNote_' + sec.key + '">' + esc(sec.label) + '</label>' +
+          '<div class="textarea-wrap">' +
+          '<textarea class="notes-textarea notes-textarea--large" id="policyNote_' + sec.key + '" data-policy-note="' + sec.key + '" placeholder="' + esc(sec.placeholder) + '">' + esc(value) + '</textarea>' +
+          '<button type="button" class="improve-writing-btn" data-improve-writing="policyNote_' + sec.key + '">Improve Writing</button>' +
+          '</div></div></div>';
+        groupStack.appendChild(card);
+      });
+      groupWrap.appendChild(groupStack);
+      stack.appendChild(groupWrap);
+      bindDisclosureCards(groupStack, '.policy-notes-card', function (card) {
+        return card.classList.contains('disclosure-card--filled');
+      });
+    });
+    root.appendChild(stack);
+    root.addEventListener('input', function (e) {
+      var ta = e.target.closest('[data-policy-note]');
+      if (!ta) return;
+      var card = ta.closest('.policy-notes-card');
+      if (!card) return;
+      var filled = !!String(ta.value || '').trim();
+      card.classList.toggle('disclosure-card--filled', filled);
+      var meta = card.querySelector('.disclosure-card-meta');
+      if (meta) meta.textContent = filled ? 'Notes added' : 'Write naturally — AI will organise this';
+      root.dispatchEvent(new CustomEvent('profile-change', { bubbles: true }));
+    });
+  }
+
   function emptyOtaChannel(type, label) {
     return {
-      type: type, label: label, paymentModel: '', prepaidOrPayAtProperty: '', refundable: '',
+      type: type, label: label, notes: '',
+      paymentModel: '', prepaidOrPayAtProperty: '', refundable: '',
       cancellationDeadline: '', virtualCardActivation: '', cardExpiryRules: '', commissionNotes: '',
       invoiceRules: '', refundProcedure: '', specialInstructions: ''
     };
+  }
+
+  function buildOtaChannelNotes(channel) {
+    if (!channel) return '';
+    if (String(channel.notes || '').trim()) return String(channel.notes).trim();
+    var parts = [
+      channel.paymentModel ? 'Payment type: ' + channel.paymentModel : '',
+      channel.prepaidOrPayAtProperty ? 'Prepaid or pay at property: ' + channel.prepaidOrPayAtProperty : '',
+      channel.refundable ? 'Refundable or non-refundable: ' + channel.refundable : '',
+      channel.cancellationDeadline ? 'Cancellation rule: ' + channel.cancellationDeadline : '',
+      channel.virtualCardActivation ? 'Virtual-card activation: ' + channel.virtualCardActivation : '',
+      channel.cardExpiryRules ? 'Virtual-card expiry: ' + channel.cardExpiryRules : '',
+      channel.invoiceRules ? 'Payment timing / invoice rules: ' + channel.invoiceRules : '',
+      channel.commissionNotes ? 'Commission / invoice notes: ' + channel.commissionNotes : '',
+      channel.refundProcedure ? 'Refund procedure: ' + channel.refundProcedure : '',
+      channel.specialInstructions ? channel.specialInstructions : ''
+    ];
+    return joinPolicyTexts(parts);
+  }
+
+  function migrateOtaChannelsToNotes(channels) {
+    if (!Array.isArray(channels)) return [];
+    return channels.map(function (ch) {
+      if (!ch || typeof ch !== 'object') return ch;
+      var copy = Object.assign({}, ch);
+      if (!String(copy.notes || '').trim()) {
+        copy.notes = buildOtaChannelNotes(copy);
+      }
+      return copy;
+    });
   }
 
   function emptyTracker(key, label) {
@@ -260,7 +588,7 @@
 
     if (!d.hotelKnowledge || typeof d.hotelKnowledge !== 'object') {
       d.hotelKnowledge = {
-        generalNotes: '', hotelStandards: '', vipRules: '', commonTerms: '',
+        generalNotes: '', guestKnowledge: '', hotelStandards: '', vipRules: '', commonTerms: '',
         operationalNotes: '', localRecommendations: '', aiInstructions: ''
       };
     } else {
@@ -272,6 +600,33 @@
       if (hk.operationalNotes == null) hk.operationalNotes = '';
       if (hk.localRecommendations == null) hk.localRecommendations = '';
       if (hk.aiInstructions == null) hk.aiInstructions = '';
+      if (hk.guestKnowledge == null) hk.guestKnowledge = '';
+      /* Migrate VIP rules into Guest Intelligence when the new field is empty */
+      if (!String(hk.guestKnowledge || '').trim() && String(hk.vipRules || '').trim()) {
+        hk.guestKnowledge = hk.vipRules;
+      }
+      /* Fold Hotel Standards into Operational Notes / AI Instructions when those are empty */
+      if (String(hk.hotelStandards || '').trim()) {
+        if (!String(hk.operationalNotes || '').trim()) {
+          hk.operationalNotes = hk.hotelStandards;
+        } else if (!String(hk.aiInstructions || '').trim()) {
+          hk.aiInstructions = hk.hotelStandards;
+        }
+      }
+      /* Settings additional AI instructions → Hotel Knowledge AI Instructions (source of truth) */
+      if (
+        !String(hk.aiInstructions || '').trim() &&
+        d.aiPrefs &&
+        String(d.aiPrefs.instructions || '').trim()
+      ) {
+        hk.aiInstructions = d.aiPrefs.instructions;
+      }
+    }
+
+    d.policiesNotes = expandPoliciesNotes(d.policiesNotes, d.policiesStructured, d.policies);
+
+    if (Array.isArray(d.otaChannels)) {
+      d.otaChannels = migrateOtaChannelsToNotes(d.otaChannels);
     }
 
     if (!d.facilities || typeof d.facilities !== 'object') d.facilities = { checked: [], custom: '', customItems: [] };
@@ -416,9 +771,7 @@
   }
 
   function renderPolicyUI(root, data) {
-    var structured = (data && data.policiesStructured) || { guest: {}, payment: {}, operational: {}, custom: {} };
-    if (!structured.custom) structured.custom = {};
-    renderPolicyList(root, PRIMARY_POLICIES, structured, true);
+    renderPolicyNotesUI(root, data);
   }
 
   function renderPaymentPoliciesUI(root, data) {
@@ -478,58 +831,72 @@
 
   function renderReservationsUI(root, data) {
     if (!root) return;
-    var channels = (data && data.otaChannels) || [];
+    var channels = migrateOtaChannelsToNotes((data && data.otaChannels) || []);
     root.innerHTML = '';
+    var intro = document.createElement('p');
+    intro.className = 'form-helper';
+    intro.style.marginTop = '0';
+    intro.style.marginBottom = '14px';
+    intro.textContent = 'One notes field per channel. Write naturally — payment timing, virtual cards, modifications and anything Reception should know.';
+    root.appendChild(intro);
+    var stack = document.createElement('div');
+    stack.className = 'disclosure-stack';
     RESERVATION_CHANNELS.forEach(function (def, idx) {
       var ch = channelByType(channels, def.type) || emptyOtaChannel(def.type, def.label);
       ch.label = ch.label || def.label;
-      root.appendChild(buildReservationCard(ch, idx));
+      ch.notes = buildOtaChannelNotes(ch);
+      stack.appendChild(buildReservationCard(ch, idx, def.placeholder || ''));
     });
-    bindDisclosureCards(root, '.reservation-card');
-    root.querySelectorAll('[data-more-toggle]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var card = btn.closest('[data-ota-channel]');
-        if (!card) return;
-        var panel = card.querySelector('[data-more-panel]');
-        var open = panel && panel.hidden;
-        if (panel) panel.hidden = !open;
-        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-        btn.textContent = open ? 'Hide more settings' : 'More settings';
-      });
+    root.appendChild(stack);
+    bindDisclosureCards(stack, '.reservation-card', function (card) {
+      return card.classList.contains('disclosure-card--filled');
+    });
+    stack.addEventListener('input', function (e) {
+      var ta = e.target.closest('[data-f="notes"]');
+      if (!ta) return;
+      var card = ta.closest('.reservation-card');
+      if (!card) return;
+      var filled = !!String(ta.value || '').trim();
+      card.classList.toggle('disclosure-card--filled', filled);
+      var meta = card.querySelector('.disclosure-card-meta');
+      if (meta) meta.textContent = filled ? 'Notes added' : 'Write naturally — AI will organise this';
+      root.dispatchEvent(new CustomEvent('profile-change', { bubbles: true }));
     });
   }
 
-  function buildReservationCard(ch, idx) {
-    var hasContent = otaChannelHasContent(ch);
+  function buildReservationCard(ch, idx, placeholder) {
+    var notes = buildOtaChannelNotes(ch);
+    var hasContent = !!String(notes || '').trim();
     var card = document.createElement('div');
     card.className = 'reservation-card disclosure-card disclosure-card--collapsed' + (hasContent ? ' disclosure-card--filled' : '');
     card.setAttribute('data-ota-channel', idx);
     card.innerHTML =
       '<button type="button" class="reservation-card-header disclosure-card-toggle" data-collapse-toggle aria-expanded="false">' +
-      '<span class="reservation-card-title">' + esc(ch.label) + '</span>' +
-      '<span class="reservation-card-status">' +
-      disclosureChevron() +
+      '<span class="policy-card-title-wrap">' +
+      '<span class="reservation-card-title">' + esc(ch.label) + ' Notes</span>' +
+      '<span class="disclosure-card-meta">' + (hasContent ? 'Notes added' : 'Write naturally — AI will organise this') + '</span>' +
       '</span>' +
+      '<span class="reservation-card-status">' + disclosureChevron() + '</span>' +
       '</button>' +
       '<div class="reservation-card-body disclosure-card-body" hidden>' +
       '<input type="hidden" data-f="type" value="' + esc(ch.type) + '">' +
       '<input type="hidden" data-f="label" value="' + esc(ch.label) + '">' +
-      '<div class="form-grid">' +
-      field('Payment type', 'paymentModel', ch.paymentModel) +
-      field('Prepaid or pay at property', 'prepaidOrPayAtProperty', ch.prepaidOrPayAtProperty) +
-      field('Refundable or non-refundable', 'refundable', ch.refundable) +
-      field('Cancellation rules', 'cancellationDeadline', ch.cancellationDeadline) +
-      fieldArea('Payment timing', 'invoiceRules', ch.invoiceRules) +
-      fieldArea('Invoice notes', 'commissionNotes', ch.commissionNotes) +
-      fieldArea('Special instructions', 'specialInstructions', ch.specialInstructions) +
-      '</div>' +
-      '<button type="button" class="disclosure-btn" data-more-toggle aria-expanded="false">More settings</button>' +
-      '<div class="disclosure-panel" data-more-panel hidden>' +
-      '<div class="form-grid">' +
-      field('Virtual card activation', 'virtualCardActivation', ch.virtualCardActivation) +
-      field('Virtual card expiry rules', 'cardExpiryRules', ch.cardExpiryRules) +
-      fieldArea('Commission rules', 'commissionNotes', ch.commissionNotes) +
-      fieldArea('Refund procedure', 'refundProcedure', ch.refundProcedure) +
+      /* Preserve legacy structured fields silently */
+      '<input type="hidden" data-f="paymentModel" value="' + esc(ch.paymentModel) + '">' +
+      '<input type="hidden" data-f="prepaidOrPayAtProperty" value="' + esc(ch.prepaidOrPayAtProperty) + '">' +
+      '<input type="hidden" data-f="refundable" value="' + esc(ch.refundable) + '">' +
+      '<input type="hidden" data-f="cancellationDeadline" value="' + esc(ch.cancellationDeadline) + '">' +
+      '<input type="hidden" data-f="virtualCardActivation" value="' + esc(ch.virtualCardActivation) + '">' +
+      '<input type="hidden" data-f="cardExpiryRules" value="' + esc(ch.cardExpiryRules) + '">' +
+      '<input type="hidden" data-f="commissionNotes" value="' + esc(ch.commissionNotes) + '">' +
+      '<input type="hidden" data-f="invoiceRules" value="' + esc(ch.invoiceRules) + '">' +
+      '<input type="hidden" data-f="refundProcedure" value="' + esc(ch.refundProcedure) + '">' +
+      '<input type="hidden" data-f="specialInstructions" value="' + esc(ch.specialInstructions) + '">' +
+      '<div class="knowledge-field">' +
+      '<label class="form-label visually-hidden" for="otaNotes_' + esc(ch.type) + '">' + esc(ch.label) + ' Notes</label>' +
+      '<div class="textarea-wrap">' +
+      '<textarea class="notes-textarea notes-textarea--large" id="otaNotes_' + esc(ch.type) + '" data-f="notes" placeholder="' + esc(placeholder) + '">' + esc(notes) + '</textarea>' +
+      '<button type="button" class="improve-writing-btn" data-improve-writing="otaNotes_' + esc(ch.type) + '">Improve Writing</button>' +
       '</div></div></div>';
     return card;
   }
@@ -662,6 +1029,7 @@
 
   function otaChannelHasContent(ch) {
     if (!ch) return false;
+    if (trimDisclosureText(ch.notes)) return true;
     return ['paymentModel', 'prepaidOrPayAtProperty', 'refundable', 'cancellationDeadline', 'virtualCardActivation',
       'cardExpiryRules', 'commissionNotes', 'invoiceRules', 'refundProcedure', 'specialInstructions'].some(function (key) {
       return !!trimDisclosureText(ch[key]);
@@ -1056,53 +1424,32 @@
       case 'departments-shifts': {
         var depts = countListItemProgress('#deptGrid', '[data-dept]', function (item) {
           var name = item.querySelector('.dept-name, input[data-f="name"], input.dept-name');
-          return !!(name && String(name.value || '').trim());
+          var notes = item.querySelector('.dept-instructions');
+          return !!(
+            (name && String(name.value || '').trim()) ||
+            (notes && String(notes.value || '').trim())
+          );
         });
-        var shifts = document.querySelectorAll('#shiftTableBody tr').length;
-        var terms = document.querySelectorAll('#termList [data-term]').length;
-        filled = depts.filled + (shifts > 0 ? shifts : 0) + (terms > 0 ? terms : 0);
-        total = depts.total + shifts + terms;
+        filled = depts.filled;
+        total = depts.total;
         mode = total > 0 ? 'count' : 'empty';
         break;
       }
       case 'policies': {
-        var pol = countPolicyProgress('policyStructuredRoot');
-        filled = pol.filled;
-        total = pol.total || PRIMARY_POLICIES.length;
+        var policyIds = POLICY_NOTES_SECTIONS.map(function (sec) { return 'policyNote_' + sec.key; });
+        filled = countFilledFields(policyIds);
+        total = policyIds.length || POLICY_NOTES_SECTIONS.length;
         mode = 'pct';
         break;
       }
       case 'hotel-knowledge': {
         var hkIds = [
-          'hkGeneralNotes', 'hkHotelStandards', 'hkVipRules', 'hkCommonTerms',
+          'hkGeneralNotes', 'hkGuestKnowledge', 'hkCommonTerms',
           'hkOperationalNotes', 'hkLocalRecommendations', 'hkAiInstructions'
         ];
         filled = countFilledFields(hkIds);
         total = hkIds.length;
         mode = 'pct';
-        break;
-      }
-      case 'operational-knowledge': {
-        var staffing = fieldHasText('okStaffingContext') ? 1 : 0;
-        var knowledge = countListItemProgress('#okKnowledgeList', '[data-ok-entry]', function (card) {
-          var content = card.querySelector('[data-f="content"]');
-          var title = card.querySelector('[data-f="title"]');
-          return !!(String((content && content.value) || '').trim() || String((title && title.value) || '').trim());
-        });
-        var sources = countListItemProgress('#okSourcesList', '[data-ok-source]', function (card) {
-          var desc = card.querySelector('[data-f="description"]');
-          var title = card.querySelector('[data-f="title"]');
-          return !!(String((desc && desc.value) || '').trim() || String((title && title.value) || '').trim());
-        });
-        var steps = countListItemProgress('#operational-knowledge', '[data-ok-step]', function (card) {
-          var title = card.querySelector('[data-f="title"]');
-          var notes = card.querySelector('[data-f="notes"]');
-          return !!(String((title && title.value) || '').trim() || String((notes && notes.value) || '').trim());
-        });
-        /* Always include staffing slot; only count lists that exist in the DOM */
-        filled = staffing + knowledge.filled + sources.filled + steps.filled;
-        total = 1 + knowledge.total + sources.total + steps.total;
-        mode = 'count';
         break;
       }
       case 'reservations-payments': {
@@ -1182,11 +1529,10 @@
           Array.from(document.querySelectorAll('#facilityGrid input[type="checkbox"]:checked')).length > 0 ||
           Array.from(document.querySelectorAll('#facilityCustomList input[type="checkbox"]:checked')).length > 0;
       case 'departments-shifts':
-        return document.querySelectorAll('#deptGrid [data-dept]').length > 0 ||
-          document.querySelectorAll('#shiftTableBody tr').length > 0 ||
-          document.querySelectorAll('#termList [data-term]').length > 0;
+        return document.querySelectorAll('#deptGrid [data-dept]').length > 0;
       case 'policies':
-        return anyPolicyFilled('policyStructuredRoot');
+        return anyFieldHasText(POLICY_NOTES_SECTIONS.map(function (sec) { return 'policyNote_' + sec.key; })) ||
+          anyPolicyFilled('policyStructuredRoot');
       case 'reservations-payments':
         return anyRootInputFilled('reservationsRoot') || anyPolicyFilled('paymentPoliciesRoot');
       case 'guest-services':
@@ -1201,10 +1547,8 @@
           return nameEl && String(nameEl.value || '').trim();
         });
       case 'operations':
-        return Array.from(document.querySelectorAll('#trackersList [data-tracker]')).some(function (card) {
-          var cb = card.querySelector('[data-f="enabled"]');
-          return cb && cb.checked;
-        }) || document.querySelectorAll('#emailRecipientList [data-email-recipient]').length > 0;
+        /* Daily Trackers removed from Hotel Brain progress; reserved for future module */
+        return false;
       case 'operational-knowledge':
         return fieldHasText('okStaffingContext') ||
           document.querySelectorAll('#okKnowledgeList [data-ok-entry]').length > 0 ||
@@ -1212,7 +1556,7 @@
           document.querySelectorAll('[data-ok-step]').length > 0;
       case 'hotel-knowledge':
         return anyFieldHasText([
-          'hkGeneralNotes', 'hkHotelStandards', 'hkVipRules', 'hkCommonTerms',
+          'hkGeneralNotes', 'hkGuestKnowledge', 'hkCommonTerms',
           'hkOperationalNotes', 'hkLocalRecommendations', 'hkAiInstructions'
         ]);
       case 'academy':
@@ -1275,12 +1619,12 @@
     if (countEl) {
       countEl.textContent = progress.isComplete
         ? 'Ready for AI Shift Handover'
-        : 'Essential details needed';
+        : 'Essentials optional — add what you know';
     }
     if (messageEl) {
       messageEl.textContent = progress.isComplete
         ? ''
-        : 'Add hotel details, rooms, teams and policies to prepare AI Shift Handover.';
+        : 'Add a few essentials when ready. Hotel Brain grows over time — you do not need to finish everything first.';
     }
     var brainStatusEl = document.getElementById('hotelBrainStatus');
     if (brainStatusEl) {
@@ -1322,7 +1666,7 @@
 
   function hotelKnowledgeFoundationLabel(progress) {
     var foundationReady = !!(progress && progress.total && progress.completed >= progress.total);
-    return foundationReady ? 'Foundation complete' : 'Building foundation';
+    return foundationReady ? 'Hotel Intelligence ready' : 'Growing Hotel Intelligence';
   }
 
   function updateCompletionUI() {
@@ -1337,15 +1681,15 @@
     if (fillEl) fillEl.style.width = progress.overall + '%';
     if (countEl) countEl.textContent = foundationLabel;
     if (messageEl) {
-      messageEl.textContent = "Continue building your hotel's operational memory.";
+      messageEl.textContent = "Add knowledge anytime — one note at a time is enough.";
     }
     if (barEl) {
       barEl.setAttribute('aria-valuenow', String(progress.overall));
       barEl.setAttribute(
         'aria-label',
-        foundationLabel === 'Foundation complete'
-          ? 'Hotel Knowledge foundation complete — continue building operational memory'
-          : 'Hotel Knowledge foundation building — continue building operational memory'
+        foundationLabel === 'Hotel Intelligence ready'
+          ? 'Hotel Intelligence ready — keep growing operational memory'
+          : 'Growing Hotel Intelligence — add knowledge anytime'
       );
     }
     updateSectionStatuses();
@@ -1387,6 +1731,12 @@
     ESSENTIAL_PROGRESS_SECTIONS: ESSENTIAL_PROGRESS_SECTIONS,
     POLICY_GROUPS: POLICY_GROUPS,
     PRIMARY_POLICIES: PRIMARY_POLICIES,
+    POLICY_NOTES_SECTIONS: POLICY_NOTES_SECTIONS,
+    POLICY_NOTES_GROUPS: POLICY_NOTES_GROUPS,
+    expandPoliciesNotes: expandPoliciesNotes,
+    migrateOtaChannelsToNotes: migrateOtaChannelsToNotes,
+    buildOtaChannelNotes: buildOtaChannelNotes,
+    DEFAULT_DEPARTMENTS: DEFAULT_DEPARTMENTS,
     RESERVATION_CHANNELS: RESERVATION_CHANNELS,
     OTA_CHANNEL_TYPES: OTA_CHANNEL_TYPES,
     TRACKER_DEFS: TRACKER_DEFS,
@@ -1395,7 +1745,12 @@
     migrateToV3: migrateToV3,
     syncLegacyPoliciesFromStructured: syncLegacyPoliciesFromStructured,
     collectPoliciesStructured: collectPoliciesStructured,
+    collectPoliciesNotes: collectPoliciesNotes,
+    emptyPoliciesNotes: emptyPoliciesNotes,
+    buildPoliciesNotesFromStructured: buildPoliciesNotesFromStructured,
+    syncStructuredFromPoliciesNotes: syncStructuredFromPoliciesNotes,
     renderPolicyUI: renderPolicyUI,
+    renderPolicyNotesUI: renderPolicyNotesUI,
     renderPaymentPoliciesUI: renderPaymentPoliciesUI,
     polishPolicyField: polishPolicyField,
     polishKnowledgeText: polishKnowledgeText,

@@ -124,6 +124,13 @@ function loadHotelBrainStore(options) {
     }
   };
 
+  context.window.HFPlatformAccess = {
+    checkPlatformAccess: function () {
+      return Promise.resolve({ allowed: true });
+    },
+    NOT_APPROVED_MESSAGE: "Not approved"
+  };
+
   vm.createContext(context);
   vm.runInContext(read("js/hotel-brain-store.js"), context);
   return {

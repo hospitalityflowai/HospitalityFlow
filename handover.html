@@ -202,21 +202,21 @@
     }
 
     .hotel-brain-panel {
-      margin-top: 14px;
-      max-width: 520px;
-      border-radius: var(--radius-lg);
-      border: 1px solid var(--gray-200);
-      background: linear-gradient(135deg, var(--white) 0%, var(--gray-50) 100%);
-      box-shadow: var(--shadow-sm);
+      margin-top: 18px;
+      max-width: none;
+      border-radius: var(--radius-xl);
+      border: 1px solid rgba(74, 143, 196, 0.2);
+      background: linear-gradient(165deg, rgba(74, 143, 196, 0.1) 0%, #ffffff 62%);
+      box-shadow: var(--shadow-card);
       overflow: hidden;
     }
 
     .hotel-brain-panel-inner {
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       justify-content: space-between;
-      gap: 16px;
-      padding: 14px 16px;
+      gap: 18px;
+      padding: 18px 20px;
     }
 
     .hotel-brain-status {
@@ -259,31 +259,33 @@
     }
 
     .hotel-brain-title {
-      font-size: 0.84rem;
+      font-size: 0.95rem;
       font-weight: 700;
       color: var(--navy-900);
-      letter-spacing: -0.01em;
+      letter-spacing: -0.02em;
     }
 
     .hotel-brain-meta,
     .hotel-brain-sub {
-      font-size: 0.78rem;
+      font-size: 0.82rem;
       color: var(--gray-500);
-      line-height: 1.45;
+      line-height: 1.5;
+      max-width: 58ch;
     }
 
     .hotel-brain-link {
       flex-shrink: 0;
       align-self: center;
-      font-size: 0.78rem;
+      font-size: 0.8rem;
       font-weight: 600;
       color: var(--blue-600);
       text-decoration: none;
-      padding: 6px 10px;
-      border-radius: 100px;
-      border: 1px solid rgba(74, 143, 196, 0.22);
-      background: var(--blue-50);
-      transition: background var(--transition), border-color var(--transition);
+      padding: 9px 14px;
+      border-radius: var(--radius);
+      border: 1px solid rgba(74, 143, 196, 0.28);
+      background: rgba(255, 255, 255, 0.88);
+      box-shadow: 0 1px 2px rgba(18, 34, 64, 0.04);
+      transition: background var(--transition), border-color var(--transition), box-shadow var(--transition);
       white-space: nowrap;
     }
 
@@ -3432,6 +3434,7 @@
     }
   </style>
   <link rel="stylesheet" href="css/demo-mode.css">
+  <link rel="stylesheet" href="css/hf-design-system.css">
 </head>
 <body>
   <div class="page">
@@ -3459,18 +3462,18 @@
       <div class="container">
         <div class="page-header">
           <h1 class="page-title" id="pageTitle">AI Shift Handover</h1>
-          <p class="page-subtitle" id="pageSubtitle">Turn scattered shift notes into clear, structured handovers in seconds.</p>
+          <p class="page-subtitle" id="pageSubtitle">Turn scattered shift notes into a clear, structured handover for the next team.</p>
           <div class="hotel-brain-panel is-disconnected" id="hotelBrainPanel" aria-live="polite">
             <div class="hotel-brain-panel-inner">
               <div class="hotel-brain-status">
                 <span class="hotel-brain-dot" id="hotelBrainDot" aria-hidden="true"></span>
                 <div class="hotel-brain-copy">
-                  <span class="hotel-brain-title" id="hotelBrainTitle">Hotel Brain Not Configured</span>
-                  <span class="hotel-brain-meta" id="hotelBrainMeta">Complete Hotel Brain to personalise Hospitality Flow.</span>
-                  <span class="hotel-brain-sub" id="hotelBrainSub" hidden></span>
+                  <span class="hotel-brain-title" id="hotelBrainTitle">Powered by Hotel Brain</span>
+                  <span class="hotel-brain-meta" id="hotelBrainMeta">AI Shift Handover uses Hotel Intelligence and Guest Intelligence automatically.</span>
+                  <span class="hotel-brain-sub" id="hotelBrainSub">Every handover benefits from the knowledge stored in Hotel Brain.</span>
                 </div>
               </div>
-              <a class="hotel-brain-link" id="hotelBrainLink" href="hotel-profile.html">Hotel Profile</a>
+              <a class="hotel-brain-link" id="hotelBrainLink" href="hotel-profile.html">Explore Hotel Brain</a>
             </div>
           </div>
         </div>
@@ -4554,9 +4557,11 @@
         if (trimText(general.hotelType)) internalSections.push("Hotel type: " + general.hotelType);
         if (trimText(general.totalRooms)) internalSections.push("Total rooms: " + general.totalRooms);
         if (trimText(general.operatingNotes)) internalSections.push("Operating notes: " + general.operatingNotes);
-        if (trimText(hk.generalNotes)) internalSections.push("Hotel standards context: " + hk.generalNotes);
+        if (trimText(hk.generalNotes)) internalSections.push("Hotel context: " + hk.generalNotes);
         if (trimText(hk.hotelStandards)) internalSections.push("Hotel standards: " + hk.hotelStandards);
-        if (trimText(hk.vipRules)) internalSections.push("VIP house rules: " + hk.vipRules);
+        if (trimText(hk.guestKnowledge) || trimText(hk.vipRules)) {
+          internalSections.push("Guest knowledge: " + (trimText(hk.guestKnowledge) || trimText(hk.vipRules)));
+        }
         /* When Operational Knowledge exists, it is the preferred source for actions.
            Keep Hotel Knowledge operationalNotes only as house context. */
         if (trimText(hk.operationalNotes)) {
@@ -4688,7 +4693,7 @@
         if (!context) return 0;
         var count = 0;
         var hk = context.hotelKnowledge || {};
-        ["generalNotes", "hotelStandards", "vipRules", "commonTerms", "operationalNotes", "localRecommendations", "aiInstructions"].forEach(function (key) {
+        ["generalNotes", "guestKnowledge", "hotelStandards", "vipRules", "commonTerms", "operationalNotes", "localRecommendations", "aiInstructions"].forEach(function (key) {
           if (trimText(hk[key])) count += 1;
         });
         if (context.policyLines && context.policyLines.length) count += 1;
@@ -4712,39 +4717,38 @@
         var workspaceName = window.HFWorkspace && window.HFWorkspace.getWorkspaceHotelName
           ? window.HFWorkspace.getWorkspaceHotelName()
           : null;
+        var demoActive = window.HFDemoMode && window.HFDemoMode.isEnabled && window.HFDemoMode.isEnabled();
+        var poweredTitle = "Powered by Hotel Brain";
+        var intelligenceLine =
+          "AI Shift Handover uses Hotel Intelligence and Guest Intelligence automatically.";
+        var benefitLine =
+          "Every handover benefits from the knowledge stored in Hotel Brain.";
+
+        if (hotelBrainTitle) hotelBrainTitle.textContent = poweredTitle;
+        if (hotelBrainMeta) hotelBrainMeta.textContent = intelligenceLine;
+        if (hotelBrainLink) {
+          hotelBrainLink.textContent = demoActive || status === "connected" || status === "partial"
+            ? "Explore Hotel Brain"
+            : "Open Hotel Brain";
+          hotelBrainLink.setAttribute("href", "hotel-profile.html");
+        }
 
         if (status === "pending") {
-          if (hotelBrainTitle) hotelBrainTitle.textContent = "Loading Hotel Brain…";
-          if (hotelBrainMeta) {
-            hotelBrainMeta.textContent = workspaceName
+          if (hotelBrainSub) {
+            hotelBrainSub.textContent = workspaceName
               ? workspaceName + " · Checking Hotel Brain for this workspace."
               : "Checking Hotel Brain for this workspace.";
-          }
-          if (hotelBrainSub) {
-            hotelBrainSub.textContent = "";
-            hotelBrainSub.hidden = true;
-          }
-          if (hotelBrainLink) {
-            hotelBrainLink.textContent = "Hotel Profile";
-            hotelBrainLink.setAttribute("href", "hotel-profile.html");
+            hotelBrainSub.hidden = false;
           }
           return;
         }
 
         if (status === "none") {
-          if (hotelBrainTitle) hotelBrainTitle.textContent = "Hotel Brain Not Configured";
-          if (hotelBrainMeta) {
-            hotelBrainMeta.textContent = workspaceName
+          if (hotelBrainSub) {
+            hotelBrainSub.textContent = workspaceName
               ? workspaceName + " · Complete Hotel Brain to personalise Hospitality Flow."
               : "Complete Hotel Brain to personalise Hospitality Flow.";
-          }
-          if (hotelBrainSub) {
-            hotelBrainSub.textContent = "";
-            hotelBrainSub.hidden = true;
-          }
-          if (hotelBrainLink) {
-            hotelBrainLink.textContent = "Hotel Profile";
-            hotelBrainLink.setAttribute("href", "hotel-profile.html");
+            hotelBrainSub.hidden = false;
           }
           return;
         }
@@ -4755,47 +4759,26 @@
         var hotelName = (window.HFWorkspace && window.HFWorkspace.resolveDisplayHotelName)
           ? window.HFWorkspace.resolveDisplayHotelName(general.hotelName)
           : trimText(general.hotelName);
-        if (!hotelName) {
-          hotelName = status === "partial" ? "Hotel Brain Partially Configured" : "Hotel Brain Connected";
-        }
         var roomCount = getTotalRoomCount() || trimText(general.totalRooms);
-        var hotelType = trimText(general.hotelType);
         var knowledgeCount = countLoadedKnowledgeSections(hotelBrainContext);
-        var demoActive = window.HFDemoMode && window.HFDemoMode.isEnabled && window.HFDemoMode.isEnabled();
 
-        if (hotelBrainTitle) {
-          hotelBrainTitle.textContent = demoActive
-            ? "Hotel Brain"
-            : (status === "partial"
-              ? "Hotel Brain Partially Configured"
-              : "Hotel Brain Connected");
-        }
-        if (hotelBrainMeta) {
-          if (demoActive) {
-            hotelBrainMeta.textContent =
-              "Powered by the Hotel Brain — hotel knowledge helps Hospitality Flow understand policies, rooms, payments and guest requirements.";
-          } else {
-            var metaParts = [hotelName];
-            if (roomCount) metaParts.push(roomCount + (roomCount === "1" ? " room" : " rooms"));
-            else if (hotelType) metaParts.push(hotelType);
-            hotelBrainMeta.textContent = metaParts.join(" · ");
-          }
-        }
         if (hotelBrainSub) {
           if (demoActive) {
             hotelBrainSub.textContent = hotelName
-              ? hotelName + " sample knowledge · used when you Generate a handover."
-              : "Sample knowledge · used when you Generate a handover.";
+              ? benefitLine + " " + hotelName + " sample knowledge is used when you Generate."
+              : benefitLine;
           } else if (status === "partial") {
-            hotelBrainSub.textContent = "Some Hotel Brain sections still need completing";
+            hotelBrainSub.textContent = benefitLine + " Some Hotel Brain sections still need completing.";
           } else {
-            hotelBrainSub.textContent = knowledgeCount > 0 ? "Knowledge loaded" : "Preferences loaded";
+            var statusBits = [];
+            if (hotelName) statusBits.push(hotelName);
+            if (roomCount) statusBits.push(roomCount + (roomCount === "1" ? " room" : " rooms"));
+            if (knowledgeCount > 0) statusBits.push("Knowledge loaded");
+            hotelBrainSub.textContent = statusBits.length
+              ? benefitLine + " " + statusBits.join(" · ") + "."
+              : benefitLine;
           }
           hotelBrainSub.hidden = false;
-        }
-        if (hotelBrainLink) {
-          hotelBrainLink.textContent = demoActive ? "Explore Hotel Brain" : "Hotel Profile";
-          hotelBrainLink.setAttribute("href", "hotel-profile.html");
         }
       }
 
@@ -5586,9 +5569,21 @@
       var DEMO_PREPARED_BY = "Sophie Chen · Night Manager";
       var DEMO_PILOT_HREF = "index.html#waitlist";
       var DEMO_SAMPLE_FIELD_TITLE = "Sample hotel — fixed in Demo Mode";
+      /**
+       * Public Demo notes policy — guided product showcase.
+       * Keep false so every visitor experiences the same Oakwood sample.
+       * Future release: set true to enable "Try Your Own Handover (Beta)"
+       * (paste personal notes). Do not expose that feature until intentionally launched.
+       */
+      var DEMO_ALLOW_CUSTOM_NOTES = false;
+      var DEMO_NOTES_FIELD_TITLE =
+        "Sample operational notes — fixed in this guided demo";
       var DEMO_SNAPSHOT_HINT =
-        "Sample figures for The Oakwood Mayfair. Only the notes below are editable in Demo Mode.";
+        "Sample figures for The Oakwood Mayfair. Fixed in this guided demo.";
+      var DEMO_NOTES_CUE =
+        "Review the Oakwood Mayfair sample notes, then click Generate to see Hospitality Flow organise the shift.";
       var demoDateGuardWired = false;
+      var demoNotesGuardWired = false;
 
       function getDemoSampleDraft() {
         if (!window.HFDemoMode || !HFDemoMode.getDemoDraft) return null;
@@ -5597,6 +5592,63 @@
         } catch (err) {
           return null;
         }
+      }
+
+      function isDemoNotesLocked() {
+        return isDemoModeActive() && !DEMO_ALLOW_CUSTOM_NOTES;
+      }
+
+      function getDemoSampleNotesText() {
+        var draft = getDemoSampleDraft();
+        return draft && draft.notes != null ? String(draft.notes) : "";
+      }
+
+      function restoreDemoSampleNotes() {
+        if (!notesInput || !isDemoNotesLocked()) return;
+        var sample = getDemoSampleNotesText();
+        if (notesInput.value !== sample) {
+          notesInput.value = sample;
+          if (typeof updateCharCount === "function") updateCharCount();
+        }
+      }
+
+      function wireDemoNotesGuardOnce() {
+        if (demoNotesGuardWired || !notesInput) return;
+        demoNotesGuardWired = true;
+        function blockIfLocked(event) {
+          if (!isDemoNotesLocked()) return;
+          event.preventDefault();
+          event.stopPropagation();
+          restoreDemoSampleNotes();
+        }
+        notesInput.addEventListener("paste", blockIfLocked, true);
+        notesInput.addEventListener("cut", blockIfLocked, true);
+        notesInput.addEventListener("drop", blockIfLocked, true);
+        notesInput.addEventListener("beforeinput", blockIfLocked, true);
+        notesInput.addEventListener("input", function () {
+          if (!isDemoNotesLocked()) return;
+          restoreDemoSampleNotes();
+        }, true);
+        notesInput.addEventListener("keydown", function (event) {
+          if (!isDemoNotesLocked()) return;
+          var key = event.key || "";
+          var allowed =
+            key === "Tab" ||
+            key === "Escape" ||
+            key === "ArrowUp" ||
+            key === "ArrowDown" ||
+            key === "ArrowLeft" ||
+            key === "ArrowRight" ||
+            key === "Home" ||
+            key === "End" ||
+            key === "PageUp" ||
+            key === "PageDown" ||
+            ((event.ctrlKey || event.metaKey) && (key === "a" || key === "A" || key === "c" || key === "C"));
+          if (!allowed) {
+            event.preventDefault();
+            restoreDemoSampleNotes();
+          }
+        }, true);
       }
 
       /**
@@ -5753,6 +5805,31 @@
               : "Enter today's hotel figures, or leave them blank and AI will extract them from your shift notes.");
         }
 
+        /* Guided demo: lock sample notes. Future Try Your Own toggles DEMO_ALLOW_CUSTOM_NOTES. */
+        if (notesInput) {
+          wireDemoNotesGuardOnce();
+          var lockNotes = demo && !DEMO_ALLOW_CUSTOM_NOTES;
+          setDemoLockedField(notesInput, lockNotes, {
+            value: lockNotes ? getDemoSampleNotesText() : null,
+            title: DEMO_NOTES_FIELD_TITLE
+          });
+          notesInput.classList.toggle("hf-demo-notes-locked", lockNotes);
+        }
+
+        var notesSubtitle = document.getElementById("notesCardSubtitle");
+        if (notesSubtitle) {
+          if (demo && !DEMO_ALLOW_CUSTOM_NOTES) {
+            if (!notesSubtitle.getAttribute("data-demo-original")) {
+              notesSubtitle.setAttribute("data-demo-original", notesSubtitle.textContent || "");
+            }
+            notesSubtitle.textContent =
+              "Oakwood Mayfair sample notes — fixed for this guided demo. Click Generate to see Hospitality Flow organise the shift.";
+          } else if (notesSubtitle.getAttribute("data-demo-original") != null) {
+            notesSubtitle.textContent = notesSubtitle.getAttribute("data-demo-original");
+            notesSubtitle.removeAttribute("data-demo-original");
+          }
+        }
+
         var detailsDesc = document.getElementById("detailsCardDesc");
         if (detailsDesc) {
           if (demo) {
@@ -5760,7 +5837,7 @@
               detailsDesc.setAttribute("data-demo-original", detailsDesc.textContent || "");
             }
             detailsDesc.textContent =
-              "This is a sample hotel — The Oakwood Mayfair. Only operational notes are editable.";
+              "This is a sample hotel — The Oakwood Mayfair. Identity, snapshot and notes are fixed for this guided demo.";
           } else if (detailsDesc.getAttribute("data-demo-original") != null) {
             detailsDesc.textContent = detailsDesc.getAttribute("data-demo-original");
             detailsDesc.removeAttribute("data-demo-original");
@@ -5786,10 +5863,15 @@
           cue = document.createElement("p");
           cue.id = "hfDemoFirstActionCue";
           cue.className = "hf-demo-first-action-cue";
-          cue.textContent = "Edit the sample notes or click Generate to see Hospitality Flow organise the shift.";
+          cue.textContent = DEMO_NOTES_CUE;
           notesInput.parentNode.insertBefore(cue, notesInput);
         }
-        if (cue) cue.hidden = !demo;
+        if (cue) {
+          cue.hidden = !demo;
+          if (demo) cue.textContent = DEMO_ALLOW_CUSTOM_NOTES
+            ? "Edit the sample notes or click Generate to see Hospitality Flow organise the shift."
+            : DEMO_NOTES_CUE;
+        }
 
         applyDemoReadOnlyState();
 
@@ -5818,8 +5900,26 @@
           if (demo) newHandoverBtn.disabled = true;
           else newHandoverBtn.disabled = false;
         }
+        if (clearBtn) {
+          /* Guided demo: do not allow clearing/replacing sample notes. */
+          if (demo && !DEMO_ALLOW_CUSTOM_NOTES) {
+            clearBtn.hidden = true;
+            clearBtn.disabled = true;
+            clearBtn.setAttribute("aria-hidden", "true");
+          } else {
+            clearBtn.hidden = false;
+            clearBtn.disabled = false;
+            clearBtn.removeAttribute("aria-hidden");
+          }
+        }
         if (editNotesBtn) {
+          /* After Generate, allow returning to the sample notes view (still read-only). */
           editNotesBtn.hidden = handoverPageState === HANDOVER_PAGE_STATE.INPUT;
+          if (demo && !DEMO_ALLOW_CUSTOM_NOTES) {
+            editNotesBtn.setAttribute("title", "Return to the sample notes (read-only in this guided demo)");
+          } else {
+            editNotesBtn.removeAttribute("title");
+          }
         }
 
         var savedSection = document.getElementById("savedHandoversSection");
@@ -10377,13 +10477,21 @@
           /* Leave read-only saved view into editable input with the loaded values. */
           viewingSavedHandoverId = null;
         }
-        setHandoverPageState(HANDOVER_PAGE_STATE.INPUT, { focusNotes: true });
+        setHandoverPageState(HANDOVER_PAGE_STATE.INPUT, { focusNotes: !isDemoNotesLocked() });
+        if (isDemoNotesLocked()) {
+          restoreDemoSampleNotes();
+          applyDemoReadOnlyState();
+        }
         if (handoverInputWorkspace) {
           handoverInputWorkspace.scrollIntoView({ behavior: "smooth", block: "start" });
         } else if (notesInput) {
           notesInput.scrollIntoView({ behavior: "smooth", block: "center" });
         }
-        showToast("Edit your notes, then generate again.");
+        showToast(
+          isDemoNotesLocked()
+            ? "Sample notes are fixed — click Generate to run the demonstration again."
+            : "Edit your notes, then generate again."
+        );
       }
 
       function startNewHandover() {
@@ -11212,6 +11320,11 @@
       }
 
       function clearNotes() {
+        if (isDemoNotesLocked()) {
+          showToast("Sample notes are fixed in this guided demo.");
+          restoreDemoSampleNotes();
+          return;
+        }
         if (notesInput.value.trim() || lastClassified) {
           if (!window.confirm("Clear shift notes and generated handover output?")) {
             return;

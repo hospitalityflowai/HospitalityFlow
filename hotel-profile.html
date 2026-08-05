@@ -130,8 +130,8 @@
     .main { flex: 1; padding: 24px 0 64px; }
     .profile-hero { margin-bottom: 20px; animation: fadeDown .45s ease both; }
     .profile-hero-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
-    .page-title { font-size: clamp(1.35rem, 3.2vw, 1.72rem); font-weight: 700; letter-spacing: -.035em; color: var(--navy-900); line-height: 1.2; margin-bottom: 4px; }
-    .page-subtitle { font-size: .88rem; color: var(--gray-500); max-width: 48ch; line-height: 1.5; }
+    .page-title { font-size: clamp(1.55rem, 3.4vw, 2rem); font-weight: 700; letter-spacing: -.04em; color: var(--navy-900); line-height: 1.15; margin-bottom: 10px; }
+    .page-subtitle { font-size: .95rem; color: var(--gray-500); max-width: 54ch; line-height: 1.55; }
     .page-tagline { font-size: .78rem; font-weight: 500; color: var(--gray-400); margin-top: 6px; }
     .knowledge-banner { position: relative; overflow: hidden; padding: 22px 26px; border-radius: var(--radius-xl); border: 1px solid rgba(74,143,196,.28); background: linear-gradient(135deg, #d4e8f7, #eaf4fc 30%, #f5faff 60%, var(--white)); box-shadow: var(--shadow-sm); }
     .knowledge-banner::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--navy-700), var(--blue-500) 45%, var(--blue-400)); }
@@ -170,7 +170,7 @@
       min-width: 12px;
       min-height: 12px;
     }
-    .profile-sections { display: flex; flex-direction: column; gap: 28px; }
+    .profile-sections { display: flex; flex-direction: column; gap: 22px; }
     .profile-card { background: var(--white); border: 1px solid rgba(7,14,26,.06); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); transition: box-shadow var(--transition-smooth); scroll-margin-top: calc(var(--nav-height) + 16px); animation: fadeUp .45s ease both; }
     .profile-card:hover { box-shadow: var(--shadow-card-hover); }
     .profile-card-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 22px 14px; border-bottom: 1px solid var(--gray-100); }
@@ -257,7 +257,7 @@
     .term-row { display: grid; grid-template-columns: 1fr 1.4fr auto; gap: 10px; align-items: center; padding: 12px 14px; background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: var(--radius); }
     .term-row input { padding: 9px 12px; font-size: .86rem; border: 1px solid var(--gray-200); border-radius: 6px; background: var(--white); min-width: 0; }
     .term-row input:focus { outline: none; border-color: var(--blue-500); box-shadow: 0 0 0 3px rgba(74,143,196,.1); }
-    .dept-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+    .dept-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
     .dept-card { padding: 16px; background: var(--gray-50); border: 1.5px solid var(--gray-200); border-radius: var(--radius-lg); transition: all var(--transition); }
     .dept-card:hover { border-color: var(--gray-300); box-shadow: var(--shadow-sm); }
     .dept-card-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
@@ -266,8 +266,9 @@
     .dept-card input.dept-name { width: 100%; padding: 8px 10px; font-size: .88rem; font-weight: 600; color: var(--navy-900); border: 1px solid var(--gray-200); border-radius: 6px; background: var(--white); margin-bottom: 8px; }
     .dept-card input.dept-name:focus { outline: none; border-color: var(--blue-500); box-shadow: 0 0 0 3px rgba(74,143,196,.1); }
     .dept-card input.dept-name::placeholder { font-weight: 500; color: var(--gray-400); }
-    .dept-card input.dept-head { width: 100%; padding: 7px 10px; font-size: .78rem; color: var(--gray-500); border: 1px solid var(--gray-200); border-radius: 6px; background: var(--white); }
-    .dept-card input.dept-head:focus { outline: none; border-color: var(--blue-500); }
+    .dept-card input.dept-head,
+    .dept-card input.dept-contact,
+    .dept-card input.dept-email { display: none; }
     .shift-pattern-selector { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
     .shift-pattern-btn { flex: 1; min-width: 120px; padding: 12px 14px; font-size: .84rem; font-weight: 600; color: var(--gray-500); background: var(--gray-50); border: 1.5px solid var(--gray-200); border-radius: var(--radius); transition: all var(--transition); text-align: center; }
     .shift-pattern-btn:hover { border-color: var(--gray-300); color: var(--navy-700); }
@@ -349,19 +350,110 @@
     .mobile-nav-layer-chip { flex-shrink: 0; padding: 7px 10px; font-size: .66rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--gray-400); background: transparent; border: none; white-space: nowrap; pointer-events: none; }
     .setup-intro { padding: 0; margin: 0; background: transparent; border: none; box-shadow: none; animation: none; }
     .setup-intro-title { font-size: .98rem; font-weight: 700; color: var(--navy-900); letter-spacing: -.02em; margin-bottom: 4px; }
-    .setup-intro-text { font-size: .84rem; color: var(--gray-500); line-height: 1.5; max-width: 58ch; margin: 0; }
+    .setup-intro-text { font-size: .95rem; color: var(--gray-500); line-height: 1.55; max-width: 54ch; margin: 0; }
     .brain-status-shell {
-      margin-top: 14px; margin-bottom: 0; padding: 16px 18px;
-      background: linear-gradient(135deg, var(--white) 0%, var(--gray-50) 100%);
-      border: 1px solid var(--gray-200); border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-sm); animation: fadeDown .45s ease both; overflow: hidden;
+      margin-top: 22px; margin-bottom: 0; padding: 0;
+      background: transparent; border: none; border-radius: 0;
+      box-shadow: none; animation: fadeDown .45s ease both; overflow: visible;
     }
-    .brain-status-intro { margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid var(--gray-100); }
-    .brain-status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: stretch; }
-    .brain-status-block {
-      padding: 14px 16px; border-radius: var(--radius-lg); border: 1px solid var(--gray-200);
-      background: var(--white); min-width: 0;
+    .brain-pillars {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+      align-items: stretch;
     }
+    .brain-pillar {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      padding: 22px 20px 20px;
+      border-radius: 18px;
+      border: 1px solid rgba(18, 34, 64, .08);
+      background: linear-gradient(165deg, #ffffff 0%, #f8fafc 100%);
+      box-shadow: 0 10px 28px rgba(18, 34, 64, .055), 0 2px 6px rgba(18, 34, 64, .035);
+    }
+    .brain-pillar--hotel {
+      background: linear-gradient(165deg, rgba(26, 48, 85, .045) 0%, #ffffff 68%);
+    }
+    .brain-pillar--guest {
+      background: linear-gradient(165deg, rgba(74, 143, 196, .1) 0%, #ffffff 68%);
+    }
+    .brain-pillar--handover {
+      background: linear-gradient(165deg, rgba(26, 48, 85, .06) 0%, #ffffff 68%);
+    }
+    .brain-pillar-icon {
+      width: 36px; height: 36px; border-radius: 11px;
+      display: inline-flex; align-items: center; justify-content: center;
+      margin-bottom: 14px;
+      background: rgba(26, 48, 85, .06);
+      color: var(--navy-800);
+      flex-shrink: 0;
+    }
+    .brain-pillar--guest .brain-pillar-icon {
+      background: rgba(74, 143, 196, .14);
+      color: var(--blue-600);
+    }
+    .brain-pillar-icon svg { width: 18px; height: 18px; }
+    .brain-pillar-title {
+      margin: 0 0 6px;
+      font-size: 1.02rem;
+      font-weight: 700;
+      letter-spacing: -.025em;
+      color: var(--navy-900);
+      line-height: 1.25;
+    }
+    .brain-pillar-lead {
+      margin: 0 0 12px;
+      font-size: .84rem;
+      font-weight: 600;
+      color: var(--navy-800);
+      letter-spacing: -.01em;
+      line-height: 1.4;
+    }
+    .brain-pillar-points {
+      list-style: none;
+      margin: 0 0 14px;
+      padding: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 0;
+      font-size: .78rem;
+      line-height: 1.45;
+      color: var(--gray-500);
+    }
+    .brain-pillar-points li {
+      display: inline;
+    }
+    .brain-pillar-points li:not(:last-child)::after {
+      content: "·";
+      margin: 0 7px;
+      color: var(--gray-300);
+    }
+    .brain-pillar-foot {
+      margin: auto 0 0;
+      padding-top: 12px;
+      border-top: 1px solid rgba(18, 34, 64, .06);
+      font-size: .78rem;
+      line-height: 1.45;
+      color: var(--gray-500);
+    }
+    .brain-hero-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px 20px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+      padding: 12px 4px 0;
+      font-size: .76rem;
+      color: var(--gray-500);
+    }
+    .brain-hero-meta-item { display: inline-flex; align-items: baseline; gap: 6px; min-width: 0; }
+    .brain-hero-meta-label {
+      font-size: .62rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--gray-400);
+    }
+    .brain-status-intro { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+    .brain-status-grid { display: none; }
     .brain-status-block-head {
       display: flex; align-items: center; justify-content: space-between; gap: 10px;
       margin-bottom: 6px; flex-wrap: wrap; min-height: 22px;
@@ -378,17 +470,8 @@
     }
     .essential-progress-panel,
     .profile-progress-panel {
-      position: relative; display: flex; flex-direction: column; margin: 0; min-height: 158px;
-      padding: 14px 16px; border-radius: var(--radius-lg); border: 1px solid var(--gray-200);
-      background: var(--white); box-shadow: none; animation: none;
-    }
-    .essential-progress-panel {
-      background: linear-gradient(180deg, var(--blue-50) 0%, var(--white) 70%);
-      border-color: rgba(74,143,196,.18);
-    }
-    .essential-progress-panel.is-complete {
-      background: linear-gradient(180deg, var(--blue-50) 0%, var(--white) 70%);
-      border-color: rgba(74,143,196,.22);
+      position: relative; display: flex; flex-direction: column; margin: 0; min-height: 0;
+      padding: 0; border: none; background: transparent; box-shadow: none; animation: none;
     }
     .essential-progress-panel.is-complete .brain-status-check { display: inline-flex; }
     .essential-progress-panel.is-complete .brain-status-summary .brain-status-count { color: var(--navy-800); }
@@ -404,9 +487,6 @@
     .essential-progress-count { font-size: .92rem; font-weight: 600; color: var(--navy-900); letter-spacing: -.02em; }
     .essential-progress-message { font-size: .76rem; color: var(--gray-500); line-height: 1.45; margin: 0; flex: 1 1 auto; min-width: 0; }
     .essential-progress-panel.is-complete .essential-progress-message { display: none; }
-    .profile-progress-panel {
-      background: linear-gradient(180deg, var(--gray-50) 0%, var(--white) 70%);
-    }
     .profile-progress-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
     .profile-progress-title { font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--gray-400); }
     .profile-progress-bar { height: 5px; background: var(--gray-100); border-radius: 100px; overflow: hidden; margin-bottom: 10px; }
@@ -425,8 +505,8 @@
     .progress-stat-value--ready { color: var(--navy-800); font-weight: 700; }
     .progress-stat-value--building { color: var(--gray-500); font-weight: 600; }
     .progress-stat-value.is-error { color: var(--red-500); }
-    @media (max-width: 860px) {
-      .brain-status-grid { grid-template-columns: 1fr; }
+    @media (max-width: 960px) {
+      .brain-pillars { grid-template-columns: 1fr; }
     }
     @keyframes fadeDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
@@ -560,8 +640,31 @@
     .empty-state.is-hidden { display: none; }
     .category-hints { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
     .category-hint { padding: 4px 10px; font-size: .68rem; font-weight: 600; color: var(--gray-500); background: var(--white); border: 1px solid var(--gray-200); border-radius: 100px; }
-    .dept-card input.dept-contact, .dept-card input.dept-email { width: 100%; padding: 7px 10px; font-size: .78rem; color: var(--gray-500); border: 1px solid var(--gray-200); border-radius: 6px; background: var(--white); margin-bottom: 8px; }
-    .dept-card textarea.dept-instructions { width: 100%; min-height: 52px; padding: 7px 10px; font-size: .78rem; color: var(--navy-900); border: 1px solid var(--gray-200); border-radius: 6px; background: var(--white); resize: vertical; }
+    .dept-card textarea.dept-instructions { width: 100%; min-height: 110px; padding: 10px 12px; font-size: .86rem; line-height: 1.45; color: var(--navy-900); border: 1px solid var(--gray-200); border-radius: 8px; background: var(--white); resize: vertical; }
+    .dept-card textarea.dept-instructions:focus { outline: none; border-color: var(--blue-500); box-shadow: 0 0 0 3px rgba(74,143,196,.1); }
+    .policy-notes-stack { display: flex; flex-direction: column; gap: 18px; }
+    .policy-notes-group .subsection-heading { margin: 0 0 10px; }
+    .policy-notes-card .notes-textarea--large { min-height: 140px; }
+    .gs-note-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px; }
+    .gs-note-item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: start;
+    }
+    .gs-note-item .notes-textarea { min-height: 72px; margin: 0; }
+    .gs-note-item .icon-btn { margin-top: 6px; }
+    .hk-guest-intelligence-panel {
+      border-color: rgba(74,143,196,.35);
+      box-shadow: 0 1px 0 rgba(74,143,196,.08);
+    }
+    .hk-guest-intelligence-panel .tracker-group-label { color: var(--navy-900); }
+    .guest-intelligence-lead {
+      margin: 0 0 12px;
+      font-size: .88rem;
+      line-height: 1.5;
+      color: var(--gray-600);
+    }
     .shift-overnight-toggle { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 14px; padding: 8px 12px; font-size: .82rem; font-weight: 500; background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: var(--radius); }
     .tracker-enabled { display: flex; align-items: center; gap: 8px; font-size: .82rem; font-weight: 600; color: var(--navy-800); }
     .ota-channel-card { padding: 16px; background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: var(--radius-lg); margin-bottom: 12px; }
@@ -898,8 +1001,10 @@
     @media (max-width: 600px) {
       .improve-writing-btn { padding: 0 10px; font-size: .72rem; }
     }
-    .profile-hero--calm { margin-bottom: 20px; }
-    .profile-hero--calm .page-subtitle { max-width: 48ch; line-height: 1.5; }
+    .profile-hero--calm { margin-bottom: 28px; }
+    .profile-hero--calm .page-subtitle,
+    .profile-hero--calm .setup-intro-text { max-width: 54ch; line-height: 1.55; }
+    .profile-hero--calm .profile-hero-top { margin-bottom: 0; }
     .brain-status-summary { min-height: 1.4em; }
     .add-row-btn { transition: background var(--transition), border-color var(--transition), transform var(--transition); }
     .add-row-btn:hover { transform: translateY(-1px); }
@@ -914,6 +1019,7 @@
     }
   </style>
   <link rel="stylesheet" href="css/demo-mode.css">
+  <link rel="stylesheet" href="css/hf-design-system.css">
 </head>
 <body>
   <div class="page">
@@ -948,57 +1054,104 @@
           <div class="profile-hero-top">
             <div>
               <h1 class="page-title">Hotel Brain</h1>
-              <p class="page-subtitle" id="hotelBrainPageSubtitle">The operational knowledge behind AI Shift Handover and future Hospitality Flow tools.</p>
+              <p class="page-subtitle setup-intro-text" id="hotelBrainPageSubtitle">Teach Hospitality Flow how your hotel operates and how your guests prefer to stay. Every policy, operational note, guest preference and handover helps your intelligence grow over time.</p>
+              <h2 class="setup-intro-title visually-hidden" id="hotelBrainSetupTitle">Hotel Brain setup</h2>
+              <p class="visually-hidden" id="hotelBrainSetupIntro">Teach Hospitality Flow how your hotel operates and how your guests prefer to stay. Every policy, operational note, guest preference and handover helps your intelligence grow over time.</p>
             </div>
           </div>
           <div class="brain-status-shell" id="hotelBrainSetupCard">
-            <div class="brain-status-intro setup-intro">
-              <h2 class="setup-intro-title" id="hotelBrainSetupTitle">Hotel Brain Setup</h2>
-              <p class="setup-intro-text" id="hotelBrainSetupIntro">Start with the essential hotel details, then build your Hotel Brain over time with policies, guest preferences and operational knowledge.</p>
-              <p class="hf-demo-brain-note" id="hfDemoBrainReadOnlyNote" hidden>
-                Demo Mode — sample knowledge is read-only and nothing is saved.
-              </p>
-              <div class="hf-demo-brain-setup-actions" id="hfDemoBrainSetupActions" hidden>
-                <a class="btn-nav-secondary" id="hfDemoBrainOpenHandoverLink" href="handover.html?demo=1">Open AI Shift Handover</a>
-              </div>
+            <div class="brain-pillars intelligence-layers" id="hotelBrainIntelligenceLayers" aria-label="Hotel Brain pillars">
+              <article class="brain-pillar brain-pillar--hotel intelligence-layer">
+                <span class="brain-pillar-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/><path d="M9 10h.01M15 10h.01M9 14h.01M15 14h.01"/></svg>
+                </span>
+                <h3 class="brain-pillar-title">Hotel Intelligence</h3>
+                <p class="brain-pillar-lead">Learns how your hotel operates.</p>
+                <ul class="brain-pillar-points">
+                  <li>Policies</li>
+                  <li>Departments</li>
+                  <li>Operational knowledge</li>
+                  <li>Rooms</li>
+                  <li>Terminology</li>
+                  <li>Local recommendations</li>
+                  <li>Procedures</li>
+                </ul>
+                <p class="brain-pillar-foot">Everything that teaches Hospitality Flow how this property works.</p>
+              </article>
+              <article class="brain-pillar brain-pillar--guest intelligence-layer intelligence-layer--guest">
+                <span class="brain-pillar-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>
+                </span>
+                <h3 class="brain-pillar-title">Guest Intelligence</h3>
+                <p class="brain-pillar-lead">Remembers every guest.</p>
+                <ul class="brain-pillar-points">
+                  <li>Guest preferences</li>
+                  <li>Returning guests</li>
+                  <li>Special occasions</li>
+                  <li>Stay history</li>
+                  <li>Personal touches</li>
+                  <li>Guest context</li>
+                </ul>
+                <p class="brain-pillar-foot">Everything that helps provide personalised hospitality.</p>
+              </article>
+              <article class="brain-pillar brain-pillar--handover">
+                <span class="brain-pillar-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 14.5A8.5 8.5 0 1 1 12.5 3"/><path d="M21 3v6h-6"/><path d="M16 8a5 5 0 1 0 1.5 3.5"/></svg>
+                </span>
+                <h3 class="brain-pillar-title">AI Shift Handover</h3>
+                <p class="brain-pillar-lead">Uses both intelligence layers every shift.</p>
+                <ul class="brain-pillar-points">
+                  <li>Creates smarter handovers</li>
+                  <li>Prioritises important information</li>
+                  <li>Provides continuity between shifts</li>
+                  <li>Applies both intelligence layers automatically</li>
+                </ul>
+                <p class="brain-pillar-foot">The first operational tool powered by Hotel Brain.</p>
+              </article>
             </div>
-            <div class="brain-status-grid">
-              <div class="essential-progress-panel" id="essentialProgressPanel" aria-live="polite">
+            <p class="hf-demo-brain-note" id="hfDemoBrainReadOnlyNote" hidden>
+              Demo Mode — sample knowledge is read-only and nothing is saved.
+            </p>
+            <div class="hf-demo-brain-setup-actions" id="hfDemoBrainSetupActions" hidden>
+              <a class="btn-nav-secondary" id="hfDemoBrainOpenHandoverLink" href="handover.html?demo=1">Open AI Shift Handover</a>
+            </div>
+            <div class="brain-hero-meta" aria-live="polite">
+              <div class="brain-hero-meta-item">
+                <span class="brain-hero-meta-label">Last saved</span>
+                <span class="progress-stat-value progress-stat-value--muted" id="lastSavedLine">—</span>
+              </div>
+              <div class="brain-hero-meta-item">
+                <span class="brain-hero-meta-label">Status</span>
+                <span class="progress-stat-value progress-stat-value--building" id="hotelBrainStatus">Building</span>
+              </div>
+              <span class="save-confirm-badge" id="saveConfirmBadge" hidden aria-live="polite"><span aria-hidden="true">✓</span> Saved</span>
+            </div>
+            <div class="brain-status-grid visually-hidden" aria-hidden="true">
+              <div class="essential-progress-panel" id="essentialProgressPanel">
                 <div class="brain-status-block-head">
                   <span class="brain-status-kicker" id="essentialProgressTitle">Core Setup</span>
                 </div>
                 <div class="brain-status-summary">
                   <span class="brain-status-check" aria-hidden="true">✓</span>
-                  <span class="essential-progress-count brain-status-count" id="essentialProgressCount">Essential details needed</span>
+                  <span class="essential-progress-count brain-status-count" id="essentialProgressCount">Essentials optional — add what you know</span>
                 </div>
-                <p class="essential-progress-message" id="essentialProgressMessage">Add hotel details, rooms, teams and policies to prepare AI Shift Handover.</p>
+                <p class="essential-progress-message" id="essentialProgressMessage">Add a few essentials when ready. Hotel Brain grows over time — you do not need to finish everything first.</p>
                 <span class="visually-hidden" id="essentialProgressPct">0%</span>
                 <div class="essential-progress-bar brain-status-bar-sr" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="essentialProgressBar" aria-label="Core Setup not ready">
                   <div class="essential-progress-fill" id="essentialProgressFill"></div>
                 </div>
               </div>
-              <div class="profile-progress-panel" id="profileProgressPanel" aria-live="polite">
+              <div class="profile-progress-panel" id="profileProgressPanel">
                 <div class="brain-status-block-head">
                   <span class="profile-progress-title brain-status-kicker">Hotel Knowledge</span>
-                  <span class="save-confirm-badge" id="saveConfirmBadge" hidden aria-live="polite"><span aria-hidden="true">✓</span> Saved</span>
                 </div>
                 <div class="brain-status-summary" id="profileProgressSummary">
-                  <span class="brain-status-count" id="profileProgressCount">Building foundation</span>
+                  <span class="brain-status-count" id="profileProgressCount">Growing Hotel Intelligence</span>
                 </div>
-                <p class="brain-status-growth" id="profileProgressMessage">Continue building your hotel's operational memory.</p>
+                <p class="brain-status-growth" id="profileProgressMessage">Add knowledge anytime — one note at a time is enough.</p>
                 <span class="visually-hidden" id="profileProgressPct">0%</span>
-                <div class="profile-progress-bar brain-status-bar-sr" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="profileProgressBar" aria-label="Hotel Knowledge foundation building">
+                <div class="profile-progress-bar brain-status-bar-sr" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="profileProgressBar" aria-label="Growing Hotel Intelligence">
                   <div class="profile-progress-fill" id="profileProgressFill"></div>
-                </div>
-                <div class="brain-status-meta">
-                  <div class="brain-status-meta-item">
-                    <span class="brain-status-meta-label">Last saved</span>
-                    <span class="progress-stat-value progress-stat-value--muted" id="lastSavedLine">—</span>
-                  </div>
-                  <div class="brain-status-meta-item">
-                    <span class="brain-status-meta-label">Status</span>
-                    <span class="progress-stat-value progress-stat-value--building" id="hotelBrainStatus">Building</span>
-                  </div>
                 </div>
               </div>
             </div>
@@ -1020,16 +1173,17 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                   </div>
                   <div class="card-header-text">
-                    <h2>General Hotel Details</h2>
-                    <p id="generalSectionSummary">Hotel identity — property, contact, location, branding and notes.</p>
+                    <h2>General</h2>
+                    <p id="generalSectionSummary">Essential hotel identity — add more detail whenever you like.</p>
                   </div>
                 </div>
               </div>
               <div class="profile-card-body">
+                <p class="form-helper" style="margin-top:0;margin-bottom:14px;">Start with the essentials. You can add more knowledge anytime — Hotel Brain grows with your hotel.</p>
                 <div class="disclosure-stack general-groups-stack">
                 <div class="disclosure-card general-field-group" data-general-group="property">
                   <button type="button" class="disclosure-card-toggle" aria-expanded="true" aria-controls="generalGroupProperty">
-                    <span class="tracker-group-label">Property</span>
+                    <span class="tracker-group-label">Essentials</span>
                     <span class="disclosure-card-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></span>
                   </button>
                   <div class="disclosure-card-body" id="generalGroupProperty">
@@ -1055,50 +1209,46 @@
                       <input class="form-input" type="number" id="totalRooms" placeholder="e.g. 24" min="1">
                     </div>
                     <div class="form-group full">
-                      <label class="form-label" for="address">Address</label>
+                      <label class="form-label" for="address">Location / address</label>
                       <input class="form-input" type="text" id="address" placeholder="Street address">
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label" for="city">City</label>
+                      <input class="form-input" type="text" id="city" placeholder="e.g. London">
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label" for="country">Country</label>
+                      <input class="form-input" type="text" id="country" placeholder="e.g. United Kingdom">
                     </div>
                     <div class="form-group full">
                       <label class="form-label" for="description">Property description</label>
-                      <textarea class="notes-textarea" id="description" style="min-height:72px"></textarea>
+                      <textarea class="notes-textarea" id="description" style="min-height:72px" placeholder="A short description of your hotel and service style."></textarea>
                       <button type="button" class="improve-writing-btn" data-improve-writing="description">Improve Writing</button>
                     </div>
                   </div>
                   </div>
                 </div>
-                <div class="disclosure-card general-field-group disclosure-card--collapsed" data-general-group="contact">
-                  <button type="button" class="disclosure-card-toggle" aria-expanded="false" aria-controls="generalGroupContact">
-                    <span class="tracker-group-label">Contact</span>
+                <div class="disclosure-card general-field-group disclosure-card--collapsed" data-general-group="more">
+                  <button type="button" class="disclosure-card-toggle" aria-expanded="false" aria-controls="generalGroupMore">
+                    <span class="tracker-group-label">More details</span>
+                    <span class="disclosure-card-meta">Optional — group, code, rating, floors, contact and branding</span>
                     <span class="disclosure-card-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></span>
                   </button>
-                  <div class="disclosure-card-body" id="generalGroupContact" hidden>
-                  <div class="form-grid">
-                    <div class="form-group">
-                      <label class="form-label" for="phone">Main telephone</label>
-                      <input class="form-input" type="tel" id="phone" placeholder="+44 ...">
+                  <div class="disclosure-card-body" id="generalGroupMore" hidden>
+                    <div class="form-grid">
+                      <div class="form-group"><label class="form-label" for="hotelGroup">Hotel group</label><input class="form-input" type="text" id="hotelGroup" placeholder="Parent group, if any"></div>
+                      <div class="form-group"><label class="form-label" for="hotelCode">Hotel code</label><input class="form-input" type="text" id="hotelCode" maxlength="16"></div>
+                      <div class="form-group"><label class="form-label" for="starRating">Star rating</label><select class="form-input" id="starRating"><option value="">Not rated</option><option>3 Star</option><option>4 Star</option><option>5 Star</option></select></div>
+                      <div class="form-group"><label class="form-label" for="totalFloors">Floors</label><input class="form-input" type="number" id="totalFloors" min="1"></div>
+                      <div class="form-group"><label class="form-label" for="phone">Main telephone</label><input class="form-input" type="tel" id="phone" placeholder="+44 ..."></div>
+                      <div class="form-group"><label class="form-label" for="email">Main email</label><input class="form-input" type="email" id="email" placeholder="info@hotel.com"></div>
                     </div>
-                    <div class="form-group">
-                      <label class="form-label" for="email">Main email</label>
-                      <input class="form-input" type="email" id="email" placeholder="info@hotel.com">
-                    </div>
-                  </div>
-                  </div>
-                </div>
-                <div class="disclosure-card general-field-group disclosure-card--collapsed" data-general-group="location">
-                  <button type="button" class="disclosure-card-toggle" aria-expanded="false" aria-controls="generalGroupLocation">
-                    <span class="tracker-group-label">Location</span>
-                    <span class="disclosure-card-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></span>
-                  </button>
-                  <div class="disclosure-card-body" id="generalGroupLocation" hidden>
-                  <div class="form-grid">
-                    <div class="form-group"><label class="form-label" for="city">City</label><input class="form-input" type="text" id="city"></div>
-                    <div class="form-group"><label class="form-label" for="country">Country</label><input class="form-input" type="text" id="country"></div>
-                  </div>
                   </div>
                 </div>
                 <div class="disclosure-card general-field-group disclosure-card--collapsed" data-general-group="branding">
                   <button type="button" class="disclosure-card-toggle" aria-expanded="false" aria-controls="generalGroupBranding">
                     <span class="tracker-group-label">Branding</span>
+                    <span class="disclosure-card-meta">Optional logo, colour and brand voice</span>
                     <span class="disclosure-card-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></span>
                   </button>
                   <div class="disclosure-card-body" id="generalGroupBranding" hidden>
@@ -1129,17 +1279,9 @@
                     <textarea class="notes-textarea" id="brandVoice" style="min-height:64px" placeholder="How should AI-written content sound for your hotel?"></textarea>
                     <button type="button" class="improve-writing-btn" data-improve-writing="brandVoice">Improve Writing</button>
                   </div>
-                  </div>
-                </div>
-                <div class="disclosure-card general-field-group disclosure-card--collapsed" data-general-group="notes">
-                  <button type="button" class="disclosure-card-toggle" aria-expanded="false" aria-controls="generalGroupNotes">
-                    <span class="tracker-group-label">Notes</span>
-                    <span class="disclosure-card-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></span>
-                  </button>
-                  <div class="disclosure-card-body" id="generalGroupNotes" hidden>
-                  <div class="form-group">
+                  <div class="form-group full" style="margin-top:14px">
                     <label class="form-label" for="operatingNotes">General hotel notes</label>
-                    <textarea class="notes-textarea" id="operatingNotes" placeholder="Anything your team should know — guest profile, style, quirks, or priorities." style="min-height: 88px;"></textarea>
+                    <textarea class="notes-textarea" id="operatingNotes" placeholder="Anything your team should know — style, quirks, or priorities." style="min-height: 88px;"></textarea>
                     <button type="button" class="improve-writing-btn" data-improve-writing="operatingNotes">Improve Writing</button>
                   </div>
                   </div>
@@ -1180,13 +1322,7 @@
                         <th>Room</th>
                         <th class="col-type">Type</th>
                         <th>Floor</th>
-                        <th>Bed setup</th>
-                        <th class="col-check">Twin</th>
-                        <th class="col-check">Extra bed</th>
-                        <th>Bath / shower</th>
-                        <th>View</th>
-                        <th>Max occ.</th>
-                        <th class="col-notes">Notes</th>
+                        <th class="col-notes">Room notes</th>
                         <th class="col-actions">Actions</th>
                       </tr>
                     </thead>
@@ -1231,64 +1367,38 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
                   </div>
                   <div class="card-header-text">
-                    <h2>Departments &amp; Shifts</h2>
-                    <p id="departmentsSectionSummary">Who runs each team, and the shift pattern your hotel works to.</p>
+                    <h2>Departments</h2>
+                    <p id="departmentsSectionSummary">Write naturally what each team should know — AI organises the rest.</p>
                   </div>
                 </div>
                 <button type="button" class="collapse-toggle" aria-label="Collapse section" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
               </div>
               <div class="profile-card-body">
-                <h3 class="subsection-heading">Departments</h3>
+                <p class="form-helper" style="margin-top:0;margin-bottom:14px;">One notes field per department. Capture habits, priorities and how the team works — no need to fill contact fields.</p>
                 <div class="dept-grid" id="deptGrid"></div>
                 <div class="empty-state" id="deptEmpty">
-                  <p>No departments added yet. Start with Front Office, Housekeeping, and F&amp;B if helpful.</p>
+                  <p>No departments yet. Reception, Housekeeping and Night Team are a good place to start.</p>
                 </div>
                 <button type="button" class="add-row-btn" id="addDept">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                   Add department
                 </button>
-                <hr class="subsection-divider">
-                <h3 class="subsection-heading">Standard shifts</h3>
-                <div class="editable-table-wrap">
+                <div hidden aria-hidden="true">
                   <table class="editable-table" id="shiftTable">
-                    <thead>
-                      <tr>
-                        <th>Code</th>
-                        <th>Shift name</th>
-                        <th>Start</th>
-                        <th>End</th>
-                        <th>Department</th>
-                        <th></th>
-                      </tr>
-                    </thead>
                     <tbody id="shiftTableBody"></tbody>
                   </table>
-                </div>
-                <div class="empty-state" id="shiftEmpty">
-                  <p>No shifts defined yet. Add the shift names and times your team recognises.</p>
-                </div>
-                <button type="button" class="add-row-btn" id="addShiftRow">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                  Add shift
-                </button>
-                <label class="facility-chip shift-overnight-toggle" style="width: fit-content; margin-top: 16px;">
                   <input type="checkbox" id="shiftOvernightSupport">
-                  <span>Some shifts cross midnight</span>
-                </label>
-                <div class="shift-pattern-selector" role="group" aria-label="Shift pattern" hidden>
-                  <button type="button" class="shift-pattern-btn active" data-pattern="8hour">8 Hour</button>
-                  <button type="button" class="shift-pattern-btn" data-pattern="12hour">12 Hour</button>
-                  <button type="button" class="shift-pattern-btn" data-pattern="custom">Custom</button>
+                  <div class="shift-pattern-selector" role="group" aria-label="Shift pattern">
+                    <button type="button" class="shift-pattern-btn active" data-pattern="8hour">8 Hour</button>
+                    <button type="button" class="shift-pattern-btn" data-pattern="12hour">12 Hour</button>
+                    <button type="button" class="shift-pattern-btn" data-pattern="custom">Custom</button>
+                  </div>
+                  <div class="term-list" id="termList"></div>
+                  <div class="empty-state" id="shiftEmpty"></div>
+                  <div class="empty-state" id="termEmpty"></div>
+                  <button type="button" class="add-row-btn" id="addShiftRow">Add shift</button>
+                  <button type="button" class="add-row-btn" id="addTerm">Add term</button>
                 </div>
-                <hr class="subsection-divider">
-                <h3 class="subsection-heading">Hotel terminology</h3>
-                <p class="section-intro">Words and phrases your team uses — helps AI tools speak your language.</p>
-                <div class="term-list" id="termList"></div>
-                <div class="empty-state" id="termEmpty"><p>No custom terms yet.</p></div>
-                <button type="button" class="add-row-btn" id="addTerm">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                  Add term
-                </button>
               </div>
             </section>
 
@@ -1300,12 +1410,13 @@
                   </div>
                   <div class="card-header-text">
                     <h2>Policies</h2>
-                    <p id="policiesSectionSummary">Approval rules and limits — cancellation, no-show, charges and escalation.</p>
+                    <p id="policiesSectionSummary">Write naturally — check-in, payments, guest rules and anything else.</p>
                   </div>
                 </div>
                 <button type="button" class="collapse-toggle" aria-label="Collapse section" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
               </div>
               <div class="profile-card-body">
+                <p class="form-helper" style="margin-top:0;margin-bottom:14px;">Four simple notes areas. Describe how your hotel works — Hospitality Flow organises the detail for AI.</p>
                 <div id="policyStructuredRoot"></div>
                 <div id="policyLegacyFields" hidden aria-hidden="true">
                 <div class="policy-grid">
@@ -1335,25 +1446,18 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
                   </div>
                   <div class="card-header-text">
-                    <h2>Reservations &amp; Payments</h2>
-                    <p id="reservationsSectionSummary">Payment, cancellation and invoicing rules for each booking channel.</p>
+                    <h2>Booking Channels</h2>
+                    <p id="reservationsSectionSummary">One notes field per channel — Booking.com, Expedia, Direct, Corporate and Other.</p>
                   </div>
                 </div>
                 <button type="button" class="collapse-toggle" aria-label="Expand section" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
               </div>
               <div class="profile-card-body">
                 <div class="disclosure-section">
-                  <h3 class="subsection-heading">Booking channels</h3>
                   <div id="reservationsRoot"></div>
                 </div>
-                <hr class="subsection-divider">
-                <div class="disclosure-card disclosure-card--collapsed disclosure-section" id="paymentRulesDisclosure">
-                  <button type="button" class="disclosure-card-toggle" aria-expanded="false" aria-controls="paymentPoliciesWrap">
-                    <span class="tracker-group-label">Payment rules</span>
-                    <span class="disclosure-card-meta">Deposits, refunds, pre-authorisations and billing</span>
-                    <span class="disclosure-card-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></span>
-                  </button>
-                  <div class="disclosure-card-body" id="paymentPoliciesWrap" hidden>
+                <div id="paymentRulesDisclosure" hidden aria-hidden="true">
+                  <div id="paymentPoliciesWrap" hidden>
                     <div id="paymentPoliciesRoot"></div>
                   </div>
                 </div>
@@ -1410,8 +1514,26 @@
                     </button>
                     <div class="disclosure-card-body" hidden>
                       <div class="form-grid">
-                        <div class="form-group"><label class="form-label" for="gsSpecialOccasions">Special occasions</label><textarea class="notes-textarea" id="gsSpecialOccasions" placeholder="Birthdays, anniversaries, celebrations." style="min-height: 72px;"></textarea><button type="button" class="improve-writing-btn" data-improve-writing="gsSpecialOccasions">Improve Writing</button></div>
-                        <div class="form-group"><label class="form-label" for="gsWelcomeAmenities">Welcome amenities</label><textarea class="notes-textarea" id="gsWelcomeAmenities" placeholder="Standard and VIP welcome options." style="min-height: 72px;"></textarea><button type="button" class="improve-writing-btn" data-improve-writing="gsWelcomeAmenities">Improve Writing</button></div>
+                        <div class="form-group full">
+                          <label class="form-label">Special occasions</label>
+                          <p class="form-helper" style="margin-top:0;margin-bottom:10px;">Add each celebration idea as a short note — birthdays, anniversaries, packages.</p>
+                          <div class="gs-note-list" id="gsSpecialOccasionsList" data-gs-note-field="specialOccasions"></div>
+                          <button type="button" class="add-row-btn gs-add-note-btn" data-gs-note-list="gsSpecialOccasionsList" data-gs-note-placeholder="e.g. Birthday package — balloons and cake note at 15:00.">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            Add another occasion
+                          </button>
+                          <textarea class="notes-textarea" id="gsSpecialOccasions" hidden aria-hidden="true"></textarea>
+                        </div>
+                        <div class="form-group full">
+                          <label class="form-label">Welcome amenities</label>
+                          <p class="form-helper" style="margin-top:0;margin-bottom:10px;">Add each amenity option as a short note — standard, VIP or request-based.</p>
+                          <div class="gs-note-list" id="gsWelcomeAmenitiesList" data-gs-note-field="welcomeAmenities"></div>
+                          <button type="button" class="add-row-btn gs-add-note-btn" data-gs-note-list="gsWelcomeAmenitiesList" data-gs-note-placeholder="e.g. VIP welcome — champagne and handwritten card.">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            Add another amenity
+                          </button>
+                          <textarea class="notes-textarea" id="gsWelcomeAmenities" hidden aria-hidden="true"></textarea>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1467,7 +1589,7 @@
               </div>
             </section>
 
-            <section class="profile-card profile-card--collapsible profile-card--collapsed" id="operational-knowledge">
+            <section class="profile-card profile-card--collapsible profile-card--collapsed" id="operational-knowledge" hidden aria-hidden="true">
               <div class="profile-card-header" data-collapse-toggle>
                 <div class="profile-card-header-left">
                   <div class="card-header-icon navy" aria-hidden="true">
@@ -1475,13 +1597,13 @@
                   </div>
                   <div class="card-header-text">
                     <h2>Shift Procedures</h2>
-                    <p id="operationalKnowledgeSectionSummary">Triggered procedures, recommended actions and shift workflows.</p>
+                    <p id="operationalKnowledgeSectionSummary">Legacy shift procedures — retained for existing data and a future SOP module.</p>
                   </div>
                 </div>
                 <button type="button" class="collapse-toggle" aria-label="Expand section" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
               </div>
               <div class="profile-card-body">
-                <p class="form-helper" style="margin-top:0;margin-bottom:14px;">Use Shift Procedures for when/then actions. Keep Policies for approval limits, Guest Services for how services are delivered, and Hotel Knowledge for standards and house rules.</p>
+                <p class="form-helper" style="margin-top:0;margin-bottom:14px;">Shift Procedures are reserved for a future SOP module. Operational habits now live in Hotel Knowledge → Operational Notes.</p>
                 <h3 class="subsection-heading">Staffing context</h3>
                 <div class="textarea-wrap">
                   <textarea class="notes-textarea" id="okStaffingContext" placeholder="Duty Managers cover AM, PM and Middle shifts. Night Managers cover five nights per week…"></textarea>
@@ -1598,94 +1720,82 @@
                   </div>
                   <div class="card-header-text">
                     <h2>Hotel Knowledge</h2>
-                    <p id="hotelKnowledgeSectionSummary">VIP rules · terminology · AI instructions</p>
+                    <p id="hotelKnowledgeSectionSummary">Hotel Intelligence and Guest Intelligence — grow over time</p>
                   </div>
                 </div>
                 <button type="button" class="collapse-toggle" aria-label="Collapse section" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
               </div>
               <div class="profile-card-body">
+                <p class="form-helper" style="margin-top:0;margin-bottom:14px;">Add a sentence whenever something useful comes up. Hotel Brain is living memory — not a form you must finish in one sitting.</p>
                 <div class="disclosure-stack" id="hotelKnowledgeStack">
                   <div class="disclosure-card disclosure-card--collapsed hk-knowledge-panel" data-hk-panel="general">
                     <button type="button" class="disclosure-card-toggle" aria-expanded="false">
                       <span class="tracker-group-label">General Notes</span>
-                      <span class="disclosure-card-meta">Overall property context and service style</span>
+                      <span class="disclosure-card-meta">Overall hotel context and service style</span>
                       <span class="disclosure-card-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></span>
                     </button>
                     <div class="disclosure-card-body" hidden>
                       <div class="knowledge-field">
                         <label class="form-label" for="hkGeneralNotes">General Notes</label>
                         <div class="textarea-wrap">
-                          <textarea class="notes-textarea" id="hkGeneralNotes" placeholder="The hotel provides personalised boutique service and clear shift communication."></textarea>
+                          <textarea class="notes-textarea notes-textarea--large" id="hkGeneralNotes" placeholder="Overall hotel information and service style — boutique, family-run, quiet luxury, etc."></textarea>
                           <span class="char-counter" data-for="hkGeneralNotes">0 characters</span>
                           <button type="button" class="improve-writing-btn" data-improve-writing="hkGeneralNotes">Improve Writing</button>
                         </div>
                       </div>
                     </div>
                   </div>
-                  <div class="disclosure-card disclosure-card--collapsed hk-knowledge-panel" data-hk-panel="standards">
+                  <div class="disclosure-card disclosure-card--collapsed hk-knowledge-panel hk-guest-intelligence-panel" data-hk-panel="guest">
                     <button type="button" class="disclosure-card-toggle" aria-expanded="false">
-                      <span class="tracker-group-label">Hotel Standards</span>
-                      <span class="disclosure-card-meta">Service standards and guest interaction expectations</span>
+                      <span class="tracker-group-label">Guest Intelligence</span>
+                      <span class="disclosure-card-meta">Personalised memory for returning guests</span>
                       <span class="disclosure-card-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></span>
                     </button>
                     <div class="disclosure-card-body" hidden>
                       <div class="knowledge-field">
-                        <label class="form-label" for="hkHotelStandards">Hotel Standards</label>
+                        <p class="guest-intelligence-lead">Remember returning guests, preferences, important history and personal touches that help the hotel provide a more personalised stay.</p>
+                        <label class="form-label visually-hidden" for="hkGuestKnowledge">Guest Intelligence</label>
                         <div class="textarea-wrap">
-                          <textarea class="notes-textarea" id="hkHotelStandards" placeholder="Service standards, presentation rules and expectations for every guest interaction."></textarea>
-                          <span class="char-counter" data-for="hkHotelStandards">0 characters</span>
-                          <button type="button" class="improve-writing-btn" data-improve-writing="hkHotelStandards">Improve Writing</button>
+                          <textarea class="notes-textarea notes-textarea--large" id="hkGuestKnowledge" placeholder="Mr David Jackson prefers high-floor rooms and avoids accessible rooms.&#10;&#10;Mrs Emma Collins requests oat milk.&#10;&#10;The Brown family usually needs two cots.&#10;&#10;Mr Patel prefers invoices printed at check-out."></textarea>
+                          <span class="char-counter" data-for="hkGuestKnowledge">0 characters</span>
+                          <button type="button" class="improve-writing-btn" data-improve-writing="hkGuestKnowledge">Improve Writing</button>
                         </div>
-                        <p class="form-helper">How your team should represent the hotel day to day.</p>
                       </div>
                     </div>
                   </div>
-                  <div class="disclosure-card disclosure-card--collapsed hk-knowledge-panel" data-hk-panel="vip">
-                    <button type="button" class="disclosure-card-toggle" aria-expanded="false">
-                      <span class="tracker-group-label">VIP Rules</span>
-                      <span class="disclosure-card-meta">VIP arrivals, amenities and handover rules</span>
-                      <span class="disclosure-card-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></span>
-                    </button>
-                    <div class="disclosure-card-body" hidden>
-                      <div class="knowledge-field">
-                        <label class="form-label" for="hkVipRules">VIP Rules</label>
-                        <div class="textarea-wrap">
-                          <textarea class="notes-textarea" id="hkVipRules" placeholder="VIP arrivals should be reviewed before check-in and relevant amenities prepared."></textarea>
-                          <span class="char-counter" data-for="hkVipRules">0 characters</span>
-                          <button type="button" class="improve-writing-btn" data-improve-writing="hkVipRules">Improve Writing</button>
-                        </div>
-                      </div>
-                    </div>
+                  <div hidden aria-hidden="true">
+                    <textarea id="hkHotelStandards"></textarea>
+                    <textarea id="hkVipRules"></textarea>
                   </div>
                   <div class="disclosure-card disclosure-card--collapsed hk-knowledge-panel" data-hk-panel="terms">
                     <button type="button" class="disclosure-card-toggle" aria-expanded="false">
-                      <span class="tracker-group-label">Common Terms &amp; Abbreviations</span>
-                      <span class="disclosure-card-meta">Room codes, internal shorthand and team phrases</span>
+                      <span class="tracker-group-label">Hotel Terminology</span>
+                      <span class="disclosure-card-meta">VC, LCO, ECI, Reg Guest, OOO, Comp…</span>
                       <span class="disclosure-card-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></span>
                     </button>
                     <div class="disclosure-card-body" hidden>
                       <div class="knowledge-field">
-                        <label class="form-label" for="hkCommonTerms">Common Terms &amp; Abbreviations</label>
+                        <label class="form-label" for="hkCommonTerms">Hotel Terminology</label>
                         <div class="textarea-wrap">
-                          <textarea class="notes-textarea notes-textarea--large" id="hkCommonTerms" placeholder="e.g. DND = Do Not Disturb&#10;VIP = Very Important Guest&#10;One term per line — use your hotel's own codes and phrases"></textarea>
+                          <textarea class="notes-textarea notes-textarea--large" id="hkCommonTerms" placeholder="VC = Virtual Card&#10;LCO = Late Check-out&#10;ECI = Early Check-in&#10;Reg Guest = Regular guest&#10;OOO = Out of Order&#10;Comp = Complimentary"></textarea>
                           <span class="char-counter" data-for="hkCommonTerms">0 characters</span>
                           <button type="button" class="improve-writing-btn" data-improve-writing="hkCommonTerms">Improve Writing</button>
                         </div>
-                        <p class="form-helper">Room codes, internal shorthand and phrases your team uses.</p>
+                        <p class="form-helper">Abbreviations and phrases your team uses — one per line helps AI speak your language.</p>
                       </div>
                     </div>
                   </div>
                   <div class="disclosure-card disclosure-card--collapsed hk-knowledge-panel" data-hk-panel="operational">
                     <button type="button" class="disclosure-card-toggle" aria-expanded="false">
                       <span class="tracker-group-label">Operational Notes</span>
-                      <span class="disclosure-card-meta">Daily priorities and handover focus areas</span>
+                      <span class="disclosure-card-meta">Habits, workflows and daily priorities</span>
                       <span class="disclosure-card-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></span>
                     </button>
                     <div class="disclosure-card-body" hidden>
                       <div class="knowledge-field">
                         <label class="form-label" for="hkOperationalNotes">Operational Notes</label>
                         <div class="textarea-wrap">
-                          <textarea class="notes-textarea" id="hkOperationalNotes" placeholder="Daily operational priorities, handover focus areas and things the team must never miss."></textarea>
+                          <textarea class="notes-textarea notes-textarea--large" id="hkOperationalNotes" placeholder="Maintenance prioritises guest-impacting issues first.&#10;Housekeeping starts departures on upper floors.&#10;Airport taxis are booked through London Executive Cars."></textarea>
                           <span class="char-counter" data-for="hkOperationalNotes">0 characters</span>
                           <button type="button" class="improve-writing-btn" data-improve-writing="hkOperationalNotes">Improve Writing</button>
                         </div>
@@ -1695,14 +1805,14 @@
                   <div class="disclosure-card disclosure-card--collapsed hk-knowledge-panel" data-hk-panel="local">
                     <button type="button" class="disclosure-card-toggle" aria-expanded="false">
                       <span class="tracker-group-label">Local Recommendations</span>
-                      <span class="disclosure-card-meta">Restaurants, walks and trusted local partners</span>
+                      <span class="disclosure-card-meta">Restaurants, taxis, parking, pharmacy and more</span>
                       <span class="disclosure-card-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></span>
                     </button>
                     <div class="disclosure-card-body" hidden>
                       <div class="knowledge-field">
                         <label class="form-label" for="hkLocalRecommendations">Local Recommendations</label>
                         <div class="textarea-wrap">
-                          <textarea class="notes-textarea" id="hkLocalRecommendations" placeholder="Restaurants, walks, transport tips and trusted local partners your team recommends."></textarea>
+                          <textarea class="notes-textarea notes-textarea--large" id="hkLocalRecommendations" placeholder="Restaurants, taxi companies, parking, pharmacy, dry cleaning, hospitals and nearby attractions."></textarea>
                           <span class="char-counter" data-for="hkLocalRecommendations">0 characters</span>
                           <button type="button" class="improve-writing-btn" data-improve-writing="hkLocalRecommendations">Improve Writing</button>
                         </div>
@@ -1720,7 +1830,7 @@
                         <label class="form-label" for="hkAiInstructions">AI Instructions</label>
                         <p class="hk-ai-helper">Controls how Hospitality Flow interprets your hotel — tone, priorities and emphasis across all AI tools.</p>
                         <div class="textarea-wrap">
-                          <textarea class="notes-textarea notes-textarea--large" id="hkAiInstructions" placeholder="Always use British English.&#10;Never invent guest information.&#10;Keep handovers concise.&#10;Prioritise urgent maintenance, payment and guest issues."></textarea>
+                          <textarea class="notes-textarea notes-textarea--large" id="hkAiInstructions" placeholder="Prioritise guest-impacting issues.&#10;Avoid generic recommendations.&#10;Use Hotel Brain only when relevant.&#10;Keep recommendations concise.&#10;Merge duplicate guest information.&#10;Think like an experienced hotel manager."></textarea>
                           <button type="button" class="improve-writing-btn" data-improve-writing="hkAiInstructions">Improve Writing</button>
                           <span class="char-counter" data-for="hkAiInstructions">0 characters</span>
                         </div>
@@ -1757,7 +1867,7 @@
                   </div>
                   <div class="card-header-text">
                     <h2>Settings</h2>
-                    <p id="advancedSettingsSectionSummary">Daily trackers, regional settings, AI preferences and backups.</p>
+                    <p id="advancedSettingsSectionSummary">Regional settings, AI preferences and backup options.</p>
                   </div>
                 </div>
                 <button type="button" class="collapse-toggle" aria-label="Expand section" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
@@ -1765,10 +1875,11 @@
               <div class="profile-card-body">
                 <div class="disclosure-stack settings-groups-stack">
 
-                <div class="disclosure-card settings-field-group disclosure-card--collapsed" data-settings-group="operations" id="operations">
+                <!-- Reserved for a future Operations Trackers module. Data is still collected/restored. -->
+                <div class="disclosure-card settings-field-group disclosure-card--collapsed" data-settings-group="operations" id="operations" hidden aria-hidden="true">
                   <button type="button" class="disclosure-card-toggle" aria-expanded="false" aria-controls="settingsGroupOperations">
                     <span class="tracker-group-label">Daily Trackers</span>
-                    <span class="disclosure-card-meta" id="operationsSectionSummary">Front-office checklist trackers and morning report recipients.</span>
+                    <span class="disclosure-card-meta" id="operationsSectionSummary">Reserved for a future Operations Trackers module.</span>
                     <span class="disclosure-card-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></span>
                   </button>
                   <div class="disclosure-card-body" id="settingsGroupOperations" hidden>
@@ -1824,19 +1935,13 @@
                   </div>
                 </div>
 
-                <div class="disclosure-card settings-field-group disclosure-card--collapsed" data-settings-group="extended" id="adv-general">
+                <div class="disclosure-card settings-field-group disclosure-card--collapsed" data-settings-group="extended" id="adv-general" hidden aria-hidden="true">
                   <button type="button" class="disclosure-card-toggle" aria-expanded="false" aria-controls="settingsGroupExtended">
                     <span class="tracker-group-label">Extended hotel details</span>
                     <span class="disclosure-card-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></span>
                   </button>
                   <div class="disclosure-card-body" id="settingsGroupExtended" hidden>
-                    <p class="section-intro">Group, codes and ratings — optional for most boutique hotels.</p>
-                    <div class="form-grid">
-                      <div class="form-group"><label class="form-label" for="hotelGroup">Hotel group</label><input class="form-input" type="text" id="hotelGroup" placeholder="Parent group, if any"></div>
-                      <div class="form-group"><label class="form-label" for="hotelCode">Hotel code</label><input class="form-input" type="text" id="hotelCode" maxlength="16"></div>
-                      <div class="form-group"><label class="form-label" for="starRating">Star rating</label><select class="form-input" id="starRating"><option value="">Not rated</option><option>3 Star</option><option>4 Star</option><option>5 Star</option></select></div>
-                      <div class="form-group"><label class="form-label" for="totalFloors">Floors</label><input class="form-input" type="number" id="totalFloors" min="1"></div>
-                    </div>
+                    <p class="section-intro">Moved to General → More details. Kept for legacy restore only.</p>
                   </div>
                 </div>
 
@@ -1846,7 +1951,7 @@
                     <span class="disclosure-card-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></span>
                   </button>
                   <div class="disclosure-card-body" id="settingsGroupAi" hidden>
-                    <p class="section-intro">Default tone and detail for Shift Handover, SOP Generator and other AI tools.</p>
+                    <p class="section-intro">Tone, detail and language for AI tools. Property-specific instructions live in Hotel Knowledge → AI Instructions.</p>
                     <div class="pref-grid">
                       <div class="pref-card"><h3>Tone</h3><div class="radio-group">
                         <label class="radio-item"><input type="radio" name="tone" value="professional" checked><span class="radio-item-text"><strong>Professional</strong></span></label>
@@ -1860,9 +1965,9 @@
                       </div></div>
                       <div class="pref-card"><label class="form-label" for="aiLanguage">Language</label><select class="form-input" id="aiLanguage"><option selected>British English</option><option>American English</option><option>French</option><option>German</option><option>Spanish</option></select></div>
                     </div>
-                    <div class="form-group full" style="margin-top:14px">
+                    <div class="form-group full" style="margin-top:14px" hidden aria-hidden="true">
                       <label class="form-label" for="aiInstructions">Additional AI instructions</label>
-                      <p class="form-helper" id="aiInstructionsHelper">Set how Hospitality Flow should write, prioritise and interpret your hotel's operational information.</p>
+                      <p class="form-helper" id="aiInstructionsHelper">Legacy field — use Hotel Knowledge → AI Instructions as the source of truth.</p>
                       <textarea class="notes-textarea" id="aiInstructions" placeholder="Optional guidance applied across all AI tools."></textarea>
                       <button type="button" class="improve-writing-btn" data-improve-writing="aiInstructions">Improve Writing</button>
                       <ul class="writing-rules-list" aria-label="Writing rules always applied">
@@ -1884,7 +1989,10 @@
                   </button>
                   <div class="disclosure-card-body" id="settingsGroupBackup" hidden>
                     <p class="section-intro">Export, import, backup and print your Hotel Brain.</p>
-                    <div class="settings-actions">
+                    <p class="form-helper hf-demo-workspace-gated-note" id="hfDemoBackupUnavailableNote" hidden>
+                      Available after creating your hotel workspace.
+                    </p>
+                    <div class="settings-actions" id="hotelBrainBackupActions">
                       <button type="button" class="btn-nav-secondary" id="exportProfileBtn" aria-label="Export profile JSON">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                         Export JSON
@@ -1917,13 +2025,13 @@
                   </div>
                 </div>
 
-                <div class="disclosure-card settings-field-group disclosure-card--collapsed" data-settings-group="demo" id="demoModePanel">
+                <div class="disclosure-card settings-field-group disclosure-card--collapsed" data-settings-group="demo" id="demoModePanel" hidden aria-hidden="true">
                   <button type="button" class="disclosure-card-toggle" aria-expanded="false" aria-controls="settingsGroupDemo">
                     <span class="tracker-group-label">Demo Mode</span>
                     <span class="disclosure-card-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></span>
                   </button>
                   <div class="disclosure-card-body" id="settingsGroupDemo" hidden>
-                    <p class="section-intro">Explore The Oakwood Mayfair Interactive Demo — a fictional 80-room boutique hotel. Hotel Brain is the hotel’s growing operational memory; sample data is overlay-only and never saved. Start from the public landing page (or Exit Demo from the banner).</p>
+                    <p class="section-intro">Reserved — Demo Mode is launched from the landing page banner, not Settings.</p>
                     <div class="settings-actions">
                       <a class="btn-nav-secondary" href="index.html#interactive-demo">Open Demo on landing page</a>
                     </div>
@@ -2111,7 +2219,7 @@
       var roomRowTemplate = '<td><input type="text" placeholder="Code"></td><td><input type="text" placeholder="Type name"></td><td><input type="number" value="1" min="0"></td><td><input type="text" placeholder="e.g. 1–3"></td><td><input type="number" value="2" min="1"></td><td><button type="button" class="icon-btn remove-row" aria-label="Remove row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>';
       var shiftRowTemplate = '<td><input type="text" placeholder="Code"></td><td><input type="text" placeholder="Name"></td><td><input type="time" value="09:00"></td><td><input type="time" value="17:00"></td><td><input type="text" placeholder="Dept"></td><td><button type="button" class="icon-btn remove-row" aria-label="Remove shift"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>';
       var termRowTemplate = '<input type="text" placeholder="Term / abbreviation"><input type="text" placeholder="Definition or usage"><button type="button" class="icon-btn remove-term" aria-label="Remove term"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>';
-      var deptCardTemplate = '<div class="dept-card-header"><div class="dept-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div><button type="button" class="icon-btn remove-dept" aria-label="Remove department"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div><input class="dept-name" type="text" placeholder="Department name"><input class="dept-head" type="text" placeholder="Department lead"><input class="dept-contact" type="text" placeholder="Internal contact / extension"><input class="dept-email" type="email" placeholder="Department email"><textarea class="dept-instructions notes-textarea" placeholder="Custom department instructions" style="min-height:64px"></textarea>';
+      var deptCardTemplate = '<div class="dept-card-header"><div class="dept-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div><button type="button" class="icon-btn remove-dept" aria-label="Remove department"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div><input class="dept-name" type="text" placeholder="Department name"><textarea class="dept-instructions notes-textarea" placeholder="Reception notes — write naturally about habits, priorities and how this team works…"></textarea><input class="dept-head" type="hidden" value=""><input class="dept-contact" type="hidden" value=""><input class="dept-email" type="hidden" value="">';
       var inventoryTemplate = '<div class="inventory-item" data-inventory><div class="inventory-item-header"><span class="inventory-item-label">Room entry</span><button type="button" class="icon-btn remove-inventory" aria-label="Remove room"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div><div class="inventory-grid"><div class="inventory-field"><span class="inventory-field-label">Room No. / Name</span><input type="text" placeholder="e.g. 101"></div><div class="inventory-field"><span class="inventory-field-label">Floor</span><input type="text" placeholder="e.g. 1"></div><div class="inventory-field"><span class="inventory-field-label">Room Category</span><select><option>Standard</option><option>Superior</option><option>Deluxe</option><option>Suite</option><option>Accessible</option></select></div><div class="inventory-field"><span class="inventory-field-label">Bathroom Type</span><select><option>En-suite shower</option><option>En-suite bath</option><option>Wet room</option><option>Shared</option></select></div><div class="inventory-field"><span class="inventory-field-label">Max Guests</span><input type="number" value="2" min="1" max="10"></div><div class="inventory-field"><span class="inventory-field-label">Interconnecting</span><input type="text" placeholder="e.g. 102"></div></div><div class="inventory-grid inventory-grid--flags"><label class="inventory-toggle"><input type="checkbox"> Accessible</label><label class="inventory-toggle"><input type="checkbox"> VIP suitable</label></div><div class="inventory-field inventory-field--notes"><span class="inventory-field-label">Operational Notes</span><input type="text" placeholder="e.g. Quiet corridor, away from lift"></div></div>';
 
       var roomFacilityTemplate = '<div class="room-detail-item" data-room-facility><div class="room-detail-item-header"><span class="inventory-item-label">Room entry</span><button type="button" class="icon-btn remove-room-facility" aria-label="Remove room"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div><div class="room-detail-grid"><div class="inventory-field"><span class="inventory-field-label">Room Number</span><input type="text" data-field="roomNo" placeholder="e.g. 101"></div><div class="inventory-field"><span class="inventory-field-label">Room Type</span><input type="text" data-field="roomType" placeholder="e.g. Deluxe King"></div><div class="inventory-field"><span class="inventory-field-label">Floor</span><input type="text" data-field="floor" placeholder="e.g. 2"></div><div class="inventory-field"><span class="inventory-field-label">Bed Type</span><select data-field="bedType"><option value="">Select</option><option>King</option><option>Queen</option><option>Double</option><option>Twin</option><option>Super King</option><option>Sofa bed only</option></select></div><div class="inventory-field"><span class="inventory-field-label">Max Occupancy</span><input type="text" data-field="maxOccupancy" placeholder="e.g. 2"></div><div class="inventory-field"><span class="inventory-field-label">Connecting Room</span><input type="text" data-field="connectingRoom" placeholder="e.g. 102"></div></div><div class="room-detail-flags"><label class="inventory-toggle"><input type="checkbox" data-field="twinCapable"> Twin capable</label><label class="inventory-toggle"><input type="checkbox" data-field="extraBedCapable"> Extra bed capable</label><label class="inventory-toggle"><input type="checkbox" data-field="sofaBed"> Sofa bed</label><label class="inventory-toggle"><input type="checkbox" data-field="bathtub"> Bathtub</label><label class="inventory-toggle"><input type="checkbox" data-field="shower"> Shower</label><label class="inventory-toggle"><input type="checkbox" data-field="accessible"> Accessible</label><label class="inventory-toggle"><input type="checkbox" data-field="streetFacing"> Street facing</label><label class="inventory-toggle"><input type="checkbox" data-field="quietFacing"> Quiet / rear facing</label><label class="inventory-toggle"><input type="checkbox" data-field="darkRoom"> Dark room</label><label class="inventory-toggle"><input type="checkbox" data-field="lowerGround"> Lower ground</label></div><div class="inventory-field inventory-field--notes"><span class="inventory-field-label">Custom Room Notes</span><input type="text" data-field="notes" placeholder="Operational notes for this room"></div></div>';
@@ -2312,7 +2420,9 @@
       function initAccordionStack(stack, attrName, defaults, storagePrefix) {
         if (!stack || stack.getAttribute('data-groups-bound')) return;
         stack.setAttribute('data-groups-bound', '1');
-        var cards = Array.from(stack.querySelectorAll('[' + attrName + ']'));
+        var cards = Array.from(stack.querySelectorAll('[' + attrName + ']')).filter(function (card) {
+          return !card.hidden && card.getAttribute('aria-hidden') !== 'true';
+        });
         cards.forEach(function (card) {
           var groupId = card.getAttribute(attrName);
           var storageKey = storagePrefix + groupId;
@@ -2347,7 +2457,7 @@
         initAccordionStack(
           document.querySelector('.general-groups-stack'),
           'data-general-group',
-          { property: true, contact: false, location: false, branding: false, notes: false },
+          { property: true, more: false, branding: false },
           'hf-general-group-'
         );
       }
@@ -2541,24 +2651,18 @@
       function updateDepartmentsSectionSummary() {
         var el = document.getElementById('departmentsSectionSummary');
         if (!el) return;
-        var deptCount = document.querySelectorAll('#deptGrid [data-dept]').length;
-        var shiftNames = Array.from(document.querySelectorAll('#shiftTableBody tr')).map(function (tr) {
-          var inputs = tr.querySelectorAll('input');
-          if (inputs[1] && String(inputs[1].value || '').trim()) return String(inputs[1].value).trim();
-          if (inputs[0] && String(inputs[0].value || '').trim()) return String(inputs[0].value).trim();
-          return '';
-        }).filter(Boolean);
-        var parts = [];
-        if (deptCount) parts.push(deptCount + ' department' + (deptCount === 1 ? '' : 's'));
-        if (shiftNames.length) {
-          var shiftText = shiftNames.length <= 4
-            ? shiftNames.join(', ')
-            : shiftNames.slice(0, 3).join(', ') + ' and ' + (shiftNames.length - 3) + ' more';
-          parts.push(shiftText + ' shifts');
+        var cards = Array.from(document.querySelectorAll('#deptGrid [data-dept]'));
+        var withNotes = cards.filter(function (card) {
+          var notes = card.querySelector('.dept-instructions');
+          return notes && String(notes.value || '').trim();
+        }).length;
+        if (!cards.length) {
+          el.textContent = 'No departments added';
+          return;
         }
-        el.textContent = parts.length
-          ? parts.join(' · ')
-          : 'No departments added';
+        el.textContent = withNotes
+          ? withNotes + ' of ' + cards.length + ' departments with notes'
+          : cards.length + ' department' + (cards.length === 1 ? '' : 's') + ' — add notes when ready';
       }
 
       function updatePoliciesSectionSummary() {
@@ -2566,7 +2670,7 @@
         if (!el) return;
         var root = document.getElementById('policyStructuredRoot');
         if (!root) return;
-        var filled = root.querySelectorAll('.policy-card.disclosure-card--filled').length;
+        var filled = root.querySelectorAll('.policy-notes-card.disclosure-card--filled, .policy-card.disclosure-card--filled').length;
         el.textContent = filled
           ? filled + ' polic' + (filled === 1 ? 'y' : 'ies') + ' with guidance'
           : 'No policies added';
@@ -2576,22 +2680,19 @@
         var el = document.getElementById('hotelKnowledgeSectionSummary');
         if (!el) return;
         var parts = [];
-        if (String(getInputValue('hkVipRules') || '').trim()) parts.push('VIP rules');
-        if (String(getInputValue('hkCommonTerms') || '').trim()) parts.push('terminology');
-        if (String(getInputValue('hkAiInstructions') || '').trim()) parts.push('AI instructions');
-        if (!parts.length) {
-          var extras = [
-            ['hkGeneralNotes', 'general notes'],
-            ['hkHotelStandards', 'standards'],
-            ['hkOperationalNotes', 'operational notes'],
-            ['hkLocalRecommendations', 'local tips']
-          ];
-          extras.forEach(function (pair) {
-            if (String(getInputValue(pair[0]) || '').trim()) parts.push(pair[1]);
-          });
-        }
+        var fields = [
+          ['hkGuestKnowledge', 'guest intelligence'],
+          ['hkCommonTerms', 'terminology'],
+          ['hkOperationalNotes', 'operational notes'],
+          ['hkAiInstructions', 'AI instructions'],
+          ['hkGeneralNotes', 'general notes'],
+          ['hkLocalRecommendations', 'local tips']
+        ];
+        fields.forEach(function (pair) {
+          if (String(getInputValue(pair[0]) || '').trim()) parts.push(pair[1]);
+        });
         el.textContent = parts.length
-          ? parts.join(' \u00b7 ')
+          ? parts.slice(0, 3).join(' \u00b7 ')
           : 'No hotel knowledge added';
       }
 
@@ -2992,6 +3093,10 @@
       }
 
       function removeLogo() {
+        if (isDemoBrainActive()) {
+          showLogoError(DEMO_BRAIN_WORKSPACE_GATED_TITLE || 'Logo changes are unavailable in Demo Mode.');
+          return;
+        }
         currentLogoDataUrl = '';
         logoPreview.removeAttribute('src');
         logoUpload.classList.remove('logo-upload--has-logo');
@@ -3214,10 +3319,13 @@
       }
 
       function collectHotelKnowledge() {
+        var guestKnowledge = getInputValue('hkGuestKnowledge');
+        var vipRules = getInputValue('hkVipRules');
         return {
           generalNotes: getInputValue('hkGeneralNotes'),
+          guestKnowledge: guestKnowledge,
           hotelStandards: getInputValue('hkHotelStandards'),
-          vipRules: getInputValue('hkVipRules'),
+          vipRules: vipRules || guestKnowledge,
           commonTerms: getInputValue('hkCommonTerms'),
           operationalNotes: getInputValue('hkOperationalNotes'),
           localRecommendations: getInputValue('hkLocalRecommendations'),
@@ -3227,9 +3335,11 @@
 
       function restoreHotelKnowledge(hk) {
         hk = hk || {};
+        var guestKnowledge = hk.guestKnowledge || hk.vipRules || '';
         setInputValue('hkGeneralNotes', hk.generalNotes);
+        setInputValue('hkGuestKnowledge', guestKnowledge);
         setInputValue('hkHotelStandards', hk.hotelStandards);
-        setInputValue('hkVipRules', hk.vipRules);
+        setInputValue('hkVipRules', hk.vipRules || guestKnowledge);
         setInputValue('hkCommonTerms', hk.commonTerms);
         setInputValue('hkOperationalNotes', hk.operationalNotes);
         setInputValue('hkLocalRecommendations', hk.localRecommendations);
@@ -3246,7 +3356,7 @@
       }
 
       function refreshKnowledgeCharCounters() {
-        ['hkGeneralNotes', 'hkHotelStandards', 'hkVipRules', 'hkCommonTerms', 'hkOperationalNotes', 'hkLocalRecommendations', 'hkAiInstructions'].forEach(updateCharCounter);
+        ['hkGeneralNotes', 'hkGuestKnowledge', 'hkCommonTerms', 'hkOperationalNotes', 'hkLocalRecommendations', 'hkAiInstructions'].forEach(updateCharCounter);
       }
 
       function initKnowledgeCharCounters() {
@@ -3668,6 +3778,13 @@
       }
 
       function applyImproveWriting() {
+        if (isDemoBrainActive()) {
+          showSaveError(typeof DEMO_BRAIN_WORKSPACE_GATED_TITLE !== 'undefined'
+            ? DEMO_BRAIN_WORKSPACE_GATED_TITLE
+            : 'Available after creating your hotel workspace.');
+          closeImproveWritingModal();
+          return;
+        }
         if (!improveWritingState.field || !improveWritingState.improved) {
           closeImproveWritingModal();
           return;
@@ -3825,6 +3942,11 @@
       }
 
       function saveRoomNotesFromModal() {
+        if (isDemoBrainActive()) {
+          showSaveError(DEMO_BRAIN_WORKSPACE_GATED_TITLE);
+          closeRoomNotesModal();
+          return;
+        }
         if (!activeRoomNotesRow || !roomNotesModalText) return;
         var notesInput = getRoomNotesInput(activeRoomNotesRow);
         if (!notesInput) {
@@ -3893,30 +4015,43 @@
         return el ? !!el.checked : false;
       }
 
+      function collectPoliciesNotes() {
+        return HPK && HPK.collectPoliciesNotes
+          ? HPK.collectPoliciesNotes(document.getElementById('policyStructuredRoot'))
+          : { checkInOut: '', paymentsOta: '', guestPolicies: '', otherNotes: '' };
+      }
+
       function collectPolicies() {
-        var structured = HPK ? HPK.collectPoliciesStructured(null) : null;
+        var notes = collectPoliciesNotes();
+        var structured = HPK && HPK.syncStructuredFromPoliciesNotes
+          ? HPK.syncStructuredFromPoliciesNotes(notes)
+          : null;
         var legacy = {
-          earlyCheckIn: getInputValue('policyEarlyCheckIn'),
-          lateCheckOut: getInputValue('policyLateCheckOut'),
-          cancellation: getInputValue('policyCancellation'),
-          noShow: getInputValue('policyNoShow'),
-          refund: getInputValue('policyRefund'),
-          deposit: getInputValue('policyDeposit'),
-          guestCompensation: getInputValue('policyGuestCompensation'),
-          lostProperty: getInputValue('policyLostProperty'),
-          keysOrCards: getInputValue('policyKeys'),
-          guestLoanItems: getInputValue('policyGuestLoans'),
-          smoking: getInputValue('policySmoking'),
-          visitors: getInputValue('policyVisitors'),
-          pets: getInputValue('policyPets'),
-          customNotes: getInputValue('policyCustomNotes')
+          earlyCheckIn: notes.checkInOut || getInputValue('policyEarlyCheckIn'),
+          lateCheckOut: notes.checkInOut || getInputValue('policyLateCheckOut'),
+          cancellation: notes.cancellationsNoShows || notes.guestPolicies || getInputValue('policyCancellation'),
+          noShow: notes.cancellationsNoShows || getInputValue('policyNoShow'),
+          refund: notes.refunds || notes.paymentsOta || getInputValue('policyRefund'),
+          deposit: notes.deposits || notes.paymentsOta || getInputValue('policyDeposit'),
+          guestCompensation: notes.otherPaymentNotes || getInputValue('policyGuestCompensation'),
+          lostProperty: notes.lostPropertyLoans || notes.otherNotes || getInputValue('policyLostProperty'),
+          keysOrCards: notes.visitorsSecurity || getInputValue('policyKeys'),
+          guestLoanItems: notes.lostPropertyLoans || getInputValue('policyGuestLoans'),
+          smoking: notes.petsSmoking || notes.guestPolicies || getInputValue('policySmoking'),
+          visitors: notes.visitorsSecurity || getInputValue('policyVisitors'),
+          pets: notes.petsSmoking || notes.guestPolicies || getInputValue('policyPets'),
+          customNotes: (notes.guestPolicies || notes.paymentsOta || notes.otherGuestPolicies || getInputValue('policyCustomNotes') || '')
         };
         if (HPK && structured) legacy = HPK.syncLegacyPoliciesFromStructured(structured, legacy);
         return legacy;
       }
 
       function collectPoliciesStructured() {
-        return HPK ? HPK.collectPoliciesStructured(null) : { guest: {}, payment: {}, operational: {}, custom: {} };
+        var notes = collectPoliciesNotes();
+        if (HPK && HPK.syncStructuredFromPoliciesNotes) {
+          return HPK.syncStructuredFromPoliciesNotes(notes);
+        }
+        return { guest: {}, payment: {}, operational: {}, custom: {} };
       }
 
       function collectOtaPayment() {
@@ -3929,6 +4064,10 @@
       }
 
       function collectGuestServices() {
+        var occasionsList = document.getElementById('gsSpecialOccasionsList');
+        var amenitiesList = document.getElementById('gsWelcomeAmenitiesList');
+        if (occasionsList) syncGsNoteHiddenField(occasionsList);
+        if (amenitiesList) syncGsNoteHiddenField(amenitiesList);
         return {
           airportTransfers: getInputValue('gsAirportTransfers'),
           preferredTaxi: getInputValue('gsPreferredTaxi'),
@@ -3937,8 +4076,8 @@
           luggageStorage: getInputValue('gsLuggageStorage'),
           guestItemLoans: getInputValue('gsGuestItemLoans'),
           restaurantBookings: getInputValue('gsRestaurantBookings'),
-          specialOccasions: getInputValue('gsSpecialOccasions'),
-          welcomeAmenities: getInputValue('gsWelcomeAmenities'),
+          specialOccasions: occasionsList ? collectGsNoteList(occasionsList) : getInputValue('gsSpecialOccasions'),
+          welcomeAmenities: amenitiesList ? collectGsNoteList(amenitiesList) : getInputValue('gsWelcomeAmenities'),
           localRecommendations: getInputValue('gsLocalRecommendations'),
           customInstructions: getInputValue('gsCustomInstructions'),
           loanItems: Array.from(guestLoanList.querySelectorAll('[data-guest-loan]')).map(function (row) {
@@ -4072,6 +4211,7 @@
           facilities: collectFacilities(),
           roomFacilities: collectRoomFacilities(),
           policies: collectPolicies(),
+          policiesNotes: collectPoliciesNotes(),
           policiesStructured: collectPoliciesStructured(),
           otaPayment: collectOtaPayment(),
           otaChannels: collectOtaChannels(),
@@ -4090,30 +4230,24 @@
         var bathShower = 'shower';
         if (data.bathtub && data.shower) bathShower = 'both';
         else if (data.bathtub) bathShower = 'bath';
-        var hasNotes = !!(data.notes && String(data.notes).trim());
         var tr = document.createElement('tr');
         tr.setAttribute('data-room-row', '');
         tr.innerHTML =
           '<td><input data-f="roomNo" placeholder="101" value="' + escAttr(data.roomNo) + '"></td>' +
-          '<td class="col-type"><input data-f="roomType" placeholder="Type code" value="' + escAttr(data.roomType) + '"></td>' +
+          '<td class="col-type"><input data-f="roomType" placeholder="e.g. Deluxe King" value="' + escAttr(data.roomType) + '"></td>' +
           '<td><input data-f="floor" placeholder="2" value="' + escAttr(data.floor) + '"></td>' +
-          '<td><input data-f="bedType" placeholder="King" value="' + escAttr(data.bedType) + '"></td>' +
-          '<td class="col-check"><input type="checkbox" data-f="twinCapable"' + (data.twinCapable ? ' checked' : '') + '></td>' +
-          '<td class="col-check"><input type="checkbox" data-f="extraBedCapable"' + (data.extraBedCapable ? ' checked' : '') + '></td>' +
-          '<td><select data-f="facing"><option value="shower"' + (bathShower === 'shower' || bathShower === 'both' ? ' selected' : '') + '>Shower</option><option value="bath"' + (bathShower === 'bath' ? ' selected' : '') + '>Bath</option><option value="both"' + (bathShower === 'both' ? ' selected' : '') + '>Both</option></select></td>' +
-          '<td><select data-f="viewFacing"><option value="">—</option><option value="street"' + (data.streetFacing ? ' selected' : '') + '>Street</option><option value="quiet"' + (data.quietFacing ? ' selected' : '') + '>Quiet / rear</option></select></td>' +
-          '<td><input data-f="maxOccupancy" placeholder="2" value="' + escAttr(data.maxOccupancy) + '"></td>' +
-          '<td class="col-notes"><button type="button" class="btn-text room-notes-btn">Details<span class="room-notes-indicator' + (hasNotes ? ' has-notes' : '') + '" aria-hidden="true"></span></button></td>' +
-          '<td class="col-actions"><button type="button" class="btn-text toggle-room-details">More</button><button type="button" class="icon-btn remove-room-row" aria-label="Delete room"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>';
-        var notesInput = document.createElement('input');
-        notesInput.type = 'hidden';
-        notesInput.setAttribute('data-f', 'notes');
-        notesInput.value = data.notes || '';
-        tr.appendChild(notesInput);
+          '<td class="col-notes"><input data-f="notes" placeholder="Quiet rear, twin capable…" value="' + escAttr(data.notes) + '"></td>' +
+          '<td class="col-actions"><button type="button" class="btn-text toggle-room-details">More</button><button type="button" class="icon-btn remove-room-row" aria-label="Delete room"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>' +
+          '<td hidden><input data-f="bedType" value="' + escAttr(data.bedType) + '">' +
+          '<input type="checkbox" data-f="twinCapable"' + (data.twinCapable ? ' checked' : '') + '>' +
+          '<input type="checkbox" data-f="extraBedCapable"' + (data.extraBedCapable ? ' checked' : '') + '>' +
+          '<select data-f="facing"><option value="shower"' + (bathShower === 'shower' || bathShower === 'both' ? ' selected' : '') + '>Shower</option><option value="bath"' + (bathShower === 'bath' ? ' selected' : '') + '>Bath</option><option value="both"' + (bathShower === 'both' ? ' selected' : '') + '>Both</option></select>' +
+          '<select data-f="viewFacing"><option value="">—</option><option value="street"' + (data.streetFacing ? ' selected' : '') + '>Street</option><option value="quiet"' + (data.quietFacing ? ' selected' : '') + '>Quiet / rear</option></select>' +
+          '<input data-f="maxOccupancy" value="' + escAttr(data.maxOccupancy) + '"></td>';
         var detailsTr = document.createElement('tr');
         detailsTr.className = 'room-details-row';
         detailsTr.hidden = true;
-        detailsTr.innerHTML = '<td colspan="11"><div class="room-details-panel">' +
+        detailsTr.innerHTML = '<td colspan="5"><div class="room-details-panel">' +
           '<label class="inventory-toggle"><input type="checkbox" data-f="accessible"' + (data.accessible ? ' checked' : '') + '> Accessible</label>' +
           '<label class="inventory-toggle"><input type="checkbox" data-f="sofaBed"' + (data.sofaBed ? ' checked' : '') + '> Sofa bed</label>' +
           '<input data-f="connectingRoom" placeholder="Connecting room" value="' + escAttr(data.connectingRoom) + '">' +
@@ -4219,6 +4353,84 @@
         return row;
       }
 
+      function splitGsNotes(text) {
+        var raw = String(text || '').trim();
+        if (!raw) return [''];
+        if (raw.indexOf('\n\n') !== -1) {
+          return raw.split(/\n\n+/).map(function (part) { return part.trim(); }).filter(Boolean);
+        }
+        var lines = raw.split(/\n/).map(function (line) { return line.trim(); }).filter(Boolean);
+        if (lines.length > 1 && lines.every(function (line) { return line.length < 160; })) {
+          return lines;
+        }
+        return [raw];
+      }
+
+      function collectGsNoteList(listEl) {
+        if (!listEl) return '';
+        return Array.from(listEl.querySelectorAll('[data-gs-note] textarea'))
+          .map(function (ta) { return String(ta.value || '').trim(); })
+          .filter(Boolean)
+          .join('\n\n');
+      }
+
+      function syncGsNoteHiddenField(listEl) {
+        if (!listEl) return;
+        var field = listEl.getAttribute('data-gs-note-field');
+        var id = field === 'specialOccasions'
+          ? 'gsSpecialOccasions'
+          : field === 'welcomeAmenities'
+            ? 'gsWelcomeAmenities'
+            : '';
+        if (!id) return;
+        setInputValue(id, collectGsNoteList(listEl));
+      }
+
+      function buildGsNoteItem(text, placeholder) {
+        var item = document.createElement('div');
+        item.className = 'gs-note-item';
+        item.setAttribute('data-gs-note', '');
+        var ta = document.createElement('textarea');
+        ta.className = 'notes-textarea';
+        ta.rows = 3;
+        ta.placeholder = placeholder || 'Write a short note…';
+        ta.value = text || '';
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'icon-btn remove-gs-note';
+        btn.setAttribute('aria-label', 'Remove note');
+        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+        item.appendChild(ta);
+        item.appendChild(btn);
+        return item;
+      }
+
+      function renderGsNoteList(listEl, text, placeholder) {
+        if (!listEl) return;
+        listEl.innerHTML = '';
+        var notes = splitGsNotes(text);
+        if (!notes.length) notes = [''];
+        notes.forEach(function (note) {
+          listEl.appendChild(buildGsNoteItem(note, placeholder));
+        });
+        syncGsNoteHiddenField(listEl);
+      }
+
+      function gsNoteListPlaceholder(listId) {
+        var btn = document.querySelector('.gs-add-note-btn[data-gs-note-list="' + listId + '"]');
+        return btn ? (btn.getAttribute('data-gs-note-placeholder') || '') : '';
+      }
+
+      function ensureGsNoteListsSeeded() {
+        ['gsSpecialOccasionsList', 'gsWelcomeAmenitiesList'].forEach(function (id) {
+          var list = document.getElementById(id);
+          if (!list) return;
+          if (!list.querySelector('[data-gs-note]')) {
+            renderGsNoteList(list, '', gsNoteListPlaceholder(id));
+          }
+        });
+      }
+
       function buildEmailRecipientRow(data) {
         var wrap = document.createElement('div');
         wrap.innerHTML = emailRecipientTemplate;
@@ -4291,6 +4503,16 @@
         setInputValue('gsLuggageStorage', gs.luggageStorage);
         setInputValue('gsGuestItemLoans', gs.guestItemLoans);
         setInputValue('gsRestaurantBookings', gs.restaurantBookings);
+        renderGsNoteList(
+          document.getElementById('gsSpecialOccasionsList'),
+          gs.specialOccasions,
+          gsNoteListPlaceholder('gsSpecialOccasionsList')
+        );
+        renderGsNoteList(
+          document.getElementById('gsWelcomeAmenitiesList'),
+          gs.welcomeAmenities,
+          gsNoteListPlaceholder('gsWelcomeAmenitiesList')
+        );
         setInputValue('gsSpecialOccasions', gs.specialOccasions);
         setInputValue('gsWelcomeAmenities', gs.welcomeAmenities);
         setInputValue('gsLocalRecommendations', gs.localRecommendations);
@@ -4428,7 +4650,10 @@
         }
 
         deptGrid.innerHTML = '';
-        (data.departments && data.departments.length ? data.departments : []).forEach(function (dept) {
+        var deptSource = (data.departments && data.departments.length)
+          ? data.departments
+          : ((HPK && HPK.DEFAULT_DEPARTMENTS) ? HPK.DEFAULT_DEPARTMENTS : []);
+        deptSource.forEach(function (dept) {
           deptGrid.appendChild(buildDeptCard(dept));
         });
 
@@ -4503,6 +4728,7 @@
         syncOtaCacheFromData({});
         refreshKnowledgeUI({});
         if (HPO && HPO.renderOperationalKnowledgeUI) HPO.renderOperationalKnowledgeUI({});
+        ensureGsNoteListsSeeded();
         updateRoomsSummary();
         setRoomsEditorOpen(false);
         toggleEmptyStates();
@@ -4569,11 +4795,15 @@
       var demoBrainObserverTimer = null;
       var demoBrainApplying = false;
 
+      var DEMO_BRAIN_WORKSPACE_GATED_TITLE = 'Available after creating your hotel workspace.';
       var DEMO_BRAIN_MUTATION_SELECTOR = [
         '#saveBtn',
         '#exportProfileBtn',
         '#importProfileBtn',
         '#importProfileInput',
+        '#downloadPdfBtn',
+        '#printProfileBtn',
+        '#hotelBrainBackupActions',
         '#logoUpload',
         '#logoInput',
         '#logoDelete',
@@ -4596,9 +4826,11 @@
         '#demoModePanel',
         '#devSamplePanel',
         '#improveWritingModal',
+        '#roomNotesModal',
         '.improve-writing-btn',
         '.ai-polish-btn',
         '.add-row-btn',
+        '.gs-add-note-btn',
         '.facility-add-row',
         '.facility-remove',
         '.logo-delete-btn',
@@ -4612,6 +4844,7 @@
         '.remove-guest-loan',
         '.remove-guest-supplier',
         '.remove-email-recipient',
+        '.remove-gs-note',
         '.icon-btn.remove-row',
         '.rooms-table .btn-text',
         '.col-actions',
@@ -4625,6 +4858,8 @@
         'button[aria-label*="Upload"]',
         'button[aria-label*="Import"]',
         'button[aria-label*="Export"]',
+        'button[aria-label*="Download"]',
+        'button[aria-label*="Print"]',
         'button[aria-label*="Improve Writing"]',
         'button[aria-label*="Polish"]'
       ].join(', ');
@@ -4633,18 +4868,20 @@
         if (!el || !el.closest) return false;
         if (el.closest('#hfDemoBrainSetupActions')) return true;
         if (el.closest('.nav-back-handover')) return true;
+        if (el.closest('.topnav')) return true;
         if (el.closest('.profile-sidebar')) return true;
         if (el.closest('.sidebar')) return true;
         if (el.closest('.section-nav')) return true;
         if (el.closest('.mobile-nav')) return true;
         if (el.closest('.profile-card-header[data-collapse-toggle]')) return true;
-        if (el.hasAttribute && el.hasAttribute('data-profile-nav')) return true;
-        if (el.classList && el.classList.contains('disclosure-card-toggle')) return true;
-        if (el.classList && el.classList.contains('supply-item-toggle')) return true;
-        if (el.classList && el.classList.contains('collapse-toggle')) return true;
-        if (el.classList && el.classList.contains('section-nav-group-toggle')) return true;
-        if (el.classList && el.classList.contains('section-nav-link')) return true;
-        if (el.classList && el.classList.contains('mobile-nav-link')) return true;
+        if (el.closest('[data-profile-nav]')) return true;
+        if (el.closest('.disclosure-card-toggle')) return true;
+        if (el.closest('.supply-item-toggle')) return true;
+        if (el.closest('.collapse-toggle')) return true;
+        if (el.closest('.section-nav-group-toggle')) return true;
+        if (el.closest('.section-nav-link')) return true;
+        if (el.closest('.mobile-nav-link')) return true;
+        if (el.closest('.hf-demo-banner')) return true;
         return false;
       }
 
@@ -4680,6 +4917,10 @@
             el.setAttribute('data-demo-brain-contenteditable', '1');
           }
           if (el.type === 'checkbox' || el.type === 'radio' || el.tagName === 'SELECT' || el.type === 'file') {
+            if (!el.hasAttribute('data-demo-brain-was-disabled')) {
+              el.setAttribute('data-demo-brain-was-disabled', el.disabled ? '1' : '0');
+            }
+            el.disabled = true;
             el.setAttribute('aria-disabled', 'true');
           } else {
             el.setAttribute('aria-readonly', 'true');
@@ -4692,6 +4933,10 @@
           if (el.getAttribute('data-demo-brain-contenteditable') === '1') {
             el.setAttribute('contenteditable', 'true');
             el.removeAttribute('data-demo-brain-contenteditable');
+          }
+          if (el.hasAttribute('data-demo-brain-was-disabled')) {
+            el.disabled = el.getAttribute('data-demo-brain-was-disabled') === '1';
+            el.removeAttribute('data-demo-brain-was-disabled');
           }
           el.removeAttribute('aria-readonly');
           el.removeAttribute('aria-disabled');
@@ -4790,7 +5035,7 @@
               saveBtn.hidden = true;
               saveBtn.disabled = true;
               saveBtn.setAttribute('aria-disabled', 'true');
-              saveBtn.title = 'Saving is unavailable in Demo Mode';
+              saveBtn.title = 'Saving is unavailable in Demo Mode. ' + DEMO_BRAIN_WORKSPACE_GATED_TITLE;
               if (saveBtnLabel) saveBtnLabel.textContent = 'Save disabled in Demo';
             } else {
               saveBtn.hidden = false;
@@ -4800,6 +5045,9 @@
               if (saveBtnLabel) saveBtnLabel.textContent = saveBtnDefaultLabel;
             }
           }
+
+          var backupNote = document.getElementById('hfDemoBackupUnavailableNote');
+          if (backupNote) backupNote.hidden = !demo;
 
           document.querySelectorAll(
             'main input:not([type="hidden"]), main textarea, main select, main [contenteditable="true"]'
@@ -4824,8 +5072,9 @@
               (el.getAttribute('aria-label') || '') + ' ' + (el.textContent || '')
             ).toLowerCase();
             if (
-              /\b(save|delete|remove|add|upload|import|export|reset|improve|polish|rewrite|edit)\b/.test(label) ||
+              /\b(save|delete|remove|add|upload|import|export|download|print|pdf|backup|reset|improve|polish|rewrite|edit)\b/.test(label) ||
               el.classList.contains('add-row-btn') ||
+              el.classList.contains('gs-add-note-btn') ||
               el.classList.contains('improve-writing-btn') ||
               el.classList.contains('ai-polish-btn') ||
               el.classList.contains('icon-btn')
@@ -5035,6 +5284,29 @@
         }
       }, true);
 
+      /* Capture-phase block for write/export/print controls still reachable in Demo. */
+      document.addEventListener('click', function (event) {
+        if (!isDemoBrainActive()) return;
+        var t = event.target;
+        if (!t || !t.closest) return;
+        if (t.closest('#hfDemoBrainSetupActions') || t.closest('.nav-back-handover')) return;
+        if (isDemoBrainNavControl(t)) return;
+        var control = t.closest(DEMO_BRAIN_MUTATION_SELECTOR);
+        if (!control) {
+          var btn = t.closest('button, [role="button"], a');
+          if (!btn || !btn.closest('main')) return;
+          var label = String((btn.getAttribute('aria-label') || '') + ' ' + (btn.textContent || '')).toLowerCase();
+          if (!/\b(save|delete|remove|add|upload|import|export|download|print|pdf|backup|improve|polish)\b/.test(label)) {
+            return;
+          }
+          control = btn;
+        }
+        if (!control || isDemoBrainNavControl(control)) return;
+        event.preventDefault();
+        event.stopPropagation();
+        showSaveError(DEMO_BRAIN_WORKSPACE_GATED_TITLE);
+      }, true);
+
       window.addEventListener('hf-demo-mode-change', function () {
         syncHotelBrainHandoverLinks();
         applyHotelBrainDemoReadOnlyState();
@@ -5043,6 +5315,10 @@
       var loadZetterSampleBtn = document.getElementById('loadZetterSampleBtn');
       if (loadZetterSampleBtn && HPO) {
         loadZetterSampleBtn.addEventListener('click', function () {
+          if (isDemoBrainActive()) {
+            showSaveError(DEMO_BRAIN_WORKSPACE_GATED_TITLE);
+            return;
+          }
           if (!isHotelBrainDevToolsEnabled()) {
             var statusEl = document.getElementById('zetterSampleStatus');
             if (statusEl) statusEl.textContent = 'Sample data is only available in local development or authorised operator mode.';
@@ -5135,6 +5411,10 @@
       if (downloadPdfBtn) {
         downloadPdfBtn.addEventListener('click', function () {
           closeMoreActions();
+          if (isDemoBrainActive()) {
+            showSaveError(DEMO_BRAIN_WORKSPACE_GATED_TITLE);
+            return;
+          }
           if (!HPE) { showSaveError('PDF export is not available'); return; }
           HPE.downloadProfilePdf(collectProfileData());
         });
@@ -5143,6 +5423,10 @@
       if (printProfileBtn) {
         printProfileBtn.addEventListener('click', function () {
           closeMoreActions();
+          if (isDemoBrainActive()) {
+            showSaveError(DEMO_BRAIN_WORKSPACE_GATED_TITLE);
+            return;
+          }
           if (!HPE) { showSaveError('Print is not available'); return; }
           HPE.printProfile(collectProfileData());
         });
@@ -5379,6 +5663,44 @@
         btn.closest('[data-guest-loan]').remove();
         toggleEmptyStates();
         markUnsaved();
+      });
+
+      ensureGsNoteListsSeeded();
+      document.querySelectorAll('.gs-add-note-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var listId = btn.getAttribute('data-gs-note-list');
+          var list = listId ? document.getElementById(listId) : null;
+          if (!list) return;
+          list.appendChild(buildGsNoteItem('', btn.getAttribute('data-gs-note-placeholder') || ''));
+          syncGsNoteHiddenField(list);
+          updateSectionSummaries();
+          markUnsaved();
+          var ta = list.querySelector('[data-gs-note]:last-child textarea');
+          if (ta) ta.focus();
+        });
+      });
+      document.querySelectorAll('.gs-note-list').forEach(function (list) {
+        list.addEventListener('click', function (e) {
+          var btn = e.target.closest('.remove-gs-note');
+          if (!btn) return;
+          var item = btn.closest('[data-gs-note]');
+          if (!item) return;
+          if (list.querySelectorAll('[data-gs-note]').length <= 1) {
+            var ta = item.querySelector('textarea');
+            if (ta) ta.value = '';
+          } else {
+            item.remove();
+          }
+          syncGsNoteHiddenField(list);
+          updateSectionSummaries();
+          markUnsaved();
+        });
+        list.addEventListener('input', function (e) {
+          if (!e.target.closest('[data-gs-note] textarea')) return;
+          syncGsNoteHiddenField(list);
+          updateSectionSummaries();
+          markUnsaved();
+        });
       });
 
       var addGuestSupplierBtn = document.getElementById('addGuestSupplier');

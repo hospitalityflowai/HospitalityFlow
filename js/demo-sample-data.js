@@ -491,13 +491,12 @@
         instructions: "Use British English. Keep handovers short and operational — fix spelling/grammar, cut repetition, prefer scan-friendly lines over long paragraphs. Include room numbers. Never invent facts."
       },
       departments: [
-        { name: "Reception", head: "", contact: "", email: "", instructions: "Front office and guest-facing operations." },
-        { name: "Night Team", head: "", contact: "", email: "", instructions: "Night shift operations and End of Day." },
-        { name: "Duty Management", head: "", contact: "", email: "", instructions: "Duty Managers cover AM, PM and Middle shifts." },
-        { name: "Housekeeping", head: "", contact: "", email: "", instructions: "Room cleaning and release coordination." },
-        { name: "Maintenance", head: "", contact: "", email: "", instructions: "Maintenance and engineering follow-up." },
-        { name: "Food and Beverage", head: "", contact: "", email: "", instructions: "Restaurant, bar and breakfast." },
-        { name: "Management", head: "", contact: "", email: "", instructions: "Management oversight and escalation." }
+        { name: "Reception", head: "", contact: "", email: "", instructions: "Front office owns arrivals, departures and guest-facing requests. Pass unresolved folios and transfers clearly to the next shift." },
+        { name: "Housekeeping", head: "", contact: "", email: "", instructions: "Start departure cleans on upper floors first. Release rooms promptly and flag VIP rooms for inspection." },
+        { name: "Maintenance", head: "", contact: "", email: "", instructions: "Prioritise guest-impacting issues first. Keep Room 24 AC on the open list until resolved." },
+        { name: "Food & Beverage", head: "", contact: "", email: "", instructions: "Restaurant, bar and breakfast. Confirm special dietary notes and VIP welcome amenities with Reception." },
+        { name: "Night Team", head: "", contact: "", email: "", instructions: "Night shift and End of Day. Confirm late arrivals, wake-up calls and overnight maintenance ownership." },
+        { name: "Management", head: "", contact: "", email: "", instructions: "Duty Managers cover AM, PM and Middle. Escalate compensation and VIP exceptions here." }
       ],
       shifts: {
         pattern: "8hour",
@@ -548,12 +547,13 @@
       ],
       hotelKnowledge: {
         generalNotes: "The Oakwood Mayfair is an 80-room independent boutique hotel in London. Hotel Brain holds the hotel’s growing operational memory — knowledge, preferences and patterns that make AI Shift Handover more useful over time.",
-        hotelStandards: "Professional, warm, clear and concise. Pass operational issues with ownership and follow-up. Never invent guest information.",
+        guestKnowledge: "Ms Eleanor Whitmore prefers quiet upper-floor Junior Suites and a handwritten welcome card.\nVIP arrivals receive champagne amenities where noted.\nRegular guests should never be offered accessible rooms unless requested.\nConfirm invoice discounts for corporate VIP stays.",
+        hotelStandards: "",
         vipRules: "Review VIP notes before arrival. Confirm quiet upper-floor allocation where requested. Prepare welcome card and amenities. Confirm invoice discounts.",
-        commonTerms: "CD = Classic Double\nDK = Deluxe King\nJS = Junior Suite\nAK = Accessible King",
-        operationalNotes: "Consolidate fragmented shift notes into one clear handover without replacing the PMS. Hotel Brain builds context as information is added.",
-        localRecommendations: "Mayfair and Green Park are within walking distance.",
-        aiInstructions: "Use British English. Prioritise unresolved and urgent matters. Include room numbers. Never invent facts."
+        commonTerms: "VC = Virtual Card\nLCO = Late Check-out\nECI = Early Check-in\nCD = Classic Double\nDK = Deluxe King\nJS = Junior Suite\nAK = Accessible King\nOOO = Out of Order",
+        operationalNotes: "Maintenance prioritises guest-impacting issues first.\nHousekeeping starts departures on upper floors.\nConsolidate fragmented shift notes into one clear handover without replacing the PMS.",
+        localRecommendations: "Restaurants around Mayfair and Green Park.\nPreferred taxi: Addison Lee.\nGreen Park and Hyde Park are within walking distance.\nNearest pharmacy on Piccadilly.",
+        aiInstructions: "Prioritise guest-impacting issues.\nAvoid generic recommendations.\nUse Hotel Brain / Guest Intelligence only when relevant.\nKeep recommendations concise.\nNever invent guest preferences.\nNever apply one guest's notes to another.\nUse British English.\nInclude room numbers."
       },
       guestServices: {
         airportTransfers: "Record transfer time, supplier and guest details. Pass unresolved transfers to the next shift.",
@@ -572,35 +572,51 @@
         { name: "Travel adapters", category: "Guest loan items", minStock: "5", guestCharge: "20", loanItem: "yes" }
       ],
       otaChannels: [
-        { type: "expedia", label: "Expedia", specialInstructions: "Charging may complete after 05:00 on arrival day — verify with management." },
-        { type: "bookingCom", label: "Booking.com", specialInstructions: "Prepaid bookings common; verify open balances and city tax." }
-      ],
-      policiesStructured: {
-        guest: {
-          earlyCheckIn: {
-            title: "Early check-in",
-            summary: "Cannot be guaranteed; offer when rooms are ready.",
-            instructions: "Early check-in is not guaranteed. Offer when a clean room is available, or suggest booking the night before."
-          },
-          lateCheckOut: {
-            title: "Late check-out",
-            summary: "Subject to occupancy and Duty Manager approval.",
-            instructions: "Approve late check-out when occupancy allows. Record the approved time on the handover."
-          }
+        {
+          type: "bookingCom",
+          label: "Booking.com",
+          notes: "Virtual cards activate after 05:00 on arrival day.\nPay at Hotel reservations are charged at check-in.\nAlways check whether breakfast remains after a booking modification.\nVerify open balances and city tax."
         },
-        operational: {
-          physicalKeys: {
-            title: "Physical keys",
-            summary: "Issue, track and follow up unreturned keys.",
-            instructions: "Issue keys at check-in. Track unreturned keys. Replacement charge £150.",
-            charge: "£150"
-          },
-          smoking: {
-            title: "Smoking",
-            summary: "Prohibited throughout the hotel.",
-            instructions: "Smoking is prohibited throughout the hotel. Report room smoking to Duty Manager and follow cleaning charge procedure."
-          }
+        {
+          type: "expedia",
+          label: "Expedia",
+          notes: "Expedia virtual cards activate after 05:00.\nCharging may complete after 05:00 on arrival day — verify with management."
+        },
+        {
+          type: "direct",
+          label: "Direct Bookings",
+          notes: "Direct bookings are prepaid or guaranteed by card. Offer the preferred rate when available."
+        },
+        {
+          type: "corporate",
+          label: "Corporate Bookings",
+          notes: "Corporate accounts are invoiced weekly. Confirm purchase order numbers at check-in."
+        },
+        {
+          type: "other",
+          label: "Other Channels",
+          notes: "Agency bookings — confirm payment timing before issuing keys."
         }
+      ],
+      policiesNotes: {
+        checkInOut: "Early check-in is not guaranteed — offer when a clean room is available, or suggest booking the night before.\nLate check-out depends on occupancy and Duty Manager approval. Record the approved time on the handover.",
+        cancellationsNoShows: "Cancellations within 24 hours are charged one night unless Management approves a waiver.\nNo-shows follow the same charge — note the reason on the handover.",
+        visitorsSecurity: "Visitors must sign in at Reception after 22:00.\nPhysical key replacement charge £150. Issue keys at check-in and track unreturned keys.",
+        petsSmoking: "Pets are not accepted unless pre-approved by Management.\nSmoking is prohibited throughout the hotel. Report room smoking to Duty Manager and follow cleaning charge procedure.",
+        lostPropertyLoans: "Lost property is held for 90 days.\nTravel adapters are loaned with a £20 deposit and tracked by room.",
+        otherGuestPolicies: "VIP arrivals receive champagne amenities where noted.",
+        deposits: "A deposit equal to the first night is taken for unguaranteed direct reservations.",
+        refunds: "Refunds are processed within 5–7 working days after Duty Manager approval.",
+        preAuthorisations: "Pre-authorise one night plus £50 incidentals for walk-in guests where policy requires.",
+        cashHandling: "Cash float is £200 and must be counted each shift.",
+        invoicing: "Corporate invoices are emailed within 24 hours of departure.",
+        otherPaymentNotes: "City tax is collected at check-in unless prepaid through the channel."
+      },
+      policiesStructured: {
+        guest: {},
+        payment: {},
+        operational: {},
+        custom: {}
       },
       operationsTrackers: [
         { key: "physicalKeys", label: "Physical keys", enabled: true },

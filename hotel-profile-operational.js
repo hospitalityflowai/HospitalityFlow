@@ -468,7 +468,7 @@
     ], true);
 
     out.hotelKnowledge = mergeObjectFields(out.hotelKnowledge, samplePatch.hotelKnowledge, [
-      "generalNotes", "hotelStandards", "vipRules", "commonTerms",
+      "generalNotes", "guestKnowledge", "hotelStandards", "vipRules", "commonTerms",
       "operationalNotes", "localRecommendations", "aiInstructions"
     ], true);
 
@@ -1255,12 +1255,18 @@
       if (!channel) return;
       var label = trimText(channel.label) || trimText(channel.type);
       if (!label) return;
+      var notes = trimText(channel.notes);
+      if (notes) {
+        lines.push(label + " notes: " + notes);
+        return;
+      }
       var parts = [label];
       if (trimText(channel.paymentModel)) parts.push("payment: " + trimText(channel.paymentModel));
       if (trimText(channel.prepaidOrPayAtProperty)) parts.push(trimText(channel.prepaidOrPayAtProperty));
       if (trimText(channel.refundable)) parts.push("refundable: " + trimText(channel.refundable));
+      if (trimText(channel.virtualCardActivation)) parts.push("virtual-card activation: " + trimText(channel.virtualCardActivation));
       if (trimText(channel.specialInstructions)) parts.push(trimText(channel.specialInstructions));
-      lines.push(parts.join(" · "));
+      if (parts.length > 1) lines.push(parts.join(" · "));
     });
     var otaPayment = (profile && profile.otaPayment) || {};
     Object.keys(otaPayment).forEach(function (key) {
@@ -1298,14 +1304,52 @@
       trimText(general.brandVoice ? "Brand voice: " + general.brandVoice : "")
     ].filter(Boolean).join("\n");
 
+    var policyNotes = profile.policiesNotes || {};
+    var policyNoteLabels = [
+      ['checkInOut', 'Check-in and Check-out'],
+      ['cancellationsNoShows', 'Cancellations and No-shows'],
+      ['visitorsSecurity', 'Visitors and Security'],
+      ['petsSmoking', 'Pets and Smoking'],
+      ['lostPropertyLoans', 'Lost Property and Loan Items'],
+      ['otherGuestPolicies', 'Other Guest Policies'],
+      ['deposits', 'Deposits'],
+      ['refunds', 'Refunds'],
+      ['preAuthorisations', 'Pre-authorisations'],
+      ['cashHandling', 'Cash Handling'],
+      ['invoicing', 'Invoicing'],
+      ['otherPaymentNotes', 'Other Payment Notes'],
+      /* Legacy aggregate keys if finer boxes empty */
+      ['paymentsOta', 'Payments & OTA'],
+      ['guestPolicies', 'Guest Policies'],
+      ['otherNotes', 'Other Notes']
+    ];
+    var policyNotesLines = [];
+    var seenPolicyText = {};
+    policyNoteLabels.forEach(function (pair) {
+      var text = trimText(policyNotes[pair[0]]);
+      if (!text || seenPolicyText[text]) return;
+      seenPolicyText[text] = true;
+      policyNotesLines.push(pair[1] + ": " + text);
+    });
+    if (policyNotesLines.length) {
+      policyLines = policyNotesLines;
+    }
+
+    var guestKnowledge = trimText(hk.guestKnowledge) || trimText(hk.vipRules);
+
     var internalSections = [];
     if (trimText(general.hotelName)) internalSections.push("Hotel: " + general.hotelName);
     if (trimText(general.hotelType)) internalSections.push("Hotel type: " + general.hotelType);
     if (trimText(general.totalRooms)) internalSections.push("Total rooms: " + general.totalRooms);
     if (trimText(general.operatingNotes)) internalSections.push("Operating notes: " + general.operatingNotes);
-    if (trimText(hk.generalNotes)) internalSections.push("Hotel standards context: " + hk.generalNotes);
+    if (trimText(hk.generalNotes)) internalSections.push("Hotel Intelligence — general notes: " + hk.generalNotes);
     if (trimText(hk.hotelStandards)) internalSections.push("Hotel standards: " + hk.hotelStandards);
-    if (trimText(hk.vipRules)) internalSections.push("VIP house rules: " + hk.vipRules);
+    if (guestKnowledge) {
+      internalSections.push(
+        "Guest Intelligence (apply only when relevant to a matching guest or situation; " +
+        "never invent preferences or apply one guest's notes to another): " + guestKnowledge
+      );
+    }
     if (trimText(hk.operationalNotes)) {
       internalSections.push(
         (hasOperationalKnowledge ? "House context (not primary action source): " : "Operational notes: ") +
@@ -1359,9 +1403,11 @@
       "; dateFormat=" + (profile.aiPrefs && profile.aiPrefs.dateFormat || "DD/MM/YYYY (24-hour)")
     );
     internalSections.push(
-      "Source of truth: Operational Knowledge for actions; Policies for approval limits; " +
-      "Guest Services for how services are delivered; Hotel Knowledge for standards and house rules. " +
-      "Only use facts present in shift notes. Never invent guest details, room events, or policy outcomes."
+      "Source of truth: Hotel Intelligence (policies, departments, operational notes, terminology) for how the hotel operates; " +
+      "Guest Intelligence for individual guest preferences only when relevant; " +
+      "Guest Services for how services are delivered. " +
+      "Only use facts present in shift notes or clearly matched Hotel Brain knowledge. " +
+      "Never invent guest preferences, never apply one guest's notes to another, and avoid repeating irrelevant Hotel Brain facts."
     );
 
     if (profile.roomFacilities && profile.roomFacilities.length) {
@@ -1388,7 +1434,6 @@
       .map(function (dept) {
         if (!dept || !trimText(dept.name)) return "";
         var line = dept.name;
-        if (trimText(dept.head)) line += " (lead: " + trimText(dept.head) + ")";
         if (trimText(dept.instructions)) line += " — " + trimText(dept.instructions);
         return line;
       })

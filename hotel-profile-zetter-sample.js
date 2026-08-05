@@ -403,12 +403,13 @@
       terminology: buildTerminology(),
       hotelKnowledge: {
         generalNotes: "The Zetter Marylebone is a 24-room independent luxury boutique hotel. Service is highly personalised and shift communication is critical.",
-        hotelStandards: "Professional, warm, clear and concise communication. Pass operational issues with ownership and follow-up. Never invent guest information.",
+        guestKnowledge: "Review VIP notes before arrival. Confirm room allocation, welcome cards and amenities. Brief the next shift. Confirm benefits, discounts and invoice instructions.",
+        hotelStandards: "",
         vipRules: "Review VIP notes before arrival. Confirm room allocation, welcome cards and amenities. Brief the next shift. Confirm benefits, discounts and invoice instructions.",
-        commonTerms: "DDB = Deluxe Double\nDDK = Deluxe King\nJNS = Junior Suite\nLL = Lear's Loft",
-        operationalNotes: "Information is fragmented across Opera, email, handover notes, the operational board and Daily Line-Up. Consolidate clearly without replacing the PMS.",
+        commonTerms: "DDB = Deluxe Double\nDDK = Deluxe King\nJNS = Junior Suite\nLL = Lear's Loft\nLCO = Late Check-out\nECI = Early Check-in",
+        operationalNotes: "Professional, warm, clear and concise communication. Pass operational issues with ownership and follow-up.\nInformation is fragmented across Opera, email, handover notes, the operational board and Daily Line-Up. Consolidate clearly without replacing the PMS.",
         localRecommendations: "",
-        aiInstructions: "Use British English. Be concise but operationally complete. Prioritise unresolved and urgent matters. Include room numbers and timing where provided. Never invent facts. Never assume a task was completed. Avoid duplicating the same issue across sections."
+        aiInstructions: "Prioritise guest-impacting issues. Use British English. Be concise but operationally complete. Include room numbers and timing where provided. Never invent facts. Never assume a task was completed. Avoid duplicating the same issue across sections."
       },
       guestServices: {
         airportTransfers: "Record transfer time, supplier and guest details. Pass unresolved transfers to the next shift.",

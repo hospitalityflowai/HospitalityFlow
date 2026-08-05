@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="AI Shift Handover for independent and boutique hotels. Transform scattered shift notes into clear operational handovers, powered by the Hotel Brain.">
-  <title>Hospitality Flow | AI Shift Handover for Boutique Hotels</title>
+  <meta name="description" content="Hospitality Flow learns your hotel and your guests — then powers AI Shift Handover through Hotel Brain. Built for independent and boutique hotels.">
+  <title>Hospitality Flow | Hotel Brain &amp; AI Shift Handover</title>
   <meta property="og:type" content="website">
-  <meta property="og:title" content="Hospitality Flow | AI Shift Handover for Boutique Hotels">
-  <meta property="og:description" content="AI Shift Handover for independent and boutique hotels. Transform scattered shift notes into clear operational handovers, powered by the Hotel Brain.">
+  <meta property="og:title" content="Hospitality Flow | Hotel Brain &amp; AI Shift Handover">
+  <meta property="og:description" content="Hospitality Flow learns your hotel and your guests — then powers AI Shift Handover through Hotel Brain. Built for independent and boutique hotels.">
   <meta property="og:url" content="https://hospitalityflow.co.uk">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Hospitality Flow | AI Shift Handover for Boutique Hotels">
-  <meta name="twitter:description" content="AI Shift Handover for independent and boutique hotels. Transform scattered shift notes into clear operational handovers, powered by the Hotel Brain.">
+  <meta name="twitter:title" content="Hospitality Flow | Hotel Brain &amp; AI Shift Handover">
+  <meta name="twitter:description" content="Hospitality Flow learns your hotel and your guests — then powers AI Shift Handover through Hotel Brain. Built for independent and boutique hotels.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -833,7 +833,7 @@
       display: none;
     }
 
-    /* ── One Intelligent Foundation ── */
+    /* ── Hotel Brain pillars ── */
     .hotel-brain {
       position: relative;
       overflow: hidden;
@@ -871,17 +871,29 @@
     .foundation-stack {
       position: relative;
       display: grid;
-      grid-template-columns: 1.1fr minmax(72px, 96px) 1fr;
-      gap: 0 var(--space-3);
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-5);
       align-items: stretch;
       margin-bottom: var(--space-7);
+    }
+
+    @media (min-width: 721px) and (max-width: 1024px) {
+      .foundation-stack {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: var(--space-4);
+      }
+      .foundation-feature-title { font-size: 1.05rem; }
+      .foundation-feature-points { font-size: 0.78rem; }
     }
 
     .foundation-tier {
       position: relative;
       z-index: 1;
-      padding: var(--card-padding);
+      display: flex;
+      flex-direction: column;
+      padding: calc(var(--card-padding) + 2px);
       min-width: 0;
+      min-height: 100%;
       border-radius: var(--radius-xl);
       border: 1px solid var(--border-default);
       background: var(--card-bg);
@@ -894,7 +906,6 @@
       box-shadow: var(--shadow-elevated-hover);
     }
 
-    /* Soft ambient glow behind each card — same language as hero glow */
     .foundation-tier::before {
       content: "";
       position: absolute;
@@ -909,40 +920,36 @@
       z-index: -1;
     }
 
-    .foundation-tier--brain {
-      border-color: var(--border-accent);
-      box-shadow: var(--shadow-elevated);
-    }
-
-    .foundation-tier--product {
-      border-color: var(--border-default);
-    }
-
     .foundation-tier .type-label {
       margin-bottom: var(--label-gap-block);
       font-size: 0.625rem;
       font-weight: 500;
       letter-spacing: 0.08em;
-      color: var(--gray-500);
-    }
-
-    .foundation-tier--brain .type-label {
       color: rgba(91, 159, 212, 0.62);
     }
 
     .foundation-feature-title {
-      font-size: 1.35rem;
+      font-size: 1.2rem;
       font-weight: 700;
       color: var(--white);
       letter-spacing: -0.03em;
-      margin-bottom: var(--label-gap-block);
+      margin-bottom: var(--space-2);
       line-height: 1.25;
+    }
+
+    .foundation-feature-lead {
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--gray-100);
+      line-height: 1.4;
+      margin: 0 0 var(--space-3);
     }
 
     .foundation-feature-text {
       font-size: var(--text-body);
       color: var(--gray-300);
       line-height: var(--leading-lead);
+      margin: 0;
     }
 
     .foundation-feature-text strong {
@@ -950,47 +957,32 @@
       font-weight: 600;
     }
 
-    /* Clean relationship: line + elegant arrow (no badge) */
-    .foundation-connector {
-      position: relative;
-      z-index: 1;
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      justify-content: center;
-      gap: 0;
-      padding: 0 var(--space-1);
-      min-width: 72px;
-      align-self: center;
+    .foundation-feature-points {
+      list-style: none;
+      margin: 0 0 var(--space-4);
+      padding: 0;
+      font-size: var(--text-sm);
+      color: var(--gray-400);
+      line-height: 1.5;
     }
 
-    .foundation-connector-line {
-      display: block;
-      height: 1px;
-      flex: 1 1 auto;
-      min-width: 28px;
-      max-width: 56px;
-      background: rgba(74, 143, 196, 0.45);
-      box-shadow:
-        0 0 8px rgba(74, 143, 196, 0.35),
-        0 0 16px rgba(74, 143, 196, 0.15);
+    .foundation-feature-points li {
+      display: inline;
     }
 
-    .foundation-connector-arrow {
-      display: block;
-      width: 7px;
-      height: 7px;
-      margin-left: -1px;
-      border-top: 1.5px solid var(--blue-400);
-      border-right: 1.5px solid var(--blue-400);
-      transform: rotate(45deg);
-      opacity: 0.9;
-      flex-shrink: 0;
-      box-shadow: 1px -1px 6px rgba(74, 143, 196, 0.25);
+    .foundation-feature-points li:not(:last-child)::after {
+      content: "·";
+      margin: 0 0.45em;
+      color: var(--gray-600);
     }
 
-    .foundation-connector-label {
-      display: none;
+    .foundation-feature-foot {
+      margin-top: auto;
+      padding-top: var(--space-4);
+      border-top: 1px solid var(--border-muted);
+      font-size: var(--text-sm);
+      color: var(--gray-400);
+      line-height: 1.5;
     }
 
     .foundation-footer {
@@ -1496,26 +1488,7 @@
       .foundation-intro { margin: 0; }
       .foundation-stack {
         grid-template-columns: 1fr;
-        gap: 0;
-      }
-      .foundation-connector {
-        flex-direction: column;
-        padding: var(--space-4) 0;
-        min-width: 0;
-        width: 100%;
-        align-self: stretch;
-      }
-      .foundation-connector-line {
-        width: 1px;
-        height: 28px;
-        flex: 0 0 auto;
-        min-width: 0;
-        max-width: none;
-      }
-      .foundation-connector-arrow {
-        margin-left: 0;
-        margin-top: -2px;
-        transform: rotate(135deg);
+        gap: var(--space-4);
       }
       .foundation-footer {
         padding-top: var(--space-8);
@@ -1664,7 +1637,7 @@
           <div class="hero-content">
             <p class="hero-eyebrow">Founding Pilot Programme</p>
             <h1>AI Shift Handover, powered by Hotel Brain™</h1>
-            <p class="hero-subhead">Built for independent and boutique hotels. Turn scattered shift notes into clear, structured handovers informed by your property&rsquo;s own knowledge.</p>
+            <p class="hero-subhead">Hospitality Flow learns how your hotel operates and how your guests prefer to stay — then uses both to power clearer AI Shift Handovers. Teach it once. Benefit every shift.</p>
             <div class="hero-audience-wrap">
               <span class="hero-audience-badge">For reception and hotel operations teams</span>
             </div>
@@ -1702,32 +1675,56 @@
       </div>
     </section>
 
-    <!-- One Intelligent Foundation -->
+    <!-- Hotel Brain — three pillars -->
     <section class="hotel-brain" id="hotel-brain">
       <div class="container">
         <div class="foundation-block reveal">
           <div class="foundation-header">
-            <h2 class="section-heading" id="product">One Intelligent Foundation</h2>
-            <p class="foundation-intro type-body">Hotel Brain powers AI Shift Handover — and every workflow Hospitality Flow builds from real hotel needs.</p>
+            <h2 class="section-heading" id="product">Hotel Brain™</h2>
+            <p class="foundation-intro type-body">Hospitality Flow learns your hotel and your guests — then uses both to power AI Shift Handover. Teach it once. Benefit every shift.</p>
           </div>
-          <div class="foundation-stack">
-            <div class="foundation-tier foundation-tier--brain">
-              <p class="type-label">Foundation</p>
-              <h3 class="foundation-feature-title">Hotel Brain™</h3>
-              <p class="foundation-feature-text"><strong>The operational memory of your hotel.</strong> It combines hotel knowledge, recurring issues, guest preferences, shift activity and operational patterns, becoming more useful over time.</p>
-            </div>
-            <div class="foundation-connector" aria-hidden="true">
-              <span class="foundation-connector-line"></span>
-              <span class="foundation-connector-arrow"></span>
-            </div>
-            <div class="foundation-tier foundation-tier--product">
-              <p class="type-label">Current Workflow</p>
-              <h3 class="foundation-feature-title">AI Shift Handover</h3>
-              <p class="foundation-feature-text">Turns messy shift information into structured actions and recommendations, using Hotel Brain context.</p>
-            </div>
+          <div class="foundation-stack" aria-label="Hotel Brain pillars">
+            <article class="foundation-tier foundation-tier--hotel">
+              <p class="type-label">Hotel Intelligence</p>
+              <h3 class="foundation-feature-title">Learns how your hotel operates</h3>
+              <p class="foundation-feature-lead">Policies, departments, rooms, terminology and operational knowledge.</p>
+              <ul class="foundation-feature-points">
+                <li>Policies</li>
+                <li>Departments</li>
+                <li>Rooms</li>
+                <li>Procedures</li>
+                <li>Local recommendations</li>
+              </ul>
+              <p class="foundation-feature-foot">Everything that teaches Hospitality Flow how this property works.</p>
+            </article>
+            <article class="foundation-tier foundation-tier--guest">
+              <p class="type-label">Guest Intelligence</p>
+              <h3 class="foundation-feature-title">Remembers every guest</h3>
+              <p class="foundation-feature-lead">Preferences, returning guests, occasions and personal touches.</p>
+              <ul class="foundation-feature-points">
+                <li>Guest preferences</li>
+                <li>Returning guests</li>
+                <li>Special occasions</li>
+                <li>Stay history</li>
+                <li>Guest context</li>
+              </ul>
+              <p class="foundation-feature-foot">Everything that helps provide personalised hospitality.</p>
+            </article>
+            <article class="foundation-tier foundation-tier--handover">
+              <p class="type-label">AI Shift Handover</p>
+              <h3 class="foundation-feature-title">Uses both every shift</h3>
+              <p class="foundation-feature-lead">Creates smarter handovers with continuity between teams.</p>
+              <ul class="foundation-feature-points">
+                <li>Smarter handovers</li>
+                <li>Clear priorities</li>
+                <li>Shift continuity</li>
+                <li>Automatic context</li>
+              </ul>
+              <p class="foundation-feature-foot">The first operational tool powered by Hotel Brain.</p>
+            </article>
           </div>
           <div class="foundation-footer">
-            <p class="foundation-closing">Hotel Brain transforms your hotel&rsquo;s operational knowledge into intelligent actions across Hospitality Flow.</p>
+            <p class="foundation-closing">Hotel Brain is the operational memory of your hotel — growing through Hotel Intelligence and Guest Intelligence, and powering every Hospitality Flow workflow over time.</p>
           </div>
         </div>
       </div>
@@ -1739,7 +1736,7 @@
         <div class="interactive-demo-panel reveal">
           <p class="interactive-demo-kicker">Interactive Demo</p>
           <h2 class="section-heading" id="interactive-demo-heading">See Hospitality Flow in action</h2>
-          <p class="interactive-demo-text">Explore The Oakwood Mayfair — a fictional 80-room boutique hotel. See how Hotel Brain supplies operational context, and how AI Shift Handover turns messy shift notes into structured actions and recommendations.</p>
+          <p class="interactive-demo-text">Explore The Oakwood Mayfair — a fictional 80-room boutique hotel. See Hotel Intelligence and Guest Intelligence grow inside Hotel Brain, and how AI Shift Handover uses both every shift.</p>
           <div class="interactive-demo-actions">
             <a href="handover.html?demo=1" class="btn btn-primary btn-lg" id="try-interactive-demo">Try Interactive Demo</a>
             <p class="interactive-demo-note">No account required. Sample data is never saved. Demo covers AI Shift Handover and Hotel Brain.</p>

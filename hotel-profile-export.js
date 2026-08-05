@@ -80,6 +80,27 @@
   }
 
   function buildPoliciesHtml(data) {
+    var notes = data.policiesNotes || {};
+    var notePairs = [
+      ['Check-in and Check-out', notes.checkInOut],
+      ['Cancellations and No-shows', notes.cancellationsNoShows],
+      ['Visitors and Security', notes.visitorsSecurity],
+      ['Pets and Smoking', notes.petsSmoking],
+      ['Lost Property and Loan Items', notes.lostPropertyLoans],
+      ['Other Guest Policies', notes.otherGuestPolicies],
+      ['Deposits', notes.deposits],
+      ['Refunds', notes.refunds],
+      ['Pre-authorisations', notes.preAuthorisations],
+      ['Cash Handling', notes.cashHandling],
+      ['Invoicing', notes.invoicing],
+      ['Other Payment Notes', notes.otherPaymentNotes],
+      ['Payments & OTA (legacy)', notes.paymentsOta],
+      ['Guest Policies (legacy)', notes.guestPolicies],
+      ['Other Notes (legacy)', notes.otherNotes]
+    ].filter(function (p) { return !isBlank(p[1]); });
+    if (notePairs.length) {
+      return section('Policies', '<table class="hp-doc-kv">' + fieldRows(notePairs) + '</table>');
+    }
     var structured = data.policiesStructured;
     if (!structured || typeof structured !== 'object') {
       var legacy = data.policies || {};
@@ -174,8 +195,17 @@
     }
 
     var deptRows = (data.departments || []).filter(function (d) { return d && d.name; }).map(function (d) {
-      return [d.name, d.head || '', d.contact || '', d.email || '', d.instructions || ''];
+      return [d.name, d.instructions || ''];
     });
+    var hk = data.hotelKnowledge || {};
+    var hkPairs = [
+      ['General Notes', hk.generalNotes],
+      ['Guest Intelligence', hk.guestKnowledge || hk.vipRules],
+      ['Hotel Terminology', hk.commonTerms],
+      ['Operational Notes', hk.operationalNotes],
+      ['Local Recommendations', hk.localRecommendations],
+      ['AI Instructions', hk.aiInstructions]
+    ].filter(function (p) { return !isBlank(p[1]); });
 
     var shiftRows = ((data.shifts && data.shifts.rows) || []).filter(function (s) { return s && (s.code || s.name); }).map(function (s) {
       return [s.code || '', s.name || '', s.start || '', s.end || '', s.dept || ''];
@@ -288,8 +318,8 @@
       section('Room Inventory', invRows.length ? table(['Room', 'Floor', 'Category', 'Bathroom', 'Max guests', 'Interconnecting', 'Flags', 'Notes'], invRows) : ''),
       section('Room Directory', rfRows.length ? table(['Room', 'Type', 'Floor', 'Bed', 'Max occ.', 'Features', 'Notes'], rfRows) : ''),
       section('Facilities', facHtml),
-      section('Departments', deptRows.length ? table(['Department', 'Lead', 'Contact', 'Email', 'Instructions'], deptRows) : ''),
-      section('Shift Structure', shiftNote + (shiftRows.length ? table(['Code', 'Name', 'Start', 'End', 'Department'], shiftRows) : '')),
+      section('Departments', deptRows.length ? table(['Department', 'Notes'], deptRows) : ''),
+      section('Hotel Knowledge', hkPairs.length ? '<table class="hp-doc-kv">' + fieldRows(hkPairs) + '</table>' : ''),
       section('Hotel Terminology', termRows.length ? table(['Term', 'Definition'], termRows) : ''),
       buildPoliciesHtml(data),
       section('OTA & Payment Rules', otaHtml),

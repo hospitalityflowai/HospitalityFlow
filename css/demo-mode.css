@@ -14,8 +14,8 @@
   --hf-demo-navy-800: #122240;
   --hf-demo-blue-50: #eef6fc;
   --hf-demo-blue-600: #3a7ab0;
-  --hf-demo-radius: 10px;
-  --hf-demo-radius-lg: 14px;
+  --hf-demo-radius: 12px;
+  --hf-demo-radius-lg: 16px;
 }
 
 html.hf-demo-active {
@@ -317,6 +317,22 @@ html.hf-demo-workspace #advancedDataOptions {
 }
 
 /* Locked sample fields — fixed values, not “broken disabled” greys */
+/* Guided demo: Clear Notes hidden; sample notes remain visible but fixed */
+html.hf-demo-workspace #clearBtn {
+  display: none !important;
+}
+
+html.hf-demo-workspace #notesInput.hf-demo-notes-locked,
+html.hf-demo-workspace #notesInput.hf-demo-locked-field {
+  cursor: default;
+  caret-color: transparent;
+  resize: none;
+  background: rgba(245, 248, 252, 0.98);
+  border-color: rgba(74, 143, 196, 0.18);
+  color: #24364f;
+  box-shadow: none;
+}
+
 html.hf-demo-workspace .hf-demo-locked-field,
 html.hf-demo-workspace .form-input--demo-locked,
 html.hf-demo-workspace #hotelName[readonly],
@@ -409,6 +425,7 @@ html.hf-demo-brain-readonly #saveBtn,
 html.hf-demo-brain-readonly .improve-writing-btn,
 html.hf-demo-brain-readonly .ai-polish-btn,
 html.hf-demo-brain-readonly .add-row-btn,
+html.hf-demo-brain-readonly .gs-add-note-btn,
 html.hf-demo-brain-readonly .facility-remove,
 html.hf-demo-brain-readonly .logo-delete-btn,
 html.hf-demo-brain-readonly .logo-remove-btn,
@@ -421,9 +438,13 @@ html.hf-demo-brain-readonly .remove-supply,
 html.hf-demo-brain-readonly .remove-guest-loan,
 html.hf-demo-brain-readonly .remove-guest-supplier,
 html.hf-demo-brain-readonly .remove-email-recipient,
+html.hf-demo-brain-readonly .remove-gs-note,
 html.hf-demo-brain-readonly .icon-btn,
 html.hf-demo-brain-readonly #exportProfileBtn,
 html.hf-demo-brain-readonly #importProfileBtn,
+html.hf-demo-brain-readonly #downloadPdfBtn,
+html.hf-demo-brain-readonly #printProfileBtn,
+html.hf-demo-brain-readonly #hotelBrainBackupActions,
 html.hf-demo-brain-readonly #logoUpload,
 html.hf-demo-brain-readonly #logoInput,
 html.hf-demo-brain-readonly #logoDelete,
@@ -436,8 +457,16 @@ html.hf-demo-brain-readonly .dev-only-panel,
 html.hf-demo-brain-readonly .col-actions,
 html.hf-demo-brain-readonly .rooms-table .btn-text,
 html.hf-demo-brain-readonly #improveWritingModal,
+html.hf-demo-brain-readonly #roomNotesModal,
 html.hf-demo-brain-readonly .hf-demo-brain-mutation-hidden {
   display: none !important;
+}
+
+html.hf-demo-brain-readonly .hf-demo-workspace-gated-note:not([hidden]) {
+  display: block !important;
+  margin: 0 0 4px;
+  color: var(--hf-demo-blue-600, #3a7ab0);
+  font-weight: 600;
 }
 
 html.hf-demo-brain-readonly main input:not([type="hidden"]),

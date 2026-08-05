@@ -138,7 +138,14 @@
       petRooms: { room1: "", room2: "" },
       inventory: [],
       roomFacilities: [],
-      departments: [],
+      departments: [
+        { name: "Reception", head: "", contact: "", email: "", instructions: "" },
+        { name: "Housekeeping", head: "", contact: "", email: "", instructions: "" },
+        { name: "Maintenance", head: "", contact: "", email: "", instructions: "" },
+        { name: "Food & Beverage", head: "", contact: "", email: "", instructions: "" },
+        { name: "Night Team", head: "", contact: "", email: "", instructions: "" },
+        { name: "Management", head: "", contact: "", email: "", instructions: "" }
+      ],
       shifts: { pattern: "8hour", overnightSupport: "", rows: [] },
       terminology: [],
       aiPrefs: {
@@ -150,6 +157,23 @@
       },
       facilities: { checked: [], custom: "", customItems: [] },
       policies: {},
+      policiesNotes: {
+        checkInOut: "",
+        cancellationsNoShows: "",
+        visitorsSecurity: "",
+        petsSmoking: "",
+        lostPropertyLoans: "",
+        otherGuestPolicies: "",
+        deposits: "",
+        refunds: "",
+        preAuthorisations: "",
+        cashHandling: "",
+        invoicing: "",
+        otherPaymentNotes: "",
+        paymentsOta: "",
+        guestPolicies: "",
+        otherNotes: ""
+      },
       policiesStructured: { guest: {}, payment: {}, operational: {}, custom: {} },
       otaPayment: {},
       otaChannels: [],
@@ -166,7 +190,14 @@
         enabled: false,
         contentSources: { sops: false, policies: false, rooms: false, operations: false }
       },
-      hotelKnowledge: {},
+      hotelKnowledge: {
+        generalNotes: "",
+        guestKnowledge: "",
+        commonTerms: "",
+        operationalNotes: "",
+        localRecommendations: "",
+        aiInstructions: ""
+      },
       operationalKnowledge: {
         schemaVersion: 1,
         handoverSources: [],

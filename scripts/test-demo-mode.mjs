@@ -404,7 +404,8 @@ async function run() {
   } else {
     ok = pass("Exactly one primary Try Interactive Demo button") && ok;
   }
-  if (!/operational memory of your hotel/i.test(indexHtml)) {
+  if (!/operational memory of your hotel/i.test(indexHtml) &&
+      !/learns your hotel and your guests/i.test(indexHtml)) {
     ok = fail("Landing Hotel Brain wording must describe growing operational memory") && ok;
   } else {
     ok = pass("Landing Hotel Brain wording reflects operational memory") && ok;
@@ -1152,7 +1153,8 @@ async function run() {
   } else {
     ok = pass("Demo banner communicates temporary / nothing saved") && ok;
   }
-  if (!/Edit the sample notes or click Generate/i.test(handoverPageHtml)) {
+  if (!/Review the Oakwood Mayfair sample notes, then click Generate/i.test(handoverPageHtml) &&
+      !/DEMO_NOTES_CUE/.test(handoverPageHtml)) {
     ok = fail("First-action cue missing") && ok;
   } else {
     ok = pass("First-action Generate cue present") && ok;
@@ -1219,15 +1221,18 @@ async function run() {
     ok = pass("5. Public Demo cannot edit hotel identity") && ok;
   }
 
-  // 6: Can edit sample notes
-  const notesEditable =
+  // 6: Guided demo — sample notes are read-only (future Try Your Own keeps a flag)
+  const notesGuided =
     /id="notesInput"/.test(handoverPageHtml) &&
-    !/notesInput\.readOnly\s*=\s*true/.test(handoverPageHtml) &&
-    /Edit the sample notes or click Generate/i.test(handoverPageHtml);
-  if (!notesEditable) {
-    ok = fail("6. Public Demo must allow editing sample notes") && ok;
+    /DEMO_ALLOW_CUSTOM_NOTES\s*=\s*false/.test(handoverPageHtml) &&
+    /isDemoNotesLocked/.test(handoverPageHtml) &&
+    /setDemoLockedField\(notesInput/.test(handoverPageHtml) &&
+    /Review the Oakwood Mayfair sample notes, then click Generate/i.test(handoverPageHtml) &&
+    /Try Your Own Handover/.test(handoverPageHtml);
+  if (!notesGuided) {
+    ok = fail("6. Public Demo must lock sample notes as a guided showcase") && ok;
   } else {
-    ok = pass("6. Public Demo can edit sample notes") && ok;
+    ok = pass("6. Public Demo locks sample notes (guided showcase)") && ok;
   }
 
   // 7: Can Generate
@@ -1331,7 +1336,7 @@ async function run() {
     ok = pass("12. Exit Demo restores normal controls") && ok;
   }
 
-  // —— Demo field locking (notes-only editing) ——
+  // —— Demo field locking (guided showcase; notes locked) ——
   console.log("\n— Demo field locking —");
   const hasReadOnlyHelper =
     /function applyDemoReadOnlyState\s*\(/.test(handoverPageHtml) &&
@@ -1385,12 +1390,13 @@ async function run() {
 
   if (
     !/id="notesInput"/.test(handoverPageHtml) ||
-    /notesInput\.readOnly\s*=\s*true/.test(handoverPageHtml) ||
-    /setDemoLockedField\(notesInput/.test(handoverPageHtml)
+    !/DEMO_ALLOW_CUSTOM_NOTES\s*=\s*false/.test(handoverPageHtml) ||
+    !/setDemoLockedField\(notesInput/.test(handoverPageHtml) ||
+    !/wireDemoNotesGuardOnce/.test(handoverPageHtml)
   ) {
-    ok = fail("Notes must remain editable in Demo") && ok;
+    ok = fail("Notes must be locked in guided Demo (with future Try Your Own flag preserved)") && ok;
   } else {
-    ok = pass("Notes remain editable") && ok;
+    ok = pass("Notes are locked in guided Demo") && ok;
   }
 
   if (
@@ -1554,19 +1560,31 @@ async function run() {
     /Import is unavailable in Demo Mode/.test(hotelProfileHtml) &&
     /Logo upload is unavailable in Demo Mode/.test(hotelProfileHtml) &&
     /DEMO_BRAIN_MUTATION_SELECTOR/.test(hotelProfileHtml) &&
+    /#downloadPdfBtn/.test(hotelProfileHtml) &&
+    /#printProfileBtn/.test(hotelProfileHtml) &&
+    /Available after creating your hotel workspace/.test(hotelProfileHtml) &&
     /MutationObserver/.test(hotelProfileHtml);
-  if (!brainReadonly) {
-    ok = fail("5–6. Hotel Brain must be read-only in Demo (Save/Improve/Upload unavailable)") && ok;
+  const brainExportPrintGuards =
+    /html\.hf-demo-brain-readonly #downloadPdfBtn/.test(demoCss) &&
+    /html\.hf-demo-brain-readonly #printProfileBtn/.test(demoCss) &&
+    /html\.hf-demo-brain-readonly #hotelBrainBackupActions/.test(demoCss) &&
+    /downloadPdfBtn[\s\S]*?isDemoBrainActive\(\)/.test(hotelProfileHtml) &&
+    /printProfileBtn[\s\S]*?isDemoBrainActive\(\)/.test(hotelProfileHtml) &&
+    /el\.disabled = true/.test(hotelProfileHtml);
+  if (!brainReadonly || !brainExportPrintGuards) {
+    ok = fail("5–6. Hotel Brain must be read-only in Demo (Save/Improve/Upload/PDF/Print unavailable)") && ok;
   } else {
     ok = pass("5. Hotel Brain is read-only in Demo") && ok;
-    ok = pass("6. Hotel Brain Save/Improve/Upload unavailable") && ok;
+    ok = pass("6. Hotel Brain Save/Improve/Upload/PDF/Print unavailable") && ok;
   }
 
-  // 7–8: Handover notes editable; identity/snapshot locked
-  if (!/id="notesInput"/.test(handoverPageHtml) || /setDemoLockedField\(notesInput/.test(handoverPageHtml)) {
-    ok = fail("7. Handover notes must remain editable") && ok;
+  // 7–8: Handover notes locked (guided); identity/snapshot locked
+  if (!/id="notesInput"/.test(handoverPageHtml) ||
+      !/setDemoLockedField\(notesInput/.test(handoverPageHtml) ||
+      !/DEMO_ALLOW_CUSTOM_NOTES\s*=\s*false/.test(handoverPageHtml)) {
+    ok = fail("7. Handover notes must be locked in guided Demo") && ok;
   } else {
-    ok = pass("7. Handover notes remain editable") && ok;
+    ok = pass("7. Handover notes are locked in guided Demo") && ok;
   }
   if (!/function applyDemoReadOnlyState/.test(handoverPageHtml) ||
       !/setDemoLockedField\(hotelName/.test(handoverPageHtml) ||
@@ -1592,9 +1610,11 @@ async function run() {
   }
 
   // Connection copy
-  if (!/Powered by the Hotel Brain/.test(handoverPageHtml) ||
-      !/Explore Hotel Brain/.test(handoverPageHtml)) {
-    ok = fail("Handover Demo must link the story to Hotel Brain") && ok;
+  if (!(/Powered by Hotel Brain/.test(handoverPageHtml) || /Powered by the Hotel Brain/.test(handoverPageHtml)) ||
+      !/Explore Hotel Brain/.test(handoverPageHtml) ||
+      !/Hotel Intelligence and Guest Intelligence/.test(handoverPageHtml) ||
+      /hf-pillars--compact/.test(handoverPageHtml)) {
+    ok = fail("Handover Demo must link the story to Hotel Brain without repeating pillars") && ok;
   } else {
     ok = pass("Handover ↔ Brain connection copy present on Handover") && ok;
   }
@@ -1686,7 +1706,8 @@ async function run() {
   }
 
   if (!/#saveBtn/.test(hotelProfileHtml) ||
-      !/Saving is unavailable in Demo Mode/.test(hotelProfileHtml) ||
+      !(/Saving is unavailable in Demo Mode/.test(hotelProfileHtml) ||
+        /Available after creating your hotel workspace/.test(hotelProfileHtml)) ||
       !/html\.hf-demo-brain-readonly #saveBtn/.test(demoCss)) {
     ok = fail("8. Save controls must be unavailable in Demo") && ok;
   } else {
@@ -1708,8 +1729,14 @@ async function run() {
   }
   if (!/Export is unavailable in Demo Mode/.test(hotelProfileHtml) ||
       !/Import is unavailable in Demo Mode/.test(hotelProfileHtml) ||
-      !/Logo upload is unavailable in Demo Mode/.test(hotelProfileHtml)) {
-    ok = fail("11. Upload/import/export controls must be unavailable") && ok;
+      !/Logo upload is unavailable in Demo Mode/.test(hotelProfileHtml) ||
+      !/#downloadPdfBtn/.test(
+        (hotelProfileHtml.match(/DEMO_BRAIN_MUTATION_SELECTOR[\s\S]*?\.join/) || [])[0] || ""
+      ) ||
+      !/#printProfileBtn/.test(
+        (hotelProfileHtml.match(/DEMO_BRAIN_MUTATION_SELECTOR[\s\S]*?\.join/) || [])[0] || ""
+      )) {
+    ok = fail("11. Upload/import/export/PDF/Print controls must be unavailable") && ok;
   } else {
     ok = pass("11. Upload/import/export controls unavailable") && ok;
   }
@@ -1862,9 +1889,11 @@ async function run() {
   }
 
   if (!/Hotel Knowledge/.test(hotelProfileHtml) ||
-      !/Foundation complete/.test(knowledgeJs) ||
+      !/Guest Intelligence/.test(hotelProfileHtml) ||
+      !/Hotel Intelligence ready/.test(knowledgeJs) ||
+      !/Growing Hotel Intelligence/.test(knowledgeJs) ||
       !/Ready for AI Shift Handover/.test(knowledgeJs) ||
-      !/Continue building your hotel's operational memory/.test(knowledgeJs) ||
+      !(/Continue building your hotel's operational memory/.test(knowledgeJs) || /Add knowledge anytime/.test(knowledgeJs)) ||
       !/brain-status-shell/.test(hotelProfileHtml) ||
       /Knowledge Library/.test(hotelProfileHtml) ||
       /\.nav-badge\s*\{[^}]*purple/.test(hotelProfileHtml)) {
