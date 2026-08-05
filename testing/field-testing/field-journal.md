@@ -133,3 +133,139 @@ Anything that doesn’t fit elsewhere.
 - Field-testing principles and AI Design Principles live in `README.md`.
 - Original messy handover for this shift was not pasted at capture time; add to `test-scenarios.md` as Scenario 001 when available.
 - Do not treat this journal entry as a development brief — weekly review still decides the action plan.
+
+---
+
+# Shift 002
+
+Date: 2026-08-05  
+Hotel: The Zetter Marylebone  
+Department: Reception / Duty Manager  
+Shift: Live production field test  
+Hospitality Flow Version:  
+
+## Overall Impression
+
+Rate the overall experience (1–10):
+
+General comments:
+
+Second live field-testing shift in real production at The Zetter Marylebone. Goal: evaluate whether Hospitality Flow behaves like an experienced hotel duty manager rather than simply rewriting notes. Extraction quality continues to improve. Main weakness is reasoning, prioritisation and information architecture — not basic extraction.
+
+Findings captured in `bugs.md`, `improvements.md` and `ideas.md`. No fixes implemented from this session; continue collecting live feedback for one week before prioritising patterns.
+
+---
+
+## What Worked Well
+
+- Correctly identified a maintenance issue.
+- Correctly identified VIP preparation.
+- Correctly identified an outstanding balance.
+- Correctly identified guest requests.
+- Captured general operational context.
+- Extraction quality is improving versus Shift 001.
+
+---
+
+## Biggest Operational Issues
+
+- Same operational issue (e.g. Room 51) repeated across Priority list, Timeline, Hotel Status and Recommendations.
+- Recommendations often generic or not actionable (“Outstanding payment requires review” instead of a clear collect-before-departure instruction).
+- Generic wording with no room, guest or action (e.g. “Reception follow-up remains open”).
+- Invented guest preference detail (foam pillows became “Extra pillows”) — critical accuracy failure.
+- Upcoming arrivals from another day included in today’s operational handover.
+- Timeline used for ongoing tasks instead of timed events; Hotel Status and Operational Notes repeat or merge instead of summarising.
+- Printed report still feels too long because repeated information appears throughout.
+
+---
+
+## Bugs Discovered
+
+Reference:  
+(See bugs.md — Shift 002 entries dated 2026-08-05)
+
+Summary:
+
+Critical/high reasoning bugs logged — invented guest preference (foam pillows), duplicate Room 51 across sections, non-actionable and generic recommendations, wrong-day arrivals in today’s handover. Medium issues: aggressive Hotel Brain enrichment, incorrect completed-action wording, Timeline/Hotel Status/Operational Notes architecture problems.
+
+---
+
+## Improvements Identified
+
+Reference:  
+(See improvements.md — Shift 002 entries dated 2026-08-05)
+
+Summary:
+
+Improvements logged — one issue / one place / one action; short direct recommendations; Timeline limited to timed events; Hotel Status as a health dashboard; clearer Operational Notes; Snapshot visual hierarchy; Hotel Brain enrichment only when it improves decisions.
+
+---
+
+## New Ideas
+
+Reference:  
+(See ideas.md — Shift 002 entries dated 2026-08-05)
+
+Summary:
+
+Standing direction reinforced — duty-manager reasoning over rewrite; collect a full week of live shifts before implementing fixes; prioritise recurring patterns over isolated examples.
+
+---
+
+## Real Operational Scenarios Tested
+
+Examples:
+
+- Maintenance issue identification
+- VIP preparation
+- Outstanding balance / payment follow-up
+- Guest requests and preferences (foam pillows)
+- Room 51 operational issue (duplicated across sections)
+- Room 11 outstanding payment recommendation quality
+- Future-day arrivals vs today’s operational scope
+- Timeline vs briefing content
+- Printed handover length / repetition
+
+---
+
+## AI Behaviour
+
+Did the AI think like an experienced hotel duty manager?
+
+Strengths:
+
+- Extraction of maintenance, VIP prep, outstanding balance, guest requests and general context is improving.
+- Core facts are often present; the system is useful as a live evidence-gathering tool.
+
+Weaknesses:
+
+- Reasoning and prioritisation lag extraction quality.
+- Repeats the same issue across multiple sections instead of stating once and referencing.
+- Recommendations over-explain or stay generic instead of telling staff exactly what to do.
+- Can invent or generalise guest preferences.
+- Can pull non-today operational items into today’s handover.
+- Hotel Brain enrichment sometimes adds explanations that were not required.
+
+---
+
+## Confidence
+
+How confident would you feel using this during a live shift?
+
+Improving for extraction; still needs review before trusting recommendations, Timeline, and preference wording without checking the source notes.
+
+---
+
+## Next Priorities
+
+1. Do not implement fixes yet — continue live field testing for one week.
+2. After several shifts, analyse recurring issues and prioritise patterns over isolated examples.
+3. Standing product bar: one issue, one place, one clear action; short duty-manager recommendations; never invent guest preferences.
+
+---
+
+## Notes
+
+- Environment: real production usage at The Zetter Marylebone.
+- Explicit session instruction: documentation only — no application, prompt or AI-logic changes from this shift.
+- Weekly review should wait until multiple shifts are collected.

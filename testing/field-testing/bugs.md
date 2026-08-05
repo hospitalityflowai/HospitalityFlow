@@ -170,3 +170,112 @@ Expected behaviour: Maintenance items state the fault and whether action/follow-
 Actual behaviour: Only the fault description appeared, without clear follow-up status.  
 Steps to reproduce: Include a Bar AC fault note in the source handover and inspect Maintenance output.  
 Status: Open
+
+---
+
+<!-- Shift 002 — 5 August 2026 — The Zetter Marylebone (live production). Do not fix yet; continue collecting for one week. -->
+
+## Guest preference invented (foam pillows → “Extra pillows”)
+
+Date: 2026-08-05  
+Hotel: The Zetter Marylebone  
+Area: Guest requests / Preferences  
+Severity: Critical  
+Priority: Critical  
+Description: A specific guest preference for foam pillows was rewritten as “Extra pillows”, inventing a different request.  
+Expected behaviour: Never replace guest preferences with assumptions. Preserve the exact preference wording (e.g. foam pillows).  
+Actual behaviour: Foam pillows became “Extra pillows”.  
+Steps to reproduce: Include a foam-pillow preference in live source notes and generate the handover.  
+Status: Open  
+Notes: Critical accuracy failure. Extraction is improving; inventing preference detail is unacceptable for live use.
+
+---
+
+## Same operational issue duplicated across multiple sections
+
+Date: 2026-08-05  
+Hotel: The Zetter Marylebone  
+Area: Information architecture / Reasoning  
+Severity: High  
+Priority: High  
+Description: The same issue (Room 51) appeared repeatedly across Priority list, Timeline, Hotel Status and Recommendations.  
+Expected behaviour: Each operational issue normally appears once; later sections reference it rather than repeating the full item.  
+Actual behaviour: Room 51 was restated across multiple sections, lengthening the printed report and reducing clarity.  
+Steps to reproduce: Generate a live handover containing a Room 51 issue and inspect Priority list, Timeline, Hotel Status and Recommendations.  
+Status: Open  
+Notes: Reinforces “one issue, one place, one clear action”.
+
+---
+
+## Recommendations not actionable
+
+Date: 2026-08-05  
+Hotel: The Zetter Marylebone  
+Area: Shift Intelligence / Recommendations  
+Severity: High  
+Priority: High  
+Description: Recommendations described review needs without telling staff what to do. Example: “Outstanding payment requires review.”  
+Expected behaviour: Actionable duty-manager language, e.g. “Collect outstanding payment from Room 11 before departure.”  
+Actual behaviour: Vague review language without room, guest or concrete action.  
+Steps to reproduce: Include an outstanding payment for a departing room and inspect Recommendations.  
+Status: Open
+
+---
+
+## Generic recommendation / follow-up wording
+
+Date: 2026-08-05  
+Hotel: The Zetter Marylebone  
+Area: Recommendations / Follow-up  
+Severity: High  
+Priority: High  
+Description: Output used generic phrases with no operational value, e.g. “Reception follow-up remains open.”, “Outstanding review required.”, “Guest impact remains open.”  
+Expected behaviour: Specific room, guest or action in every follow-up item.  
+Actual behaviour: Generic status language that cannot be actioned.  
+Steps to reproduce: Generate a live handover with open follow-ups and inspect Recommendations / related sections.  
+Status: Open
+
+---
+
+## Wrong-day arrivals included in today’s operational handover
+
+Date: 2026-08-05  
+Hotel: The Zetter Marylebone  
+Area: Reasoning / Arrivals  
+Severity: High  
+Priority: High  
+Description: Upcoming arrivals from another day were included in today’s operational handover.  
+Expected behaviour: Today’s handover prioritises today’s operation unless future arrivals are intentionally relevant.  
+Actual behaviour: Non-today arrivals were treated as part of today’s operational scope.  
+Steps to reproduce: Include future-dated arrivals in source notes and inspect today’s generated handover sections.  
+Status: Open
+
+---
+
+## Hotel Brain enrichment too aggressive
+
+Date: 2026-08-05  
+Hotel: The Zetter Marylebone  
+Area: Hotel Brain  
+Severity: Medium  
+Priority: Medium  
+Description: AI sometimes added operational explanations that were not required.  
+Expected behaviour: Hotel Brain enriches only when it genuinely improves decisions.  
+Actual behaviour: Enrichment was too aggressive and added unnecessary explanation.  
+Steps to reproduce: Generate a live handover where Hotel Brain context is available and compare enrichment against source need.  
+Status: Open
+
+---
+
+## Completed action wording translated incorrectly
+
+Date: 2026-08-05  
+Hotel: The Zetter Marylebone  
+Area: Completed Actions / Data quality  
+Severity: Medium  
+Priority: Medium  
+Description: One completed action was translated incorrectly (Stayover / Paid / Departure wording).  
+Expected behaviour: Accurate interpretation of stayover, paid and departure status language.  
+Actual behaviour: Wording was misinterpreted during translation into the generated output.  
+Steps to reproduce: Include a completed stayover/paid/departure note in source handover and inspect Completed Actions / related status text.  
+Status: Open

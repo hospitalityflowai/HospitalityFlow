@@ -122,3 +122,89 @@ Current behaviour: Completed Actions works well; confirmed actions move here aut
 Suggested improvement: Preserve this behaviour as a standard rule for future changes.  
 Reason: Automatic completion routing reduces noise in active sections and matches how reception closes work.  
 Priority: Low
+
+---
+
+<!-- Shift 002 — 5 August 2026 — The Zetter Marylebone (live production). Do not implement yet; continue collecting for one week. -->
+
+## One issue, one place, one clear action
+
+Date: 2026-08-05  
+Hotel: The Zetter Marylebone  
+Area: Information architecture / Printed report  
+Current behaviour: The same operational issue is repeated across multiple sections, making the printed report longer than necessary.  
+Suggested improvement: State each issue once, with a clear action; later sections should reference rather than restating.  
+Reason: Receptionists need a short, scannable handover. Repetition slows reading and hides priorities.  
+Priority: High
+
+---
+
+## Keep recommendations short, direct and operational
+
+Date: 2026-08-05  
+Hotel: The Zetter Marylebone  
+Area: Shift Intelligence / Writing  
+Current behaviour: Recommendations frequently over-explain how reception works instead of stating the next action.  
+Suggested improvement: Write short, direct, operational recommendations only. No training-style explanation of reception process.  
+Reason: Receptionists do not need instructions on how reception works; they need what to do next.  
+Priority: High
+
+---
+
+## Limit Timeline to timed events
+
+Date: 2026-08-05  
+Hotel: The Zetter Marylebone  
+Area: Timeline  
+Current behaviour: Timeline contains ongoing tasks and repeats briefing content instead of timed events.  
+Suggested improvement: Restrict Timeline to timed items such as wake-up calls, taxi bookings, late check-outs, VIP arrivals and scheduled inspections — not general reminders.  
+Reason: Timeline should answer “what happens when”, not restate the briefing.  
+Priority: Medium
+
+---
+
+## Make Hotel Status a quick hotel-health dashboard
+
+Date: 2026-08-05  
+Hotel: The Zetter Marylebone  
+Area: Hotel Status  
+Current behaviour: Hotel Status cards repeat information instead of summarising hotel health.  
+Suggested improvement: Present a quick dashboard covering Guest Experience, Revenue, Maintenance, VIP and Operations.  
+Reason: Status cards should give an at-a-glance health read, not duplicate detail from other sections.  
+Priority: Medium
+
+---
+
+## Split Operational Notes into clear actionable items
+
+Date: 2026-08-05  
+Hotel: The Zetter Marylebone  
+Area: Operational Notes  
+Current behaviour: Mixed information is merged into long paragraphs.  
+Suggested improvement: Separate operational facts into clear, actionable items.  
+Reason: Long merged paragraphs slow scanning and bury the next action.  
+Priority: Medium
+
+---
+
+## Strengthen Snapshot visual hierarchy and KPI emphasis
+
+Date: 2026-08-05  
+Hotel: The Zetter Marylebone  
+Area: Hotel Snapshot  
+Current behaviour: Snapshot works functionally but lacks visual hierarchy.  
+Suggested improvement: Stronger colours, better emphasis, and potential KPI highlighting.  
+Reason: Important house metrics should stand out during a live shift glance.  
+Priority: Low
+
+---
+
+## Enrich from Hotel Brain only when it improves decisions
+
+Date: 2026-08-05  
+Hotel: The Zetter Marylebone  
+Area: Hotel Brain  
+Current behaviour: Enrichment sometimes adds operational explanations that were not required.  
+Suggested improvement: Enrich only when the added context genuinely improves the next shift’s decisions.  
+Reason: Unnecessary explanation creates noise and can look like invented operational detail.  
+Priority: Medium

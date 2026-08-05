@@ -42,3 +42,25 @@ Category: Quality process
 Description: Every future improvement should be checked against real hotel handovers collected in field testing before it is considered complete.  
 Potential value: Stops regressions that only appear with messy live notes.  
 Notes: Use Scenario 001 and later scenarios as the acceptance baseline.
+
+---
+
+<!-- Shift 002 — 5 August 2026 — The Zetter Marylebone -->
+
+## Collect one week of live shifts before implementing fixes
+
+Date: 2026-08-05  
+Category: Quality process  
+Description: Continue live field testing for one week. Do not implement fixes from individual shifts yet. After several shifts, analyse recurring issues and prioritise solving patterns rather than isolated examples.  
+Potential value: Avoids premature fixes that chase one-off wording instead of systemic reasoning problems.  
+Notes: Confirmed after Shift 002 at The Zetter Marylebone. Extraction is improving; main weakness is reasoning and prioritisation.
+
+---
+
+## One issue, one place, one clear action (standing architecture rule)
+
+Date: 2026-08-05  
+Category: Information architecture  
+Description: Every operational issue should normally appear once, with one clear action. Later sections reference rather than repeat. Printed handovers should stay short because of this rule.  
+Potential value: Faster reading, clearer priorities, higher trust during live shifts.  
+Notes: Reinforced by Room 51 appearing across Priority list, Timeline, Hotel Status and Recommendations on Shift 002.
