@@ -252,18 +252,29 @@ console.log("\nHandover Intelligence Experience Sprint 1\n");
   assert(scheduled.items.some(function (i) {
     return /Before 11:00|11:00/i.test(String(i.deadlineLabel || i.time || "")) && /Whitmore|VIP/i.test(i.action);
   }), "VIP before 11:00 present");
+  assert(scheduled.items.some(function (i) {
+    return i.time === "13:00" && /late\s+check-?out/i.test(i.action) && /21|Chen/i.test(i.action);
+  }), "13:00 late check-out present");
+
+  const beforeArrival = timeline.groups.find(function (g) { return g.key === "before_arrival"; });
+  assert(beforeArrival && beforeArrival.items.some(function (i) {
+    return /welcome\s+card|champagne/i.test(i.action);
+  }), "before arrival includes welcome amenities");
+  assert(beforeArrival && beforeArrival.items.some(function (i) {
+    return /twin/i.test(i.action);
+  }), "before arrival includes twin setup");
 
   const before = timeline.groups.find(function (g) { return g.key === "before_deadline"; });
   assert(before && before.items.some(function (i) { return /42\.50|minibar/i.test(i.action); }),
-    "before departure includes minibar");
-  assert(before && before.items.some(function (i) { return /12\.50|city tax/i.test(i.action); }),
-    "before departure includes city tax");
+    "before departure includes timed minibar collection");
+  assert(!before || !before.items.some(function (i) { return /city tax/i.test(i.action); }),
+    "untimed city tax stays out of Timeline (Finance owns it)");
 
   const during = timeline.groups.find(function (g) { return g.key === "during_shift"; });
-  assert(during && during.items.some(function (i) { return /Room 24|AC/i.test(i.action); }),
-    "during shift includes Room 24 AC");
+  assert(!during || !during.items.some(function (i) { return /AC|shower|dryer|safe|Follow up/i.test(i.action); }),
+    "Timeline excludes generic maintenance follow-ups");
   assert(during && during.items.some(function (i) { return /no-show|Room 5/i.test(i.action); }),
-    "during shift includes no-show decision");
+    "sequence no-show decision remains on Timeline");
 
   const tomorrow = timeline.groups.find(function (g) { return g.key === "tomorrow"; });
   assert(tomorrow && tomorrow.items.some(function (i) { return /14|15|interconnect|Henderson/i.test(i.action); }),
@@ -280,6 +291,8 @@ console.log("\nHandover Intelligence Experience Sprint 1\n");
     uniq[a] = true;
   });
   assert(!dup, "no duplicate actions inside timeline");
+  assert(!allActions.some(function (a) { return /Follow up .*Maintenance|arrivals left|Confirm two remaining/i.test(a); }),
+    "Timeline omits generic outstanding / snapshot noise");
 
   const withIcons = [];
   timeline.groups.forEach(function (g) {
@@ -290,10 +303,11 @@ console.log("\nHandover Intelligence Experience Sprint 1\n");
     "wake-up uses clock icon");
   assert(withIcons.some(function (i) { return i.icon === "🚕" && /Addison Lee/i.test(i.action); }),
     "Addison Lee uses taxi icon");
-  assert(withIcons.some(function (i) { return i.icon === "⭐" && /VIP|Whitmore/i.test(i.action); }),
-    "VIP uses star icon");
+  assert(withIcons.some(function (i) { return i.icon === "⭐" && /VIP|Whitmore|Welcome|champagne|Twin/i.test(i.action); }),
+    "VIP / arrival prep uses star icon");
   assert(withIcons.some(function (i) { return i.icon === "💰"; }), "payment deadline uses money icon");
-  assert(withIcons.some(function (i) { return i.icon === "🔧"; }), "maintenance uses wrench icon");
+  assert(!withIcons.some(function (i) { return i.icon === "🔧"; }),
+    "maintenance wrench icon no longer appears on Timeline");
 })();
 
 (function displayWordingPolish() {

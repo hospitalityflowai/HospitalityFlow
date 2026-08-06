@@ -301,12 +301,22 @@ console.log("\n-- Briefing / status / alerts share context authority --");
   var status = SI.buildHotelStatusModel(entries);
   var guestArea = status.filter(function (a) { return a.key === "guest_experience"; })[0];
   var revenueArea = status.filter(function (a) { return a.key === "revenue"; })[0];
+  var maintArea = status.filter(function (a) { return a.key === "maintenance"; })[0];
   assert(guestArea && guestArea.level === "critical", "status guest_experience critical from context");
   assert(revenueArea && revenueArea.level === "critical", "status revenue critical from context");
   var alerts = SI.computeShiftAlertsFromObjects(entries);
   assert(alerts.maintenance >= 1, "alerts maintenance from context objects");
   assert(alerts.payments >= 1, "alerts payments from context objects");
   assert(alerts.urgent >= 1, "alerts urgent for guest-impacting maintenance");
+  /* Shared glance source of truth — alerts and status counts must not diverge. */
+  assert(maintArea && maintArea.count === alerts.maintenance,
+    "Hotel Status maintenance count matches Shift Alert maintenance");
+  assert(revenueArea && revenueArea.count === alerts.payments,
+    "Hotel Status revenue count matches Shift Alert payments");
+  if (guestArea.level === "critical") {
+    assert(guestArea.count === alerts.urgent,
+      "Critical guest experience count matches Shift Alert urgent");
+  }
 })();
 
 console.log("\n-- Confidence gating --");

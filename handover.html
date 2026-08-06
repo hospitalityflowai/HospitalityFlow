@@ -393,11 +393,32 @@
 
     .handover-meta {
       display: none;
-      padding: 16px 18px;
-      background: var(--white);
-      border: 1px solid rgba(7, 14, 26, 0.05);
-      border-radius: var(--radius-lg);
-      box-shadow: 0 1px 3px rgba(7, 14, 26, 0.04);
+      padding: 14px 16px;
+      position: relative;
+      overflow: hidden;
+      border-radius: var(--radius-xl);
+      border: 1px solid transparent;
+      background:
+        linear-gradient(165deg, rgba(74, 143, 196, 0.13) 0%, rgba(255, 255, 255, 0.98) 58%) padding-box,
+        linear-gradient(180deg, rgba(106, 173, 224, 0.65), rgba(74, 143, 196, 0.2) 50%, rgba(106, 173, 224, 0.45)) border-box;
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.85) inset,
+        0 12px 32px rgba(18, 34, 64, 0.06),
+        0 0 36px rgba(74, 143, 196, 0.12);
+    }
+
+    .handover-meta::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 36%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(160, 210, 245, 0.95), transparent);
+      box-shadow: 0 0 12px 2px rgba(106, 173, 224, 0.5);
+      z-index: 2;
+      pointer-events: none;
     }
 
     .handover-meta.is-visible { display: block; }
@@ -405,13 +426,15 @@
     .handover-meta-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 14px 24px;
+      gap: 10px 18px;
+      position: relative;
+      z-index: 1;
     }
 
     .handover-meta-item {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       min-width: 0;
     }
 
@@ -423,9 +446,10 @@
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      background: var(--gray-50);
-      border: none;
-      color: var(--gray-400);
+      background: rgba(255, 255, 255, 0.88);
+      border: 1px solid rgba(74, 143, 196, 0.22);
+      color: var(--blue-600);
+      box-shadow: 0 1px 4px rgba(74, 143, 196, 0.1);
     }
 
     .handover-meta-icon svg {
@@ -436,7 +460,7 @@
     .handover-meta-body {
       display: flex;
       flex-direction: column;
-      gap: 3px;
+      gap: 1px;
       min-width: 0;
       flex: 1;
     }
@@ -444,18 +468,18 @@
     .handover-meta-label {
       font-size: 0.72rem;
       font-weight: 600;
-      color: var(--gray-500);
+      color: var(--blue-600);
       text-transform: none;
-      letter-spacing: 0;
+      letter-spacing: 0.01em;
       line-height: 1.2;
     }
 
     .handover-meta-value {
       font-size: 0.92rem;
-      font-weight: 600;
+      font-weight: 700;
       color: var(--navy-900);
       line-height: 1.3;
-      letter-spacing: -0.015em;
+      letter-spacing: -0.02em;
     }
 
     .form-label {
@@ -488,30 +512,38 @@
 
     .shift-selector {
       display: flex;
-      gap: 8px;
+      gap: 6px;
       flex-wrap: wrap;
+      padding: 3px;
+      background: var(--gray-100);
+      border: 1px solid rgba(7, 14, 26, 0.06);
+      border-radius: calc(var(--radius) + 2px);
     }
 
     .shift-btn {
       flex: 1;
       min-width: 72px;
-      padding: 10px 14px;
+      padding: 9px 14px;
       font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--gray-500);
-      background: var(--gray-50);
-      border: 1.5px solid var(--gray-200);
+      font-weight: 500;
+      color: var(--gray-400);
+      background: transparent;
+      border: 1.5px solid transparent;
       border-radius: var(--radius);
       transition: all var(--transition);
     }
 
-    .shift-btn:hover { border-color: var(--gray-300); color: var(--navy-700); }
+    .shift-btn:hover {
+      color: var(--navy-700);
+      background: rgba(255, 255, 255, 0.55);
+    }
 
     .shift-btn.active {
-      background: var(--navy-800);
-      border-color: var(--navy-800);
+      background: var(--navy-900);
+      border-color: var(--navy-900);
       color: var(--white);
-      box-shadow: 0 2px 8px rgba(18, 34, 64, 0.2);
+      font-weight: 700;
+      box-shadow: 0 2px 10px rgba(7, 14, 26, 0.28);
     }
 
     .shift-btn:focus-visible {
@@ -531,6 +563,29 @@
 
     .char-count { font-size: 0.78rem; color: var(--gray-400); }
 
+    .notes-sections {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .notes-section-title {
+      display: block;
+      font-size: 0.92rem;
+      font-weight: 650;
+      color: var(--navy-900);
+      letter-spacing: -0.02em;
+      margin: 0 0 4px;
+    }
+
+    .notes-section-helper {
+      font-size: 0.78rem;
+      color: var(--gray-500);
+      line-height: 1.45;
+      margin: 0 0 8px;
+      max-width: 62ch;
+    }
+
     .notes-textarea {
       width: 100%;
       min-height: 200px;
@@ -543,6 +598,19 @@
       border-radius: var(--radius);
       resize: vertical;
       transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
+      white-space: pre-wrap;
+    }
+
+    .notes-textarea--section {
+      min-height: 148px;
+    }
+
+    .notes-textarea--mirror {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
     }
 
     .notes-textarea::placeholder { color: var(--gray-400); }
@@ -893,7 +961,7 @@
     .handover-results {
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 10px;
     }
 
     /* ── Shift at a Glance ── */
@@ -907,89 +975,423 @@
     }
 
     .shift-glance-header {
-      margin-bottom: 14px;
+      margin-bottom: 2px;
     }
 
     .shift-glance-header h3 {
-      font-size: 0.94rem;
+      font-size: 0.86rem;
       font-weight: 600;
       color: var(--navy-800);
       letter-spacing: -0.01em;
     }
 
     .shift-glance-group + .shift-glance-group {
-      margin-top: 14px;
+      margin-top: 8px;
     }
 
     .shift-glance-subheading {
-      font-size: 0.78rem;
+      font-size: 0.66rem;
       font-weight: 600;
       color: var(--navy-700);
       letter-spacing: -0.01em;
       text-transform: none;
-      margin-bottom: 10px;
+      margin-bottom: 4px;
     }
 
     .shift-glance-grid {
       display: grid;
-      gap: 10px;
+      gap: 6px;
+      align-items: stretch;
+      width: 100%;
     }
 
-    .hotel-snapshot-groups {
+    /* Hotel Snapshot — compact widgets in a full-width dashboard grid */
+    .hotel-snapshot-groups,
+    .hotel-snapshot-groups--compact {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 6px;
+      width: 100%;
+    }
+
+    .hotel-snapshot-group {
+      min-width: 0;
+      width: 100%;
+    }
+
+    .hotel-snapshot-group + .hotel-snapshot-group {
+      margin-top: 0;
+      padding-top: 6px;
+      border-top: 1px solid rgba(18, 34, 64, 0.06);
     }
 
     .hotel-snapshot-group-label {
-      font-size: 0.72rem;
-      font-weight: 650;
-      color: var(--gray-500);
-      letter-spacing: 0.04em;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.58rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
-      margin: 0 0 8px;
+      margin: 0 0 4px;
+      padding-left: 7px;
+      border-left: 2px solid currentColor;
+      line-height: 1.15;
+    }
+
+    .hotel-snapshot-group-label::before {
+      content: "";
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: currentColor;
+      flex-shrink: 0;
+      opacity: 0.85;
+    }
+
+    .hotel-snapshot-group[data-snapshot-group="operations"] .hotel-snapshot-group-label {
+      color: #3a7ab0;
+    }
+
+    .hotel-snapshot-group[data-snapshot-group="inventory"] .hotel-snapshot-group-label {
+      color: #7c5cbf;
+    }
+
+    .hotel-snapshot-group[data-snapshot-group="revenue"] .hotel-snapshot-group-label {
+      color: #3f8f6c;
     }
 
     .shift-glance-grid--snapshot {
-      grid-template-columns: repeat(6, minmax(0, 1fr));
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 6px;
       align-items: stretch;
+      width: 100%;
+      max-width: none;
     }
 
-    .hotel-snapshot-group[data-snapshot-group="operations"] .shift-glance-grid--snapshot {
-      grid-template-columns: repeat(6, minmax(0, 1fr));
-    }
-
+    .hotel-snapshot-group[data-snapshot-group="operations"] .shift-glance-grid--snapshot,
     .hotel-snapshot-group[data-snapshot-group="inventory"] .shift-glance-grid--snapshot {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      width: 100%;
     }
 
+    /* ADR | RevPAR | Quote — Quote takes remaining half so row edges match Ops/Inventory */
     .hotel-snapshot-group[data-snapshot-group="revenue"] .shift-glance-grid--snapshot {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      max-width: 420px;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 2fr);
+      width: 100%;
     }
 
-    .hotel-snapshot-groups .glance-snapshot {
-      min-height: 88px;
-      padding: 12px 10px 10px;
+    .hotel-snapshot-group[data-snapshot-group="operations"] .glance-snapshot-icon,
+    .hotel-snapshot-group[data-snapshot-group="inventory"] .glance-snapshot-icon,
+    .hotel-snapshot-group[data-snapshot-group="revenue"] .glance-snapshot-icon {
+      color: var(--gray-400);
+      background: var(--gray-50);
+    }
+
+    .quote-of-day-card {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-width: 0;
+      max-width: none;
+      min-height: 56px;
+      padding: 6px 10px;
+      text-align: center;
+      background: #ffffff;
+      border: 1px solid rgba(18, 34, 64, 0.08);
+      border-radius: 12px;
+      box-shadow: var(--shadow-card);
+      align-self: stretch;
+    }
+
+    .quote-of-day-body {
+      min-width: 0;
+      max-width: 100%;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .quote-of-day-label {
+      font-size: 0.52rem;
+      font-weight: 650;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #3f8f6c;
+      margin: 0 0 2px;
+      line-height: 1.15;
+      text-align: center;
+      opacity: 0.95;
+    }
+
+    .quote-of-day-text {
+      margin: 0;
+      font-size: 0.7rem;
+      font-weight: 450;
+      font-style: italic;
+      line-height: 1.3;
+      color: var(--navy-700);
+      letter-spacing: -0.01em;
+      text-align: center;
+    }
+
+    .quote-of-day-author {
+      margin: 2px 0 0;
+      font-size: 0.56rem;
+      font-weight: 500;
+      font-style: normal;
+      color: var(--gray-400);
+      text-align: center;
+    }
+
+    .hotel-snapshot-groups .glance-snapshot,
+    #preHotelSnapshotGrid .glance-snapshot,
+    #shiftSnapshotGrid .glance-snapshot {
+      width: 100%;
+      min-width: 0;
+      max-width: none;
+      min-height: 56px;
+      padding: 6px 5px 5px;
+    }
+
+    /* Source Notes — collapsed by default, compact trust strip */
+    .source-notes-panel {
+      margin: 0 0 10px;
+      position: relative;
+      overflow: hidden;
+      border-radius: var(--radius-xl);
+      border: 1px solid transparent;
+      background:
+        linear-gradient(165deg, rgba(74, 143, 196, 0.1) 0%, rgba(255, 255, 255, 0.97) 62%) padding-box,
+        linear-gradient(180deg, rgba(106, 173, 224, 0.55), rgba(74, 143, 196, 0.18) 50%, rgba(106, 173, 224, 0.4)) border-box;
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.85) inset,
+        0 8px 22px rgba(18, 34, 64, 0.04),
+        0 0 28px rgba(74, 143, 196, 0.1);
+    }
+
+    .source-notes-panel::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 28%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(160, 210, 245, 0.9), transparent);
+      box-shadow: 0 0 10px 1px rgba(106, 173, 224, 0.4);
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .source-notes-panel[hidden] {
+      display: none !important;
+    }
+
+    .source-notes-toggle {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      text-align: left;
+      color: inherit;
+      font: inherit;
+      position: relative;
+      z-index: 1;
+    }
+
+    .source-notes-toggle:hover {
+      background: rgba(74, 143, 196, 0.06);
+    }
+
+    .source-notes-toggle:focus-visible {
+      outline: 2px solid var(--blue-400);
+      outline-offset: -2px;
+    }
+
+    .source-notes-toggle-icon {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+      color: var(--blue-500);
+      opacity: 0.9;
+    }
+
+    .source-notes-toggle-icon svg {
+      width: 18px;
+      height: 18px;
+      display: block;
+    }
+
+    .source-notes-toggle-copy {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .source-notes-toggle-title {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 650;
+      color: var(--navy-800);
+      letter-spacing: -0.01em;
+      line-height: 1.2;
+    }
+
+    .source-notes-toggle-sub {
+      display: block;
+      margin-top: 1px;
+      font-size: 0.7rem;
+      color: var(--gray-500);
+      line-height: 1.3;
+    }
+
+    .source-notes-toggle-action {
+      flex-shrink: 0;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--blue-600);
+      white-space: nowrap;
+    }
+
+    .source-notes-chevron {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+      color: var(--gray-400);
+      transition: transform 0.2s ease;
+    }
+
+    .source-notes-panel.is-open .source-notes-chevron {
+      transform: rotate(180deg);
+    }
+
+    .source-notes-body {
+      display: none;
+      padding: 0 14px 12px;
+      border-top: 1px solid rgba(74, 143, 196, 0.12);
+      position: relative;
+      z-index: 1;
+    }
+
+    .source-notes-panel.is-open .source-notes-body {
+      display: block;
+    }
+
+    .source-notes-section + .source-notes-section {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(18, 34, 64, 0.05);
+    }
+
+    .source-notes-section-label {
+      font-size: 0.64rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--gray-500);
+      margin: 0 0 4px;
+    }
+
+    .source-notes-section-text {
+      margin: 0;
+      font-size: 0.8rem;
+      line-height: 1.45;
+      color: var(--navy-800);
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: inherit;
+    }
+
+    .source-notes-empty {
+      margin: 8px 0 0;
+      font-size: 0.76rem;
+      color: var(--gray-500);
     }
 
     .shift-glance-grid--alerts {
-      grid-template-columns: repeat(5, minmax(0, 1fr));
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 6px;
+      align-items: stretch;
+      width: 100%;
+      max-width: none;
     }
 
     .glance-stat,
     .glance-snapshot {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 12px 14px;
+      gap: 4px;
+      padding: 6px 8px;
       background: var(--white);
-      border: 1px solid rgba(7, 14, 26, 0.05);
-      border-radius: var(--radius-lg);
-      box-shadow: 0 1px 2px rgba(7, 14, 26, 0.03);
+      border: 1px solid rgba(18, 34, 64, 0.08);
+      border-radius: 12px;
+      box-shadow: var(--shadow-card);
       text-align: left;
       width: 100%;
       min-width: 0;
+    }
+
+    .shift-glance-grid--alerts .glance-stat {
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: flex-start;
+      text-align: center;
+      width: 100%;
+      min-width: 0;
+      max-width: none;
+      gap: 2px;
+      min-height: 56px;
+      padding: 6px 5px 5px;
+      border-radius: 12px;
+      background: #ffffff;
+      border: 1px solid rgba(18, 34, 64, 0.08);
+      box-shadow: var(--shadow-card), inset 0 2px 0 0 transparent;
+    }
+
+    .shift-glance-grid--alerts .glance-stat-icon {
+      order: 3;
+      width: 16px;
+      height: 16px;
+      margin: 2px auto 0;
+      border-radius: 50%;
+    }
+
+    .shift-glance-grid--alerts .glance-stat-icon svg {
+      width: 9px;
+      height: 9px;
+    }
+
+    .shift-glance-grid--alerts .glance-stat-body {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1px;
+      flex: 0 0 auto;
+      overflow: visible;
+    }
+
+    .shift-glance-grid--alerts .glance-stat-value {
+      font-size: 0.95rem;
+      line-height: 1.1;
+    }
+
+    .shift-glance-grid--alerts .glance-stat-label {
+      font-size: 0.52rem;
+      font-weight: 550;
+      letter-spacing: 0.01em;
+      text-transform: none;
+      white-space: normal;
+      line-height: 1.15;
+      max-width: 100%;
+      color: var(--gray-500);
     }
 
     .shift-glance-grid--snapshot .glance-snapshot {
@@ -999,22 +1401,33 @@
       align-items: stretch;
       justify-content: flex-start;
       text-align: center;
-      min-height: 102px;
-      padding: 16px 12px 12px;
-      gap: 6px;
-      border: 1px solid rgba(7, 14, 26, 0.06);
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-card), inset 0 3px 0 0 rgba(74, 143, 196, 0.28);
+      width: 100%;
+      min-width: 0;
+      max-width: none;
+      min-height: 56px;
+      padding: 6px 5px 5px;
+      gap: 2px;
+      border: 1px solid rgba(18, 34, 64, 0.08);
+      border-radius: 12px;
+      background: #ffffff;
+      box-shadow: var(--shadow-card);
     }
 
     .shift-glance-grid--snapshot .glance-snapshot-icon {
       order: 3;
-      margin: 6px auto 0;
-      width: var(--hf-icon-size);
-      height: var(--hf-icon-size);
+      margin: 2px auto 0;
+      width: 16px;
+      height: 16px;
       opacity: 0.85;
+      border: none;
+      border-radius: 50%;
       background: var(--gray-50);
-      border: 1px solid rgba(7, 14, 26, 0.04);
+      color: var(--gray-400);
+    }
+
+    .shift-glance-grid--snapshot .glance-snapshot-icon svg {
+      width: 9px;
+      height: 9px;
     }
 
     .shift-glance-grid--snapshot .glance-stat-body {
@@ -1022,7 +1435,9 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 3px;
+      gap: 1px;
+      flex: 0 0 auto;
+      overflow: visible;
     }
 
     .glance-snapshot {
@@ -1033,8 +1448,8 @@
     .shift-glance-grid--snapshot .glance-snapshot:hover:not(.is-editing),
     #preHotelSnapshotGrid .glance-snapshot:hover {
       transform: translateY(-1px);
-      border-color: rgba(7, 14, 26, 0.12);
-      box-shadow: 0 2px 8px rgba(7, 14, 26, 0.06);
+      border-color: rgba(74, 143, 196, 0.3);
+      box-shadow: var(--shadow-card-hover), inset 0 2px 0 0 rgba(74, 143, 196, 0.32);
     }
 
     .shift-glance-grid--snapshot .glance-snapshot:focus-visible:not(.is-editing),
@@ -1128,13 +1543,13 @@
 
     .glance-snapshot-value {
       order: 1;
-      font-size: 1.28rem;
+      font-size: 0.95rem;
       font-weight: 700;
       letter-spacing: -0.03em;
       color: var(--navy-900);
-      line-height: 1.15;
-      border-radius: 6px;
-      padding: 0 2px;
+      line-height: 1.1;
+      border-radius: 4px;
+      padding: 0;
       margin: 0;
       word-break: break-word;
       overflow-wrap: anywhere;
@@ -1149,13 +1564,13 @@
 
     .glance-snapshot-label {
       order: 2;
-      font-size: 0.7rem;
-      font-weight: 500;
+      font-size: 0.52rem;
+      font-weight: 550;
       text-transform: none;
       letter-spacing: 0;
-      color: var(--gray-400);
+      color: var(--gray-500);
       margin-top: 0;
-      line-height: 1.3;
+      line-height: 1.15;
       white-space: normal;
       overflow: visible;
       text-overflow: unset;
@@ -1227,18 +1642,7 @@
       overflow-wrap: anywhere;
     }
 
-    @media (max-width: 1024px) {
-      .hotel-snapshot-group[data-snapshot-group="operations"] .shift-glance-grid--snapshot,
-      .hotel-snapshot-group[data-snapshot-group="inventory"] .shift-glance-grid--snapshot,
-      .shift-glance-grid--snapshot {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-      }
-
-      .hotel-snapshot-group[data-snapshot-group="revenue"] .shift-glance-grid--snapshot {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        max-width: none;
-      }
-
+    @media (max-width: 900px) {
       .shift-glance-grid--alerts {
         grid-template-columns: repeat(3, minmax(0, 1fr));
       }
@@ -1247,15 +1651,28 @@
     @media (max-width: 600px) {
       .hotel-snapshot-group[data-snapshot-group="operations"] .shift-glance-grid--snapshot,
       .hotel-snapshot-group[data-snapshot-group="inventory"] .shift-glance-grid--snapshot,
-      .hotel-snapshot-group[data-snapshot-group="revenue"] .shift-glance-grid--snapshot,
-      .shift-glance-grid--snapshot,
+      .shift-glance-grid--snapshot {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .hotel-snapshot-group[data-snapshot-group="revenue"] .shift-glance-grid--snapshot {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .hotel-snapshot-group[data-snapshot-group="revenue"] .quote-of-day-card {
+        grid-column: 1 / -1;
+        min-height: 54px;
+      }
+
       .shift-glance-grid--alerts {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
-      .glance-stat,
-      .glance-snapshot {
-        padding: 11px 12px;
+      .shift-glance-grid--snapshot .glance-snapshot,
+      .hotel-snapshot-groups .glance-snapshot,
+      .shift-glance-grid--alerts .glance-stat {
+        min-height: 54px;
+        padding: 5px 4px 4px;
       }
     }
 
@@ -1395,7 +1812,7 @@
       border-radius: var(--radius-xl);
       background: var(--white);
       box-shadow: var(--shadow-sm);
-      margin-top: 14px;
+      margin-top: 10px;
     }
 
     .hotel-status-card.is-visible,
@@ -1405,30 +1822,29 @@
 
     .hotel-status-card .card-body,
     .timeline-card .card-body {
-      padding: 18px 20px;
+      padding: 8px 10px;
     }
 
     .hotel-status-header {
-      margin-bottom: 14px;
+      margin-bottom: 6px;
     }
 
     .hotel-status-title {
       margin: 0;
-      font-size: 1rem;
+      font-size: 0.9rem;
       font-weight: 700;
       color: var(--navy-800);
     }
 
     .hotel-status-sub {
-      margin: 4px 0 0;
-      font-size: 0.82rem;
-      color: var(--gray-500);
+      display: none;
     }
 
     .hotel-status-grid {
       display: grid;
       grid-template-columns: repeat(5, minmax(0, 1fr));
-      gap: 10px;
+      gap: 5px;
+      width: 100%;
     }
 
     @media (max-width: 1100px) {
@@ -1440,12 +1856,29 @@
     }
 
     .hotel-status-item {
+      display: block;
+      width: 100%;
+      font: inherit;
+      color: inherit;
       border: 1px solid rgba(7, 14, 26, 0.08);
-      border-radius: 12px;
-      padding: 12px 12px 11px;
+      border-radius: 9px;
+      padding: 5px 7px;
       background: var(--gray-50);
       border-left: 3px solid var(--gray-300);
-      min-height: 100%;
+      min-height: 0;
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .hotel-status-item:hover {
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(7, 14, 26, 0.05);
+    }
+
+    .hotel-status-item:focus-visible {
+      outline: 2px solid var(--blue-400);
+      outline-offset: 2px;
     }
 
     .hotel-status-item[data-level="critical"] {
@@ -1470,18 +1903,18 @@
     .hotel-status-label {
       display: flex;
       align-items: center;
-      gap: 7px;
-      font-size: 0.72rem;
+      gap: 5px;
+      font-size: 0.62rem;
       font-weight: 700;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.03em;
       text-transform: uppercase;
       color: var(--navy-700);
-      margin-bottom: 4px;
+      margin-bottom: 1px;
     }
 
     .hotel-status-dot {
-      width: 8px;
-      height: 8px;
+      width: 7px;
+      height: 7px;
       border-radius: 50%;
       flex-shrink: 0;
       background: var(--gray-300);
@@ -1504,16 +1937,37 @@
     }
 
     .hotel-status-level {
-      font-size: 0.78rem;
+      font-size: 0.74rem;
       font-weight: 700;
       color: var(--navy-800);
-      margin-bottom: 6px;
+      margin: 0;
+      line-height: 1.2;
     }
 
     .hotel-status-summary {
-      font-size: 0.8rem;
-      line-height: 1.4;
+      display: none;
+    }
+
+    .hotel-status-details {
+      display: none;
+      margin: 6px 0 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .hotel-status-item.is-expanded .hotel-status-details {
+      display: block;
+    }
+
+    .hotel-status-details li {
+      font-size: 0.72rem;
+      line-height: 1.35;
       color: var(--gray-600);
+      padding: 2px 0;
+    }
+
+    .hotel-status-details li + li {
+      border-top: 1px solid rgba(7, 14, 26, 0.05);
     }
 
     .timeline-toggle {
@@ -1555,12 +2009,19 @@
     }
 
     .timeline-body {
-      display: none;
-      margin-top: 14px;
+      max-height: 0;
+      overflow: hidden;
+      margin-top: 0;
+      opacity: 0;
+      transition: max-height 0.38s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.22s ease,
+        margin-top 0.22s ease;
     }
 
     .timeline-body.is-open {
-      display: block;
+      max-height: 1200px;
+      margin-top: 14px;
+      opacity: 1;
     }
 
     .timeline-group {
@@ -1799,8 +2260,82 @@
     .section-card[data-section="maintenance"] .section-icon-wrap { background: var(--amber-50); color: var(--amber-500); }
     .section-card[data-section="payments"] .section-icon-wrap { background: var(--green-50); color: var(--green-500); }
     .section-card[data-section="events"] .section-icon-wrap { background: #f3f0fa; color: #7c5cbf; }
+    .section-card[data-section="preparations"] .section-icon-wrap { background: #eef6fc; color: var(--blue-600); }
+    .section-card[data-section="openQuestions"] .section-icon-wrap { background: #fff7ed; color: #c47a3a; }
     .section-card[data-section="tasks"] .section-icon-wrap { background: var(--gray-100); color: var(--navy-600); }
-    .section-card[data-section="general"] .section-icon-wrap { background: var(--gray-100); color: var(--gray-500); }
+    .section-card[data-section="lostproperty"] .section-icon-wrap { background: #eef3f6; color: #6b8a9e; }
+    .section-card[data-section="general"] .section-icon-wrap { background: #f1f3f5; color: #7a8594; }
+
+    .section-card[data-section="lostproperty"] {
+      box-shadow: var(--shadow-card), inset 3px 0 0 0 #6b8a9e;
+    }
+
+    .section-card[data-section="general"] {
+      box-shadow: var(--shadow-card), inset 3px 0 0 0 #7a8594;
+    }
+
+    .handover-item--heading {
+      list-style: none;
+      margin-top: 8px;
+      padding-top: 4px;
+    }
+    .handover-item--heading .handover-item-text--heading {
+      font-weight: 700;
+      color: var(--navy-900);
+      letter-spacing: -0.02em;
+    }
+    .handover-item--checklist .handover-item-text,
+    .handover-item--question .handover-item-text {
+      font-size: 0.9rem;
+    }
+    .section-card[data-section="openQuestions"] .handover-item-text {
+      white-space: pre-line;
+      line-height: 1.35;
+    }
+    /* Compact guest-grouped preparations: heading full-width, tasks wrap horizontally. */
+    .section-card[data-section="preparations"] .section-list {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 4px 14px;
+    }
+    .section-card[data-section="preparations"] .section-list > .handover-item--heading {
+      flex: 1 1 100%;
+      margin-top: 10px;
+      padding: 0;
+      background: transparent;
+      border: none;
+      box-shadow: none;
+    }
+    .section-card[data-section="preparations"] .section-list > .handover-item--heading:first-child {
+      margin-top: 0;
+    }
+    .section-card[data-section="preparations"] .section-list > .handover-item--checklist {
+      flex: 0 1 auto;
+      margin: 0;
+      padding: 2px 0;
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      cursor: pointer;
+      max-width: 100%;
+    }
+    .section-card[data-section="preparations"] .section-list > .handover-item--checklist:hover {
+      background: transparent;
+    }
+    .section-card[data-section="preparations"] .section-list > .handover-item--checklist.is-done .handover-item-text {
+      text-decoration: line-through;
+      opacity: 0.72;
+    }
+    .section-card[data-section="preparations"] .section-list li::before,
+    .section-card[data-section="openQuestions"] .section-list li::before {
+      display: none;
+    }
+    @media (max-width: 640px) {
+      .section-card[data-section="preparations"] .section-list > .handover-item--checklist {
+        flex: 1 1 100%;
+      }
+    }
 
     .section-toggle-text { flex: 1; min-width: 0; }
 
@@ -1897,6 +2432,8 @@
     .section-card[data-section="payments"] .section-list li::before { background: var(--green-500); }
     .section-card[data-section="events"] .section-list li::before { background: #7c5cbf; }
     .section-card[data-section="tasks"] .section-list li::before { background: var(--navy-600); }
+    .section-card[data-section="lostproperty"] .section-list li::before { background: #6b8a9e; }
+    .section-card[data-section="general"] .section-list li::before { background: #7a8594; }
 
     .section-list li.handover-item {
       display: flex;
@@ -2188,22 +2725,33 @@
       flex-direction: column;
       align-items: stretch;
       text-align: center;
-      min-height: 88px;
-      padding: 12px 10px 10px;
-      gap: 6px;
-      border: 1px solid rgba(7, 14, 26, 0.06);
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-card), inset 0 3px 0 0 rgba(74, 143, 196, 0.28);
+      width: 100%;
+      min-width: 0;
+      max-width: none;
+      min-height: 56px;
+      padding: 6px 5px 5px;
+      gap: 2px;
+      border: 1px solid rgba(18, 34, 64, 0.08);
+      border-radius: 12px;
+      background: #ffffff;
+      box-shadow: var(--shadow-card);
     }
 
     #preHotelSnapshotGrid .glance-snapshot-icon {
       order: 3;
-      margin: 6px auto 0;
-      width: var(--hf-icon-size);
-      height: var(--hf-icon-size);
+      margin: 2px auto 0;
+      width: 16px;
+      height: 16px;
       opacity: 0.85;
+      border: none;
+      border-radius: 50%;
       background: var(--gray-50);
-      border: 1px solid rgba(7, 14, 26, 0.04);
+      color: var(--gray-400);
+    }
+
+    #preHotelSnapshotGrid .glance-snapshot-icon svg {
+      width: 9px;
+      height: 9px;
     }
 
     #preHotelSnapshotGrid .glance-stat-body {
@@ -2211,12 +2759,14 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 3px;
+      gap: 1px;
+      flex: 0 0 auto;
+      overflow: visible;
     }
 
     #preHotelSnapshotGrid .snapshot-field-input {
       order: 1;
-      font-size: 1.28rem;
+      font-size: 0.95rem;
       font-weight: 700;
       letter-spacing: -0.03em;
       text-align: center;
@@ -2227,6 +2777,7 @@
       color: var(--navy-900);
       word-break: break-word;
       overflow-wrap: anywhere;
+      line-height: 1.1;
     }
 
     #preHotelSnapshotGrid .glance-snapshot-label {
@@ -2697,6 +3248,13 @@
         padding: 8px 12px !important;
         border: 1px solid rgba(7, 14, 26, 0.12) !important;
         border-radius: 6px !important;
+        background: #fff !important;
+        box-shadow: none !important;
+      }
+
+      .handover-meta::before,
+      .source-notes-panel::before {
+        display: none !important;
       }
 
       .handover-meta-grid {
@@ -2740,43 +3298,108 @@
         gap: 8px !important;
       }
 
-      .shift-glance-grid--snapshot {
-        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-        gap: 8px !important;
+      .source-notes-panel {
+        break-inside: avoid;
+        page-break-inside: avoid;
+        margin-bottom: 8px !important;
+        background: #fff !important;
+        border: 1px solid rgba(7, 14, 26, 0.12) !important;
+        box-shadow: none !important;
+      }
+
+      .source-notes-panel[hidden] {
+        display: none !important;
+      }
+
+      .source-notes-toggle {
+        display: none !important;
+      }
+
+      .source-notes-panel .source-notes-body,
+      .source-notes-panel.is-open .source-notes-body {
+        display: block !important;
+        padding: 8px 10px !important;
+        border-top: none !important;
+      }
+
+      .source-notes-section-label {
+        font-size: 0.62rem !important;
+      }
+
+      .source-notes-section-text {
+        font-size: 0.74rem !important;
+        line-height: 1.35 !important;
+      }
+
+      .shift-glance-grid--snapshot,
+      .hotel-snapshot-group[data-snapshot-group="operations"] .shift-glance-grid--snapshot,
+      .hotel-snapshot-group[data-snapshot-group="inventory"] .shift-glance-grid--snapshot {
+        display: grid !important;
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        gap: 4px !important;
+        width: 100% !important;
+      }
+
+      .hotel-snapshot-group[data-snapshot-group="revenue"] .shift-glance-grid--snapshot {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 2fr) !important;
+        gap: 4px !important;
+        width: 100% !important;
+      }
+
+      .hotel-snapshot-group[data-snapshot-group="revenue"] .quote-of-day-card {
+        grid-column: auto !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        width: 100% !important;
+      }
+
+      .quote-of-day-card {
+        min-height: 40px !important;
+        padding: 5px 8px !important;
+      }
+
+      .quote-of-day-text {
+        font-size: 0.68rem !important;
       }
 
       .shift-glance-grid--alerts {
-        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-        gap: 8px !important;
+        display: grid !important;
+        grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+        gap: 4px !important;
+        width: 100% !important;
       }
 
       .glance-stat,
       .glance-snapshot {
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
-        padding: 7px 8px !important;
-        gap: 4px !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        padding: 3px 4px !important;
+        gap: 1px !important;
         box-shadow: none !important;
         min-height: 0 !important;
-        border-radius: 6px !important;
+        border-radius: 8px !important;
         display: flex !important;
         flex-direction: column !important;
         align-items: stretch !important;
       }
 
       .shift-glance-grid--snapshot .glance-snapshot {
-        padding: 7px 8px !important;
+        padding: 3px 4px !important;
       }
 
       .glance-snapshot-value {
-        font-size: 0.95rem !important;
-        line-height: 1.2 !important;
+        font-size: 0.84rem !important;
+        line-height: 1.15 !important;
         white-space: normal !important;
       }
 
       .glance-snapshot-label {
-        font-size: 0.68rem !important;
-        line-height: 1.2 !important;
+        font-size: 0.56rem !important;
+        line-height: 1.15 !important;
       }
 
       .glance-stat-value {
@@ -2924,6 +3547,28 @@
         display: block !important;
       }
 
+      .timeline-card.is-visible {
+        display: block !important;
+        opacity: 1 !important;
+        transform: none !important;
+      }
+
+      .timeline-body,
+      .timeline-body.is-open {
+        max-height: none !important;
+        overflow: visible !important;
+        opacity: 1 !important;
+        margin-top: 10px !important;
+      }
+
+      .timeline-toggle {
+        pointer-events: none;
+      }
+
+      .timeline-chevron {
+        display: none !important;
+      }
+
       .section-body-inner {
         padding: 0 10px 8px !important;
       }
@@ -3010,6 +3655,20 @@
         display: block !important;
         max-height: none !important;
         overflow: visible !important;
+      }
+
+      .hotel-status-card .card-body {
+        padding: 10px 12px !important;
+      }
+
+      .hotel-status-item {
+        cursor: default !important;
+        pointer-events: none;
+      }
+
+      .hotel-status-details {
+        display: block !important;
+        margin-top: 5px !important;
       }
 
       .shift-intelligence-part-toggle-text strong {
@@ -3518,13 +4177,13 @@
               </div>
               <div class="hotel-snapshot-pre">
                 <h4 class="shift-glance-subheading">Hotel Snapshot</h4>
-                <p class="hotel-snapshot-pre-hint">Enter today's hotel figures, or leave them blank and AI will extract them from your shift notes.</p>
-                <div class="hotel-snapshot-groups" id="preHotelSnapshotGrid"></div>
+                <p class="hotel-snapshot-pre-hint">Enter today’s figures. Occupancy and RevPAR calculate automatically. Leave blank to extract from notes.</p>
+                <div class="hotel-snapshot-groups hotel-snapshot-groups--compact" id="preHotelSnapshotGrid" aria-label="Hotel Snapshot"></div>
               </div>
             </div>
           </div>
 
-          <!-- Shift Handover Notes -->
+          <!-- Shift Handover Notes — three clear sections, one workflow -->
           <div class="card input-card">
             <div class="card-header">
               <div class="card-header-icon blue" aria-hidden="true">
@@ -3534,19 +4193,32 @@
               </div>
               <div class="card-header-text">
                 <h2 id="notesCardTitle">Shift Handover Notes</h2>
-                <p id="notesCardSubtitle">Add the key information from your shift. Hospitality Flow will organise it into a clear, professional handover.</p>
+                <p id="notesCardSubtitle">Capture arrivals, departures and general hotel notes. Hospitality Flow keeps each section’s context when organising the handover.</p>
               </div>
             </div>
             <div class="card-body">
               <div class="input-meta">
                 <span class="char-count" id="charCount">0 characters</span>
               </div>
-              <textarea
-                class="notes-textarea"
-                id="notesInput"
-                placeholder="Example:&#10;Wake-up call at 06:00 for Room 15&#10;Ironing board required for Room 21&#10;Light not working in Room 305&#10;Follow up Booking #4567&#10;VIP arrival at 14:00"
-                aria-label="Shift handover notes"
-              ></textarea>
+              <div class="notes-sections" id="notesSections">
+                <div class="notes-section" data-notes-section="arrivals">
+                  <label class="notes-section-title" for="notesArrivals">Today’s Arrivals</label>
+                  <p class="notes-section-helper">VIPs, ETAs, payment status, room setup, special requests and arrival actions.</p>
+                  <textarea class="notes-textarea notes-textarea--section" id="notesArrivals" rows="7" aria-label="Today's Arrivals" placeholder="VIPs, ETAs, payment status, room setup, special requests and arrival actions."></textarea>
+                </div>
+                <div class="notes-section" data-notes-section="departures">
+                  <label class="notes-section-title" for="notesDepartures">Today’s Departures</label>
+                  <p class="notes-section-helper">Outstanding balances, late check-outs, transport, luggage and departure actions.</p>
+                  <textarea class="notes-textarea notes-textarea--section" id="notesDepartures" rows="7" aria-label="Today's Departures" placeholder="Outstanding balances, late check-outs, transport, luggage and departure actions."></textarea>
+                </div>
+                <div class="notes-section" data-notes-section="general">
+                  <label class="notes-section-title" for="notesGeneral">General Hotel / Shift Notes</label>
+                  <p class="notes-section-helper">Maintenance, guest issues, housekeeping, staff communication and operational updates.</p>
+                  <textarea class="notes-textarea notes-textarea--section" id="notesGeneral" rows="8" aria-label="General Hotel / Shift Notes" placeholder="Maintenance, guest issues, housekeeping, staff communication and operational updates."></textarea>
+                </div>
+              </div>
+              <!-- Legacy mirror for draft/save compatibility — kept in sync with the three sections -->
+              <textarea id="notesInput" class="notes-textarea notes-textarea--mirror" hidden aria-hidden="true" tabindex="-1"></textarea>
             </div>
           </div>
           </div>
@@ -3637,13 +4309,28 @@
                   <div class="handover-meta-grid" id="handoverMetaGrid"></div>
                 </div>
 
+                <div class="source-notes-panel" id="sourceNotesPanel" hidden>
+                  <button type="button" class="source-notes-toggle" id="sourceNotesToggle" aria-expanded="false" aria-controls="sourceNotesBody">
+                    <span class="source-notes-toggle-icon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                    </span>
+                    <span class="source-notes-toggle-copy">
+                      <span class="source-notes-toggle-title">Source Notes</span>
+                      <span class="source-notes-toggle-sub">View the original staff notes used to generate this handover.</span>
+                    </span>
+                    <span class="source-notes-toggle-action" id="sourceNotesToggleAction">View Source Notes</span>
+                    <svg class="source-notes-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+                  </button>
+                  <div class="source-notes-body" id="sourceNotesBody" hidden></div>
+                </div>
+
                 <div class="shift-glance" id="shiftGlance">
                   <div class="shift-glance-header">
                     <h3>Today's Shift at a Glance</h3>
                   </div>
                   <div class="shift-glance-group">
                     <h4 class="shift-glance-subheading">Hotel Snapshot</h4>
-                    <div class="hotel-snapshot-groups" id="shiftSnapshotGrid"></div>
+                    <div class="hotel-snapshot-groups hotel-snapshot-groups--compact" id="shiftSnapshotGrid" aria-label="Hotel Snapshot"></div>
                   </div>
                   <div class="shift-glance-group" id="shiftAlertsGroup">
                     <h4 class="shift-glance-subheading">Shift Alerts</h4>
@@ -3681,14 +4368,14 @@
 
                 <div class="card timeline-card" id="timelineCard" hidden>
                   <div class="card-body">
-                    <button class="timeline-toggle is-open" id="timelineToggle" type="button" aria-expanded="true" aria-controls="timelineBody">
+                    <button class="timeline-toggle" id="timelineToggle" type="button" aria-expanded="false" aria-controls="timelineBody">
                       <span class="timeline-toggle-text">
                         <strong>Today's Timeline</strong>
                         <span class="timeline-toggle-sub">Timed actions and deadlines</span>
                       </span>
                       <svg class="timeline-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
                     </button>
-                    <div class="timeline-body is-open" id="timelineBody">
+                    <div class="timeline-body" id="timelineBody">
                       <div id="timelineGroups"></div>
                     </div>
                   </div>
@@ -3831,6 +4518,10 @@
   <script src="shift-intelligence-engine.js"></script>
   <script src="guest-intelligence.js"></script>
   <script src="handover-saved.js"></script>
+  <script src="js/hotel-snapshot-metrics.js"></script>
+  <script src="js/handover-quote-of-the-day.js"></script>
+  <script src="js/handover-notes-sections.js"></script>
+  <script src="js/handover-preparations.js"></script>
   <script src="js/demo-sample-data.js"></script>
   <script src="js/demo-mode.js"></script>
   <script>
@@ -3966,6 +4657,27 @@
           icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>'
         },
         {
+          id: "preparations",
+          emoji: "📋",
+          title: "Today's Preparations",
+          category: "Preparations",
+          keywords: [
+            "champagne", "truffle", "flower", "welcome card", "anniversary", "birthday",
+            "balloon", "sofa bed", "dental kit", "amenity", "twin", "cot", "prepare", "setup"
+          ],
+          icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>'
+        },
+        {
+          id: "openQuestions",
+          emoji: "❓",
+          title: "Questions Still Open",
+          category: "Open Questions",
+          keywords: [
+            "confirm", "awaiting", "still open", "not sure", "tbc", "has room", "please check"
+          ],
+          icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
+        },
+        {
           id: "completed",
           emoji: "✅",
           title: "Completed Actions",
@@ -3980,6 +4692,65 @@
       ];
 
       var notesInput = document.getElementById("notesInput");
+      var notesArrivals = document.getElementById("notesArrivals");
+      var notesDepartures = document.getElementById("notesDepartures");
+      var notesGeneral = document.getElementById("notesGeneral");
+      var notesSectionFields = [notesArrivals, notesDepartures, notesGeneral].filter(Boolean);
+
+      function getNotesParts() {
+        var Notes = window.HFHandoverNotesSections;
+        if (!Notes) {
+          return {
+            arrivals: notesArrivals ? notesArrivals.value : "",
+            departures: notesDepartures ? notesDepartures.value : "",
+            general: notesGeneral ? notesGeneral.value : (notesInput ? notesInput.value : "")
+          };
+        }
+        return Notes.normalizeParts({
+          arrivals: notesArrivals ? notesArrivals.value : "",
+          departures: notesDepartures ? notesDepartures.value : "",
+          general: notesGeneral ? notesGeneral.value : ""
+        });
+      }
+
+      function setNotesParts(parts) {
+        var Notes = window.HFHandoverNotesSections;
+        var next = Notes ? Notes.normalizeParts(parts) : (parts || {});
+        if (notesArrivals) notesArrivals.value = next.arrivals || "";
+        if (notesDepartures) notesDepartures.value = next.departures || "";
+        if (notesGeneral) notesGeneral.value = next.general || "";
+        syncNotesMirror();
+      }
+
+      function syncNotesMirror() {
+        if (!notesInput) return;
+        var Notes = window.HFHandoverNotesSections;
+        var parts = getNotesParts();
+        notesInput.value = Notes ? Notes.combineForAi(parts) : [
+          parts.arrivals, parts.departures, parts.general
+        ].filter(Boolean).join("\n\n");
+      }
+
+      function getCombinedNotesForAi() {
+        var Notes = window.HFHandoverNotesSections;
+        var parts = getNotesParts();
+        if (Notes) return Notes.combineForAi(parts);
+        return notesInput ? notesInput.value : "";
+      }
+
+      function notesHaveContent() {
+        var Notes = window.HFHandoverNotesSections;
+        var parts = getNotesParts();
+        if (Notes) return Notes.hasContent(parts);
+        return !!(notesInput && notesInput.value.trim());
+      }
+
+      function applyNotesFromLegacyString(text) {
+        var Notes = window.HFHandoverNotesSections;
+        if (Notes) setNotesParts(Notes.splitCombined(text || ""));
+        else if (notesInput) notesInput.value = text || "";
+        syncNotesMirror();
+      }
       var charCount = document.getElementById("charCount");
       var generateBtn = document.getElementById("generateBtn");
       var copyBtn = document.getElementById("copyBtn");
@@ -4012,10 +4783,17 @@
       var timelineGroups = document.getElementById("timelineGroups");
       var lastIntelligenceExperience = null;
       var lastGeneratedView = null;
+      /* Immutable source notes captured at generation — not live form values. */
+      var lastGeneratedSourceNotes = null;
+      var lastQuoteOfTheDay = null;
       var summaryStats = document.getElementById("summaryStats");
       var summaryCard = document.getElementById("summaryCard");
       var shiftGlance = document.getElementById("shiftGlance");
       var shiftSnapshotGrid = document.getElementById("shiftSnapshotGrid");
+      var sourceNotesPanel = document.getElementById("sourceNotesPanel");
+      var sourceNotesToggle = document.getElementById("sourceNotesToggle");
+      var sourceNotesBody = document.getElementById("sourceNotesBody");
+      var sourceNotesToggleAction = document.getElementById("sourceNotesToggleAction");
       var preHotelSnapshotGrid = document.getElementById("preHotelSnapshotGrid");
       var shiftAlertsGrid = document.getElementById("shiftAlertsGrid");
       var shiftAlertsGroup = document.getElementById("shiftAlertsGroup");
@@ -5407,13 +6185,17 @@
           var item = {
             id: raw.id || createItemId(),
             text: String(raw.text),
-            status: normalizeItemStatus(raw.status || "pending"),
+            status: normalizeItemStatus(raw.status || (raw.completed ? "done" : "pending")),
             sectionId: sectionId
           };
           if (raw.importedFromMaintenance) item.importedFromMaintenance = true;
           if (raw.sourceType) item.sourceType = String(raw.sourceType);
           if (raw.sourceId) item.sourceId = String(raw.sourceId);
           if (raw.fact) item.fact = raw.fact;
+          if (raw.isHeading) item.isHeading = true;
+          if (raw.completed != null) item.completed = !!raw.completed;
+          if (raw.guest) item.guest = raw.guest;
+          if (raw.rooms) item.rooms = raw.rooms;
           return item;
         }
         return {
@@ -5502,6 +6284,85 @@
         });
       }
 
+      function captureGeneratedSourceNotes(parts, options) {
+        var Notes = window.HFHandoverNotesSections;
+        if (Notes && Notes.captureSourceNotes) {
+          lastGeneratedSourceNotes = Notes.captureSourceNotes(parts, options || {});
+          return lastGeneratedSourceNotes;
+        }
+        var normalized = Notes && Notes.normalizeParts
+          ? Notes.normalizeParts(parts || {})
+          : Object.assign({ arrivals: "", departures: "", general: "" }, parts || {});
+        lastGeneratedSourceNotes = {
+          id: "src-" + Date.now().toString(36),
+          version: 1,
+          capturedAt: (options && options.capturedAt) || new Date().toISOString(),
+          parts: normalized,
+          combined: Notes && Notes.combineForAi ? Notes.combineForAi(normalized) : "",
+          lines: []
+        };
+        return lastGeneratedSourceNotes;
+      }
+
+      function resolveSourceNotesForDisplay(record) {
+        if (lastGeneratedSourceNotes && lastGeneratedSourceNotes.parts) {
+          return lastGeneratedSourceNotes;
+        }
+        if (record && record.sourceNotesParts) {
+          return { parts: record.sourceNotesParts, id: record.sourceNotesId || "" };
+        }
+        if (record && record.sourceNotes && typeof record.sourceNotes === "object") {
+          return record.sourceNotes;
+        }
+        if (record && record.originalNotes) {
+          return { originalNotes: record.originalNotes };
+        }
+        return lastGeneratedSourceNotes;
+      }
+
+      function setSourceNotesExpanded(open) {
+        if (!sourceNotesPanel || !sourceNotesToggle || !sourceNotesBody) return;
+        var isOpen = !!open;
+        sourceNotesPanel.classList.toggle("is-open", isOpen);
+        sourceNotesToggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+        sourceNotesBody.hidden = !isOpen;
+        if (sourceNotesToggleAction) {
+          sourceNotesToggleAction.textContent = isOpen ? "Hide Source Notes" : "View Source Notes";
+        }
+      }
+
+      function renderSourceNotesPanel(source) {
+        if (!sourceNotesPanel || !sourceNotesBody) return;
+        var Notes = window.HFHandoverNotesSections;
+        var model = Notes && Notes.buildSourceNotesViewModel
+          ? Notes.buildSourceNotesViewModel(source)
+          : { hasContent: false, sections: [] };
+
+        sourceNotesBody.innerHTML = "";
+        if (!model.hasContent) {
+          sourceNotesPanel.hidden = true;
+          setSourceNotesExpanded(false);
+          return;
+        }
+
+        sourceNotesPanel.hidden = false;
+        model.sections.forEach(function (section) {
+          var block = document.createElement("div");
+          block.className = "source-notes-section";
+          block.setAttribute("data-source-section", section.id || "");
+          var label = document.createElement("h5");
+          label.className = "source-notes-section-label";
+          label.textContent = section.title || "Notes";
+          var text = document.createElement("pre");
+          text.className = "source-notes-section-text";
+          text.textContent = section.text || "";
+          block.appendChild(label);
+          block.appendChild(text);
+          sourceNotesBody.appendChild(block);
+        });
+        setSourceNotesExpanded(false);
+      }
+
       function buildCanonicalGeneratedView(classified, options) {
         options = options || {};
         if (!window.HandoverGeneratedView) return null;
@@ -5511,10 +6372,14 @@
         }
         captureHotelSnapshotInputs();
         commitSnapshotState();
+        var sourceNotes = options.sourceNotes || lastGeneratedSourceNotes || null;
+        var quoteOfTheDay = options.quoteOfTheDay || lastQuoteOfTheDay || null;
         return HandoverGeneratedView.build({
           meta: options.meta || getPdfMeta(),
           generatedAt: options.generatedAt || lastGeneratedTime || formatTimestamp(new Date()),
           snapshot: buildHotelSnapshotForPdfFromData(options.snapshot || getCommittedSnapshot()),
+          sourceNotes: sourceNotes,
+          quoteOfTheDay: quoteOfTheDay,
           experience: experience || {},
           classified: classified || {},
           sectionDefs: getOrganisedSectionDefsForView(),
@@ -5604,16 +6469,17 @@
       }
 
       function restoreDemoSampleNotes() {
-        if (!notesInput || !isDemoNotesLocked()) return;
-        var sample = getDemoSampleNotesText();
-        if (notesInput.value !== sample) {
-          notesInput.value = sample;
-          if (typeof updateCharCount === "function") updateCharCount();
-        }
+        if (!isDemoNotesLocked()) return;
+        var draft = getDemoSampleDraft();
+        if (draft && draft.notesParts) setNotesParts(draft.notesParts);
+        else applyNotesFromLegacyString(getDemoSampleNotesText());
+        if (typeof updateCharCount === "function") updateCharCount();
       }
 
       function wireDemoNotesGuardOnce() {
-        if (demoNotesGuardWired || !notesInput) return;
+        if (demoNotesGuardWired) return;
+        var fields = notesSectionFields.length ? notesSectionFields : (notesInput ? [notesInput] : []);
+        if (!fields.length) return;
         demoNotesGuardWired = true;
         function blockIfLocked(event) {
           if (!isDemoNotesLocked()) return;
@@ -5621,34 +6487,36 @@
           event.stopPropagation();
           restoreDemoSampleNotes();
         }
-        notesInput.addEventListener("paste", blockIfLocked, true);
-        notesInput.addEventListener("cut", blockIfLocked, true);
-        notesInput.addEventListener("drop", blockIfLocked, true);
-        notesInput.addEventListener("beforeinput", blockIfLocked, true);
-        notesInput.addEventListener("input", function () {
-          if (!isDemoNotesLocked()) return;
-          restoreDemoSampleNotes();
-        }, true);
-        notesInput.addEventListener("keydown", function (event) {
-          if (!isDemoNotesLocked()) return;
-          var key = event.key || "";
-          var allowed =
-            key === "Tab" ||
-            key === "Escape" ||
-            key === "ArrowUp" ||
-            key === "ArrowDown" ||
-            key === "ArrowLeft" ||
-            key === "ArrowRight" ||
-            key === "Home" ||
-            key === "End" ||
-            key === "PageUp" ||
-            key === "PageDown" ||
-            ((event.ctrlKey || event.metaKey) && (key === "a" || key === "A" || key === "c" || key === "C"));
-          if (!allowed) {
-            event.preventDefault();
+        fields.forEach(function (field) {
+          field.addEventListener("paste", blockIfLocked, true);
+          field.addEventListener("cut", blockIfLocked, true);
+          field.addEventListener("drop", blockIfLocked, true);
+          field.addEventListener("beforeinput", blockIfLocked, true);
+          field.addEventListener("input", function () {
+            if (!isDemoNotesLocked()) return;
             restoreDemoSampleNotes();
-          }
-        }, true);
+          }, true);
+          field.addEventListener("keydown", function (event) {
+            if (!isDemoNotesLocked()) return;
+            var key = event.key || "";
+            var allowed =
+              key === "Tab" ||
+              key === "Escape" ||
+              key === "ArrowUp" ||
+              key === "ArrowDown" ||
+              key === "ArrowLeft" ||
+              key === "ArrowRight" ||
+              key === "Home" ||
+              key === "End" ||
+              key === "PageUp" ||
+              key === "PageDown" ||
+              ((event.ctrlKey || event.metaKey) && (key === "a" || key === "A" || key === "c" || key === "C"));
+            if (!allowed) {
+              event.preventDefault();
+              restoreDemoSampleNotes();
+            }
+          }, true);
+        });
       }
 
       /**
@@ -5806,13 +6674,17 @@
         }
 
         /* Guided demo: lock sample notes. Future Try Your Own toggles DEMO_ALLOW_CUSTOM_NOTES. */
-        if (notesInput) {
-          wireDemoNotesGuardOnce();
-          var lockNotes = demo && !DEMO_ALLOW_CUSTOM_NOTES;
-          setDemoLockedField(notesInput, lockNotes, {
-            value: lockNotes ? getDemoSampleNotesText() : null,
+        wireDemoNotesGuardOnce();
+        var lockNotes = demo && !DEMO_ALLOW_CUSTOM_NOTES;
+        if (lockNotes) restoreDemoSampleNotes();
+        notesSectionFields.forEach(function (field) {
+          setDemoLockedField(field, lockNotes, {
             title: DEMO_NOTES_FIELD_TITLE
           });
+          field.classList.toggle("hf-demo-notes-locked", lockNotes);
+        });
+        if (notesInput) {
+          setDemoLockedField(notesInput, lockNotes, { title: DEMO_NOTES_FIELD_TITLE });
           notesInput.classList.toggle("hf-demo-notes-locked", lockNotes);
         }
 
@@ -6590,17 +7462,44 @@
         syncHandoverExports();
       }
 
+      /** Toggle one preparation checklist item only — never the whole guest group. */
+      function togglePreparationChecklistItem(itemId) {
+        if (!lastClassified) return;
+        var found = findItemInClassified(lastClassified, itemId);
+        if (!found || found.sectionId !== "preparations") return;
+        if (found.item && found.item.isHeading) return;
+        var done = !(found.item.completed || found.item.status === "done");
+        found.item.completed = done;
+        found.item.status = done ? "done" : "pending";
+        var label = String(found.item.text || "").replace(/^[☐☑]\s*/, "");
+        found.item.text = (done ? "☑ " : "☐ ") + label;
+        lastClassified[found.sectionId][found.index] = found.item;
+        renderSections(lastClassified);
+        syncHandoverExports();
+      }
+
       function buildHandoverItemElement(item, sectionId) {
         var normalized = normalizeHandoverItem(item, sectionId);
         var li = document.createElement("li");
         li.className = "handover-item";
         li.setAttribute("data-item-id", normalized.id);
 
-        if (normalized.status === "done") li.classList.add("is-done");
+        if (normalized.isHeading) {
+          li.classList.add("handover-item--heading");
+          var heading = document.createElement("div");
+          heading.className = "handover-item-text handover-item-text--heading";
+          heading.textContent = normalizeAdrInText(normalized.text);
+          li.appendChild(heading);
+          return li;
+        }
+
+        if (normalized.status === "done" || normalized.completed) li.classList.add("is-done");
         if (normalized.status === "follow_up" || normalized.status === "in_progress") {
           li.classList.add("is-follow-up");
         }
         if (normalized.status === "confirmed") li.classList.add("is-confirmed");
+        if (sectionId === "preparations") li.classList.add("handover-item--checklist");
+        if (sectionId === "openQuestions") li.classList.add("handover-item--question");
 
         var main = document.createElement("div");
         main.className = "handover-item-main";
@@ -6612,7 +7511,24 @@
         /* Imported board items stay in the Maintenance section; no module CTA badge. */
         li.appendChild(main);
 
-        if (!isDemoModeActive()) {
+        if (sectionId === "preparations") {
+          var prepDone = !!(normalized.completed || normalized.status === "done");
+          li.setAttribute("role", "checkbox");
+          li.setAttribute("aria-checked", prepDone ? "true" : "false");
+          li.tabIndex = 0;
+          li.addEventListener("click", function (event) {
+            event.preventDefault();
+            togglePreparationChecklistItem(normalized.id);
+          });
+          li.addEventListener("keydown", function (event) {
+            if (event.key === " " || event.key === "Enter") {
+              event.preventDefault();
+              togglePreparationChecklistItem(normalized.id);
+            }
+          });
+        }
+
+        if (!isDemoModeActive() && sectionId !== "preparations" && sectionId !== "openQuestions") {
           var toolbar = document.createElement("div");
           toolbar.className = "handover-item-toolbar";
 
@@ -6714,7 +7630,9 @@
       }
 
       function updateCharCount() {
-        var len = notesInput.value.length;
+        syncNotesMirror();
+        var parts = getNotesParts();
+        var len = (parts.arrivals || "").length + (parts.departures || "").length + (parts.general || "").length;
         charCount.textContent = len + " character" + (len === 1 ? "" : "s");
       }
 
@@ -7347,17 +8265,31 @@
           return "guest";
         }
 
+        /* Adapters / loan items are inventory — never Finance, even if "outstanding". */
+        if (noteContains(line, ["adapter", "restock", "inventory", "loan item", "iron", "ironing board"]) &&
+            !noteContains(line, ["minibar charge", "dispute", "declined", "folio", "invoice", "city tax"])) {
+          return "inventory";
+        }
+
         /* Shared engine subject → section (no second classification layer). */
         if (note.fact && note.fact.subject && window.AiWritingEngine && window.AiWritingEngine.sectionFromFact) {
           var fromFact = window.AiWritingEngine.sectionFromFact(note.fact, "");
-          if (fromFact && fromFact !== "general") return fromFact;
+          /* Finance only for actual financial actions — never departures / moves / reminders. */
+          if (fromFact === "payments") {
+            if (isPaymentIssueLine(line) ||
+                (window.AiWritingEngine.isActualFinancialIssue &&
+                  window.AiWritingEngine.isActualFinancialIssue(line))) {
+              return "payments";
+            }
+          } else if (fromFact && fromFact !== "general") {
+            return fromFact;
+          }
         }
 
-        if (isPaymentRelatedLine(line) || noteContains(line, ["booking.com", "b.com", "expedia", "city tax", "outstanding"])) {
-          if (isPaymentIssueLine(line) || noteContains(line, ["outstanding", "city tax", "open balance", "minibar"]) ||
-              (note.fact && /payment|balance|folio|invoice|charge/i.test(note.fact.subject || ""))) {
-            return "payments";
-          }
+        if (isPaymentIssueLine(line) ||
+            (window.AiWritingEngine && window.AiWritingEngine.isActualFinancialIssue &&
+              window.AiWritingEngine.isActualFinancialIssue(line))) {
+          return "payments";
         }
 
         if (note.fact && note.fact.subject === "guest_arrangement") return "guest";
@@ -7371,11 +8303,6 @@
 
         if (noteContains(line, ["housekeeping", "dnd", "turndown", "linen", "dirty room", "vacant dirty", "pillow", "towel"])) {
           return "tasks";
-        }
-
-        if (noteContains(line, ["adapter", "restock", "inventory", "loan", "iron", "ironing board"]) &&
-            !noteContains(line, ["minibar charge", "dispute"])) {
-          return "inventory";
         }
 
         if (isMaintenanceFollowUp(line) || isMaintenanceDominant(line) || isMaintenanceNote(line)) {
@@ -7728,12 +8655,33 @@
       }
 
       function classifyNotes(lines) {
-        var analyzed = lines.map(analyzeNote).filter(function (note) {
+        var Notes = window.HFHandoverNotesSections;
+        var Prep = window.HFHandoverPreparations;
+        var analyzed = lines.map(function (line) {
+          var text = typeof line === "string" ? line : (line && line.text) || "";
+          var source = typeof line === "string" ? "general" : ((line && line.source) || "general");
+          if (Notes && Notes.resolveSourceBias) source = Notes.resolveSourceBias(source, text);
+          var note = analyzeNote(text);
+          if (note) note.noteSource = source;
+          return note;
+        }).filter(function (note) {
           /* Drop closing wrap-ups that only restate facts already segmented. */
-          return !isRestatementFollowUpWrap(note && note.original);
+          return note && !isRestatementFollowUpWrap(note.original);
         });
         analyzed.forEach(function (note) {
           note.section = classifyAnalyzedNote(note);
+          /* Arrival / departure source bias — keep section ownership clean. */
+          if (note.noteSource === "arrivals" && note.section === "guest" &&
+              !/\b(?:depart|check[\s-]?out|late\s+co)\b/i.test(note.original || "")) {
+            note.section = "events";
+          }
+          if (note.noteSource === "departures" && note.section === "events" &&
+              !/\b(?:arriv|check[\s-]?in|eta)\b/i.test(note.original || "")) {
+            note.section = "guest";
+          }
+          if (Prep && Prep.isPreparationCue && Prep.isPreparationCue(note.original || "")) {
+            note.section = "preparations";
+          }
           finalizeNote(note);
           refreshNoteFact(note);
         });
@@ -7805,6 +8753,41 @@
             });
           });
         }
+
+        /* Shared preparation checklist + open questions (workspace + demo). */
+        if (Prep) {
+          var prepGroups = Prep.buildPreparationGroups(analyzed);
+          classified.preparations = Prep.formatPreparationLines(prepGroups);
+          classified.openQuestions = Prep.buildOpenQuestions(analyzed);
+          /* Avoid repeating full prep detail in Guest/VIP when already in Preparations. */
+          if (classified.preparations.length) {
+            ["guest", "vip", "tasks"].forEach(function (sectionId) {
+              classified[sectionId] = (classified[sectionId] || []).filter(function (item) {
+                var text = typeof item === "string" ? item : (item && item.text) || "";
+                return !(Prep.isPreparationCue && Prep.isPreparationCue(text));
+              });
+            });
+          }
+        }
+
+        /* Finance must only retain actual financial actions. */
+        classified.payments = (classified.payments || []).filter(function (item) {
+          var text = typeof item === "string" ? item : (item && item.text) || "";
+          if (!String(text).trim()) return false;
+          /* Adapters belong in tasks / inventory — not Finance. */
+          if (/\badapters?\b/i.test(text) && !/\b(?:declined|folio|invoice|city\s*tax|minibar)\b/i.test(text)) {
+            return false;
+          }
+          if (/\b(?:depart|departure|check[\s-]?out|room\s+move|wake[\s-]?up|taxi|transfer|arrivals?\b|reminder)\b/i.test(text) &&
+              !(window.AiWritingEngine && window.AiWritingEngine.isActualFinancialIssue &&
+                window.AiWritingEngine.isActualFinancialIssue(text)) &&
+              !isPaymentIssueLine(text)) {
+            return false;
+          }
+          return isPaymentIssueLine(text) ||
+            (window.AiWritingEngine && window.AiWritingEngine.isActualFinancialIssue &&
+              window.AiWritingEngine.isActualFinancialIssue(text));
+        });
 
         classified._analyzed = analyzed;
         classified._sectionModel = sectionModel;
@@ -8492,17 +9475,17 @@
       var GLANCE_STATS = [
         {
           id: "urgent",
-          label: "Urgent Issues",
+          label: "Urgent",
           icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
         },
         {
           id: "vip",
-          label: "VIP Guests",
+          label: "VIP",
           icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>'
         },
         {
           id: "maintenance",
-          label: "Maintenance Issues",
+          label: "Maintenance",
           icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>'
         },
         {
@@ -8512,17 +9495,12 @@
         },
         {
           id: "payments",
-          label: "Open Payment Issues",
+          label: "Payments",
           icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>'
         },
         {
-          id: "events",
-          label: "Timed Actions",
-          icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>'
-        },
-        {
           id: "tasks",
-          label: "Outstanding Tasks",
+          label: "Outstanding",
           icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14l2 2 4-4"/></svg>'
         }
       ];
@@ -8554,21 +9532,9 @@
         },
         {
           id: "inHouse",
-          label: "Guests In-house",
+          label: "Guests",
           group: "operations",
           icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>'
-        },
-        {
-          id: "adults",
-          label: "Adults",
-          group: "operations",
-          icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'
-        },
-        {
-          id: "children",
-          label: "Children",
-          group: "operations",
-          icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3"/><path d="M6 21v-1a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v1"/></svg>'
         },
         {
           id: "roomsSold",
@@ -8578,14 +9544,22 @@
         },
         {
           id: "roomsAvailable",
-          label: "Rooms Available",
+          label: "Available",
           group: "inventory",
           icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M7 7V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/></svg>'
+        },
+        {
+          id: "oooRooms",
+          label: "OOO",
+          group: "inventory",
+          icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M10 12h4"/><path d="M3 10h18"/></svg>'
         },
         {
           id: "occupancy",
           label: "Occupancy",
           group: "inventory",
+          readOnly: true,
+          auto: true,
           icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>'
         },
         {
@@ -8598,30 +9572,31 @@
           id: "revpar",
           label: "RevPAR",
           group: "revenue",
+          readOnly: true,
+          auto: true,
           icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/><path d="M3 12h2"/><path d="M19 12h2"/></svg>'
         }
       ];
 
       var SNAPSHOT_EMPTY = "—";
       var HOTEL_SNAPSHOT_HINT_TEXT =
-        "Enter today's hotel figures, or leave them blank and AI will extract them from your shift notes.";
+        "Enter today’s figures. Occupancy and RevPAR calculate automatically. Leave blank to extract from notes.";
 
       var SNAPSHOT_PDF_LABELS = {
         arrivals: "Arrivals",
         departures: "Departures",
         stayovers: "Stayovers",
-        inHouse: "Guests In-house",
-        adults: "Adults",
-        children: "Children",
+        inHouse: "Guests in House",
         roomsSold: "Rooms Sold",
         roomsAvailable: "Rooms Available",
+        oooRooms: "OOO Rooms",
         occupancy: "Occupancy",
         adr: "ADR",
         revpar: "RevPAR"
       };
 
       function getActiveHotelSnapshot() {
-        return extractHotelSnapshot(notesInput.value);
+        return extractHotelSnapshot(getCombinedNotesForAi());
       }
 
       function readRawSnapshotFromForm() {
@@ -8630,15 +9605,19 @@
           raw[stat.id] = "";
         });
 
-        if (preHotelSnapshotGrid) {
-          preHotelSnapshotGrid.querySelectorAll(".snapshot-field-input").forEach(function (input) {
+        function readFromGrid(grid) {
+          if (!grid) return;
+          grid.querySelectorAll(".snapshot-field-input").forEach(function (input) {
             var statId = input.getAttribute("data-snapshot-input");
             if (statId) raw[statId] = String(input.value || "").trim();
           });
-        }
-
-        if (shiftSnapshotGrid && shiftSnapshotGrid.children.length) {
-          shiftSnapshotGrid.querySelectorAll(".glance-snapshot[data-snapshot]").forEach(function (card) {
+          grid.querySelectorAll(".snapshot-compact-value[data-snapshot]").forEach(function (el) {
+            var statId = el.getAttribute("data-snapshot");
+            if (!statId || (raw[statId] && raw[statId] !== SNAPSHOT_EMPTY)) return;
+            var display = String(el.textContent || "").trim();
+            if (display && display !== SNAPSHOT_EMPTY) raw[statId] = display;
+          });
+          grid.querySelectorAll(".glance-snapshot[data-snapshot]").forEach(function (card) {
             if (card.classList.contains("is-editing")) return;
             var statId = card.getAttribute("data-snapshot");
             if (!statId || (raw[statId] && raw[statId] !== SNAPSHOT_EMPTY)) return;
@@ -8649,6 +9628,8 @@
           });
         }
 
+        readFromGrid(preHotelSnapshotGrid);
+        readFromGrid(shiftSnapshotGrid);
         return raw;
       }
 
@@ -8716,7 +9697,7 @@
         captureHotelSnapshotInputs();
         var rawForm = readRawSnapshotFromForm();
         lastNormalizedSnapshot = buildNormalizedSnapshot(
-          notesText != null ? notesText : notesInput.value
+          notesText != null ? notesText : getCombinedNotesForAi()
         );
         lastHotelSnapshotOverrides = {};
         HOTEL_SNAPSHOT_STATS.forEach(function (stat) {
@@ -8745,11 +9726,12 @@
       }
 
       function formatOccupancyPercent(num) {
+        var Metrics = window.HFHotelSnapshotMetrics;
+        if (Metrics && Metrics.formatOccupancyPercent) {
+          return Metrics.formatOccupancyPercent(num);
+        }
         var clamped = Math.min(100, Math.max(0, num));
-        var formatted = clamped % 1 === 0
-          ? String(Math.round(clamped))
-          : clamped.toFixed(1).replace(/\.0$/, "");
-        return formatted + "%";
+        return clamped.toFixed(1) + "%";
       }
 
       function normalizeSnapshotStoredValue(statId, raw) {
@@ -8776,7 +9758,8 @@
           case "adults":
           case "children":
           case "roomsSold":
-          case "roomsAvailable": {
+          case "roomsAvailable":
+          case "oooRooms": {
             var intMatch = trimmed.replace(/,/g, "").match(/-?\d+/);
             if (!intMatch) return "";
             var intNum = parseInt(intMatch[0], 10);
@@ -8829,6 +9812,10 @@
       }
 
       function focusNextSectionAfterSnapshot() {
+        if (notesArrivals) {
+          notesArrivals.focus();
+          return;
+        }
         if (notesInput) {
           notesInput.focus();
           return;
@@ -9079,11 +10066,20 @@
 
           visibleStats.forEach(function (stat) {
             if (mode === "input") {
-              grid.appendChild(renderPreSnapshotInputCard(stat));
+              grid.appendChild(renderPreSnapshotInputCard(stat, snapshot));
             } else {
               grid.appendChild(renderSnapshotCard(stat, snapshot));
             }
           });
+
+          if (group.id === "revenue" && mode !== "input") {
+            var quote = options.quoteOfTheDay || lastQuoteOfTheDay;
+            var quoteCard = renderQuoteOfTheDayCard(quote);
+            if (quoteCard) {
+              grid.classList.add("has-quote");
+              grid.appendChild(quoteCard);
+            }
+          }
 
           groupEl.appendChild(heading);
           groupEl.appendChild(grid);
@@ -9101,7 +10097,8 @@
         }
       }
 
-      function renderPreSnapshotInputCard(stat) {
+      function renderPreSnapshotInputCard(stat, snapshot) {
+        snapshot = snapshot || {};
         var card = document.createElement("div");
         card.className = "glance-snapshot";
         card.setAttribute("data-snapshot", stat.id);
@@ -9121,10 +10118,27 @@
         input.setAttribute("aria-label", stat.label);
         input.setAttribute("name", "hotel-snapshot-" + stat.id);
         input.setAttribute("autocomplete", "off");
-        input.setAttribute("inputmode", stat.id === "adr" || stat.id === "occupancy" ? "decimal" : "numeric");
+        input.setAttribute("inputmode",
+          stat.id === "adr" || stat.id === "occupancy" || stat.id === "revpar" ? "decimal" : "numeric");
         input.placeholder = SNAPSHOT_EMPTY;
-        input.value = hasSnapshotOverride(stat.id) ? String(lastHotelSnapshotOverrides[stat.id]) : "";
+
+        var current = hasSnapshotOverride(stat.id)
+          ? String(lastHotelSnapshotOverrides[stat.id])
+          : (snapshot[stat.id] && snapshot[stat.id] !== SNAPSHOT_EMPTY ? String(snapshot[stat.id]) : "");
+        if (stat.id === "adr" || stat.id === "revpar") {
+          input.value = current ? String(current).replace(/^[£$€]\s*/, "") : "";
+        } else if (stat.id === "occupancy") {
+          input.value = current ? String(current).replace(/%+\s*$/, "") : "";
+        } else {
+          input.value = current || "";
+        }
         input.setAttribute("data-snapshot-committed", input.value);
+
+        if (stat.readOnly) {
+          input.readOnly = true;
+          input.setAttribute("aria-readonly", "true");
+          card.classList.add("is-readonly");
+        }
 
         function syncGeneratedSnapshotFromForm() {
           if (!lastClassified) return;
@@ -9134,18 +10148,20 @@
         }
 
         input.addEventListener("input", function () {
-          if (isDemoModeActive()) return;
+          if (isDemoModeActive() || stat.readOnly) return;
           syncSnapshotOverrideFromInput(stat.id, input.value);
+          commitSnapshotState();
+          renderPreHandoverSnapshot();
           syncGeneratedSnapshotFromForm();
           scheduleDraftSave();
         });
 
         input.addEventListener("blur", function () {
-          if (isDemoModeActive()) return;
+          if (isDemoModeActive() || stat.readOnly) return;
           confirmPreSnapshotField(input, stat.id);
         });
 
-        bindPreSnapshotKeyboard(input, stat);
+        if (!stat.readOnly) bindPreSnapshotKeyboard(input, stat);
 
         var label = document.createElement("div");
         label.className = "glance-snapshot-label";
@@ -9159,7 +10175,7 @@
         card.appendChild(iconWrap);
 
         card.addEventListener("click", function (event) {
-          if (isDemoModeActive()) return;
+          if (isDemoModeActive() || stat.readOnly) return;
           if (event.target === input || input.contains(event.target)) return;
           input.focus();
         });
@@ -9177,11 +10193,28 @@
 
       function buildHotelSnapshotTextLines() {
         var snapshot = getCommittedSnapshot();
+        var Metrics = window.HFHotelSnapshotMetrics;
+        if (Metrics && Metrics.buildCompactDisplayLines) {
+          var compact = Metrics.buildCompactDisplayLines(snapshot, {
+            totalRooms: getTotalRoomCount(),
+            currency: currencySymbol || "£"
+          });
+          var lines = [];
+          var lastGroup = "";
+          compact.forEach(function (row) {
+            if (row.group !== lastGroup) {
+              lines.push(String(row.group || "").toUpperCase());
+              lastGroup = row.group;
+            }
+            lines.push(row.line);
+          });
+          return lines;
+        }
         var lines = [];
         HOTEL_SNAPSHOT_GROUPS.forEach(function (group) {
           var groupLines = [];
           HOTEL_SNAPSHOT_STATS.forEach(function (stat) {
-            if (stat.group !== group.id) return;
+            if (stat.group !== group.id || stat.id === "oooRoomsNote") return;
             var value = snapshot[stat.id];
             if (!value || value === SNAPSHOT_EMPTY) return;
             var label = SNAPSHOT_PDF_LABELS[stat.id] || stat.label;
@@ -9348,6 +10381,12 @@
       function bindSnapshotEdit(card, stat) {
         var valueEl = card.querySelector(".glance-snapshot-value");
         if (!valueEl) return;
+
+        if (stat.readOnly) {
+          card.classList.add("is-readonly");
+          card.setAttribute("title", stat.auto ? "Calculated automatically" : stat.label);
+          return;
+        }
 
         if (isDemoModeActive()) {
           card.classList.add("hf-demo-locked-snapshot");
@@ -9574,9 +10613,7 @@
         var card = sectionsGrid.querySelector('.section-card[data-section="' + sectionId + '"]');
         if (!card) return;
 
-        card.classList.add("is-open");
-        var toggle = card.querySelector(".section-toggle");
-        if (toggle) toggle.setAttribute("aria-expanded", "true");
+        setSectionExpanded(card, true);
 
         card.classList.remove("is-highlighted");
         void card.offsetWidth;
@@ -9611,18 +10648,125 @@
         });
       }
 
+      function isAlertItemOpen(item) {
+        if (!item) return false;
+        if (item.isHeading) return false;
+        var status = String(item.status || "").toLowerCase();
+        if (status === "done" || status === "confirmed" || status === "completed") return false;
+        if (item.completed === true) return false;
+        var text = typeof item === "string" ? item : String(item.text || "");
+        if (!String(text).trim()) return false;
+        return true;
+      }
+
+      function countOpenSectionItems(classified, sectionId) {
+        var items = (classified && classified[sectionId]) || [];
+        var seen = {};
+        var count = 0;
+        items.forEach(function (raw) {
+          var item = normalizeHandoverItem(raw, sectionId);
+          if (!isAlertItemOpen(item)) return;
+          var key = String(item.text || "").toLowerCase().replace(/\s+/g, " ").trim();
+          if (!key || seen[key]) return;
+          seen[key] = true;
+          count += 1;
+        });
+        return count;
+      }
+
+      function countUniqueVipGuests(classified) {
+        var items = (classified && classified.vip) || [];
+        var seen = {};
+        var count = 0;
+        items.forEach(function (raw) {
+          var item = normalizeHandoverItem(raw, "vip");
+          if (!isAlertItemOpen(item)) return;
+          var text = String(item.text || "");
+          var guestKey = "";
+          if (item.fact && item.fact.guestName) guestKey = String(item.fact.guestName).toLowerCase();
+          if (!guestKey) {
+            var nameMatch = text.match(/\b([A-Z][a-zà-öø-ÿ'’\-]+(?:\s+[A-Z][a-zà-öø-ÿ'’\-]+)?)\b/);
+            if (nameMatch) guestKey = nameMatch[1].toLowerCase();
+          }
+          if (!guestKey && item.fact && item.fact.rooms && item.fact.rooms[0]) {
+            guestKey = "room:" + item.fact.rooms[0];
+          }
+          if (!guestKey) guestKey = text.toLowerCase().replace(/\s+/g, " ").trim().slice(0, 48);
+          if (!guestKey || seen[guestKey]) return;
+          seen[guestKey] = true;
+          count += 1;
+        });
+        if (count > 0) return count;
+        var metrics = getHandoverMetrics(classified || {});
+        return metrics.vip || 0;
+      }
+
       function calculateShiftStats(classified) {
-        var metrics = getHandoverMetrics(classified);
+        /*
+         * Single source of truth with Hotel Status:
+         * object-based metrics from ShiftIntelligenceEngine.computeShiftAlertsFromObjects.
+         */
+        var metrics = getHandoverMetrics(classified || {});
         var display = metrics.display || {};
         return {
           urgent: metrics.urgent || display.urgent || 0,
-          vip: metrics.vip || 0,
+          vip: metrics.vip || display.vip || 0,
           maintenance: metrics.maintenance || display.maintenance || 0,
-          guest: display.guest || 0,
+          guest: display.guest != null ? display.guest : (metrics.guest || 0),
           payments: metrics.payments || display.payments || 0,
-          events: metrics.timedActions || metrics.events || display.timedActions || display.events || 0,
           tasks: metrics.tasks || display.tasks || 0
         };
+      }
+
+      function captureQuoteOfTheDay(options) {
+        var Quote = window.HFHandoverQuoteOfTheDay;
+        if (Quote && Quote.generateQuoteOfTheDay) {
+          lastQuoteOfTheDay = Quote.generateQuoteOfTheDay(options || {});
+        } else {
+          lastQuoteOfTheDay = {
+            text: "Every smooth shift begins with a clear handover.",
+            source: "fallback",
+            generatedAt: (options && options.generatedAt) || new Date().toISOString()
+          };
+        }
+        return lastQuoteOfTheDay;
+      }
+
+      function renderQuoteOfTheDayCard(quote) {
+        if (!quote || !quote.text) return null;
+        var Quote = window.HFHandoverQuoteOfTheDay;
+        var formatted = Quote && Quote.formatQuoted
+          ? Quote.formatQuoted(quote)
+          : {
+              text: "\u201C" + String(quote.text).replace(/^["“”']+|["“”']+$/g, "") + "\u201D",
+              author: quote.author || ""
+            };
+
+        var card = document.createElement("div");
+        card.className = "quote-of-day-card";
+        card.setAttribute("data-quote-of-day", "true");
+
+        var body = document.createElement("div");
+        body.className = "quote-of-day-body";
+
+        var label = document.createElement("div");
+        label.className = "quote-of-day-label";
+        label.textContent = "Quote of the Day";
+
+        var text = document.createElement("p");
+        text.className = "quote-of-day-text";
+        text.textContent = typeof formatted === "string" ? formatted : formatted.text;
+
+        body.appendChild(label);
+        body.appendChild(text);
+        if (formatted && formatted.author) {
+          var author = document.createElement("p");
+          author.className = "quote-of-day-author";
+          author.textContent = "— " + formatted.author;
+          body.appendChild(author);
+        }
+        card.appendChild(body);
+        return card;
       }
 
       function parseSnapshotInteger(value) {
@@ -9643,35 +10787,47 @@
       }
 
       function enrichHotelSnapshot(snapshot) {
+        var Metrics = window.HFHotelSnapshotMetrics;
+        var totalRooms = parseSnapshotInteger(getTotalRoomCount());
+        if (Metrics && typeof Metrics.enrichSnapshot === "function") {
+          return Metrics.enrichSnapshot(snapshot || {}, {
+            totalRooms: totalRooms,
+            currency: currencySymbol || "£",
+            overwriteOccupancy: true,
+            clearInvalidRevpar: true
+          });
+        }
+
+        /* Fallback if shared module unavailable */
         var next = Object.assign({}, snapshot || {});
         var roomsSold = parseSnapshotInteger(next.roomsSold);
+        var oooRooms = parseSnapshotInteger(next.oooRooms) || 0;
         var arrivals = parseSnapshotInteger(next.arrivals);
-        var occupancy = parseOccupancyNumber(next.occupancy);
         var adr = parseSnapshotMoney(next.adr);
-        var totalRooms = parseSnapshotInteger(getTotalRoomCount());
         var adults = parseSnapshotInteger(next.adults);
         var children = parseSnapshotInteger(next.children);
-
-        if ((next.revpar == null || next.revpar === "" || next.revpar === SNAPSHOT_EMPTY) &&
-            adr != null && occupancy != null) {
-          next.revpar = formatAdrDisplay(Math.round(adr * (occupancy / 100) * 100) / 100);
+        var sellable = totalRooms != null ? totalRooms - oooRooms : null;
+        var occupancyRate = null;
+        if (sellable != null && sellable > 0 && roomsSold != null) {
+          occupancyRate = (roomsSold / sellable) * 100;
+          next.occupancy = formatOccupancyPercent(occupancyRate);
         }
-
+        if (occupancyRate == null) occupancyRate = parseOccupancyNumber(next.occupancy);
+        if (adr != null && occupancyRate != null) {
+          next.revpar = formatAdrDisplay(Math.round(adr * (occupancyRate / 100) * 100) / 100);
+        }
         if ((next.roomsAvailable == null || next.roomsAvailable === "" || next.roomsAvailable === SNAPSHOT_EMPTY) &&
-            totalRooms != null && roomsSold != null && totalRooms >= roomsSold) {
-          next.roomsAvailable = String(totalRooms - roomsSold);
+            sellable != null && roomsSold != null && sellable >= roomsSold) {
+          next.roomsAvailable = String(sellable - roomsSold);
         }
-
         if ((next.stayovers == null || next.stayovers === "" || next.stayovers === SNAPSHOT_EMPTY) &&
             roomsSold != null && arrivals != null && roomsSold >= arrivals) {
           next.stayovers = String(roomsSold - arrivals);
         }
-
         if ((next.inHouse == null || next.inHouse === "" || next.inHouse === SNAPSHOT_EMPTY) &&
             adults != null && children != null) {
           next.inHouse = String(adults + children);
         }
-
         return next;
       }
 
@@ -9682,14 +10838,13 @@
         shiftAlertsGrid.innerHTML = "";
 
         lastNormalizedSnapshot = enrichHotelSnapshot(lastNormalizedSnapshot || {});
-        renderHotelSnapshotIntoGrid(shiftSnapshotGrid, lastNormalizedSnapshot, { hideEmpty: true });
+        renderHotelSnapshotIntoGrid(shiftSnapshotGrid, lastNormalizedSnapshot, {
+          hideEmpty: true,
+          quoteOfTheDay: lastQuoteOfTheDay
+        });
 
-        var alertCount = 0;
         GLANCE_STATS.forEach(function (stat) {
           var count = stats[stat.id] || 0;
-          if (count === 0) return;
-
-          alertCount += 1;
 
           var card = document.createElement("div");
           card.className = "glance-stat";
@@ -9719,7 +10874,7 @@
           shiftAlertsGrid.appendChild(card);
         });
 
-        shiftAlertsGroup.style.display = alertCount > 0 ? "" : "none";
+        shiftAlertsGroup.style.display = "";
         showShiftGlance();
       }
 
@@ -9753,16 +10908,33 @@
       function renderHotelStatusUI(statusAreas) {
         if (!hotelStatusCard || !hotelStatusGrid) return;
         hotelStatusGrid.innerHTML = "";
-        var areas = statusAreas || [];
+        /* Only show meaningful exceptions — hide generic "Normal" filler. */
+        var areas = (statusAreas || []).filter(function (area) {
+          var level = String((area && area.level) || "").toLowerCase();
+          return level && level !== "normal" && level !== "unknown" &&
+            !/_clear$/i.test((area.summaryIntent && area.summaryIntent.kind) || "");
+        });
         if (!areas.length) {
           hotelStatusCard.hidden = true;
           hotelStatusCard.classList.remove("is-visible");
           return;
         }
         areas.forEach(function (area) {
-          var el = document.createElement("div");
+          var levelKey = String(area.level || "unknown").toLowerCase();
+          var levelLabel = levelKey.replace(/^\w/, function (c) {
+            return c.toUpperCase();
+          });
+          var details = Array.isArray(area.details) ? area.details.filter(Boolean) : [];
+          /* Displayed count must always equal expanded actionable lines. */
+          var count = details.length;
+          var canExpand = details.length > 0;
+
+          var el = document.createElement(canExpand ? "button" : "div");
+          if (canExpand) el.type = "button";
           el.className = "hotel-status-item";
-          el.setAttribute("data-level", area.level || "unknown");
+          el.setAttribute("data-level", levelKey);
+          if (canExpand) el.setAttribute("aria-expanded", "false");
+
           var label = document.createElement("div");
           label.className = "hotel-status-label";
           var dot = document.createElement("span");
@@ -9772,17 +10944,30 @@
           labelText.textContent = area.label || area.key || "";
           label.appendChild(dot);
           label.appendChild(labelText);
+
           var level = document.createElement("div");
           level.className = "hotel-status-level";
-          level.textContent = String(area.level || "unknown").replace(/^\w/, function (c) {
-            return c.toUpperCase();
-          });
-          var summary = document.createElement("div");
-          summary.className = "hotel-status-summary";
-          summary.textContent = area.summary || "";
+          level.textContent = count > 0 ? (levelLabel + " (" + count + ")") : levelLabel;
+
           el.appendChild(label);
           el.appendChild(level);
-          el.appendChild(summary);
+
+          if (canExpand) {
+            var list = document.createElement("ul");
+            list.className = "hotel-status-details";
+            details.forEach(function (line) {
+              var li = document.createElement("li");
+              li.textContent = line;
+              list.appendChild(li);
+            });
+            el.appendChild(list);
+            el.addEventListener("click", function () {
+              var open = !el.classList.contains("is-expanded");
+              el.classList.toggle("is-expanded", open);
+              el.setAttribute("aria-expanded", open ? "true" : "false");
+            });
+          }
+
           hotelStatusGrid.appendChild(el);
         });
         hotelStatusCard.hidden = false;
@@ -9833,11 +11018,8 @@
         });
         timelineCard.hidden = false;
         timelineCard.classList.add("is-visible");
-        if (timelineBody && timelineToggle) {
-          timelineBody.classList.add("is-open");
-          timelineToggle.classList.add("is-open");
-          timelineToggle.setAttribute("aria-expanded", "true");
-        }
+        /* Progressive disclosure: Timeline is detail — collapsed by default. */
+        setTimelineExpanded(false);
       }
 
       function getSummaryDetailCards(classified) {
@@ -10092,6 +11274,10 @@
       }
 
       function draftPayloadHasContent(draft) {
+        if (draft && draft.notesParts) {
+          var Notes = window.HFHandoverNotesSections;
+          if (Notes && Notes.hasContent && Notes.hasContent(draft.notesParts)) return true;
+        }
         if (!draft || typeof draft !== "object") return false;
         if (draft.notes && String(draft.notes).trim()) return true;
         if (draft.hasGeneratedOutput) return true;
@@ -10104,20 +11290,31 @@
 
       function buildDraftPayload() {
         captureHotelSnapshotInputs();
+        syncNotesMirror();
         var now = new Date().toISOString();
+        var parts = getNotesParts();
         var payload = {
           savedAt: now,
           hotelName: hotelName.value.trim(),
           preparedBy: preparedBy.value.trim(),
           shift: selectedShift,
           date: handoverDate.value,
-          notes: notesInput.value,
+          notes: getCombinedNotesForAi(),
+          notesParts: parts,
           hotelSnapshot: getCommittedSnapshot(),
           aiSummary: lastSummaryText || "",
           generatedTime: lastGeneratedTime || "",
           recommendations: lastRecommendations.map(normalizeRecommendation),
           hasGeneratedOutput: !!lastClassified
         };
+        if (lastGeneratedSourceNotes) {
+          payload.sourceNotes = lastGeneratedSourceNotes;
+          payload.sourceNotesParts = lastGeneratedSourceNotes.parts || null;
+          payload.sourceNotesId = lastGeneratedSourceNotes.id || "";
+        }
+        if (lastQuoteOfTheDay) {
+          payload.quoteOfTheDay = lastQuoteOfTheDay;
+        }
         if (lastClassified) {
           payload.organisedHandover = buildOrganisedHandover(lastClassified);
           payload.dashboardMetrics = getHandoverMetrics(lastClassified);
@@ -10167,7 +11364,8 @@
         preparedBy.value = draft.preparedBy || "";
         setSelectedShift(draft.shift || "AM", { respectUserSelection: true });
         if (draft.date) handoverDate.value = draft.date;
-        notesInput.value = draft.notes || "";
+        if (draft.notesParts) setNotesParts(draft.notesParts);
+        else applyNotesFromLegacyString(draft.notes || "");
         updateCharCount();
 
         lastHotelSnapshotOverrides = draft.hotelSnapshot
@@ -10189,12 +11387,27 @@
             : [];
           lastGeneratedTime = draft.generatedTime || "";
           lastHandoverText = "";
+          if (draft.sourceNotes) {
+            lastGeneratedSourceNotes = draft.sourceNotes;
+          } else if (draft.sourceNotesParts) {
+            lastGeneratedSourceNotes = captureGeneratedSourceNotes(draft.sourceNotesParts, {
+              id: draft.sourceNotesId || undefined,
+              capturedAt: draft.savedAt || undefined
+            });
+          } else if (draft.originalNotes || draft.notes) {
+            lastGeneratedSourceNotes = captureGeneratedSourceNotes(draft.originalNotes || draft.notes);
+          } else {
+            lastGeneratedSourceNotes = null;
+          }
+          lastQuoteOfTheDay = draft.quoteOfTheDay || null;
         } else {
           lastSummaryText = "";
           lastClassified = null;
           lastRecommendations = [];
           lastGeneratedTime = "";
           lastHandoverText = "";
+          lastGeneratedSourceNotes = null;
+          lastQuoteOfTheDay = null;
         }
         activeHandoverEditId = null;
         activeRecommendationEditId = null;
@@ -10232,12 +11445,14 @@
 
       function captureHandoverSessionSnapshot() {
         captureHotelSnapshotInputs();
+        syncNotesMirror();
         return {
           hotelName: hotelName.value,
           preparedBy: preparedBy.value,
           shift: selectedShift,
           date: handoverDate.value,
-          notes: notesInput.value,
+          notes: getCombinedNotesForAi(),
+          notesParts: getNotesParts(),
           hotelSnapshotOverrides: Object.assign({}, lastHotelSnapshotOverrides || {}),
           normalizedSnapshot: lastNormalizedSnapshot ? Object.assign({}, lastNormalizedSnapshot) : null,
           classified: lastClassified,
@@ -10260,7 +11475,8 @@
         preparedBy.value = snapshot.preparedBy || "";
         setSelectedShift(snapshot.shift || "AM", { respectUserSelection: true });
         if (snapshot.date) handoverDate.value = snapshot.date;
-        notesInput.value = snapshot.notes || "";
+        if (snapshot.notesParts) setNotesParts(snapshot.notesParts);
+        else applyNotesFromLegacyString(snapshot.notes || "");
         updateCharCount();
         lastHotelSnapshotOverrides = snapshot.hotelSnapshotOverrides
           ? Object.assign({}, snapshot.hotelSnapshotOverrides)
@@ -10363,8 +11579,9 @@
         }
         syncDemoConversionCard(showOutput && isDemoModeActive());
 
-        if (options.focusNotes && notesInput) {
-          notesInput.focus();
+        if (options.focusNotes) {
+          if (notesArrivals) notesArrivals.focus();
+          else if (notesInput) notesInput.focus();
         }
         if (options.scrollToOutput && outputSection && showOutput) {
           outputSection.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -10445,6 +11662,8 @@
         lastGeneratedTime = "";
         lastClassified = null;
         lastGeneratedView = null;
+        lastGeneratedSourceNotes = null;
+        lastQuoteOfTheDay = null;
         lastIntelligenceExperience = null;
         lastRecommendations = [];
         lastHotelSnapshotOverrides = {};
@@ -10454,6 +11673,7 @@
         editingSavedHandoverId = null;
         isEditingExistingSavedHandover = false;
         hideShiftIntelligencePanel();
+        renderSourceNotesPanel(null);
         setHandoverPageState(HANDOVER_PAGE_STATE.INPUT);
       }
 
@@ -10463,7 +11683,7 @@
         shiftTouchedByUser = false;
         setSelectedShift(configuredShifts[0] ? configuredShifts[0].code : "AM");
         initDate();
-        notesInput.value = "";
+        setNotesParts({ arrivals: "", departures: "", general: "" });
         updateCharCount();
         clearHandoverOutputState();
         cachedSessionBeforeSavedView = null;
@@ -10713,7 +11933,10 @@
           el.addEventListener("input", onHandoverDetailsChanged);
           el.addEventListener("change", onHandoverDetailsChanged);
         });
-        notesInput.addEventListener("input", scheduleDraftSave);
+        notesSectionFields.forEach(function (field) {
+          field.addEventListener("input", scheduleDraftSave);
+        });
+        if (notesInput) notesInput.addEventListener("input", scheduleDraftSave);
         if (preHotelSnapshotGrid) {
           preHotelSnapshotGrid.addEventListener("input", function (event) {
             if (event.target && event.target.classList.contains("snapshot-field-input")) {
@@ -10762,7 +11985,12 @@
           shift: selectedShift,
           date: handoverDate.value,
           dateDisplay: meta.date,
-          originalNotes: notesInput.value,
+          originalNotes: (lastGeneratedSourceNotes && lastGeneratedSourceNotes.combined) || getCombinedNotesForAi(),
+          notesParts: getNotesParts(),
+          sourceNotes: lastGeneratedSourceNotes || null,
+          sourceNotesParts: lastGeneratedSourceNotes ? lastGeneratedSourceNotes.parts : null,
+          sourceNotesId: lastGeneratedSourceNotes ? lastGeneratedSourceNotes.id : "",
+          quoteOfTheDay: lastQuoteOfTheDay || null,
           aiSummary: lastSummaryText,
           dashboardMetrics: getHandoverMetrics(lastClassified),
           organisedHandover: buildOrganisedHandover(lastClassified),
@@ -10791,7 +12019,8 @@
         shiftTouchedByUser = false;
         setSelectedShift(saved.shift || "AM");
         handoverDate.value = saved.date || handoverDate.value;
-        notesInput.value = saved.originalNotes || "";
+        if (saved.notesParts) setNotesParts(saved.notesParts);
+        else applyNotesFromLegacyString(saved.originalNotes || "");
         updateCharCount();
 
         lastSummaryText = saved.aiSummary || "";
@@ -10806,6 +12035,22 @@
           ? Object.assign({}, saved.hotelSnapshot)
           : null;
 
+        if (saved.sourceNotes) {
+          lastGeneratedSourceNotes = saved.sourceNotes;
+        } else if (saved.sourceNotesParts) {
+          lastGeneratedSourceNotes = captureGeneratedSourceNotes(saved.sourceNotesParts, {
+            id: saved.sourceNotesId || undefined,
+            capturedAt: saved.timestamp || undefined
+          });
+        } else if (saved.originalNotes) {
+          lastGeneratedSourceNotes = captureGeneratedSourceNotes(saved.originalNotes, {
+            capturedAt: saved.timestamp || undefined
+          });
+        } else {
+          lastGeneratedSourceNotes = null;
+        }
+        lastQuoteOfTheDay = saved.quoteOfTheDay || null;
+
         renderSummaryUI(lastClassified);
         renderShiftAtAGlance(lastClassified);
         renderPreHandoverSnapshot();
@@ -10816,6 +12061,7 @@
         renderSummaryStats(lastClassified);
         renderSections(lastClassified);
         renderShiftIntelligence();
+        renderSourceNotesPanel(resolveSourceNotesForDisplay(saved));
         showSummaryCard();
         lastHandoverText = formatHandoverText(lastClassified);
       }
@@ -10901,10 +12147,30 @@
         return lastSummaryText || "";
       }
 
+      /**
+       * Progressive disclosure: Snapshot, Alerts, Briefing, Recommendations stay up top.
+       * Timeline + Source Notes stay collapsed. Organised sections remain expanded for field testing.
+       */
+      function isSectionOpenByDefault(/* sectionId */) {
+        return true;
+      }
+
+      function setSectionExpanded(card, open) {
+        if (!card) return;
+        card.classList.toggle("is-open", !!open);
+        var toggle = card.querySelector(".section-toggle");
+        if (toggle) toggle.setAttribute("aria-expanded", open ? "true" : "false");
+      }
+
       function toggleSection(card) {
-        var isOpen = card.classList.contains("is-open");
-        card.classList.toggle("is-open", !isOpen);
-        card.querySelector(".section-toggle").setAttribute("aria-expanded", !isOpen);
+        setSectionExpanded(card, !card.classList.contains("is-open"));
+      }
+
+      function setTimelineExpanded(open) {
+        if (!timelineBody || !timelineToggle) return;
+        timelineBody.classList.toggle("is-open", !!open);
+        timelineToggle.classList.toggle("is-open", !!open);
+        timelineToggle.setAttribute("aria-expanded", open ? "true" : "false");
       }
 
       function isUsefulOperationalNote(item) {
@@ -10923,9 +12189,13 @@
         /* Snapshot/KPI lines belong in Hotel Snapshot, not Operational Notes. */
         if (/^\d+\s+(arrivals?|departures?|deps?)\b/i.test(text)) return false;
         if (/^(arrivals?|departures?)\s*(left|still|due|tomorrow|tmrw)?\s*:?\s*\d+/i.test(text)) return false;
-        if (/\b(in[\s-]?house|occupancy|adr|revpar)\b/i.test(text) && /\d/.test(text) && text.length < 80) {
-          return false;
-        }
+        if (/\b(?:rooms?\s+sold|sellable\s+rooms?|ooo\s+rooms?)\b/i.test(text)) return false;
+        if (/\b(?:guests?\s+in\s+house|in[\s-]?house)\b/i.test(text) && /\d/.test(text)) return false;
+        if (/\b(?:occupancy|adr|revpar)\b/i.test(text)) return false;
+        if (/\b\d+(?:\.\d+)?\s*%\b/.test(text) && /\b(?:occup|sold|rooms?)\b/i.test(text)) return false;
+        /* Prefer hotel-wide operational info — omit pure guest/task noise with no action. */
+        if (/^guest\s+not\s+identified/i.test(text)) return false;
+        if (/review original note\.?$/i.test(text) && text.length < 28) return false;
         return true;
       }
 
@@ -10941,14 +12211,15 @@
 
           var sectionCount = items.length;
 
+          var openByDefault = isSectionOpenByDefault(section.id);
           var card = document.createElement("article");
-          card.className = "card section-card is-open";
+          card.className = "card section-card" + (openByDefault ? " is-open" : "");
           card.setAttribute("data-section", section.id);
 
           var toggle = document.createElement("button");
           toggle.className = "section-toggle";
           toggle.type = "button";
-          toggle.setAttribute("aria-expanded", "true");
+          toggle.setAttribute("aria-expanded", openByDefault ? "true" : "false");
           toggle.innerHTML =
             '<span class="section-icon-wrap" aria-hidden="true">' + section.icon + "</span>" +
             '<span class="section-toggle-text">' +
@@ -10983,10 +12254,11 @@
       }
 
       function generateHandover() {
-        var text = notesInput.value.trim();
-        if (!text) {
-          showToast("Please paste your shift notes first.");
-          notesInput.focus();
+        syncNotesMirror();
+        if (!notesHaveContent()) {
+          showToast("Please add shift notes in at least one section first.");
+          if (notesArrivals) notesArrivals.focus();
+          else if (notesInput) notesInput.focus();
           return;
         }
 
@@ -11014,9 +12286,58 @@
         setTimeout(function () {
           loadMaintenanceIssuesForHandover().then(function (maintenanceIssues) {
             try {
-              var lines = parseNotes(text);
-              var classified = classifyNotes(lines);
+              var Notes = window.HFHandoverNotesSections;
+              var parts = getNotesParts();
+              var text = getCombinedNotesForAi();
+              var sourcedLines = [];
+              if (Notes && Notes.parseSectionedNotes) {
+                Notes.parseSectionedNotes(parts).lines.forEach(function (entry) {
+                  parseNotes(entry.text).forEach(function (seg) {
+                    sourcedLines.push({
+                      text: seg,
+                      source: Notes.resolveSourceBias
+                        ? Notes.resolveSourceBias(entry.source, seg)
+                        : entry.source
+                    });
+                  });
+                });
+              } else {
+                parseNotes(text).forEach(function (seg) {
+                  sourcedLines.push({ text: seg, source: "general" });
+                });
+              }
+              var classified = classifyNotes(sourcedLines);
               var now = new Date();
+
+              /* Freeze the exact staff notes used for this generation. */
+              captureGeneratedSourceNotes(parts, { capturedAt: now.toISOString() });
+              if (isDemoModeActive() && window.HFDemoMode && HFDemoMode.getDemoHandover) {
+                var demoHandover = HFDemoMode.getDemoHandover();
+                if (demoHandover && demoHandover.quoteOfTheDay && demoHandover.quoteOfTheDay.text) {
+                  lastQuoteOfTheDay = {
+                    text: String(demoHandover.quoteOfTheDay.text),
+                    source: demoHandover.quoteOfTheDay.source || "local",
+                    generatedAt: demoHandover.quoteOfTheDay.generatedAt || now.toISOString()
+                  };
+                } else {
+                  captureQuoteOfTheDay({
+                    seed: [DEMO_HOTEL_NAME, selectedShift, handoverDate.value, "oakwood-mayfair-v1"].join("|"),
+                    hotelName: DEMO_HOTEL_NAME,
+                    shift: selectedShift,
+                    date: handoverDate.value,
+                    generatedAt: now.toISOString(),
+                    id: "oakwood-mayfair-v1"
+                  });
+                }
+              } else {
+                captureQuoteOfTheDay({
+                  hotelName: hotelName.value.trim() || DEMO_HOTEL_NAME,
+                  shift: selectedShift,
+                  date: handoverDate.value,
+                  generatedAt: now.toISOString(),
+                  id: editingSavedHandoverId || String(now.getTime())
+                });
+              }
 
               commitSnapshotState(text);
 
@@ -11035,6 +12356,7 @@
               renderHandoverMeta(lastGeneratedTime);
               renderSummaryStats(classified);
               showSummaryCard();
+              renderSourceNotesPanel(lastGeneratedSourceNotes);
 
               lastClassified = classified;
               lastIntelligenceExperience = getHandoverIntelligenceExperience(classified);
@@ -11121,17 +12443,27 @@
             meta: options.meta,
             generatedAt: options.generatedAt,
             snapshot: options.snapshot,
-            recommendations: options.recommendations
+            recommendations: options.recommendations,
+            sourceNotes: options.sourceNotes || lastGeneratedSourceNotes
           });
         }
         if (view && window.HandoverGeneratedView) {
-          return HandoverGeneratedView.toReportPayload(view);
+          var payload = HandoverGeneratedView.toReportPayload(view);
+          if (!payload.sourceNotes && (options.sourceNotes || lastGeneratedSourceNotes)) {
+            payload.sourceNotes = options.sourceNotes || lastGeneratedSourceNotes;
+          }
+          if (!payload.quoteOfTheDay && (options.quoteOfTheDay || lastQuoteOfTheDay)) {
+            payload.quoteOfTheDay = options.quoteOfTheDay || lastQuoteOfTheDay;
+          }
+          return payload;
         }
         /* Minimal fallback — briefing only, no legacy detail rows */
         return {
           meta: options.meta || getPdfMeta(),
           generatedAt: options.generatedAt || formatTimestamp(new Date()),
           hotelSnapshot: buildHotelSnapshotForPdfFromData(options.snapshot || getCommittedSnapshot()),
+          sourceNotes: options.sourceNotes || lastGeneratedSourceNotes || null,
+          quoteOfTheDay: options.quoteOfTheDay || lastQuoteOfTheDay || null,
           briefing: { paragraphs: lastSummaryText ? [lastSummaryText] : [] },
           hotelStatus: [],
           timeline: { groups: [] },
@@ -11146,7 +12478,16 @@
 
       function buildHandoverReportPayloadFromSaved(saved) {
         if (saved && saved.generatedView && window.HandoverGeneratedView) {
-          return HandoverGeneratedView.toReportPayload(saved.generatedView);
+          var savedPayload = HandoverGeneratedView.toReportPayload(saved.generatedView);
+          if (!savedPayload.sourceNotes) {
+            savedPayload.sourceNotes = saved.sourceNotes ||
+              (saved.sourceNotesParts ? { parts: saved.sourceNotesParts, id: saved.sourceNotesId || "" } : null) ||
+              (saved.originalNotes ? { originalNotes: saved.originalNotes } : null);
+          }
+          if (!savedPayload.quoteOfTheDay && saved.quoteOfTheDay) {
+            savedPayload.quoteOfTheDay = saved.quoteOfTheDay;
+          }
+          return savedPayload;
         }
         var classified = restoreClassifiedFromSaved(saved);
         var experience = null;
@@ -11160,6 +12501,10 @@
             experience = null;
           }
         }
+        var savedSourceNotes = saved.sourceNotes ||
+          (saved.sourceNotesParts ? { parts: saved.sourceNotesParts, id: saved.sourceNotesId || "" } : null) ||
+          (saved.originalNotes ? { originalNotes: saved.originalNotes } : null);
+        var savedQuote = saved.quoteOfTheDay || null;
         var view = buildCanonicalGeneratedView(classified, {
           experience: experience,
           meta: buildPdfMetaFromSaved(saved),
@@ -11167,13 +12512,19 @@
             ? formatTimestamp(new Date(saved.timestamp))
             : "Saved handover",
           snapshot: saved.hotelSnapshot || {},
-          recommendations: saved.recommendations || []
+          recommendations: saved.recommendations || [],
+          sourceNotes: savedSourceNotes,
+          quoteOfTheDay: savedQuote
         });
         if (view && window.HandoverGeneratedView) {
           if (!view.briefing.paragraphs.length && saved.aiSummary) {
             view.briefing.paragraphs = [saved.aiSummary];
           }
-          return HandoverGeneratedView.toReportPayload(view);
+          var restoredPayload = HandoverGeneratedView.toReportPayload(view);
+          if (!restoredPayload.quoteOfTheDay && savedQuote) {
+            restoredPayload.quoteOfTheDay = savedQuote;
+          }
+          return restoredPayload;
         }
         return {
           meta: buildPdfMetaFromSaved(saved),
@@ -11181,6 +12532,8 @@
             ? formatTimestamp(new Date(saved.timestamp))
             : "Saved handover",
           hotelSnapshot: buildHotelSnapshotForPdfFromData(saved.hotelSnapshot || {}),
+          sourceNotes: savedSourceNotes,
+          quoteOfTheDay: savedQuote,
           briefing: { paragraphs: saved.aiSummary ? [saved.aiSummary] : [] },
           hotelStatus: [],
           timeline: { groups: [] },
@@ -11312,11 +12665,12 @@
       }
 
       function clearNotesInternal() {
-        notesInput.value = "";
+        setNotesParts({ arrivals: "", departures: "", general: "" });
         updateCharCount();
         clearHandoverOutputState();
         renderPreHandoverSnapshot();
-        notesInput.focus();
+        if (notesArrivals) notesArrivals.focus();
+        else if (notesInput) notesInput.focus();
       }
 
       function clearNotes() {
@@ -11325,7 +12679,7 @@
           restoreDemoSampleNotes();
           return;
         }
-        if (notesInput.value.trim() || lastClassified) {
+        if (notesHaveContent() || lastClassified) {
           if (!window.confirm("Clear shift notes and generated handover output?")) {
             return;
           }
@@ -11337,11 +12691,24 @@
         showToast("Notes cleared.");
       }
 
-      notesInput.addEventListener("input", updateCharCount);
+      notesSectionFields.forEach(function (field) {
+        field.addEventListener("input", function () {
+          syncNotesMirror();
+          updateCharCount();
+          scheduleDraftSave();
+        });
+      });
+      if (notesInput) notesInput.addEventListener("input", updateCharCount);
       generateBtn.addEventListener("click", generateHandover);
       copyBtn.addEventListener("click", copyHandover);
       exportPdfBtn.addEventListener("click", exportHandoverPdf);
       printHandoverBtn.addEventListener("click", printHandover);
+      if (sourceNotesToggle) {
+        sourceNotesToggle.addEventListener("click", function () {
+          var open = sourceNotesToggle.getAttribute("aria-expanded") === "true";
+          setSourceNotesExpanded(!open);
+        });
+      }
       saveHandoverBtn.addEventListener("click", function () {
         if (isDemoModeActive()) {
           showToast("Demo Mode does not save handovers.");
@@ -11484,19 +12851,20 @@
         }
       });
 
-      notesInput.addEventListener("keydown", function (e) {
+      function onNotesCtrlEnter(e) {
         if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
           e.preventDefault();
           generateHandover();
         }
+      }
+      notesSectionFields.forEach(function (field) {
+        field.addEventListener("keydown", onNotesCtrlEnter);
       });
+      if (notesInput) notesInput.addEventListener("keydown", onNotesCtrlEnter);
 
       if (timelineToggle && timelineBody) {
         timelineToggle.addEventListener("click", function () {
-          var open = !timelineBody.classList.contains("is-open");
-          timelineBody.classList.toggle("is-open", open);
-          timelineToggle.classList.toggle("is-open", open);
-          timelineToggle.setAttribute("aria-expanded", open ? "true" : "false");
+          setTimelineExpanded(!timelineBody.classList.contains("is-open"));
         });
       }
 

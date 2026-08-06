@@ -108,43 +108,65 @@
     return roomIndex(inventory)[String(roomNo)] || null;
   }
 
+  function buildSourceNotesParts() {
+    return {
+      arrivals: [
+        "vip eleanor whitmore due 11am quiet upper pls — rm42 if free",
+        "champagne + welcome card — 15% corp rate on invoice",
+        "",
+        "patel late arr ~2345 rm16 b.com prepaid — no mobile on file",
+        "twin pls — move 12 or 25 if free",
+        "",
+        "henderson x4 interconnect 14+15 tmrw — bday balloons 15 @1500 fb informed",
+        "",
+        "arrivals left tonight: 2"
+      ].join("\n"),
+      departures: [
+        "okonkwo rm22 dep am — wake 0630 addison lee 1015",
+        "minibar 42.50 still open — collect b4 checkout",
+        "",
+        "late co rm21 chen approved 1pm",
+        "",
+        "deps tmrw: 6",
+        "",
+        "no show davies rm5 b.com — hold till night confirms",
+        "",
+        "expedia room4 city tax 12.50"
+      ].join("\n"),
+      general: [
+        "pm → night — busy pls read",
+        "",
+        "24 ac broken maint aware fan guest",
+        "",
+        "shower drip rm31 hk reported medium",
+        "",
+        "lobby wc hand dryer dead — paper towels out — maint aware",
+        "",
+        "rm11 safe keypad intermittent — guest moved 21 — 11 on hold parts",
+        "",
+        "adapter 15 +16",
+        "",
+        "inhouse 86 guests / adults 76 / children 10",
+        "rooms sold 60 / ooo 2 — rooms 11, 31 / adr 285",
+        "",
+        "lost prop gold cufflink rm25 fraser — dm safe — email sent"
+      ].join("\n")
+    };
+  }
+
   function buildSourceNotes() {
+    var parts = buildSourceNotesParts();
+    var Notes = global.HFHandoverNotesSections;
+    if (Notes && Notes.combineForAi) return Notes.combineForAi(parts);
     return [
-      "pm → night — busy pls read",
+      "=== TODAY'S ARRIVALS ===",
+      parts.arrivals,
       "",
-      "24 ac broken maint aware fan guest",
+      "=== TODAY'S DEPARTURES ===",
+      parts.departures,
       "",
-      "vip eleanor whitmore due 11am quiet upper pls — rm42 if free",
-      "champagne + welcome card — 15% corp rate on invoice",
-      "",
-      "okonkwo rm22 dep am — wake 0630 addison lee 1015",
-      "minibar 42.50 still open — collect b4 checkout",
-      "",
-      "patel late arr ~2345 rm16 b.com prepaid — no mobile on file",
-      "twin pls — move 12 or 25 if free",
-      "",
-      "shower drip rm31 hk reported medium",
-      "",
-      "lobby wc hand dryer dead — paper towels out — maint aware",
-      "",
-      "rm11 safe keypad intermittent — guest moved 21 — 11 on hold parts",
-      "",
-      "adapter 15 +16",
-      "",
-      "expedia room4 city tax 12.50",
-      "",
-      "henderson x4 interconnect 14+15 tmrw — bday balloons 15 @1500 fb informed",
-      "",
-      "late co rm21 chen approved 1pm",
-      "",
-      "arrivals left tonight: 2",
-      "deps tmrw: 6",
-      "inhouse 112 guests / adults 98 / children 14",
-      "rooms sold 60 / occ 75% / adr 285 / revpar 213.75",
-      "",
-      "no show davies rm5 b.com — hold till night confirms",
-      "",
-      "lost prop gold cufflink rm25 fraser — dm safe — email sent"
+      "=== GENERAL HOTEL / SHIFT NOTES ===",
+      parts.general
     ].join("\n");
   }
 
@@ -163,10 +185,9 @@
         item("Whitmore VIP – due " + tomorrow + " 11:00. Quiet upper suite Room 42. Champagne + welcome card. Confirm 15% corp rate on invoice.")
       ],
       guest: [
-        item("Room 22 Okonkwo – dep AM. Wake 06:30. Addison Lee 10:15. Collect £42.50 minibar before checkout."),
-        item("Room 16 Patel – late arr ~23:45. B.com prepaid. Get mobile at check-in. Twin pref → Room 12 or 25 if free."),
-        item("Henderson x4 – interconnect Rooms 14 & 15 tomorrow. Birthday balloons Room 15 at 15:00 (F&B informed)."),
-        item("Room 21 Chen – late CO approved 13:00.")
+        item("Follow up Room 16 Patel – collect mobile at check-in and confirm twin preference (Room 12 or 25)."),
+        item("Follow up Henderson interconnect – confirm birthday balloons Room 15 at 15:00 with F&B."),
+        item("Follow up Room 21 Chen – late check-out approved until 13:00; brief AM team.")
       ],
       maintenance: [
         item("Room 24 – AC not cooling. Guest provided with a fan. Maintenance has been informed. Follow up next shift until resolved."),
@@ -198,7 +219,7 @@
         item("PM shift reported unusually high operational workload. Review remaining operational notes before continuing the shift."),
         item("Arrivals remaining tonight: 2."),
         item("Departures tomorrow: 6."),
-        item("In-house 112 guests (98 adults / 14 children). Rooms sold 60 — occupancy 75%."),
+        item("In-house 86 guests (76 adults / 10 children). Rooms sold 60 — occupancy 76.9%."),
         item("No-show Davies Room 5 — keep reservation on hold until Night Team confirms.")
       ],
       completed: [
@@ -655,17 +676,26 @@
   function buildMetrics() {
     var totalRooms = TOTAL_ROOMS;
     var roomsSold = 60;
-    var occupancyPct = (roomsSold / totalRooms) * 100;
+    var oooRooms = 2;
+    var Metrics = global.HFHotelSnapshotMetrics;
+    var sellable = Metrics && Metrics.sellableRooms
+      ? Metrics.sellableRooms(totalRooms, oooRooms)
+      : totalRooms - oooRooms;
+    var occupancyPct = Metrics && Metrics.calculateOccupancy
+      ? Metrics.calculateOccupancy(roomsSold, totalRooms, oooRooms)
+      : (roomsSold / sellable) * 100;
     var adr = 285;
-    var revpar = Math.round(adr * (occupancyPct / 100) * 100) / 100;
+    var revpar = Metrics && Metrics.calculateRevpar
+      ? Metrics.calculateRevpar(adr, occupancyPct)
+      : Math.round(adr * (occupancyPct / 100) * 100) / 100;
     var maintenanceIssues = buildMaintenanceIssues();
     var handoverMaintenance = maintenanceIssues.filter(function (issue) {
       return issue.includeInHandover && issue.status !== "completed";
     });
     var openBalanceCount = 2;
 
-    var adults = 98;
-    var children = 14;
+    var adults = 76;
+    var children = 10;
     return {
       totalRooms: totalRooms,
       arrivals: 8,
@@ -673,7 +703,12 @@
       inHouse: adults + children,
       adults: adults,
       children: children,
-      occupancy: String(occupancyPct) + "%",
+      oooRooms: oooRooms,
+      oooRoomsNote: "Rooms 11, 31",
+      sellableRooms: sellable,
+      occupancy: Metrics && Metrics.formatOccupancyPercent
+        ? Metrics.formatOccupancyPercent(occupancyPct)
+        : occupancyPct.toFixed(1) + "%",
       occupancyValue: occupancyPct,
       adr: String(adr),
       adrValue: adr,
@@ -697,7 +732,10 @@
     var metrics = buildMetrics();
     var inventory = buildRoomInventory();
     var maintenanceIssues = buildMaintenanceIssues(workspaceId);
-    var roomsAvailable = metrics.totalRooms - metrics.roomsSold;
+    var sellable = metrics.sellableRooms != null
+      ? metrics.sellableRooms
+      : metrics.totalRooms - (metrics.oooRooms || 0);
+    var roomsAvailable = sellable - metrics.roomsSold;
     var stayovers = Math.max(0, metrics.roomsSold - metrics.arrivals);
     var snapshot = {
       arrivals: metrics.arrivals,
@@ -708,13 +746,15 @@
       children: metrics.children,
       roomsSold: metrics.roomsSold,
       roomsAvailable: String(roomsAvailable),
+      oooRooms: String(metrics.oooRooms || 0),
+      oooRoomsNote: metrics.oooRoomsNote || "",
       occupancy: metrics.occupancy,
       adr: metrics.adr,
       revpar: metrics.revpar,
       currency: metrics.currency
     };
 
-    return {
+    var pack = {
       packId: PACK_ID,
       packLabel: PACK_LABEL,
       hotelName: HOTEL_NAME,
@@ -754,6 +794,28 @@
         minute: "2-digit"
       })
     };
+    pack.quoteOfTheDay = buildDemoQuoteOfTheDay(pack);
+    return pack;
+  }
+
+  function buildDemoQuoteOfTheDay(pack) {
+    pack = pack || {};
+    var Quote = global.HFHandoverQuoteOfTheDay;
+    var seed = [pack.hotelName || HOTEL_NAME, pack.shift || "Night", pack.date || todayIso(), PACK_ID].join("|");
+    if (Quote && Quote.generateQuoteOfTheDay) {
+      return Quote.generateQuoteOfTheDay({
+        seed: seed,
+        hotelName: pack.hotelName || HOTEL_NAME,
+        shift: pack.shift || "Night",
+        date: pack.date || todayIso(),
+        id: PACK_ID
+      });
+    }
+    return {
+      text: "Every smooth shift begins with a clear handover.",
+      source: "fallback",
+      generatedAt: new Date().toISOString()
+    };
   }
 
   function buildHandoverRecord(pack) {
@@ -773,6 +835,7 @@
       dashboardMetrics: pack.dashboardMetrics,
       recommendations: pack.recommendations,
       shiftIntelligenceChecklist: pack.shiftIntelligenceChecklist,
+      quoteOfTheDay: pack.quoteOfTheDay || buildDemoQuoteOfTheDay(pack),
       timestamp: new Date().toISOString(),
       isDemoData: true,
       sampleDataId: PACK_ID + ":handover:night"
@@ -823,12 +886,14 @@
    */
   function buildDraftPayload(pack) {
     pack = pack || buildPack();
+    var notesParts = buildSourceNotesParts();
     return {
       hotelName: pack.hotelName,
       preparedBy: pack.preparedBy,
       shift: pack.shift,
       date: pack.date,
       notes: pack.sourceNotes,
+      notesParts: notesParts,
       hotelSnapshot: pack.hotelSnapshot,
       dashboardMetrics: pack.dashboardMetrics,
       hasGeneratedOutput: false,
@@ -932,8 +997,9 @@
         metrics.inHouse !== (metrics.adults + metrics.children)) {
       errors.push("inHouse guests must equal adults + children when both are set.");
     }
-    if (metrics.occupancyValue !== (metrics.roomsSold / metrics.totalRooms) * 100) {
-      errors.push("Occupancy percentage must equal roomsSold / totalRooms * 100.");
+    var expectedOcc = (metrics.roomsSold / (metrics.totalRooms - (metrics.oooRooms || 0))) * 100;
+    if (Math.abs(metrics.occupancyValue - expectedOcc) > 0.01) {
+      errors.push("Occupancy percentage must equal roomsSold / sellableRooms * 100.");
     }
     var expectedRevpar = Math.round(metrics.adrValue * (metrics.occupancyValue / 100) * 100) / 100;
     if (metrics.revparValue !== expectedRevpar) {
@@ -946,6 +1012,15 @@
     if (pack.hotelName !== HOTEL_NAME) {
       errors.push("hotelName must be The Oakwood Mayfair.");
     }
+    if (!pack.quoteOfTheDay || !String(pack.quoteOfTheDay.text || "").trim()) {
+      errors.push("Demo pack must include a Quote of the Day.");
+    }
+    ["urgent", "vip", "maintenance", "guest", "payments", "tasks"].forEach(function (sectionId) {
+      var items = (pack.organisedHandover && pack.organisedHandover[sectionId]) || [];
+      if (!items.length) {
+        errors.push("Demo organised handover must include at least one " + sectionId + " item.");
+      }
+    });
     var brainBlob = JSON.stringify(pack.hotelBrainProfile || {});
     var banned = ["Mary" + "lebone", "Zet" + "ter"];
     banned.forEach(function (token) {
@@ -973,6 +1048,7 @@
     buildGuests: buildGuests,
     buildHotelBrainProfile: buildHotelBrainProfile,
     buildSourceNotes: buildSourceNotes,
+    buildSourceNotesParts: buildSourceNotesParts,
     buildMetrics: buildMetrics,
     extractReferencedRooms: extractReferencedRooms,
     validatePackConsistency: validatePackConsistency

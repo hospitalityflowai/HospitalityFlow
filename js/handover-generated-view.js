@@ -96,6 +96,9 @@
         level: area.level || "unknown",
         summary: area.summary || "",
         count: typeof area.count === "number" ? area.count : 0,
+        details: asArray(area.details).map(function (line) {
+          return String(line || "").trim();
+        }).filter(Boolean),
         supportingFactIds: asArray(area.supportingFactIds)
       };
     });
@@ -184,6 +187,28 @@
       };
     });
 
+    var sourceNotes = null;
+    if (input.sourceNotes && typeof input.sourceNotes === "object") {
+      sourceNotes = {
+        id: input.sourceNotes.id || "",
+        version: input.sourceNotes.version || 1,
+        capturedAt: input.sourceNotes.capturedAt || "",
+        parts: input.sourceNotes.parts || null,
+        combined: input.sourceNotes.combined || "",
+        /* Keep line index for future item-level tracing; UI does not render it yet. */
+        lines: asArray(input.sourceNotes.lines)
+      };
+    }
+
+    var quoteOfTheDay = null;
+    if (input.quoteOfTheDay && input.quoteOfTheDay.text) {
+      quoteOfTheDay = {
+        text: String(input.quoteOfTheDay.text),
+        source: input.quoteOfTheDay.source || "",
+        generatedAt: input.quoteOfTheDay.generatedAt || ""
+      };
+    }
+
     var view = {
       version: VIEW_VERSION,
       meta: {
@@ -195,6 +220,8 @@
       generatedAt: input.generatedAt || "",
       snapshot: snapshot,
       hotelSnapshot: snapshot,
+      sourceNotes: sourceNotes,
+      quoteOfTheDay: quoteOfTheDay,
       briefing: normalizeBriefing(experience.briefing),
       hotelStatus: normalizeHotelStatus(experience.hotelStatus),
       timeline: normalizeTimeline(experience.timeline),
@@ -219,6 +246,8 @@
       generatedAt: view.generatedAt || "",
       hotelSnapshot: view.snapshot || view.hotelSnapshot || [],
       snapshot: view.snapshot || view.hotelSnapshot || [],
+      sourceNotes: view.sourceNotes || null,
+      quoteOfTheDay: view.quoteOfTheDay || null,
       briefing: normalizeBriefing(view.briefing),
       hotelStatus: normalizeHotelStatus(view.hotelStatus),
       timeline: normalizeTimeline(view.timeline),

@@ -111,6 +111,11 @@ const view = View.build({
     "Confirm engineer attendance for Room 412 before peak arrivals.",
     "Review Room 118 declined card with duty manager."
   ],
+  quoteOfTheDay: {
+    text: "A prepared team delivers better hospitality.",
+    source: "local",
+    generatedAt: "2026-07-22T11:46:00.000Z"
+  },
   formatItemText: function (item) { return item.text; },
   formatRecommendation: function (rec) {
     return typeof rec === "string" ? rec : rec.text;
@@ -151,6 +156,11 @@ if (!html.includes("Hotel Snapshot") || !html.includes("Today's Briefing") ||
 
 if (html.includes("AI Summary")) {
   console.error("FAIL: report HTML still uses AI Summary title");
+  failed = true;
+}
+
+if (!html.includes("Quote of the Day") || !html.includes("A prepared team delivers better hospitality")) {
+  console.error("FAIL: report HTML missing Quote of the Day");
   failed = true;
 }
 

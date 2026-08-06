@@ -335,6 +335,7 @@ function loadDemoRuntime(options) {
     }
   };
 
+  vm.runInNewContext(read("js/handover-quote-of-the-day.js"), context, { filename: "handover-quote-of-the-day.js" });
   vm.runInNewContext(read("js/demo-sample-data.js"), context, { filename: "demo-sample-data.js" });
   vm.runInNewContext(read("js/demo-mode.js"), context, { filename: "demo-mode.js" });
 
@@ -553,6 +554,7 @@ async function run() {
   };
   packCtx.window = packCtx;
   packCtx.globalThis = packCtx;
+  vm.runInNewContext(read("js/handover-quote-of-the-day.js"), packCtx, { filename: "handover-quote-of-the-day.js" });
   vm.runInNewContext(demoSampleSrc, packCtx, { filename: "demo-sample-data.js" });
   const Sample = packCtx.HFDemoSampleData;
   const pack = Sample.buildPack("hotel-ws-1");
@@ -561,6 +563,20 @@ async function run() {
     ok = fail("Pack consistency errors:\n - " + validation.errors.join("\n - ")) && ok;
   } else {
     ok = pass("Oakwood pack consistency validation passed") && ok;
+  }
+  if (!pack.quoteOfTheDay || !pack.quoteOfTheDay.text) {
+    ok = fail("Demo pack must include a stored Quote of the Day") && ok;
+  } else {
+    ok = pass("Demo pack includes Quote of the Day") && ok;
+  }
+  const alertSections = ["urgent", "vip", "maintenance", "guest", "payments", "tasks"];
+  const missingAlerts = alertSections.filter(function (id) {
+    return !((pack.organisedHandover && pack.organisedHandover[id]) || []).length;
+  });
+  if (missingAlerts.length) {
+    ok = fail("Demo organised handover missing alert categories: " + missingAlerts.join(", ")) && ok;
+  } else {
+    ok = pass("Demo organised handover covers all six Shift Alert categories") && ok;
   }
 
   const inventory = Sample.buildRoomInventory();
@@ -949,14 +965,44 @@ async function run() {
     ok = fail("Enter/exit cycles left side effects or writes") && ok;
   }
 
-  // Metrics math
+  // Metrics math — sellable rooms = total − OOO
   const metrics = Sample.buildMetrics();
-  const expectedOcc = (metrics.roomsSold / metrics.totalRooms) * 100;
+  const sellable = metrics.totalRooms - (metrics.oooRooms || 0);
+  const expectedOcc = (metrics.roomsSold / sellable) * 100;
   const expectedRevpar = Math.round(metrics.adrValue * (expectedOcc / 100) * 100) / 100;
-  if (metrics.occupancyValue !== expectedOcc || metrics.revparValue !== expectedRevpar) {
+  if (
+    metrics.totalRooms !== 80 ||
+    metrics.roomsSold !== 60 ||
+    metrics.oooRooms !== 2 ||
+    sellable !== 78 ||
+    Math.abs(metrics.occupancyValue - expectedOcc) > 0.01 ||
+    Math.abs(metrics.revparValue - expectedRevpar) > 0.01 ||
+    Math.abs(expectedOcc - 76.923076) > 0.01 ||
+    Math.abs(expectedRevpar - 219.23) > 0.011
+  ) {
     ok = fail("Metrics occupancy/RevPAR math failed") && ok;
   } else {
     ok = pass("Occupancy and RevPAR are mathematically consistent") && ok;
+  }
+  if (
+    metrics.adults !== 76 ||
+    metrics.children !== 10 ||
+    metrics.inHouse !== 86 ||
+    metrics.inHouse !== metrics.adults + metrics.children
+  ) {
+    ok = fail("Demo guest counts must be In-house 86 = Adults 76 + Children 10") && ok;
+  } else {
+    ok = pass("Demo guest counts are restrained and consistent") && ok;
+  }
+  const packSnap = pack.hotelSnapshot || {};
+  const avail = Number(packSnap.roomsAvailable);
+  if (
+    Number(packSnap.roomsSold) + avail + Number(packSnap.oooRooms) !== 80 ||
+    Number(packSnap.inHouse) !== Number(packSnap.adults) + Number(packSnap.children)
+  ) {
+    ok = fail("Demo hotelSnapshot inventory/guest totals are inconsistent") && ok;
+  } else {
+    ok = pass("Demo hotelSnapshot inventory and guests stay consistent") && ok;
   }
 
   // UX realism polish — messy notes → clean operational handover
@@ -989,10 +1035,70 @@ async function run() {
   } else {
     ok = pass("Demo hotelSnapshot includes expanded KPIs") && ok;
   }
-  if (!/HOTEL_SNAPSHOT_GROUPS/.test(handoverHtml) || !/hotel-snapshot-group-label/.test(handoverHtml)) {
-    ok = fail("Hotel Snapshot must render Operations / Inventory / Revenue groups") && ok;
+  if (
+    !/HOTEL_SNAPSHOT_GROUPS/.test(handoverHtml) ||
+    !/label:\s*"Guests"/.test(handoverHtml) ||
+    !/label:\s*"OOO"/.test(handoverHtml) ||
+    !/glance-snapshot/.test(handoverHtml)
+  ) {
+    ok = fail("Hotel Snapshot must use compact widget layout with Guests + OOO") && ok;
+  } else if (/id:\s*"adults"/.test(handoverHtml) || /id:\s*"children"/.test(handoverHtml)) {
+    ok = fail("Hotel Snapshot must not render separate Adults/Children cards") && ok;
   } else {
-    ok = pass("Hotel Snapshot uses Operations / Inventory / Revenue groups") && ok;
+    ok = pass("Hotel Snapshot uses compact Guests / OOO widgets") && ok;
+  }
+  if (
+    !/sourceNotesPanel/.test(handoverHtml) ||
+    !/View Source Notes/.test(handoverHtml) ||
+    !/captureGeneratedSourceNotes|captureSourceNotes/.test(handoverHtml) ||
+    !/source-notes-panel/.test(handoverHtml)
+  ) {
+    ok = fail("Generated handover must include collapsible Source Notes") && ok;
+  } else {
+    ok = pass("Generated handover includes collapsible Source Notes") && ok;
+  }
+  if (!/min-height:\s*56px/.test(handoverHtml) && !/min-height: 56px/.test(handoverHtml)) {
+    ok = fail("Hotel Snapshot widgets should use compact ~56px height") && ok;
+  } else if (!/repeat\(4,\s*minmax\(0,\s*1fr\)\)/.test(handoverHtml)) {
+    ok = fail("Hotel Snapshot should use a full-width 4-column dashboard grid") && ok;
+  } else if (!/minmax\(0,\s*1fr\)\s+minmax\(0,\s*1fr\)\s+minmax\(0,\s*2fr\)/.test(handoverHtml)) {
+    ok = fail("Revenue row should span full width with Quote taking remaining space") && ok;
+  } else {
+    ok = pass("Hotel Snapshot uses compact widgets in a full-width dashboard grid") && ok;
+  }
+  if (
+    !/Quote of the Day/.test(handoverHtml) ||
+    !/quote-of-day-card/.test(handoverHtml) ||
+    !/handover-quote-of-the-day\.js/.test(handoverHtml) ||
+    !/captureQuoteOfTheDay/.test(handoverHtml)
+  ) {
+    ok = fail("Revenue row must include Quote of the Day") && ok;
+  } else {
+    ok = pass("Revenue row includes Quote of the Day") && ok;
+  }
+  if (
+    !/isSectionOpenByDefault/.test(handoverHtml) ||
+    !/setTimelineExpanded\(false\)/.test(handoverHtml) ||
+    !/hotel-status-details/.test(handoverHtml) ||
+    !/shift-btn\.active/.test(handoverHtml)
+  ) {
+    ok = fail("Progressive disclosure + refined status/shift styles must be present") && ok;
+  } else if (/timeline-toggle is-open/.test(handoverHtml) || /timeline-body is-open/.test(handoverHtml)) {
+    ok = fail("Today's Timeline must start collapsed in markup") && ok;
+  } else {
+    ok = pass("Progressive disclosure: Timeline collapsed; organised sections expanded for field testing") && ok;
+  }
+  if (/label:\s*"Timed Actions"/.test(handoverHtml)) {
+    ok = fail("Timed Actions must not appear as a Shift Alert card") && ok;
+  } else if (
+    !/label:\s*"Payments"/.test(handoverHtml) ||
+    !/label:\s*"Guest Follow-ups"/.test(handoverHtml) ||
+    !/label:\s*"Outstanding"/.test(handoverHtml) ||
+    !/repeat\(6,\s*minmax\(0,\s*1fr\)\)/.test(handoverHtml)
+  ) {
+    ok = fail("Shift Alerts must expose six compact widgets in a full-width row") && ok;
+  } else {
+    ok = pass("Shift Alerts use six compact widgets without Timed Actions") && ok;
   }
   const recs = pack.recommendations || [];
   const recDepts = {};

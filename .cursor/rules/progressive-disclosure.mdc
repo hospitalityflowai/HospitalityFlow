@@ -1,0 +1,46 @@
+---
+description: Hospitality Flow Progressive Disclosure — show only what the incoming shift needs first
+alwaysApply: true
+---
+
+# Progressive Disclosure
+
+Show only what the user needs first. Everything else is one click away.
+
+Prioritise speed, clarity and confidence for reception teams. Every section must answer:
+
+> Does the incoming shift need to see this immediately?
+
+- **YES** → show by default
+- **NO** → hide behind expand/collapse
+
+## Shift Handover defaults
+
+**Expanded by default**
+- Hotel Snapshot
+- Shift Alerts
+- Today's Briefing
+- AI Recommendations
+- Organised operational sections (field-testing before collapsing)
+
+**Collapsed by default**
+- Today's Timeline
+- Source Notes
+- AI reasoning, traces, or supporting detail
+
+Hotel Status is a compact exception glance: show level/count only; expand details on click.
+
+## Rules
+
+- Reduce unnecessary scrolling and cognitive load
+- Keep page one focused on today's priorities
+- Preserve access to all information
+- Never hide critical operational risks
+- Use smooth, consistent expand/collapse throughout
+- Print/PDF may expand content for completeness
+
+## New AI / UI sections
+
+Before adding a section, ask whether it is essential for immediate decision-making. If not, make it collapsible and **default collapsed**.
+
+Goal: calm, premium, and fast — even as AI features grow.

@@ -116,6 +116,11 @@ const view = View.build({
     { label: "Arrivals", value: "2" },
     { label: "Departures", value: "6" }
   ],
+  quoteOfTheDay: {
+    text: "Clear communication creates confident shifts.",
+    source: "local",
+    generatedAt: "2026-08-01T12:00:00.000Z"
+  },
   experience: experience,
   classified: classified,
   sectionDefs: [
@@ -154,12 +159,16 @@ assert(typeof View.formatTimelineEntry === "function", "timeline entry formatter
 assert(view.sections && view.sections.length >= 1, "view includes operational sections");
 assert(view.recommendations && view.recommendations.length === 2, "view includes recommendations");
 assert(view.snapshot && view.snapshot.length === 2, "view includes snapshot");
+assert(view.quoteOfTheDay && /Clear communication/.test(view.quoteOfTheDay.text),
+  "view stores Quote of the Day with the handover");
 
 const payload = View.toReportPayload(view);
 assert(payload.hasCanonicalView === true, "report payload marks canonical view");
 assert(payload.summary == null, "no legacy summary object when canonical model exists");
 assert(!(payload.summary && payload.summary.rows && payload.summary.rows.length),
   "no legacy detail rows when canonical model exists");
+assert(payload.quoteOfTheDay && payload.quoteOfTheDay.text === view.quoteOfTheDay.text,
+  "report payload preserves Quote of the Day");
 
 const html = Report.renderHtml(payload);
 assert(/Today's Briefing/.test(html), "Print contains Today's Briefing");
@@ -168,6 +177,10 @@ assert(/Today's Timeline/.test(html), "Print contains Today's Timeline");
 assert(!/AI Summary/.test(html), "no AI Summary title when canonical model exists");
 assert(/AI Recommendations/.test(html), "Print contains AI Recommendations");
 assert(/Hotel Snapshot/.test(html), "Print contains Hotel Snapshot");
+assert(/Quote of the Day/.test(html) && /Clear communication creates confident shifts/.test(html),
+  "Print includes Quote of the Day without author attribution");
+assert(!/—\s*[A-Z][a-z]+/.test(html.match(/hr-quote-text[\s\S]*?<\/div>/) || [""])[0],
+  "Quote of the Day has no fabricated author");
 
 /* PDF path uses same payload fields (jsPDF not required for field parity). */
 assert(payload.briefing.paragraphs.join(" ").length > 20, "PDF payload contains Today's Briefing");

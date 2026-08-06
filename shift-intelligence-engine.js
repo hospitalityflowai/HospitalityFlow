@@ -1180,16 +1180,19 @@
         confidence: /\bvip\b/.test(src) || subject === "vip_arrival" ? "high" : "medium"
       };
     }
+    /* Adapters are inventory / loan follow-ups — never payment objects. */
+    if (/\badapter/.test(src) && !/\b(?:declined|folio|invoice|city\s*tax|minibar)\b/.test(src)) {
+      return { type: OPERATIONAL_OBJECT_TYPE.guest_request, confidence: "high" };
+    }
     /* Pure collection notes may extract as departure_followup — keep them payments. */
     var paymentCue = /\b(minibar|city\s+tax|outstanding|folio|balance|booking\.com|expedia|declined)\b/.test(src) ||
       subject === "payment" || subject === "outstanding_balance" || subject === "payment_balance" ||
       subject === "financial_settlement_unclear" || subject === "invoice" || subject === "folio" ||
-      subject === "charge" || subject === "bill" ||
-      (/\badapter\b/.test(src) && /\b(?:£|\$|€|\d+|charge|posted|not\s+posted|collect)\b/.test(src));
+      subject === "charge" || subject === "bill";
     var timedDepartureCue = /\bwake\b/.test(src) || /\baddison|taxi|transfer\b/.test(src) ||
       subject === "wake_up" || subject === "transfer";
     if (paymentCue && !timedDepartureCue &&
-        (subject === "departure_followup" || section === "payments" || subject === "inventory" || paymentCue)) {
+        (subject === "departure_followup" || section === "payments" || paymentCue)) {
       return { type: OPERATIONAL_OBJECT_TYPE.payment, confidence: "high" };
     }
     if (subject === "departure_followup" ||
@@ -1211,10 +1214,13 @@
       return { type: OPERATIONAL_OBJECT_TYPE.transport, confidence: "high" };
     }
     if (
-      subject === "payment" || subject === "outstanding_balance" || subject === "payment_balance" ||
-      subject === "invoice" || subject === "folio" || subject === "bill" ||
-      section === "payments" ||
-      /\b(minibar|city\s+tax|outstanding|folio|balance|booking\.com|expedia)\b/.test(src)
+      !/\badapter/.test(src) &&
+      (
+        subject === "payment" || subject === "outstanding_balance" || subject === "payment_balance" ||
+        subject === "invoice" || subject === "folio" || subject === "bill" ||
+        section === "payments" ||
+        /\b(minibar|city\s+tax|outstanding|folio|balance|booking\.com|expedia)\b/.test(src)
+      )
     ) {
       return { type: OPERATIONAL_OBJECT_TYPE.payment, confidence: subject || section === "payments" ? "high" : "medium" };
     }
@@ -2998,11 +3004,14 @@
     var primary = objectPrimaryFact(obj);
     var fact = primary && primary.fact;
     var subject = normalizeSubjectToken(fact && (fact.subject || fact.subjectType) || "");
+    /* Adapters are inventory / task follow-ups, not Finance folio actions. */
+    if (/\badapter/.test(src) && !/\b(?:declined|folio|invoice|city\s*tax|minibar)\b/.test(src)) {
+      return false;
+    }
     return subject === "payment" || subject === "outstanding_balance" || subject === "payment_balance" ||
       subject === "financial_settlement_unclear" || subject === "invoice" || subject === "folio" ||
       subject === "charge" ||
-      /\b(outstanding|declined|minibar|city\s+tax|folio|balance)\b/.test(src) ||
-      (/\badapter\b/.test(src) && /\b(?:£|\$|€|\d+|charge|posted|collect)\b/.test(src));
+      /\b(outstanding|declined|minibar|city\s+tax|folio|balance)\b/.test(src);
   }
 
   function objectLooksLikeMaintenance(obj) {
@@ -3271,11 +3280,223 @@
     };
   }
 
+  /** Compact actionable detail line for Hotel Status expand. */
+  function hotelStatusDetailFromObject(obj, areaKey) {
+    if (!obj) return "";
+    var primary = objectPrimaryFact(obj);
+    var fact = primary && primary.fact ? primary.fact : null;
+    var src = objectSourceBlob(obj);
+    var room = (obj.rooms && obj.rooms[0]) || (fact && fact.rooms && fact.rooms[0]) || "";
+    var roomLabel = room ? "Room " + room : "";
+    var guest = trimText(obj.guestName || (fact && fact.guestName) || "");
+    var amount = fact ? extractMoneyAmount(fact, primary && primary.note) : null;
+    var amountLabel = amount != null ? ("£" + amount.toFixed(amount % 1 ? 2 : 0)) : "";
+    var fault = trimText(fact && fact.faultType || "");
+    if (!fault && /hot\s*water/.test(src)) fault = "hot water";
+    if (!fault && /(?:\bac\b|air\s*con|not cooling)/.test(src)) fault = "AC";
+    if (!fault && /\btv\b/.test(src)) fault = "TV";
+    if (!fault && /\blamp\b/.test(src)) fault = "Lamp";
+    if (!fault && /hand\s*dryer/.test(src)) fault = "hand dryer";
+    if (!fault && /safe/.test(src)) fault = "safe";
+    if (!fault && /shower|mixer|drip/.test(src)) fault = "shower";
+    if (fault) fault = fault.charAt(0).toUpperCase() + fault.slice(1);
+
+    if (areaKey === "vip_readiness") {
+      if (guest && roomLabel) return guest + " — " + roomLabel;
+      if (guest) return guest + " (VIP readiness)";
+      if (roomLabel) return roomLabel + " VIP readiness";
+      return "VIP readiness — review original note";
+    }
+    if (areaKey === "revenue") {
+      if (roomLabel && amountLabel) return roomLabel + " " + amountLabel;
+      if (roomLabel && /declined/.test(src)) return roomLabel + " declined card";
+      if (roomLabel && /city\s*tax/.test(src)) return roomLabel + " city tax";
+      if (roomLabel && /minibar/.test(src)) return roomLabel + " minibar";
+      if (roomLabel) return roomLabel + " outstanding payment";
+      if (amountLabel) return amountLabel + " outstanding";
+      return "Outstanding payment — review original note";
+    }
+    if (roomLabel && fault) return roomLabel + " " + fault;
+    if (roomLabel && amountLabel) return roomLabel + " " + amountLabel;
+    if (guest && roomLabel) return guest + " — " + roomLabel;
+    if (roomLabel && /wake/.test(src)) return roomLabel + " wake-up";
+    if (roomLabel && /taxi|transfer|addison/.test(src)) return roomLabel + " transfer";
+    if (roomLabel) return roomLabel;
+    if (guest) return guest;
+    if (amountLabel) return amountLabel + " outstanding";
+    if (fault) return fault;
+    return "Review original note";
+  }
+
+  /**
+   * Single source of truth for Shift Alerts + Hotel Status.
+   * One object pass — counts and critical levels never diverge.
+   */
+  function collectOperationalGlanceBuckets(items) {
+    var objects = groupIntoOperationalObjects(items || []);
+    var buckets = {
+      urgent: [],
+      vip: [],
+      maintenance: [],
+      payments: [],
+      guest: [],
+      tasks: [],
+      timedActions: [],
+      guest_experience: [],
+      vip_readiness: [],
+      revenue: [],
+      reception_operations: []
+    };
+    var levels = {
+      guest_experience: HOTEL_STATUS_LEVEL.normal,
+      vip_readiness: HOTEL_STATUS_LEVEL.normal,
+      maintenance: HOTEL_STATUS_LEVEL.normal,
+      revenue: HOTEL_STATUS_LEVEL.normal,
+      reception_operations: HOTEL_STATUS_LEVEL.normal
+    };
+    var seen = {};
+
+    function pushUnique(key, obj) {
+      var token = key + "::" + obj.id;
+      if (seen[token]) return false;
+      seen[token] = true;
+      buckets[key].push(obj);
+      return true;
+    }
+
+    function escalate(areaKey, nextLevel) {
+      var order = {};
+      order[HOTEL_STATUS_LEVEL.normal] = 0;
+      order[HOTEL_STATUS_LEVEL.attention] = 1;
+      order[HOTEL_STATUS_LEVEL.critical] = 2;
+      if ((order[nextLevel] || 0) > (order[levels[areaKey]] || 0)) {
+        levels[areaKey] = nextLevel;
+      }
+    }
+
+    objects.forEach(function (obj) {
+      if (!isPromotableOperationalObject(obj) && obj.type !== OPERATIONAL_OBJECT_TYPE.vip) return;
+      var src = objectSourceBlob(obj);
+      var resolvedInfo = isResolvedNoiseObject(obj);
+      var primary = objectPrimaryFact(obj);
+      var fact = primary && primary.fact;
+      var ctx = obj.operationalContext ||
+        (primary ? scoreOperationalImpact(primary).operationalContext : null);
+      var ctxCompleted = ctx && (
+        ctx.currentStatus === CONTEXT_STATUS.completed ||
+        ctx.currentStatus === CONTEXT_STATUS.confirmed
+      );
+      var isVip = obj.type === OPERATIONAL_OBJECT_TYPE.vip ||
+        (ctx && ctx.objectType === OPERATIONAL_OBJECT_TYPE.vip) ||
+        /\bvip\b/.test(src);
+      var isMaint = (objectLooksLikeMaintenance(obj) ||
+        (ctx && ctx.category === OPERATIONAL_CATEGORY.maintenance)) &&
+        !resolvedInfo && !ctxCompleted;
+      var guestImpactMaint = isMaint && (
+        (ctx && (ctx.guestImpact === IMPACT_LEVEL.high || ctx.guestImpact === IMPACT_LEVEL.critical)) ||
+        isGuestImpactingMaintenance(fact, primary && primary.note)
+      );
+      /* Adapters are inventory / task follow-ups — not Finance folio actions. */
+      var looksPayment = objectLooksLikePayment(obj) ||
+        (ctx && ctx.revenueImpact !== IMPACT_LEVEL.none && ctx.revenueImpact !== IMPACT_LEVEL.low);
+      if (looksPayment && /\badapter/.test(src) && !/\b(?:declined|folio|invoice|city\s*tax|minibar)\b/.test(src)) {
+        looksPayment = false;
+      }
+      var isPayment = looksPayment && !resolvedInfo && !ctxCompleted;
+      var isTimed =
+        obj.type === OPERATIONAL_OBJECT_TYPE.departure ||
+        obj.type === OPERATIONAL_OBJECT_TYPE.wake_up ||
+        obj.type === OPERATIONAL_OBJECT_TYPE.transport ||
+        obj.type === OPERATIONAL_OBJECT_TYPE.timed ||
+        (obj.components && (obj.components.indexOf("wake_up") !== -1 || obj.components.indexOf("transport") !== -1)) ||
+        /\bwake\b.+\b(?:taxi|addison|transfer)\b|\b(?:taxi|addison|transfer)\b.+\bwake\b/.test(src);
+      var isGuestFollow =
+        obj.type === OPERATIONAL_OBJECT_TYPE.guest_request ||
+        obj.type === OPERATIONAL_OBJECT_TYPE.reception ||
+        isVip ||
+        /late\s+check|late\s+arr|arriv/.test(src);
+      var isTask =
+        obj.type === OPERATIONAL_OBJECT_TYPE.guest_request ||
+        obj.type === OPERATIONAL_OBJECT_TYPE.interconnect ||
+        obj.type === OPERATIONAL_OBJECT_TYPE.reception ||
+        /parcel|package|delivery|adapter|task|bedding|feather|confirm prepared/.test(src);
+
+      if (isVip) pushUnique("vip", obj);
+      if (isMaint) {
+        pushUnique("maintenance", obj);
+        if (guestImpactMaint || /hot\s*water|on hold|unavailable|ac\b|not cooling/.test(src) ||
+            (ctx && (ctx.guestImpact === IMPACT_LEVEL.high || ctx.operationalRisk === IMPACT_LEVEL.high))) {
+          escalate("maintenance", HOTEL_STATUS_LEVEL.critical);
+        } else {
+          escalate("maintenance", HOTEL_STATUS_LEVEL.attention);
+        }
+      }
+      if (guestImpactMaint) {
+        pushUnique("urgent", obj);
+        pushUnique("guest_experience", obj);
+        escalate("guest_experience", HOTEL_STATUS_LEVEL.critical);
+      } else if (
+        !ctxCompleted &&
+        (obj.type === OPERATIONAL_OBJECT_TYPE.guest_request || obj.type === OPERATIONAL_OBJECT_TYPE.reception) &&
+        /complaint|unhappy|noise|feather|bedding|guest\s+request|follow/i.test(src) &&
+        !resolvedInfo
+      ) {
+        pushUnique("guest_experience", obj);
+        escalate("guest_experience", HOTEL_STATUS_LEVEL.attention);
+      }
+      if (isPayment) {
+        pushUnique("payments", obj);
+        pushUnique("revenue", obj);
+        if ((ctx && (ctx.revenueImpact === IMPACT_LEVEL.high || ctx.revenueImpact === IMPACT_LEVEL.critical)) ||
+            isHighFinancialRisk(fact, primary && primary.note)) {
+          escalate("revenue", HOTEL_STATUS_LEVEL.critical);
+        } else {
+          escalate("revenue", HOTEL_STATUS_LEVEL.attention);
+        }
+      }
+      if (isTimed) pushUnique("timedActions", obj);
+      if (isGuestFollow && (!resolvedInfo || isVip)) pushUnique("guest", obj);
+      if (isTask && (!resolvedInfo || /parcel|package|delivery|adapter|bedding|feather/.test(src))) {
+        pushUnique("tasks", obj);
+      }
+      if (isVip) {
+        pushUnique("vip_readiness", obj);
+        if (ctx && ctx.currentStatus === CONTEXT_STATUS.completed) {
+          /* keep supporting but do not escalate */
+        } else if ((ctx && (ctx.reasoning || []).indexOf("vip_readiness") !== -1) ||
+            /champagne|welcome\s+card|amenity|quiet|prepare|still\s+needed/.test(src)) {
+          escalate("vip_readiness", HOTEL_STATUS_LEVEL.attention);
+        } else {
+          escalate("vip_readiness", HOTEL_STATUS_LEVEL.attention);
+        }
+      }
+      if (
+        obj.type === OPERATIONAL_OBJECT_TYPE.departure ||
+        obj.type === OPERATIONAL_OBJECT_TYPE.wake_up ||
+        obj.type === OPERATIONAL_OBJECT_TYPE.transport ||
+        obj.type === OPERATIONAL_OBJECT_TYPE.timed ||
+        obj.type === OPERATIONAL_OBJECT_TYPE.interconnect ||
+        obj.type === OPERATIONAL_OBJECT_TYPE.reception ||
+        (ctx && ctx.nextAction === NEXT_ACTION_KIND.complete_timed_actions) ||
+        (obj.type === OPERATIONAL_OBJECT_TYPE.guest_request &&
+          /late\s+check|room\s+move|allocation|no-show|arriv|parcel|delivery/.test(src))
+      ) {
+        if (!(ctxCompleted && obj.type !== OPERATIONAL_OBJECT_TYPE.vip)) {
+          pushUnique("reception_operations", obj);
+          escalate("reception_operations", HOTEL_STATUS_LEVEL.attention);
+        }
+      }
+    });
+
+    return { objects: objects, buckets: buckets, levels: levels };
+  }
+
   /**
    * Engine-owned Hotel Status model — levels from operational evidence only.
+   * Counts are shared with Shift Alerts via collectOperationalGlanceBuckets.
    */
   function buildHotelStatusModel(items) {
-    var objects = groupIntoOperationalObjects(items || []);
+    var glance = collectOperationalGlanceBuckets(items);
     var areas = [
       { key: "guest_experience", label: "Guest Experience" },
       { key: "vip_readiness", label: "VIP Readiness" },
@@ -3284,15 +3505,48 @@
       { key: "reception_operations", label: "Reception Operations" }
     ];
     return areas.map(function (area) {
-      var judged = statusLevelFromObjects(area.key, objects);
-      var summaryIntent = buildStatusSummaryIntent(area.key, judged.level, judged.supporting);
+      var supporting = glance.buckets[area.key] || [];
+      var level = glance.levels[area.key] || HOTEL_STATUS_LEVEL.normal;
+      /* Align overlapping status counts with Shift Alert buckets. */
+      if (area.key === "maintenance") {
+        supporting = glance.buckets.maintenance || [];
+        level = glance.levels.maintenance;
+      } else if (area.key === "revenue") {
+        supporting = glance.buckets.payments || [];
+        level = glance.levels.revenue;
+      } else if (area.key === "vip_readiness") {
+        supporting = glance.buckets.vip || [];
+        level = glance.levels.vip_readiness;
+      } else if (area.key === "guest_experience") {
+        /* Critical guest-experience = urgent guest-impacting items. */
+        if (level === HOTEL_STATUS_LEVEL.critical) {
+          supporting = glance.buckets.urgent.length
+            ? glance.buckets.urgent
+            : supporting;
+        }
+      }
+      var summaryIntent = buildStatusSummaryIntent(area.key, level, supporting);
+      /* One actionable detail per supporting object — count always equals expanded lines. */
+      var details = [];
+      var seenObj = {};
+      supporting.forEach(function (obj) {
+        if (!obj || seenObj[obj.id]) return;
+        seenObj[obj.id] = true;
+        details.push(hotelStatusDetailFromObject(obj, area.key));
+      });
+      details = details.filter(Boolean);
+      var count = details.length;
+      if (!count) {
+        level = HOTEL_STATUS_LEVEL.normal;
+      }
       return {
         key: area.key,
         label: area.label,
-        level: judged.level,
+        level: level,
         summaryIntent: summaryIntent,
-        count: judged.supporting.length,
-        supportingFactIds: judged.supporting.reduce(function (acc, obj) {
+        count: count,
+        details: details,
+        supportingFactIds: supporting.reduce(function (acc, obj) {
           return acc.concat(obj.factIds || []);
         }, [])
       };
@@ -3300,87 +3554,20 @@
   }
 
   /**
-   * Shift Alerts from distinct operational objects (not keyword / sentence counts).
+   * Shift Alerts from the same operational glance buckets as Hotel Status.
    */
   function computeShiftAlertsFromObjects(items) {
-    var objects = groupIntoOperationalObjects(items || []);
+    var glance = collectOperationalGlanceBuckets(items);
     var counts = {
-      urgent: 0,
-      vip: 0,
-      maintenance: 0,
-      payments: 0,
-      timedActions: 0,
-      guest: 0,
-      tasks: 0,
-      events: 0
+      urgent: glance.buckets.urgent.length,
+      vip: glance.buckets.vip.length,
+      maintenance: glance.buckets.maintenance.length,
+      payments: glance.buckets.payments.length,
+      timedActions: glance.buckets.timedActions.length,
+      guest: glance.buckets.guest.length,
+      tasks: glance.buckets.tasks.length,
+      events: glance.buckets.timedActions.length
     };
-    var seen = {};
-
-    function bump(key, objectId) {
-      var token = key + "::" + objectId;
-      if (seen[token]) return;
-      seen[token] = true;
-      counts[key] += 1;
-    }
-
-    objects.forEach(function (obj) {
-      if (!isPromotableOperationalObject(obj) && obj.type !== OPERATIONAL_OBJECT_TYPE.vip) return;
-      var src = objectSourceBlob(obj);
-      var resolvedInfo = isResolvedNoiseObject(obj);
-      var primary = objectPrimaryFact(obj);
-      var ctx = obj.operationalContext ||
-        (primary ? scoreOperationalImpact(primary).operationalContext : null);
-      var ctxCompleted = ctx && (
-        ctx.currentStatus === CONTEXT_STATUS.completed ||
-        ctx.currentStatus === CONTEXT_STATUS.confirmed
-      );
-
-      if (obj.type === OPERATIONAL_OBJECT_TYPE.vip || (ctx && ctx.objectType === OPERATIONAL_OBJECT_TYPE.vip) ||
-          /\bvip\b/.test(src)) {
-        bump("vip", obj.id);
-      }
-      if ((objectLooksLikeMaintenance(obj) || (ctx && ctx.category === OPERATIONAL_CATEGORY.maintenance)) &&
-          !resolvedInfo && !ctxCompleted) {
-        bump("maintenance", obj.id);
-        if ((ctx && (ctx.guestImpact === IMPACT_LEVEL.high || ctx.guestImpact === IMPACT_LEVEL.critical)) ||
-            isGuestImpactingMaintenance(primary && primary.fact, primary && primary.note)) {
-          bump("urgent", obj.id);
-        }
-      }
-      if ((objectLooksLikePayment(obj) || (ctx && ctx.revenueImpact !== IMPACT_LEVEL.none &&
-          ctx.revenueImpact !== IMPACT_LEVEL.low)) && !resolvedInfo && !ctxCompleted) {
-        bump("payments", obj.id);
-      }
-      if (
-        obj.type === OPERATIONAL_OBJECT_TYPE.departure ||
-        obj.type === OPERATIONAL_OBJECT_TYPE.wake_up ||
-        obj.type === OPERATIONAL_OBJECT_TYPE.transport ||
-        obj.type === OPERATIONAL_OBJECT_TYPE.timed ||
-        (obj.components && (obj.components.indexOf("wake_up") !== -1 || obj.components.indexOf("transport") !== -1)) ||
-        /\bwake\b.+\b(?:taxi|addison|transfer)\b|\b(?:taxi|addison|transfer)\b.+\bwake\b/.test(src)
-      ) {
-        bump("timedActions", obj.id);
-        bump("events", obj.id);
-      }
-      if (
-        obj.type === OPERATIONAL_OBJECT_TYPE.guest_request ||
-        obj.type === OPERATIONAL_OBJECT_TYPE.reception ||
-        obj.type === OPERATIONAL_OBJECT_TYPE.vip ||
-        /late\s+check|late\s+arr|arriv/.test(src)
-      ) {
-        if (!resolvedInfo || obj.type === OPERATIONAL_OBJECT_TYPE.vip) bump("guest", obj.id);
-      }
-      if (
-        obj.type === OPERATIONAL_OBJECT_TYPE.guest_request ||
-        obj.type === OPERATIONAL_OBJECT_TYPE.interconnect ||
-        obj.type === OPERATIONAL_OBJECT_TYPE.reception ||
-        /parcel|package|delivery|adapter|task|bedding|feather|confirm prepared/.test(src)
-      ) {
-        if (!resolvedInfo || /parcel|package|delivery|adapter|bedding|feather/.test(src)) {
-          bump("tasks", obj.id);
-        }
-      }
-    });
 
     return {
       urgent: counts.urgent,
@@ -3388,7 +3575,7 @@
       maintenance: counts.maintenance,
       payments: counts.payments,
       timedActions: counts.timedActions,
-      events: counts.timedActions,
+      events: counts.events,
       tasks: counts.tasks,
       guest: counts.guest,
       display: {
@@ -3401,7 +3588,8 @@
         tasks: counts.tasks,
         general: 0
       },
-      objects: objects
+      objects: glance.objects,
+      _glance: glance
     };
   }
 
@@ -3436,6 +3624,13 @@
     if (object.type === OPERATIONAL_OBJECT_TYPE.maintenance || subject === "maintenance") {
       return "maintenance";
     }
+    /* Adapters / loan stock — Inventory, never Finance (even when wording says outstanding). */
+    if (
+      subject === "inventory" || subject === "adapter" ||
+      (/\badapter/.test(src) && !/\b(?:declined|folio|invoice|city\s*tax|minibar)\b/.test(src))
+    ) {
+      return "inventory";
+    }
     if (object.type === OPERATIONAL_OBJECT_TYPE.payment || objectLooksLikePayment(object)) {
       return "payments";
     }
@@ -3449,9 +3644,16 @@
     ) {
       return "guest";
     }
-    if (subject === "twin_setup") return "tasks";
-    if (subject === "inventory" || subject === "adapter" ||
-        (/\bumbrella\b/.test(src) && /\b(?:not\s+returned|loan|outstanding)\b/.test(src))) {
+    /* Guest preparation actions belong in Today's Preparations. */
+    if (
+      /\b(?:champagne|truffles?|flowers?|welcome\s+cards?|anniversary|birthday|balloons?|sofa\s+bed|dental\s+kits?|amenity|amenities|twin(?:\s+beds?)?|cot|rollaway|room\s+setup|vip\s+setup|quiet\s+upper)\b/i.test(src) &&
+      !objectLooksLikePayment(object) &&
+      !objectLooksLikeMaintenance(object)
+    ) {
+      return "preparations";
+    }
+    if (subject === "twin_setup") return "preparations";
+    if (/\bumbrella\b/.test(src) && /\b(?:not\s+returned|loan|outstanding)\b/.test(src)) {
       return "inventory";
     }
     if (subject === "delivery" || /\bparcels?|packages?|courier\b/.test(src)) return "deliveries";
@@ -3467,12 +3669,12 @@
         subject === "late_arrival") {
       return "events";
     }
-    if (/\badapter\b/.test(src) && !/\b(?:£|charge|posted|collect)\b/.test(src)) return "inventory";
     return "general";
   }
 
   var DEFAULT_ORGANISED_SECTION_IDS = [
     "urgent", "vip", "guest", "maintenance", "payments", "events",
+    "preparations", "openQuestions",
     "tasks", "inventory", "deliveries", "lostproperty", "general", "completed"
   ];
 
@@ -4070,11 +4272,58 @@
     return "pm";
   }
 
+  /** Split into sentences without breaking domains like Booking.com. */
+  function splitRecommendationSentences(text) {
+    var src = String(text || "");
+    var parts = [];
+    var buf = "";
+    for (var i = 0; i < src.length; i++) {
+      var ch = src.charAt(i);
+      buf += ch;
+      if (ch === "." || ch === "!" || ch === "?") {
+        var next = src.charAt(i + 1);
+        /* Keep abbreviations / domains intact (Booking.com, e.g.). */
+        if (next && /[A-Za-z0-9]/.test(next)) continue;
+        parts.push(buf.trim());
+        buf = "";
+      }
+    }
+    if (buf.trim()) parts.push(buf.trim());
+    return parts;
+  }
+
+  /** Max two action-focused sentences; drop generic advice. */
+  function limitRecommendationText(text) {
+    var cleaned = String(text || "")
+      .replace(/\s+/g, " ")
+      .replace(/\b(?:ensure all (?:hotel )?procedures(?: are followed)?|according to hotel (?:policy|procedures)|as appropriate|where possible|if needed|please note that)\b[.!]?\s*/gi, "")
+      .replace(/\b(?:the next shift should|staff should|it is important to)\b\s*/gi, "")
+      .trim();
+    if (!cleaned) return "";
+    var parts = splitRecommendationSentences(cleaned);
+    var kept = [];
+    var seen = {};
+    parts.forEach(function (part) {
+      if (kept.length >= 2) return;
+      var sentence = String(part || "").replace(/\s+/g, " ").trim();
+      if (!sentence) return;
+      if (!/[.!?]$/.test(sentence)) sentence += ".";
+      var sig = sentence.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+      if (!sig || seen[sig]) return;
+      if (/^(?:follow\s+hotel\s+policy|monitor\s+the\s+situation|stay\s+vigilant)\.?$/i.test(sentence)) {
+        return;
+      }
+      seen[sig] = true;
+      kept.push(sentence);
+    });
+    return kept.join(" ").trim();
+  }
+
   function normalizeRecommendation(raw, fallbackDept) {
     if (!raw || typeof raw !== "object") {
       return {
         id: createId(),
-        text: String(raw || ""),
+        text: limitRecommendationText(String(raw || "")),
         priority: "normal",
         department: fallbackDept || "Reception",
         status: "open"
@@ -4084,7 +4333,7 @@
     if (status === "in-progress") status = "in_progress";
     var out = {
       id: raw.id || createId(),
-      text: String(raw.text || ""),
+      text: limitRecommendationText(String(raw.text || "")),
       priority: raw.priority || "normal",
       department: raw.department || fallbackDept || "Reception",
       status: status
@@ -6217,7 +6466,9 @@
 
     function addCandidate(rec) {
       if (!rec || !rec.text) return;
-      var signature = recommendationSignature(rec.text);
+      var normalized = normalizeRecommendation(rec, fallbackDept);
+      if (!normalized.text) return;
+      var signature = recommendationSignature(normalized.text);
       if (seen[signature]) return;
       var issueSig = signature.replace(
         /\b(confirm|settle|attend|action|prepare|prioritise|review|notify|arrange|follow\s*up|contact|chase)\b/g,
@@ -6226,7 +6477,7 @@
       if (issueSig && seenIssue[issueSig]) return;
       seen[signature] = true;
       if (issueSig) seenIssue[issueSig] = true;
-      candidates.push(normalizeRecommendation(rec, fallbackDept));
+      candidates.push(normalized);
     }
 
     analyzed.forEach(function (note) {
@@ -6337,9 +6588,9 @@
     });
 
     return candidates.slice(0, MAX_RECOMMENDATIONS).map(function (rec) {
-      rec.text = applyText(rec.text);
+      rec.text = limitRecommendationText(applyText(rec.text));
       return rec;
-    });
+    }).filter(function (rec) { return !!rec.text; });
   }
 
   function buildMemoryIndexForInput(input, analyzed) {

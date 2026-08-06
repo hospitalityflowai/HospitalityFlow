@@ -1502,21 +1502,28 @@
         !/\b(?:outstanding\s+balance|unpaid|declined|refund|settle(?:ment)?\s+required|still\s+to\s+pay)\b/i.test(src)) {
       return false;
     }
+    /* Exclude pure operational departures / moves / reminders / adapters from Finance. */
+    if (/\badapters?\b/.test(lower)) return false;
+    if (/\b(?:room\s+move|wake[\s-]?up|taxi|transfer|reminder)\b/.test(lower) &&
+        !/[£$€]\s*\d/.test(src) &&
+        !/\b(?:balance|payment|folio|invoice|refund|deposit|tax|minibar|charge)\b/.test(lower)) {
+      return false;
+    }
     return /\boutstanding\s+(?:balance|amount|payment)\b/.test(lower) ||
       /\bbalance\s+outstanding\b/.test(lower) ||
       /\boutstanding\s*[£$€]?\s*\d/.test(lower) ||
-      (/[£$€]\s*\d/.test(src) && /\b(?:balance|outstanding|unpaid|payment\s+link)\b/.test(lower)) ||
+      (/[£$€]\s*\d/.test(src) && /\b(?:balance|outstanding|unpaid|payment\s+link|collect)\b/.test(lower)) ||
       /\bunpaid\b/.test(lower) ||
       /\bnot\s+(?:yet\s+)?paid\b/.test(lower) ||
       /\bstill\s+to\s+pay\b/.test(lower) ||
       /\bstill\s+open\b/.test(lower) && /\b(?:minibar|balance|folio|tax|payment)\b/.test(lower) ||
       /\bcity\s*tax\b/.test(lower) ||
+      /\bpayment\s+links?\b/.test(lower) ||
       /\bminibar\b/.test(lower) && /\b(?:open|collect|still|outstanding|charge)\b/.test(lower) ||
-      (/\badapters?\b/.test(lower) && /\b(?:charge|posted|not\s+posted|collect|fee|£|\$|€|\d+)/.test(lower)) ||
       (/\b(?:booking\.com|expedia|ota|virtual\s+card)\b/.test(lower) &&
         /\b(?:tax|payment|collect|outstanding|open|balance|pending|auth|authoris|authoriz|vcc)\b/.test(lower)) ||
       /\bvirtual\s+card\b/.test(lower) && /\b(?:pending|awaiting|auth|authoris|authoriz)\b/.test(lower) ||
-      /\bpayment\s+(?:failed|failure|declined)\b/.test(lower) ||
+      /\bpayment\s+(?:failed|failure|declined|collection|collect)\b/.test(lower) ||
       /\bcard\s+declined\b/.test(lower) ||
       /\bdeclined\b/.test(lower) && /\b(?:card|payment|pdq|pos)\b/.test(lower) ||
       /\brefund\b/.test(lower) ||
@@ -1524,10 +1531,10 @@
       /\bauthoris(?:e|ation)|authoriz(?:e|ation)|pre-?auth\b/.test(lower) ||
       /\bsettlement\s+required\b/.test(lower) ||
       /\bsettle\b/.test(lower) && /\b(?:balance|folio|bill|invoice)\b/.test(lower) ||
-      (/\binvoice\b/.test(lower) && /\b(?:unpaid|outstanding|overdue|open)\b/.test(lower)) ||
+      (/\binvoice\b/.test(lower) && /\b(?:unpaid|outstanding|overdue|open|send|issue)\b/.test(lower)) ||
       (/\bbill\b/.test(lower) && /\b(?:unpaid|outstanding|overdue)\b/.test(lower)) ||
       (/\bfolio\b/.test(lower) && /\b(?:balance|outstanding|unpaid|declined)\b/.test(lower)) ||
-      (/\bcharge\b/.test(lower) && /\b(?:dispute|incorrect|extra|minibar)\b/.test(lower));
+      (/\bcharge\b/.test(lower) && /\b(?:dispute|incorrect|extra|minibar)\b/.test(lower) && !/\badapter/.test(lower));
   }
 
   /**
@@ -2536,17 +2543,14 @@
       fact.actionVerb = "";
     }
 
+    /* Adapters are inventory / loan follow-ups — never Finance (room digits ≠ charge). */
     if (/\badapters?\b/i.test(detectText) &&
-        (!fact.subject || fact.subject === "follow_up" || fact.subject === "guest_request" || fact.subject === "inventory")) {
-      if (/\b(?:£|\$|€|\d+(?:\.\d{1,2})?)\b/.test(detectText) &&
-          /\b(?:charge|posted|not\s+posted|collect|outstanding|fee)\b/i.test(detectText)) {
-        fact.subject = "payment";
-        if (!fact.ownerDept) fact.ownerDept = "Reception";
-        if (!fact.actionVerb) fact.actionVerb = "collect";
-      } else {
-        fact.subject = "inventory";
-        if (!fact.ownerDept) fact.ownerDept = "Reception";
-        if (!fact.actionVerb) fact.actionVerb = "follow_up";
+        (!fact.subject || fact.subject === "follow_up" || fact.subject === "guest_request" ||
+          fact.subject === "inventory" || fact.subject === "payment" || fact.subject === "charge")) {
+      fact.subject = "inventory";
+      if (!fact.ownerDept) fact.ownerDept = "Reception";
+      if (!fact.actionVerb) {
+        fact.actionVerb = /[£$€]\s*\d/.test(detectText) ? "collect" : "follow_up";
       }
     }
 
@@ -5169,7 +5173,11 @@
       paragraphs.push("Shift status\nNo urgent guest-impacting priorities for the incoming team.");
     }
 
-    paragraphs = paragraphs.slice(0, 5);
+    /* Keep engine-selected priorities (up to BRIEFING_MAX_BLOCKS) so timed actions
+     * and secondary revenue items are not dropped after ranking. */
+    var maxBriefing = (global.ShiftIntelligenceEngine &&
+      global.ShiftIntelligenceEngine.BRIEFING_MAX_BLOCKS) || 5;
+    paragraphs = paragraphs.slice(0, maxBriefing);
     var firstAction = (paragraphs[0] || "").split("\n")[1] || paragraphs[0] || "Today's shift briefing";
     var headline = String(firstAction).replace(/\.+$/, "").trim();
     if (headline.length > 120) headline = "Today's shift briefing";
@@ -5248,96 +5256,128 @@
   function buildHotelStatus(analyzed, options) {
     options = options || {};
     var entries = unresolvedAnalyzedEntries(analyzed);
+    var areas;
 
     if (global.ShiftIntelligenceEngine &&
         typeof global.ShiftIntelligenceEngine.buildHotelStatusModel === "function") {
-      return global.ShiftIntelligenceEngine.buildHotelStatusModel(entries).map(function (area) {
+      areas = global.ShiftIntelligenceEngine.buildHotelStatusModel(entries).map(function (area) {
         return {
           key: area.key,
           label: area.label,
           level: area.level,
           summary: formatHotelStatusSummary(area),
           count: area.count,
+          details: Array.isArray(area.details) ? area.details.slice() : [],
           supportingFactIds: area.supportingFactIds || [],
           summaryIntent: area.summaryIntent || null
         };
       });
+    } else {
+      /* Fallback — only meaningful exceptions, never filler "Normal" cards. */
+      var hasMaint = entries.some(function (e) {
+        return e.fact && e.fact.subject === "maintenance";
+      });
+      areas = [];
+      if (hasMaint) {
+        areas.push({
+          key: "maintenance",
+          label: "Maintenance",
+          level: "attention",
+          summary: "Unresolved maintenance requires follow-up.",
+          count: 0,
+          supportingFactIds: []
+        });
+      }
     }
 
-    /* Fallback when engine is unavailable — evidence-based, no invented levels. */
-    var hasMaint = entries.some(function (e) {
-      return e.fact && e.fact.subject === "maintenance";
+    return (areas || []).filter(function (area) {
+      var level = String((area && area.level) || "").toLowerCase();
+      return level && level !== "normal" && level !== "unknown" &&
+        !/_clear$/i.test((area.summaryIntent && area.summaryIntent.kind) || "");
     });
-    return [
-      {
-        key: "guest_experience",
-        label: "Guest Experience",
-        level: hasMaint ? "attention" : "normal",
-        summary: hasMaint ? "Guest-impacting follow-up remains open." : "No unresolved guest-impacting issues.",
-        count: 0,
-        supportingFactIds: []
-      },
-      {
-        key: "vip_readiness",
-        label: "VIP Readiness",
-        level: "normal",
-        summary: "No VIP preparation required.",
-        count: 0,
-        supportingFactIds: []
-      },
-      {
-        key: "maintenance",
-        label: "Maintenance",
-        level: hasMaint ? "attention" : "normal",
-        summary: hasMaint ? "Unresolved maintenance requires follow-up." : "No unresolved maintenance.",
-        count: 0,
-        supportingFactIds: []
-      },
-      {
-        key: "revenue",
-        label: "Revenue",
-        level: "normal",
-        summary: "No unresolved revenue actions.",
-        count: 0,
-        supportingFactIds: []
-      },
-      {
-        key: "reception_operations",
-        label: "Reception Operations",
-        level: "normal",
-        summary: "No unresolved reception operational work.",
-        count: 0,
-        supportingFactIds: []
-      }
-    ];
   }
 
+  /**
+   * Today's Timeline — receptionist schedule only.
+   * Include timed actions or clear sequence triggers (before arrival / departure /
+   * releasing / tomorrow). Never duplicate Maintenance, Finance, or generic follow-ups.
+   */
   function buildTodaysTimeline(analyzed, options) {
     options = options || {};
     var entries = unresolvedAnalyzedEntries(analyzed);
+    var seenEntryIds = {};
+    entries.forEach(function (entry) {
+      if (entry && entry.factId) seenEntryIds[entry.factId] = true;
+    });
+    /*
+     * Confirmed timed schedule items (e.g. approved late check-out at 13:00)
+     * still belong on the receptionist Timeline even when closed for chase.
+     */
+    (analyzed || []).forEach(function (note, index) {
+      if (!note || !note.fact) return;
+      var fact = note.fact;
+      var src = String(fact.sourceText || note.original || "");
+      var factId = note._neutralFactId || factIdentityKey(fact) || ("fact-" + index);
+      if (seenEntryIds[factId]) return;
+      if (fact.status === FACT_STATUS.done || note.section === "completed") return;
+      var isTimedSchedule =
+        fact.subject === "late_checkout" ||
+        /\blate\s+(?:co|check[\s-]?out)\b/i.test(src) ||
+        (/\b(?:wake|addison|taxi)\b/i.test(src) && /\b\d{3,4}\b|\d{1,2}\s*(?:am|pm)/i.test(src));
+      if (!isTimedSchedule) return;
+      if (fact.status !== FACT_STATUS.confirmed && fact.status !== FACT_STATUS.open &&
+          fact.status !== FACT_STATUS.requested && fact.status !== FACT_STATUS.in_progress &&
+          fact.status !== FACT_STATUS.unknown) {
+        return;
+      }
+      seenEntryIds[factId] = true;
+      entries.push({
+        note: note,
+        fact: fact,
+        index: index,
+        factId: factId,
+        topic: classifyFactSummaryTopic(fact, note),
+        section: note.section || sectionFromFact(fact, "general"),
+        isVip: !!note.isVip,
+        original: note.original || ""
+      });
+    });
     var usedFactIds = {};
     var groupsMap = {
       scheduled: { key: "scheduled", label: "Scheduled", items: [] },
+      before_arrival: { key: "before_arrival", label: "Before arrival", items: [] },
       before_deadline: { key: "before_deadline", label: "Before departure", items: [] },
       during_shift: { key: "during_shift", label: "During shift", items: [] },
       tomorrow: { key: "tomorrow", label: "Tomorrow", items: [] }
     };
 
+    function hasDepartureTimingCue(text) {
+      return /\b(?:before\s+(?:check[\s-]?out|departure|co)\b|b4\s+(?:check[\s-]?out|checkout|co)\b|dep(?:arts?|arture)?\s+(?:am|pm|today)\b|departing(?:\s+today)?\b|checkout\s+today\b|dep\s+am\b)/i.test(text);
+    }
+
+    function hasArrivalTimingCue(text) {
+      return /\b(?:before\s+arrival|due\s+\d|arriving|eta|due\s+(?:in|at)|check[\s-]?in)\b/i.test(text) ||
+        /\b\d{1,2}\s*(?:am|pm)\b/i.test(text) ||
+        /\b(?:\d{3,4}|\d{1,2}[:.]\d{2})\b/.test(text);
+    }
+
     function timelineIconFor(groupKey, item) {
       var action = String((item && item.action) || "").toLowerCase();
       if (/wake/.test(action)) return "⏰";
-      if (/addison|taxi|transfer/.test(action)) return "🚕";
+      if (/addison|taxi|transfer|pickup/.test(action)) return "🚕";
       if (/vip/.test(action)) return "⭐";
       if (/balloon|birthday/.test(action)) return "🎈";
+      if (/champagne|welcome\s+card|twin|prepare/.test(action) || groupKey === "before_arrival") return "⭐";
       if (groupKey === "before_deadline" || /collect|tax|minibar|payment|balance/.test(action)) return "💰";
-      if (groupKey === "during_shift" || /maintenance|ac fault|safe|follow up/.test(action)) return "🔧";
       if (groupKey === "tomorrow" || /interconnect|reserve|allocate/.test(action)) return "📅";
-      if (/no-show|arrival/.test(action)) return "🛎️";
+      if (/no-show|late\s+check/.test(action)) return "🛎️";
       return "•";
     }
 
     function addItem(groupKey, item) {
       if (!item || !item.action) return;
+      /* Timeline requires a clock time or an explicit sequence label. */
+      if (!item.time && !item.deadlineLabel) return;
       if (item.factId && usedFactIds[item.factId + "|" + item.action]) return;
       if (item.factId) usedFactIds[item.factId + "|" + item.action] = true;
       if (!item.icon) item.icon = timelineIconFor(groupKey, item);
@@ -5346,21 +5386,35 @@
 
     entries.forEach(function (entry) {
       var fact = entry.fact;
-      var src = String(fact.sourceText || "");
+      if (!fact) return;
+      var note = entry.note || null;
+      var src = String(fact.sourceText || entry.original || (note && note.original) || "");
+      var subject = normalizeSubjectForIdentity(fact.subject || "");
       var room = fact.rooms && fact.rooms[0] ? "Room " + fact.rooms[0] : "";
       var roomsLabel = fact.rooms && fact.rooms.length > 1
         ? "Rooms " + joinNatural(fact.rooms)
         : room;
       var priority = fact.priority || "normal";
+      var guest = trimText(fact.guestName || "");
+      var noteIsVip = !!(entry.isVip || (note && note.isVip));
 
-      if (fact.subject === "departure_followup" || fact.subject === "wake_up" || /wake\s*\d/i.test(src)) {
+      /* Never put generic maintenance / fault chase on the Timeline. */
+      if (subject === "maintenance" || fact.subject === "maintenance") return;
+      if (/maint(?:enance)?\s+aware|follow\s+up.*(?:ac|leak|dryer|safe|shower|fault)/i.test(src) &&
+          !/wake|taxi|addison|late\s+(?:co|check)|balloon|vip|minibar|before\s+(?:arrival|departure|check)/i.test(src)) {
+        return;
+      }
+
+      /* Timed wake / taxi / transfer. */
+      if (fact.subject === "departure_followup" || fact.subject === "wake_up" ||
+          fact.subject === "transfer" || /wake\s*\d|addison|taxi/i.test(src)) {
         var wake = extractWakeDisplayTime(src);
         if (wake) {
           addItem("scheduled", {
             factId: entry.factId,
             time: wake,
             deadlineLabel: null,
-            action: "Complete wake-up call" + (room ? " for " + room : ""),
+            action: "Wake-up call" + (room ? " " + room : ""),
             reason: null,
             priority: priority
           });
@@ -5371,120 +5425,181 @@
             factId: entry.factId,
             time: taxi,
             deadlineLabel: null,
-            action: (/addison/i.test(src) ? "Complete Addison Lee collection" : "Complete taxi departure") +
-              (room ? " for " + room : ""),
+            action: (/addison/i.test(src) ? "Addison Lee pickup" : "Taxi pickup") +
+              (room ? " " + room : ""),
             reason: null,
             priority: priority
           });
         }
       }
 
-      if (fact.subject === "vip_arrival") {
-        var vipTime = normalizeTimelineTime(detailValueFromFact(fact, "time") ||
+      /* Timed late check-out. */
+      if (fact.subject === "late_checkout" || /\blate\s+(?:co|check[\s-]?out)\b/i.test(src)) {
+        var lateTime = normalizeTimelineTime(detailValueFromFact(fact, "time") ||
           (src.match(/\b(\d{1,2}\s*(?:am|pm)|\d{3,4}|\d{1,2}[:.]\d{2})\b/i) || [])[1]);
-        var vipGuest = fact.guestName || "VIP guest";
-        var vipAction = /quiet/i.test(src)
-          ? ("Complete quiet upper-floor VIP setup for " + vipGuest + (room ? " (" + room + ")" : ""))
-          : ("Complete VIP room setup for " + vipGuest + (room ? " (" + room + ")" : ""));
-        addItem("scheduled", {
-          factId: entry.factId,
-          time: vipTime,
-          deadlineLabel: vipTime ? "Before " + vipTime : "Before arrival",
-          action: vipAction,
-          reason: /quiet/i.test(src) ? "Quiet preference noted" : null,
-          priority: "high"
-        });
+        if (lateTime) {
+          addItem("scheduled", {
+            factId: entry.factId,
+            time: lateTime,
+            deadlineLabel: null,
+            action: "Late check-out" + (room ? " " + room : "") + (guest ? " (" + guest + ")" : ""),
+            reason: null,
+            priority: priority
+          });
+        }
       }
 
-      if (fact.subject === "interconnect" || (/birthday|balloons/i.test(src) && /tomorrow|tmrw/i.test(src))) {
-        var balloonTime = normalizeTimelineTime((src.match(/@\s*(\d{3,4})|(\d{3,4})\b|(\d{1,2}[:.]\d{2})/i) || []).filter(Boolean)[1]);
-        if (!balloonTime) balloonTime = normalizeTimelineTime((src.match(/\b(\d{3,4})\b/) || [])[1]);
-        addItem("scheduled", {
+      /* VIP — timed arrival or before-arrival sequence. */
+      if (fact.subject === "vip_arrival" || (noteIsVip && hasArrivalTimingCue(src))) {
+        var vipTime = normalizeTimelineTime(detailValueFromFact(fact, "time") ||
+          (src.match(/\b(\d{1,2}\s*(?:am|pm)|\d{3,4}|\d{1,2}[:.]\d{2})\b/i) || [])[1]);
+        var vipGuest = guest || "VIP guest";
+        var vipAction = room
+          ? ("Prepare VIP " + room + (guest ? " — " + guest : ""))
+          : ("Prepare VIP arrival for " + vipGuest);
+        if (/quiet/i.test(src)) {
+          vipAction = "Prepare quiet upper-floor VIP" + (room ? " " + room : "") +
+            (guest ? " — " + guest : "");
+        }
+        if (vipTime) {
+          addItem("scheduled", {
+            factId: entry.factId,
+            time: vipTime,
+            deadlineLabel: "Before " + vipTime,
+            action: vipAction,
+            reason: null,
+            priority: "high"
+          });
+        } else {
+          addItem("before_arrival", {
+            factId: entry.factId,
+            time: null,
+            deadlineLabel: "Before arrival",
+            action: vipAction,
+            reason: null,
+            priority: "high"
+          });
+        }
+      }
+
+      /* Arrival preparations — sequence only (not a second Guest Follow-up dump). */
+      if (/\b(?:champagne|welcome\s+cards?|truffles?|flowers?)\b/i.test(src) &&
+          !/minibar|balance|declined|payment/i.test(src)) {
+        var amenityBits = [];
+        if (/\bwelcome\s+cards?\b/i.test(src)) amenityBits.push("Welcome card");
+        if (/\bchampagne\b/i.test(src)) amenityBits.push("champagne");
+        if (/\btruffles?\b/i.test(src)) amenityBits.push("truffles");
+        if (/\bflowers?\b/i.test(src)) amenityBits.push("flowers");
+        addItem("before_arrival", {
           factId: entry.factId,
-          time: balloonTime,
-          deadlineLabel: balloonTime ? balloonTime + " tomorrow" : "Tomorrow",
-          action: "Birthday balloons in " + (fact.rooms && fact.rooms[1] ? "Room " + fact.rooms[1] : (room || "the room")) +
-            " for the " + (fact.guestName || "Henderson") + " party",
+          time: null,
+          deadlineLabel: "Before arrival",
+          action: amenityBits.length ? amenityBits.join(" & ") : "Welcome amenities",
           reason: null,
           priority: priority
         });
-        addItem("tomorrow", {
+      }
+
+      if (fact.subject === "twin_setup" || (/\btwin\b/i.test(src) && /\b(?:setup|set\s+up|pls|please|if\s+(?:free|available)|beds?)\b/i.test(src))) {
+        addItem("before_arrival", {
           factId: entry.factId,
           time: null,
-          deadlineLabel: "Tomorrow",
-          action: "Protect or allocate interconnecting " + (roomsLabel || "rooms") +
-            " for the " + (fact.guestName || "Henderson") + " party",
+          deadlineLabel: "Before arrival",
+          action: "Twin room setup if available" + (room ? " — " + room : ""),
           reason: null,
-          priority: "high"
+          priority: priority
         });
       }
 
-      if (normalizeSubjectForIdentity(fact.subject) === "payment_balance" || entry.section === "payments" ||
-          /minibar|city\s+tax/i.test(src)) {
+      if (/\bbaby\s*cot\b|\bcot\b/i.test(src) && !/minibar|payment|maint/i.test(src)) {
+        var cotTime = normalizeTimelineTime(detailValueFromFact(fact, "time") ||
+          (src.match(/\b(\d{1,2}\s*(?:am|pm)|\d{3,4}|\d{1,2}[:.]\d{2})\b/i) || [])[1]);
+        addItem(cotTime ? "scheduled" : "before_arrival", {
+          factId: entry.factId,
+          time: cotTime || null,
+          deadlineLabel: cotTime ? "Before " + cotTime : "Before arrival",
+          action: "Baby cot" + (room ? " " + room : "") + (cotTime ? " before " + cotTime + " arrival" : ""),
+          reason: null,
+          priority: priority
+        });
+      }
+
+      /* Birthday / interconnect — timed today/tomorrow or tomorrow sequence. */
+      if (fact.subject === "interconnect" || (/\bballoons?|birthday\b/i.test(src) && /tomorrow|tmrw|@\s*\d|\b\d{3,4}\b/i.test(src))) {
+        var balloonMatch = src.match(/(?:@\s*)?(\d{3,4}|\d{1,2}[:.]\d{2}|\d{1,2}\s*(?:am|pm))\b/i);
+        var balloonTime = balloonMatch ? normalizeTimelineTime(balloonMatch[1]) : "";
+        var partyName = guest || "Henderson";
+        if (balloonTime || /\bballoons?|birthday\b/i.test(src)) {
+          addItem(/tomorrow|tmrw/i.test(src) && !balloonTime ? "tomorrow" : "scheduled", {
+            factId: entry.factId,
+            time: balloonTime || null,
+            deadlineLabel: balloonTime
+              ? (/tomorrow|tmrw/i.test(src) ? balloonTime + " tomorrow" : null)
+              : "Tomorrow",
+            action: "Birthday balloons for " + partyName,
+            reason: null,
+            priority: priority
+          });
+        }
+        if (fact.subject === "interconnect" || /\binterconnect/i.test(src)) {
+          addItem("tomorrow", {
+            factId: entry.factId,
+            time: null,
+            deadlineLabel: "Tomorrow",
+            action: "Interconnecting " + (roomsLabel || "rooms") + " for " + partyName,
+            reason: null,
+            priority: "high"
+          });
+        }
+      }
+
+      /*
+       * Payments only with an explicit departure / check-out timing trigger.
+       * Untimed outstanding balances stay in Finance — not Timeline.
+       */
+      if (
+        (subject === "payment_balance" || entry.section === "payments" ||
+          /\b(?:minibar|city\s+tax|outstanding|declined|folio)\b/i.test(src)) &&
+        hasDepartureTimingCue(src)
+      ) {
         var amount = factMoneyValues(fact)[0];
-        var action;
+        var payAction;
         if (/minibar/i.test(src)) {
-          action = "Collect " + (amount || "outstanding") + " minibar charge";
+          payAction = "Collect" + (room ? " " + room : "") + " minibar" +
+            (amount ? " (" + amount + ")" : "");
         } else if (/city\s+tax/i.test(src)) {
-          action = "Collect " + (amount || "outstanding") + (room ? " " + room : "") +
-            (/expedia/i.test(src) ? " Expedia city tax" : " city tax");
-        } else if (/expedia|booking\.com|virtual\s+card/i.test(src)) {
-          action = "Chase " + (/expedia/i.test(src) ? "Expedia" : "OTA") +
-            " virtual-card payment" + (fact.guestName ? " for " + fact.guestName : "") +
+          payAction = "Collect" + (room ? " " + room + " " : " ") +
+            (/expedia/i.test(src) ? "Expedia city tax" : "city tax") +
             (amount ? " (" + amount + ")" : "");
         } else {
-          action = "Collect outstanding " + (amount || "balance") + (room ? " on " + room : "") +
-            " before guest departure";
+          payAction = "Collect" + (room ? " " + room : "") + " outstanding" +
+            (amount ? " (" + amount + ")" : " balance");
         }
         addItem("before_deadline", {
           factId: entry.factId,
           time: null,
-          deadlineLabel: /before\s+checkout|b4\s+checkout|before\s+departure|before\s+check-out/i.test(src)
+          deadlineLabel: /b4\s+checkout|before\s+check[\s-]?out/i.test(src)
             ? "Before check-out"
-            : "Before guest departure",
-          action: action,
+            : "Before departure",
+          action: payAction,
           reason: null,
           priority: "high"
         });
       }
 
-      if (fact.subject === "maintenance") {
-        var issue = fact.faultType === "AC" ? "AC fault"
-          : (fact.faultType === "safe" ? "safe repair / room hold"
-            : (fact.faultType === "heating" || /heat/i.test(src) ? "heating fault"
-              : (fact.faultType || "maintenance issue")));
+      /* Sequence: confirm no-show before releasing — not a generic follow-up. */
+      if (fact.subject === "no_show" || /\bno[\s-]?show\b/i.test(src)) {
         addItem("during_shift", {
           factId: entry.factId,
           time: null,
-          deadlineLabel: "During shift",
-          action: "Follow up " + (room ? room + " " : "") + issue + " with Maintenance until resolved",
-          reason: /fan|guest|comfort/i.test(src) ? "Guest impact remains open" : null,
-          priority: fact.guestImpact === "high" ? "high" : priority
-        });
-      }
-
-      if (fact.subject === "no_show") {
-        addItem("during_shift", {
-          factId: entry.factId,
-          time: null,
-          deadlineLabel: "During shift",
-          action: "Confirm " + (room ? room + " " : "") + "no-show before releasing the room",
+          deadlineLabel: "Before releasing",
+          action: "Confirm" + (room ? " " + room : "") + " no-show" +
+            (guest ? " (" + guest + ")" : ""),
           reason: null,
           priority: "high"
         });
       }
     });
-
-    if ((analyzed || []).some(function (n) { return /arrivals?\s+left\s+tonight:\s*2/i.test((n && n.original) || ""); })) {
-      addItem("during_shift", {
-        factId: "snapshot-arrivals",
-        time: null,
-        deadlineLabel: "During shift",
-        action: "Confirm two remaining arrivals",
-        reason: null,
-        priority: "normal"
-      });
-    }
 
     groupsMap.scheduled.items.sort(function (a, b) {
       var ta = a.time || "99:99";
@@ -5493,7 +5608,7 @@
       return ta < tb ? -1 : 1;
     });
 
-    var groups = ["scheduled", "before_deadline", "during_shift", "tomorrow"].map(function (key) {
+    var groups = ["scheduled", "before_arrival", "before_deadline", "during_shift", "tomorrow"].map(function (key) {
       return groupsMap[key];
     }).filter(function (g) { return g.items.length; });
 

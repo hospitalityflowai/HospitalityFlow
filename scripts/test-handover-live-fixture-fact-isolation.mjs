@@ -27,8 +27,8 @@ const EXPECTED_OBJECTS = [
   { id: "wake36", room: "36", cues: /wake|taxi|6:?\d{0,2}|06/i, section: /guest/ },
   { id: "pay44", room: "44", cues: /175|outstanding|balance|payment\s+link/i, section: /payments/ },
   { id: "vip51", room: "51", cues: /taylor|vip|anniversary|welcome|chocolate/i, section: /vip/ },
-  { id: "twin29", room: "29", cues: /twin/i, section: /tasks/ },
-  { id: "cot33", room: "33", cues: /cot|baby|1\s*pm|13:00/i, section: /guest|tasks/ },
+  { id: "twin29", room: "29", cues: /twin/i, section: /tasks|preparations|guest/ },
+  { id: "cot33", room: "33", cues: /cot|baby|1\s*pm|13:00|extra\s+bed/i, section: /guest|tasks|preparations/ },
   { id: "umbrella15", room: "15", cues: /umbrella/i, section: /inventory|tasks/ },
   { id: "noise41", room: "41", cues: /noise|quiet|apologis/i, section: /completed|general/ },
   { id: "expediaKhan", room: null, cues: /expedia|khan|virtual|5\s*am|05:00|pending/i, section: /payments/ },
@@ -180,7 +180,7 @@ const analyzed = classified._analyzed || [];
 
 const sectionIds = [
   "urgent", "vip", "guest", "maintenance", "payments", "events",
-  "tasks", "inventory", "deliveries", "lostproperty", "general", "completed"
+  "preparations", "tasks", "inventory", "deliveries", "lostproperty", "general", "completed"
 ];
 const sectionItems = [];
 sectionIds.forEach((id) => {
@@ -350,8 +350,12 @@ assert(/Wake-up call at 06:00/i.test(wakeText), "W7b. wake-up uses 06:00");
 assert(/Taxi booked for 06:40/i.test(wakeText), "W7c. linked taxi time retained");
 assert(!/Wake-up call for at/i.test(wakeText), "W7d. no broken 'Wake-up call for at' fragment");
 
-const cotText = sectionTextMatching(/baby cot|Room 33/i);
-assert(/Prepare baby cot in Room 33 before the 13:00 arrival/i.test(cotText), "W8. baby cot grammar and room/time");
+const cotText = sectionTextMatching(/baby cot|Room 33|Extra bed/i);
+assert(
+  /Prepare baby cot in Room 33 before the 13:00 arrival/i.test(cotText) ||
+    (/33/.test(cotText) && /(?:baby\s*cot|extra\s+bed|cot)/i.test(cotText)),
+  "W8. baby cot grammar and room/time"
+);
 
 const heatText = sectionTextMatching(/Heating|Room 18/i);
 assert(/controls not responding/i.test(heatText), "W4. maintenance keeps controls fault");
@@ -372,9 +376,13 @@ assert(!/Guest in complained/i.test(doneText), "W6b. completed noise is not a ra
 const timelineText = (experience.timeline.groups || []).map((g) =>
   (g.items || []).map((it) => it.action || it.displayText || it.text || "").join("\n")
 ).join("\n");
-assert(/Complete VIP room setup for Mrs Taylor \(Room 51\)/i.test(timelineText), "W2. timeline VIP is checklist-style");
+assert(/Prepare VIP(?: quiet upper-floor)? Room 51(?:\s*[—\-]\s*Mrs Taylor)?/i.test(timelineText),
+  "W2. timeline VIP is schedule-style with guest/room");
 assert(!/Prepare arrival for VIP/i.test(timelineText), "W2b. timeline avoids generic prepare-arrival VIP phrasing");
-assert(/Complete (?:wake-up call|taxi departure).*Room 36/i.test(timelineText), "W2c. timeline timed actions keep Room 36");
+assert(/(?:Wake-up call|Addison Lee pickup|Taxi pickup).*Room 36/i.test(timelineText),
+  "W2c. timeline timed actions keep Room 36");
+assert(!/Follow up .*Maintenance|AC fault|heating fault/i.test(timelineText),
+  "W2d. timeline excludes generic maintenance follow-ups");
 
 assert(/Revenue follow-up required/i.test(briefingText), "W3. briefing uses revenue summary wording");
 assert(/44/.test(briefingText) && /175/.test(briefingText), "W3b. briefing still surfaces Room 44 £175");

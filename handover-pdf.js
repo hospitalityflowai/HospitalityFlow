@@ -279,8 +279,132 @@
     );
   };
 
+  PdfDocument.prototype.drawQuoteOfTheDay = function (quote) {
+    if (!quote || !quote.text) return;
+    var body = String(quote.text).replace(/^["“”']+|["“”']+$/g, "").trim();
+    if (!body) return;
+    if (!/[.!?]$/.test(body)) body += ".";
+    var display = "\u201C" + body.replace(/[.!?]$/, "") + ".\u201D";
+    var author = String(quote.author || "").replace(/^[\s\u2014\-\u2013]+/, "").trim();
+
+    var doc = this.doc;
+    var width = contentWidth();
+    var textWidth = width - 8;
+    var labelLines = measureWrappedLines(doc, "Quote of the Day", textWidth, 6.5, "normal");
+    var valueLines = measureWrappedLines(doc, display, textWidth, 8.4, "italic");
+    var authorLines = author ? measureWrappedLines(doc, "— " + author, textWidth, 7, "normal") : [];
+    var boxHeight = Math.max(10, 5 + labelLines.length * 3 + valueLines.length * 4 + authorLines.length * 3);
+
+    /* Keep quote compact — skip if little room remains on the page. */
+    if (this.y + boxHeight + 18 > bottomLimit()) return;
+
+    this.ensureSpace(boxHeight + 2);
+    var boxY = this.y;
+    var centerX = LAYOUT.marginX + width / 2;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(6.5);
+    setText(doc, COLORS.gray500);
+    doc.text(labelLines, centerX, boxY + 3.5, { align: "center" });
+
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(8.4);
+    setText(doc, COLORS.navy700);
+    doc.text(valueLines, centerX, boxY + 3.5 + labelLines.length * 3 + 1, { align: "center" });
+
+    if (authorLines.length) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      setText(doc, COLORS.gray500);
+      doc.text(
+        authorLines,
+        centerX,
+        boxY + 3.5 + labelLines.length * 3 + 1 + valueLines.length * 4,
+        { align: "center" }
+      );
+    }
+
+    this.y = boxY + boxHeight + 2;
+  };
+
+  PdfDocument.prototype.drawSourceNotes = function (sourceNotes) {
+    if (!sourceNotes) return;
+    var Notes = global.HFHandoverNotesSections;
+    var sections = [];
+    if (Notes && Notes.buildSourceNotesViewModel) {
+      var model = Notes.buildSourceNotesViewModel(sourceNotes);
+      if (model && model.hasContent) sections = model.sections;
+    } else if (sourceNotes.parts) {
+      [
+        { id: "arrivals", title: "Today's Arrivals" },
+        { id: "departures", title: "Today's Departures" },
+        { id: "general", title: "General Hotel / Shift Notes" }
+      ].forEach(function (def) {
+        var body = String(sourceNotes.parts[def.id] || "").trim();
+        if (body) sections.push({ title: def.title, text: body });
+      });
+    } else {
+      var fallback = String(sourceNotes.combined || sourceNotes.originalNotes || "").trim();
+      if (fallback) sections.push({ title: "Original notes", text: fallback });
+    }
+    if (!sections.length) return;
+
+    var doc = this.doc;
+    var width = contentWidth();
+    var padding = 4.5;
+    var textWidth = width - padding * 2;
+    var measured = [];
+    var boxHeight = padding * 2;
+
+    sections.forEach(function (section, index) {
+      var labelLines = measureWrappedLines(doc, String(section.title || "").toUpperCase(), textWidth, 6.4, "bold");
+      var bodyLines = measureWrappedLines(doc, String(section.text || ""), textWidth, 8.2, "normal");
+      var height = 3 + labelLines.length * 3 + bodyLines.length * 3.8;
+      measured.push({ labelLines: labelLines, bodyLines: bodyLines, height: height });
+      boxHeight += height + (index < sections.length - 1 ? 2.5 : 0);
+    });
+
+    this.drawSectionTitle("Source Notes", Math.min(boxHeight, 18));
+    this.ensureSpace(boxHeight + 2);
+
+    var boxY = this.y;
+    setFill(doc, COLORS.gray100);
+    setDraw(doc, COLORS.gray200);
+    doc.setLineWidth(0.2);
+    doc.roundedRect(LAYOUT.marginX, boxY, width, boxHeight, LAYOUT.cardRadius, LAYOUT.cardRadius, "FD");
+
+    var cursorY = boxY + padding + 3;
+    measured.forEach(function (row, index) {
+      if (index > 0) {
+        setDraw(doc, COLORS.gray200);
+        doc.setLineWidth(0.12);
+        doc.line(LAYOUT.marginX + padding, cursorY - 1.8, LAYOUT.marginX + width - padding, cursorY - 1.8);
+      }
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(6.4);
+      setText(doc, COLORS.gray500);
+      doc.text(row.labelLines, LAYOUT.marginX + padding, cursorY);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.2);
+      setText(doc, COLORS.navy900);
+      doc.text(row.bodyLines, LAYOUT.marginX + padding, cursorY + row.labelLines.length * 3 + 0.8);
+      cursorY += row.height + (index < measured.length - 1 ? 2.5 : 0);
+    });
+
+    this.y = boxY + boxHeight + LAYOUT.sectionGap;
+  };
+
   PdfDocument.prototype.drawHotelSnapshot = function (rows) {
     if (!rows || !rows.length) return;
+
+    var isStrip = rows.every(function (cell) {
+      return cell && cell.layout === "strip";
+    });
+
+    if (isStrip) {
+      this.drawHotelSnapshotStrip(rows);
+      return;
+    }
 
     var doc = this.doc;
     var width = contentWidth();
@@ -340,6 +464,77 @@
     }, this);
 
     this.y += LAYOUT.sectionGap;
+  };
+
+  PdfDocument.prototype.drawHotelSnapshotStrip = function (rows) {
+    var doc = this.doc;
+    var width = contentWidth();
+    var paddingX = 5;
+    var paddingY = 4;
+    var innerWidth = width - paddingX * 2;
+    var rowHeights = [];
+    var totalHeight = paddingY * 2;
+
+    rows.forEach(function (cell, index) {
+      var labelLines = measureWrappedLines(
+        doc,
+        String(cell.label || "").toUpperCase(),
+        innerWidth,
+        LAYOUT.snapshotLabelSize,
+        "bold"
+      );
+      var valueLines = measureWrappedLines(
+        doc,
+        normalizeSnapshotValue(cell.value),
+        innerWidth,
+        8.6,
+        "normal"
+      );
+      var rowHeight = Math.max(10, 3.2 + labelLines.length * 3 + valueLines.length * 4.2);
+      rowHeights.push({ labelLines: labelLines, valueLines: valueLines, height: rowHeight });
+      totalHeight += rowHeight + (index < rows.length - 1 ? 3 : 0);
+    });
+
+    this.drawSectionTitle("Hotel Snapshot", Math.min(totalHeight, 20));
+    this.ensureSpace(totalHeight + 2);
+
+    var boxY = this.y;
+    setFill(doc, COLORS.gray100);
+    setDraw(doc, COLORS.gray200);
+    doc.setLineWidth(0.2);
+    doc.roundedRect(LAYOUT.marginX, boxY, width, totalHeight, LAYOUT.cardRadius, LAYOUT.cardRadius, "FD");
+
+    var cursorY = boxY + paddingY + 3.2;
+    rowHeights.forEach(function (measured, index) {
+      if (index > 0) {
+        setDraw(doc, COLORS.gray200);
+        doc.setLineWidth(0.15);
+        doc.line(
+          LAYOUT.marginX + paddingX,
+          cursorY - 2.2,
+          LAYOUT.marginX + width - paddingX,
+          cursorY - 2.2
+        );
+      }
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(LAYOUT.snapshotLabelSize);
+      setText(doc, COLORS.gray500);
+      doc.text(measured.labelLines, LAYOUT.marginX + paddingX, cursorY);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.6);
+      setText(doc, COLORS.navy900);
+      doc.text(
+        measured.valueLines,
+        LAYOUT.marginX + paddingX,
+        cursorY + measured.labelLines.length * 3 + 1.2
+      );
+
+      cursorY += measured.height + (index < rowHeights.length - 1 ? 3 : 0);
+    });
+
+    this.y = boxY + totalHeight + LAYOUT.sectionGap;
   };
 
   PdfDocument.prototype.drawBriefing = function (briefing) {
@@ -673,7 +868,9 @@
     var generatedAt = payload.generatedAt || new Date().toLocaleString("en-GB");
 
     pdf.drawHeader(payload.meta, generatedAt);
+    pdf.drawSourceNotes(payload.sourceNotes);
     pdf.drawHotelSnapshot(payload.hotelSnapshot || payload.snapshot);
+    pdf.drawQuoteOfTheDay(payload.quoteOfTheDay);
     if (payload.briefing && payload.briefing.paragraphs && payload.briefing.paragraphs.length) {
       pdf.drawBriefing(payload.briefing);
     } else if (payload.summary) {
