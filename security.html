@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Security &amp; Trust at Hospitality Flow — workspace separation, invitation-only access, authenticated accounts and database access policies for hotel operations.">
+  <title>Security &amp; Trust | Hospitality Flow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy-950: #05080f;
+      --navy-900: #0a1422;
+      --navy-800: #101f36;
+      --blue-400: #6aade0;
+      --blue-500: #4a8fc4;
+      --blue-600: #3a7ab0;
+      --white: #ffffff;
+      --gray-100: #e8eef6;
+      --gray-200: #c5d0de;
+      --gray-300: #9aabbf;
+      --gray-400: #6f8299;
+      --gray-500: #526178;
+      --border-subtle: rgba(106, 173, 224, 0.08);
+      --border-muted: rgba(255, 255, 255, 0.07);
+      --border-default: rgba(106, 173, 224, 0.16);
+      --card-bg: rgba(14, 26, 44, 0.78);
+      --radius: 12px;
+      --radius-lg: 16px;
+      --max-width: 1120px;
+      --header-height: 72px;
+      --container-pad: 24px;
+      --transition: 0.2s ease;
+      --btn-pad-y: 12px;
+      --btn-pad-x: 20px;
+      --btn-height: 44px;
+      --btn-font: 0.9rem;
+      --shadow-btn:
+        0 4px 16px rgba(74, 143, 196, 0.34),
+        0 0 24px rgba(74, 143, 196, 0.16);
+      --shadow-btn-hover:
+        0 6px 22px rgba(74, 143, 196, 0.42),
+        0 0 32px rgba(90, 168, 230, 0.2);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Inter", system-ui, -apple-system, sans-serif;
+      background: var(--navy-950);
+      color: var(--white);
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: var(--blue-400); text-decoration: none; }
+    a:hover, a:focus-visible { color: var(--white); outline: none; }
+
+    .container {
+      width: 100%;
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 0 var(--container-pad);
+    }
+
+    .header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      height: var(--header-height);
+      background: rgba(5, 8, 15, 0.78);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      height: 100%;
+    }
+
+    .logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--white);
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+
+    .logo-mark {
+      width: 28px;
+      height: 28px;
+      flex-shrink: 0;
+    }
+
+    .logo span { color: var(--blue-400); }
+
+    .nav-desktop {
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      margin-left: auto;
+    }
+
+    .nav-desktop a {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--gray-300);
+      transition: color var(--transition);
+    }
+
+    .nav-desktop a:hover,
+    .nav-desktop a:focus-visible {
+      color: var(--white);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--btn-pad-y) var(--btn-pad-x);
+      min-height: var(--btn-height);
+      font-size: var(--btn-font);
+      font-weight: 600;
+      border-radius: var(--radius);
+      transition: background var(--transition), border-color var(--transition), box-shadow var(--transition), color var(--transition);
+      white-space: nowrap;
+      border: 1px solid transparent;
+    }
+
+    .btn-primary {
+      background: linear-gradient(165deg, var(--blue-400) 0%, var(--blue-500) 48%, var(--blue-600) 100%);
+      color: var(--white);
+      border-color: rgba(160, 210, 245, 0.28);
+      box-shadow: var(--shadow-btn);
+    }
+
+    .btn-primary:hover,
+    .btn-primary:focus-visible {
+      background: linear-gradient(165deg, #7ab8e6 0%, var(--blue-500) 45%, var(--blue-600) 100%);
+      box-shadow: var(--shadow-btn-hover);
+      color: var(--white);
+      outline: 2px solid var(--blue-400);
+      outline-offset: 2px;
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.02);
+      color: var(--white);
+      border-color: rgba(255, 255, 255, 0.22);
+    }
+
+    .btn-secondary:hover,
+    .btn-secondary:focus-visible {
+      background: rgba(106, 173, 224, 0.08);
+      border-color: rgba(160, 210, 245, 0.4);
+      color: var(--white);
+      outline: 2px solid var(--blue-400);
+      outline-offset: 2px;
+    }
+
+    .btn-nav {
+      min-height: 40px;
+      padding: 10px 16px;
+      font-size: 0.875rem;
+    }
+
+    .header-end {
+      display: none;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .menu-toggle {
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      gap: 5px;
+      width: 40px;
+      height: 40px;
+      padding: 10px;
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.03);
+      cursor: pointer;
+    }
+
+    .menu-toggle span {
+      display: block;
+      height: 2px;
+      background: var(--gray-200);
+      border-radius: 1px;
+    }
+
+    .nav-mobile {
+      display: none;
+      flex-direction: column;
+      gap: 4px;
+      padding: 12px var(--container-pad) 20px;
+      background: rgba(5, 8, 15, 0.96);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .nav-mobile.is-open { display: flex; }
+
+    .nav-mobile a {
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: var(--gray-200);
+      padding: 12px 4px;
+    }
+
+    .nav-mobile .btn { width: 100%; margin-top: 8px; }
+
+    main {
+      padding: calc(var(--header-height) + 56px) 0 0;
+    }
+
+    .hero {
+      padding-bottom: 48px;
+      border-bottom: 1px solid var(--border-muted);
+    }
+
+    .hero-eyebrow {
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--blue-400);
+      margin-bottom: 14px;
+    }
+
+    .hero h1 {
+      font-size: clamp(2rem, 4vw, 2.75rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      max-width: 16ch;
+      margin-bottom: 16px;
+    }
+
+    .hero-headline {
+      font-size: clamp(1.15rem, 2.2vw, 1.35rem);
+      font-weight: 500;
+      color: var(--gray-100);
+      max-width: 36ch;
+      margin-bottom: 16px;
+      letter-spacing: -0.015em;
+    }
+
+    .hero-support {
+      font-size: 1rem;
+      color: var(--gray-300);
+      max-width: 58ch;
+    }
+
+    .section {
+      padding: 64px 0;
+      border-bottom: 1px solid var(--border-muted);
+    }
+
+    .section-heading {
+      font-size: clamp(1.35rem, 2.4vw, 1.65rem);
+      font-weight: 650;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+    }
+
+    .section-lead {
+      font-size: 0.98rem;
+      color: var(--gray-300);
+      max-width: 58ch;
+      margin-bottom: 32px;
+    }
+
+    .protections-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .protection-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-lg);
+      padding: 24px 22px;
+      min-height: 100%;
+    }
+
+    .protection-card h3 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      letter-spacing: -0.015em;
+      margin-bottom: 10px;
+      color: var(--gray-100);
+    }
+
+    .protection-card p {
+      font-size: 0.92rem;
+      color: var(--gray-300);
+    }
+
+    .prose-block {
+      max-width: 640px;
+    }
+
+    .prose-block p {
+      font-size: 0.98rem;
+      color: var(--gray-300);
+    }
+
+    .faq-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-width: 720px;
+    }
+
+    .faq-item {
+      background: var(--card-bg);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius);
+      padding: 0 18px;
+    }
+
+    .faq-item summary {
+      cursor: pointer;
+      list-style: none;
+      font-size: 0.98rem;
+      font-weight: 600;
+      color: var(--gray-100);
+      padding: 16px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .faq-item summary::-webkit-details-marker { display: none; }
+
+    .faq-item summary::after {
+      content: "+";
+      flex-shrink: 0;
+      font-size: 1.2rem;
+      font-weight: 400;
+      color: var(--blue-400);
+      line-height: 1;
+    }
+
+    .faq-item[open] summary::after { content: "–"; }
+
+    .faq-item summary:focus-visible {
+      outline: 2px solid var(--blue-400);
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
+
+    .faq-item p {
+      font-size: 0.92rem;
+      color: var(--gray-300);
+      padding: 0 0 18px;
+    }
+
+    .cta {
+      padding: 72px 0 56px;
+      text-align: center;
+    }
+
+    .cta .section-heading { margin-bottom: 12px; }
+
+    .cta-text {
+      font-size: 0.98rem;
+      color: var(--gray-300);
+      max-width: 42ch;
+      margin: 0 auto 28px;
+    }
+
+    .cta-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    .page-note {
+      padding: 0 0 48px;
+      text-align: center;
+    }
+
+    .page-note p {
+      font-size: 0.82rem;
+      color: var(--gray-500);
+      max-width: 52ch;
+      margin: 0 auto;
+    }
+
+    .footer {
+      padding: 40px 0 32px;
+      border-top: 1px solid var(--border-muted);
+    }
+
+    .footer-trust {
+      font-size: 0.85rem;
+      color: var(--gray-500);
+      margin-bottom: 28px;
+      text-align: center;
+    }
+
+    .footer-inner {
+      display: flex;
+      justify-content: space-between;
+      gap: 32px;
+      margin-bottom: 28px;
+    }
+
+    .footer-brand { max-width: 340px; }
+
+    .footer-brand .logo {
+      margin-bottom: 10px;
+    }
+
+    .footer-tagline {
+      font-size: 0.9rem;
+      color: var(--gray-400);
+      margin-bottom: 12px;
+    }
+
+    .footer-email {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--gray-300);
+    }
+
+    .footer-email:hover,
+    .footer-email:focus-visible {
+      color: var(--white);
+    }
+
+    .footer-links-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      justify-content: flex-end;
+      gap: 12px 22px;
+      max-width: 520px;
+    }
+
+    .footer-links-row a {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--gray-400);
+    }
+
+    .footer-links-row a:hover,
+    .footer-links-row a:focus-visible {
+      color: var(--white);
+    }
+
+    .footer-bottom {
+      font-size: 0.85rem;
+      color: var(--gray-500);
+      border-top: 1px solid var(--border-muted);
+      padding-top: 20px;
+    }
+
+    @media (max-width: 900px) {
+      .protections-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .nav-desktop { display: none; }
+      .header-end { display: flex; }
+      .menu-toggle { display: flex; }
+
+      .footer-inner {
+        flex-direction: column;
+      }
+
+      .footer-links-row {
+        justify-content: flex-start;
+        max-width: none;
+      }
+
+      .footer-trust { text-align: left; }
+    }
+
+    @media (max-width: 560px) {
+      .protections-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero h1 { max-width: none; }
+
+      .cta-actions .btn { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="header" role="banner">
+    <div class="container header-inner">
+      <a href="index.html" class="logo" aria-label="Hospitality Flow home">
+        <img src="assets/hf-mark.png" alt="" class="logo-mark" width="28" height="28" decoding="async">Hospitality <span>Flow</span>
+      </a>
+
+      <nav class="nav-desktop" aria-label="Main navigation">
+        <a href="index.html#product">Product</a>
+        <a href="index.html#hotel-brain">How It Works</a>
+        <a href="index.html#interactive-demo">Demo</a>
+        <a href="login.html" class="btn btn-secondary btn-nav">Log In</a>
+        <a href="index.html#waitlist" class="btn btn-primary btn-nav">Apply for Founding Access</a>
+      </nav>
+
+      <div class="header-end">
+        <button class="menu-toggle" type="button" aria-label="Toggle menu" aria-expanded="false" aria-controls="mobile-menu">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </div>
+    </div>
+
+    <nav class="nav-mobile" id="mobile-menu" aria-label="Mobile navigation">
+      <a href="index.html#product">Product</a>
+      <a href="index.html#hotel-brain">How It Works</a>
+      <a href="index.html#interactive-demo">Demo</a>
+      <a href="login.html" class="btn btn-secondary">Log In</a>
+      <a href="index.html#waitlist" class="btn btn-primary">Apply for Founding Access</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero" aria-labelledby="security-title">
+      <div class="container">
+        <p class="hero-eyebrow">Security &amp; Trust</p>
+        <h1 id="security-title">Security &amp; Trust</h1>
+        <p class="hero-headline">Your hotel&rsquo;s operational knowledge stays protected.</p>
+        <p class="hero-support">Hospitality Flow is being built for hotels that depend on private operational information. Access control, workspace separation and responsible data handling are part of the platform&rsquo;s foundation.</p>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="protections-heading">
+      <div class="container">
+        <h2 class="section-heading" id="protections-heading">How access is protected today</h2>
+        <p class="section-lead">These protections are implemented in the current Hospitality Flow platform. This page describes only what the product already enforces.</p>
+
+        <div class="protections-grid">
+          <article class="protection-card">
+            <h3>Private hotel workspaces</h3>
+            <p>Each hotel operates through its own workspace. Application access and data requests are scoped to the authorised workspace.</p>
+          </article>
+
+          <article class="protection-card">
+            <h3>Invitation-based access</h3>
+            <p>Hospitality Flow is currently invitation-only. Accounts must be approved and invited before accessing a hotel workspace.</p>
+          </article>
+
+          <article class="protection-card">
+            <h3>Secure account access</h3>
+            <p>Users sign in through authenticated accounts. Protected workspace pages check access before displaying hotel information.</p>
+          </article>
+
+          <article class="protection-card">
+            <h3>Database-level protection</h3>
+            <p>Database access policies help prevent users from reading or changing information outside their authorised workspace.</p>
+          </article>
+
+          <article class="protection-card">
+            <h3>Controlled operator access</h3>
+            <p>Platform administration is handled through controlled operator access, separate from ordinary hotel accounts.</p>
+          </article>
+
+          <article class="protection-card">
+            <h3>Hotel-specific information</h3>
+            <p>Hotel profiles, handovers and operational knowledge are stored against the relevant hotel workspace rather than being treated as shared public content.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="ai-heading">
+      <div class="container">
+        <div class="prose-block">
+          <h2 class="section-heading" id="ai-heading">AI supports the operation. It does not replace control.</h2>
+          <p>Hospitality Flow uses AI to organise and interpret operational information for authorised hotel teams. AI-generated output should remain reviewable by hotel staff.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="stage-heading">
+      <div class="container">
+        <div class="prose-block">
+          <h2 class="section-heading" id="stage-heading">Built carefully as the platform grows</h2>
+          <p>Hospitality Flow is currently being developed and tested with independent and boutique hotel operations. Security and privacy controls will continue to be strengthened as integrations and platform capabilities expand.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="faq-heading">
+      <div class="container">
+        <h2 class="section-heading" id="faq-heading">Common questions</h2>
+        <p class="section-lead">Straightforward answers based on how Hospitality Flow works today.</p>
+
+        <div class="faq-list">
+          <details class="faq-item">
+            <summary>Can another hotel access our workspace?</summary>
+            <p>No. Hotel data is stored against a specific workspace, and database access policies require membership of that workspace. A user belonging to one hotel cannot read or change another hotel&rsquo;s operational information through normal product access.</p>
+          </details>
+
+          <details class="faq-item">
+            <summary>How does a user receive access?</summary>
+            <p>Hospitality Flow currently uses an invitation-based account process. Public self-registration is disabled. Access follows approved invitation into a hotel workspace.</p>
+          </details>
+
+          <details class="faq-item">
+            <summary>What happens when someone opens a protected page without access?</summary>
+            <p>Protected pages require a signed-in session and approved platform access. If there is no session, the user is sent to sign in. If the account is not approved, or access has been suspended, the session is signed out and the user is redirected away from hotel information.</p>
+          </details>
+
+          <details class="faq-item">
+            <summary>Does Hospitality Flow connect automatically to our PMS, email or WhatsApp?</summary>
+            <p>No. Hospitality Flow does not connect to external hotel systems unless an integration is deliberately configured and authorised.</p>
+          </details>
+
+          <details class="faq-item">
+            <summary>Is Hospitality Flow formally GDPR certified?</summary>
+            <p>Hospitality Flow is being developed with responsible data handling in mind, but this page should not be interpreted as a formal compliance certification.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta" aria-labelledby="cta-heading">
+      <div class="container">
+        <h2 class="section-heading" id="cta-heading">Questions about security or hotel data?</h2>
+        <p class="cta-text">We are happy to explain how access and workspace separation currently work before a pilot begins.</p>
+        <div class="cta-actions">
+          <a href="index.html#waitlist" class="btn btn-primary">Contact Hospitality Flow</a>
+          <a href="mailto:hello@hospitalityflow.co.uk" class="btn btn-secondary">hello@hospitalityflow.co.uk</a>
+        </div>
+      </div>
+    </section>
+
+    <div class="page-note">
+      <div class="container">
+        <p>This page describes the current Hospitality Flow platform and will be updated as security capabilities develop.</p>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer" role="contentinfo">
+    <div class="container">
+      <p class="footer-trust">Built for independent &amp; boutique hotels. Designed by hospitality professionals.</p>
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <a href="index.html" class="logo" aria-label="Hospitality Flow home">
+            <img src="assets/hf-mark.png" alt="" class="logo-mark" width="28" height="28" decoding="async">Hospitality <span>Flow</span>
+          </a>
+          <p class="footer-tagline">AI that helps boutique hotels run smarter.</p>
+          <a href="mailto:hello@hospitalityflow.co.uk" class="footer-email">hello@hospitalityflow.co.uk</a>
+        </div>
+        <nav class="footer-links-row" aria-label="Footer">
+          <a href="index.html#product">Product</a>
+          <a href="index.html#hotel-brain">How It Works</a>
+          <a href="index.html#interactive-demo">Interactive Demo</a>
+          <a href="index.html#waitlist">Founding Pilot Programme</a>
+          <a href="security.html" aria-current="page">Security &amp; Trust</a>
+          <a href="privacy.html">Privacy</a>
+          <a href="terms.html">Terms</a>
+        </nav>
+      </div>
+      <div class="footer-bottom">
+        <span>&copy; 2026 Hospitality Flow. All rights reserved.</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var toggle = document.querySelector(".menu-toggle");
+      var menu = document.getElementById("mobile-menu");
+      if (!toggle || !menu) return;
+
+      toggle.addEventListener("click", function () {
+        var open = menu.classList.toggle("is-open");
+        toggle.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+
+      menu.querySelectorAll("a").forEach(function (link) {
+        link.addEventListener("click", function () {
+          menu.classList.remove("is-open");
+          toggle.setAttribute("aria-expanded", "false");
+        });
+      });
+    })();
+  </script>
+
+</body>
+</html>
