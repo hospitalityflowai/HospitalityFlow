@@ -391,7 +391,7 @@ assert(!/Collect outstanding payment before departure\.?$/im.test(briefingText),
 assert(/VIP readiness follow-up/i.test(briefingText), "W3e. briefing VIP is summary-level");
 
 assert(/Complete VIP Room 51 anniversary setup before arrival/i.test(recText), "W9. VIP recommendation is Duty Manager action");
-assert(/Follow up the Room 18 heating fault with Maintenance until resolved/i.test(recText), "W9b. heating recommendation keeps room/action/owner");
+assert(/Follow up with Maintenance regarding Room 18 heating fault/i.test(recText), "W9b. heating recommendation keeps room/action/owner");
 assert(!/Review VIP requirements/i.test(recText), "W9c. VIP recommendation avoids vague review phrasing");
 
 console.log("\n" + passed + " passed, " + failed + " failed\n");

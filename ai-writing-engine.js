@@ -131,8 +131,15 @@
     while ((m = re.exec(src)) !== null) {
       matches.push(m[0]);
     }
-    /* Staff shorthand: minibar 42.50, city tax 12.50, open 42.50 */
-    if (/minibar|city\s*tax|balance|folio|charge|collect|tax|expedia|booking\.com/i.test(src)) {
+    /* Staff shorthand: bal64.50 / bal 64.50 */
+    var balRe = /\bbal(?:ance)?\.?\s*([£$€]?\s*\d+\.\d{2})\b/gi;
+    while ((m = balRe.exec(src)) !== null) {
+      var balAmt = String(m[1] || "").replace(/\s+/g, "");
+      if (!/^[£$€]/.test(balAmt)) balAmt = "£" + balAmt;
+      if (matches.indexOf(balAmt) === -1) matches.push(balAmt);
+    }
+    /* Staff shorthand: minibar 42.50, city tax 12.50, open 42.50, prepaid/OTA context */
+    if (/minibar|city\s*tax|bal(?:ance)?|folio|charge|collect|tax|expedia|booking\.com|prepaid|\bpp\b/i.test(src)) {
       var bare = src.match(/\b(\d+\.\d{2})\b/g) || [];
       bare.forEach(function (amount) {
         var withSymbol = "£" + amount;
@@ -152,8 +159,14 @@
     while ((m = re.exec(src)) !== null) {
       matches.push(m[0]);
     }
-    /* Compact staff times: wake 0630, @1500, Addison Lee 1015 — not bare room numbers. */
-    var compact = /(?:@\s*|wake(?:-?up)?\s+|addison(?:\s+lee)?\s+|taxi\s+|transfer\s+|due\s+|at\s+|by\s+)?\b((?:[01]\d|2[0-3])[0-5]\d)\b/gi;
+    /* Glued staff times before spacing: ETA2230, arr2230, wake0630 */
+    var glued = /\b(?:eta|arr(?:ival)?|due|dep(?:arture)?|wake(?:-?up)?|wu)((?:[01]\d|2[0-3])[0-5]\d)\b/gi;
+    while ((m = glued.exec(src)) !== null) {
+      var gluedRaw = m[1];
+      if (matches.indexOf(gluedRaw) === -1) matches.push(gluedRaw);
+    }
+    /* Compact staff times: wake 0630, ETA 2230, arr 2230, @1500, Addison Lee 1015 */
+    var compact = /(?:@\s*|wake(?:-?up)?\s+|eta\s+|arr(?:ival)?\s+|addison(?:\s+lee)?\s+|taxi\s+|transfer\s+|due\s+|dep(?:arture)?\s+|at\s+|by\s+)?\b((?:[01]\d|2[0-3])[0-5]\d)\b/gi;
     while ((m = compact.exec(src)) !== null) {
       var raw = m[1];
       if (matches.indexOf(raw) === -1 && matches.indexOf(raw.slice(0, 2) + ":" + raw.slice(2)) === -1) {
@@ -161,6 +174,14 @@
       }
     }
     return matches;
+  }
+
+  /** Extract ETA / arrival clock time into HH:MM when clearly labelled. */
+  function extractEta(text) {
+    var src = String(text || "");
+    var m = src.match(/\b(?:eta|arr(?:ival)?)\s*((?:[01]\d|2[0-3])[0-5]\d|\d{1,2}[:.]\d{2})\b/i);
+    if (!m) m = src.match(/\b(?:eta|arr)((?:[01]\d|2[0-3])[0-5]\d)\b/i);
+    return m ? normalizeTimelineTime(m[1]) : null;
   }
 
   /** Normalise staff times to 24-hour HH:MM. Returns null when unparseable. */
@@ -272,6 +293,8 @@
       /\broom\s*[#.]?\s*(\d{1,4}[a-z]?)\b/gi,
       /\broom(\d{1,4}[a-z]?)\b/gi,
       /\brm\.?\s*(\d{1,4}[a-z]?)\b/gi,
+      /* Messy shorthand: r24, r.24, r 24 — word-bounded so "for 24" is not matched */
+      /\br\.?\s*(\d{1,4}[a-z]?)\b/gi,
       /\bsuite\s*[#.]?\s*(\d{1,4}[a-z]?)\b/gi,
       /\bguest\s+(?:in|at)\s+(\d{1,4}[a-z]?)\b/gi
     ];
@@ -517,6 +540,13 @@
     [/\bb\.?\s*com\b/gi, "Booking.com"],
     [/\bbooking\.com\b/gi, "Booking.com"],
     [/\bexpedia\b/gi, "Expedia"],
+    /* OTA shorthand — avoid expired/express/expect */
+    [/\bexp\b(?!\.|ired|iry|ress|ect|and|ose|lain)/gi, "Expedia"],
+    [/\bota\b(?=\s|$|[.,!?])/gi, "OTA"],
+    [/\bpp\b(?=\s|$|[.,!?])/gi, "prepaid"],
+    [/\bwc\b(?=\s|$|[.,!?])/gi, "WC"],
+    [/\bbday\b/gi, "birthday"],
+    [/\banniv(?:ersary)?\b/gi, "anniversary"],
     [/\bb4\b/gi, "before"],
     [/\bmaint\b(?=\s+(?:aware|informed|notified|advised)\b)/gi, "Maintenance"],
     [/\bmaint\b(?=\s|$|[.,!?])/gi, "maintenance"],
@@ -535,9 +565,28 @@
     [/\blost\s*prop(?:erty)?\b/gi, "lost property"],
     [/\bfb\b(?=\s|$|[.,!?])/gi, "F&B"],
     [/\bcorp(?:orate)?\s+rate\b/gi, "corporate rate"],
+    [/\bcorp\b(?=\s|$|[.,!?])/gi, "corporate"],
     [/\b(\d+(?:\.\d{1,2})?)\s*pounds?\b/gi, "£$1"],
     [/\bpounds?\b/gi, "£"]
   ];
+
+  /**
+   * Split / expand glued Night Manager shorthand before abbreviation maps.
+   * Examples: ETA2230, arr2230, bal64.50, r24 → spaced/normalised forms.
+   */
+  function expandMessyShorthand(text) {
+    var result = String(text || "");
+    /* Glued clock prefixes */
+    result = result.replace(
+      /\b(eta|arr(?:ival)?|due|dep(?:arture)?|wake(?:-?up)?|wu)((?:[01]\d|2[0-3])[0-5]\d)\b/gi,
+      "$1 $2"
+    );
+    /* Balance shorthand: bal64.50 / bal.64.50 */
+    result = result.replace(/\bbal(?:ance)?\.?\s*(\d+\.\d{2})\b/gi, "balance £$1");
+    /* Bare r24 / r.24 → rm 24 (extractRoomNumbers also matches r directly) */
+    result = result.replace(/\br\.?\s*(\d{1,4}[a-z]?)\b/gi, "rm $1");
+    return result;
+  }
 
   var TERMINOLOGY = [
     [/\bcheck\s*out\b/gi, "check-out"],
@@ -581,7 +630,10 @@
       .replace(/\bfollow\s*(?:up\s*)?am\b/gi, "follow up next shift")
       .replace(/\bfollow\s+next\b/gi, "follow up next shift")
       .replace(/\bhk\s+aware\b/gi, "Housekeeping has been informed")
-      .replace(/\bquiet\s+upper\b/gi, "quiet upper-floor room");
+      .replace(/\bhousekeeping\s+aware\b/gi, "Housekeeping has been informed")
+      .replace(/\bquiet\s+upper\b/gi, "quiet upper-floor room")
+      .replace(/\bdm\s+safe\b/gi, "Duty Manager safe")
+      .replace(/\bDuty Manager\s+safe\b/gi, "Duty Manager safe");
     return result;
   }
 
@@ -595,6 +647,7 @@
 
   function normalizeInput(text) {
     var result = trimText(text);
+    result = expandMessyShorthand(result);
     result = correctSpelling(result);
     result = expandAbbreviations(result);
     result = expandOperationalShorthand(result);
@@ -1402,6 +1455,8 @@
       guestType: "",
       category: "",
       uncertainty: false,
+      needsReview: false,
+      extractionConfidence: "",
       /* Operational classification helpers */
       guestImpact: "",
       priority: "",
@@ -1426,6 +1481,11 @@
     var src = String(text || "");
     if (/\bair\s*con(?:ditioning)?\b|\ba\/c\b|\bac\b|\bnot\s+cooling\b|\bhvac\b/i.test(src)) return "AC";
     if (/\bhot\s*water\b|\bno\s+hot\s+water\b|\bcold\s+water\s+only\b/i.test(src)) return "hot water";
+    if (/\b(?:wc|toilet|loo)\b/i.test(src) &&
+        /\b(?:broken|fault|blocked|not\s+working|issue|maint|leak|overflow)/i.test(src)) {
+      return "WC";
+    }
+    if (/\bwc\b/i.test(src) && !/\bduty\s+manager\s+safe|lost\s+prop/i.test(src)) return "WC";
     if (/\bshower\b|\bleak(?:ing)?\b|\bdrip(?:ping)?\b|\bmixer\b|\bbathroom\b/i.test(src)) return "shower/leak";
     if (/\btv\b|\bremote\b/i.test(src)) return "TV remote";
     if (/\bsafe\b|\bkeypad\b/i.test(src)) return "safe";
@@ -1511,8 +1571,9 @@
     }
     return /\boutstanding\s+(?:balance|amount|payment)\b/.test(lower) ||
       /\bbalance\s+outstanding\b/.test(lower) ||
+      /\bbal(?:ance)?\s*[£$€]?\s*\d/.test(lower) ||
       /\boutstanding\s*[£$€]?\s*\d/.test(lower) ||
-      (/[£$€]\s*\d/.test(src) && /\b(?:balance|outstanding|unpaid|payment\s+link|collect)\b/.test(lower)) ||
+      (/[£$€]\s*\d/.test(src) && /\b(?:balance|outstanding|unpaid|payment\s+link|collect|prepaid)\b/.test(lower)) ||
       /\bunpaid\b/.test(lower) ||
       /\bnot\s+(?:yet\s+)?paid\b/.test(lower) ||
       /\bstill\s+to\s+pay\b/.test(lower) ||
@@ -1521,7 +1582,7 @@
       /\bpayment\s+links?\b/.test(lower) ||
       /\bminibar\b/.test(lower) && /\b(?:open|collect|still|outstanding|charge)\b/.test(lower) ||
       (/\b(?:booking\.com|expedia|ota|virtual\s+card)\b/.test(lower) &&
-        /\b(?:tax|payment|collect|outstanding|open|balance|pending|auth|authoris|authoriz|vcc)\b/.test(lower)) ||
+        /\b(?:tax|payment|collect|outstanding|open|balance|pending|auth|authoris|authoriz|vcc|prepaid)\b/.test(lower)) ||
       /\bvirtual\s+card\b/.test(lower) && /\b(?:pending|awaiting|auth|authoris|authoriz)\b/.test(lower) ||
       /\bpayment\s+(?:failed|failure|declined|collection|collect)\b/.test(lower) ||
       /\bcard\s+declined\b/.test(lower) ||
@@ -1707,9 +1768,10 @@
       var combined = commaName[2] + " " + commaName[1];
       if (names.indexOf(combined) === -1) names.unshift(combined);
     }
-    /* Messy lowercase staff leads: "okonkwo rm22", "vip eleanor whitmore due", "henderson x4" */
+    /* Messy lowercase staff leads: "okonkwo rm22", "okonkwo r24", "vip eleanor whitmore due"
+       Require digits after r/rm so surnames like "Ringer" are never treated as room tags. */
     var lead = src.match(
-      /(?:^|\bvip\s+)([a-zà-öø-ÿ'’-]+(?:\s+[a-zà-öø-ÿ'’-]+)?)\s+(?:rm\.?|room|due|late|x\d|dep|no\s*show)/i
+      /(?:^|\bvip\s+)([a-zà-öø-ÿ'’-]+(?:\s+[a-zà-öø-ÿ'’-]+)?)\s+(?:(?:rm\.?|r\.?)\s*\d{1,4}|room(?:\s*\d|\b)|due\b|late\b|x\d|dep\b|eta\b|arr\b|no\s*show)/i
     );
     if (lead) {
       var messy = lead[1].replace(/\s+/g, " ").trim();
@@ -2015,6 +2077,92 @@
     }
     if (/\bregular\s+guest\b/i.test(sourceText)) {
       fact.guestType = "regular guest";
+    }
+    if (/\bcorporate\b/i.test(sourceText) || /\bcorp\b/i.test(sourceText)) {
+      fact.guestType = fact.guestType || "corporate";
+      if (!detailValueFromFact(fact, "booking_type")) {
+        fact.details.push({ type: "booking_type", value: "corporate" });
+      }
+    }
+    if (/\bprepaid\b/i.test(sourceText)) {
+      fact.paymentMethod = fact.paymentMethod || "prepaid";
+      if (!detailValueFromFact(fact, "payment_method")) {
+        fact.details.push({ type: "payment_method", value: "prepaid" });
+      }
+    }
+
+    /* Channel / OTA — structured only when explicitly present */
+    if (/\bBooking\.com\b/i.test(sourceText) || /\bb\.?\s*com\b/i.test(sourceText)) {
+      if (!detailValueFromFact(fact, "channel")) {
+        fact.details.push({ type: "channel", value: "Booking.com" });
+      }
+    } else if (/\bExpedia\b/i.test(sourceText)) {
+      if (!detailValueFromFact(fact, "channel")) {
+        fact.details.push({ type: "channel", value: "Expedia" });
+      }
+    } else if (/\bOTA\b/.test(sourceText)) {
+      if (!detailValueFromFact(fact, "channel")) {
+        fact.details.push({ type: "channel", value: "OTA" });
+      }
+    }
+
+    /* Celebrations — never invent; only tag when cue is present */
+    var celebrationMatch = sourceText.match(
+      /\b(birthday|anniversary|honeymoon|celebration|balloons?|champagne)\b/i
+    );
+    if (celebrationMatch) {
+      var celeb = celebrationMatch[1].toLowerCase();
+      if (celeb === "balloons" || celeb === "balloon") celeb = "balloons";
+      if (celeb === "champagne") celeb = "champagne amenity";
+      if (!detailValueFromFact(fact, "celebration")) {
+        fact.details.push({ type: "celebration", value: celeb });
+      }
+      if (!fact.subject || fact.subject === "follow_up" || fact.subject === "interconnect") {
+        if (/\b(?:birthday|anniversary|honeymoon|celebration)\b/i.test(sourceText)) {
+          fact.subject = "celebration";
+          fact.ownerDept = fact.ownerDept || "Reception";
+          if (!fact.actionVerb) fact.actionVerb = "prepare";
+        }
+      }
+    }
+
+    /* Preferences — quiet / accessible / dietary when explicit */
+    if (/\bquiet(?:\s+(?:room|upper|floor))?\b/i.test(sourceText) ||
+        /\bupper-floor room\b/i.test(sourceText)) {
+      if (!detailValueFromFact(fact, "preference")) {
+        fact.details.push({
+          type: "preference",
+          value: /\bupper/i.test(sourceText) ? "quiet upper-floor room" : "quiet room"
+        });
+      }
+    }
+    if (/\baccessib(?:le|ility)\b|\bwheelchair\b/i.test(sourceText)) {
+      if (!detailValueFromFact(fact, "preference")) {
+        fact.details.push({ type: "preference", value: "accessible room" });
+      }
+    }
+    if (/\bfeather[\s-]*free\b|\bnon[\s-]*feather\b|\ballerg/i.test(sourceText)) {
+      if (!detailValueFromFact(fact, "preference")) {
+        fact.details.push({ type: "preference", value: "feather-free bedding" });
+      }
+    }
+
+    /* Arrival / departure status cues */
+    if (/\b(?:arrival|arriving|due\s+in|eta)\b/i.test(sourceText) &&
+        !/\b(?:depart|check-?out|c\/o)\b/i.test(sourceText)) {
+      if (!detailValueFromFact(fact, "stay_status")) {
+        fact.details.push({ type: "stay_status", value: "arrival" });
+      }
+    } else if (/\b(?:departure|departing|check-?out|c\/o|dep\b)\b/i.test(sourceText) &&
+               !/\b(?:arrival|eta|due\s+in)\b/i.test(sourceText)) {
+      if (!detailValueFromFact(fact, "stay_status")) {
+        fact.details.push({ type: "stay_status", value: "departure" });
+      }
+    }
+
+    var etaValue = extractEta(sourceText);
+    if (etaValue && !detailValueFromFact(fact, "eta")) {
+      fact.details.push({ type: "eta", value: etaValue });
     }
 
     /* Twin / king bed configuration */
@@ -2529,11 +2677,26 @@
       }
     }
 
-    if (/\b(?:air\s*con|a\/c|\bac\b|leak|leaking|broken|faulty|repair|maintenance|not cooling|heating|hot\s*water|no\s+hot\s+water|hand\s*dryer|safe\s+keypad|\bon\s+hold\s+parts)\b/i.test(detectText) &&
+    if (/\b(?:air\s*con|a\/c|\bac\b|wc\b|toilet|leak|leaking|broken|faulty|repair|maintenance|not cooling|heating|hot\s*water|no\s+hot\s+water|hand\s*dryer|safe\s+keypad|\bon\s+hold\s+parts)\b/i.test(detectText) &&
         !fact.subject) {
       fact.subject = "maintenance";
       if (!fact.ownerDept) fact.ownerDept = "Maintenance";
       if (!fact.actionVerb) fact.actionVerb = "follow_up";
+    }
+
+    /* Taxi / transfer booking — structured detail; subject only when nothing stronger */
+    if (/\b(?:taxi|addison(?:\s+lee)?|transfer)\b/i.test(detectText)) {
+      if (!fact.subject || fact.subject === "follow_up") {
+        fact.subject = "departure_followup";
+        if (!fact.ownerDept) fact.ownerDept = "Reception";
+        if (!fact.actionVerb) fact.actionVerb = "confirm";
+      }
+      if (!detailValueFromFact(fact, "transport")) {
+        var transport = /\baddison/i.test(detectText)
+          ? "Addison Lee"
+          : /\btransfer\b/i.test(detectText) ? "transfer" : "taxi";
+        fact.details.push({ type: "transport", value: transport });
+      }
     }
 
     /* Orphan status fragments are not standalone maintenance items. */
@@ -2635,9 +2798,13 @@
       fact.subject = "lost_property";
       if (!fact.ownerDept) fact.ownerDept = "Reception";
       if (!fact.actionVerb) fact.actionVerb = "follow_up";
-      /* "dm safe" is storage location, not a safe fault */
+      /* "dm safe" / "Duty Manager safe" is storage location, not a safe fault */
       if (fact.faultType === "safe" && !/\bsafe\s+keypad\b|\bsafe\s+(?:broken|fault)/i.test(detectText)) {
         fact.faultType = "";
+      }
+      if (/\b(?:Duty Manager safe|dm\s+safe)\b/i.test(detectText + " " + sourceText) &&
+          !detailValueFromFact(fact, "storage")) {
+        fact.details.push({ type: "storage", value: "Duty Manager safe" });
       }
     }
 
@@ -2691,6 +2858,41 @@
     }
     fact.guestImpact = classifyGuestImpact(detectText, fact.subject);
     fact.priority = classifyFactPriority(detectText, fact.subject, fact.guestImpact);
+    assessExtractionConfidence(fact);
+    return fact;
+  }
+
+  /**
+   * Score extraction evidence. Low confidence → needsReview.
+   * Never invent missing rooms/guests — only flag for human review.
+   */
+  function assessExtractionConfidence(fact) {
+    if (!fact) return fact;
+    var score = 0.15;
+    var guestFacing = /^(vip_arrival|wake_up|late_checkout|room_move|outstanding_balance|payment|guest_request|lost_property|celebration|departure_followup|invoice|bill|folio)$/.test(fact.subject || "");
+
+    if (fact.rooms && fact.rooms.length) score += 0.35;
+    if (fact.guestName) score += 0.25;
+    if (fact.subject) score += 0.15;
+    if (fact.details && fact.details.length) score += Math.min(0.2, fact.details.length * 0.05);
+    if (fact.faultType || fact.requestItem) score += 0.05;
+    if (detailValueFromFact(fact, "eta") || detailValueFromFact(fact, "time")) score += 0.05;
+
+    if (fact.uncertainty) score -= 0.2;
+    if (fact.subject === "financial_settlement_unclear") score -= 0.25;
+    if (guestFacing && !(fact.rooms && fact.rooms.length) && !fact.guestName) {
+      score = Math.min(score, 0.4);
+      fact.needsReview = true;
+    }
+    if (fact.subject === "room_move" && !detailValueFromFact(fact, "destination_room") && fact.uncertainty) {
+      fact.needsReview = true;
+      score = Math.min(score, 0.45);
+    }
+
+    var label = score >= 0.75 ? "high" : score >= 0.45 ? "medium" : "low";
+    fact.extractionConfidence = label;
+    if (label === "low" || fact.uncertainty) fact.needsReview = true;
+    if (!fact.needsReview) fact.needsReview = false;
     return fact;
   }
 
@@ -3428,7 +3630,8 @@
     if (normalized === "payment_balance") return "payments";
     if (subject === "maintenance") return "maintenance";
     if (subject === "vip_arrival" || subject === "reservation_info") return "vip";
-    if (subject === "guest_arrangement" || subject === "guest_preparation" || subject === "interconnect") {
+    if (subject === "guest_arrangement" || subject === "guest_preparation" || subject === "interconnect" ||
+        subject === "celebration") {
       return "guest";
     }
     if (subject === "twin_setup") return "tasks";
@@ -5082,7 +5285,8 @@
     if (kind === "collect_before_departure") kind = "collect_payment";
 
     if (kind === "follow_up_maintenance") {
-      return "Follow up " + (room ? room + " " : "") + fault +
+      if (fault === "AC") fault = "AC";
+      return "Follow up with Maintenance regarding " + (room ? room + " " : "") + fault +
         (spec.reasonKind === "before_departure_guest_impact"
           ? " before departure / further guest impact"
           : " before further guest impact");
@@ -5109,9 +5313,7 @@
     if (kind === "prepare_vip") {
       var amenityBit = "";
       if (e.amenities && e.amenities.length) {
-        amenityBit = " (" + joinNatural(e.amenities.filter(function (a) {
-          return a !== "quiet upper-floor room";
-        })) + ")";
+        amenityBit = " — " + joinNatural(e.amenities);
       }
       if (room && e.guestName) {
         return "VIP readiness follow-up for " + e.guestName + " in " + room + amenityBit;
@@ -5125,7 +5327,9 @@
         if (t.kind === "wake_up") bits.push("wake-up at " + when);
         if (t.kind === "transport") bits.push("taxi at " + when);
       });
-      if (!bits.length) return "Timed departure actions require attention" + (room ? " for " + room : "");
+      if (!bits.length) {
+        return room ? "Complete wake-up / transfer actions for " + room + " before departure" : "";
+      }
       return "Timed departure actions for " + (room ? room + ": " : "") + joinNatural(bits);
     }
     if (kind === "reserve_interconnect") {
@@ -5136,7 +5340,10 @@
       return "Reserve interconnecting rooms" + (e.guestName ? " for " + e.guestName : "");
     }
     if (kind === "guest_follow_up") {
-      return "Follow up " + (room || "guest request");
+      if (e.requestItem && room) return "Arrange " + e.requestItem + " for " + room;
+      if (room) return "Complete outstanding guest follow-up for " + room;
+      /* Never surface vague "Follow up guest request". */
+      return "";
     }
     return "";
   }
@@ -5617,11 +5824,20 @@
 
   function buildHandoverIntelligenceExperience(analyzed, options) {
     options = options || {};
-    return {
+    var experience = {
       briefing: buildTodaysBriefing(analyzed, options),
       hotelStatus: buildHotelStatus(analyzed, options),
       timeline: buildTodaysTimeline(analyzed, options)
     };
+    /* Sprint 3 — engine owns cross-surface consistency; writing does not re-rank. */
+    if (global.ShiftIntelligenceEngine &&
+        typeof global.ShiftIntelligenceEngine.applyExperienceConsistencyGate === "function") {
+      experience = global.ShiftIntelligenceEngine.applyExperienceConsistencyGate(experience, {
+        analyzed: analyzed,
+        options: options
+      });
+    }
+    return experience;
   }
 
   /* ------------------------------------------------------------------ */
@@ -5648,12 +5864,15 @@
     normalizeInput: normalizeInput,
     correctSpelling: correctSpelling,
     expandAbbreviations: expandAbbreviations,
+    expandMessyShorthand: expandMessyShorthand,
     standardiseTerminology: standardiseTerminology,
 
     extractRoomNumbers: extractRoomNumbers,
     extractMoney: extractMoney,
     extractTimes: extractTimes,
+    extractEta: extractEta,
     extractGuestNames: extractGuestNames,
+    assessExtractionConfidence: assessExtractionConfidence,
     extractPercentages: extractPercentages,
     extractDates: extractDates,
     containsHandoverActionTemplate: containsHandoverActionTemplate,

@@ -202,7 +202,7 @@ console.log("\nHandover Intelligence Experience Sprint 1\n");
   assert(!/Today's main priorities/i.test(text), "avoids filler Today's main priorities");
   assert(!/attention required/i.test(text), "avoids attention required filler");
   /* Impact ranking: guest-impacting AC outranks VIP readiness. */
-  assert(/Priority 1\nFollow up.*AC.*Room 24|Priority 1\nFollow up Room 24.*AC/i.test(text),
+  assert(/Priority 1\nFollow up(?: with Maintenance regarding)?.*(?:Room 24|AC).*(?:AC|Room 24)/i.test(text),
     "Priority 1 is action-first AC line by operational impact");
   assert(
     /Priority 2\n(?:Prepare VIP|VIP readiness follow-up)/i.test(text) ||
@@ -372,8 +372,9 @@ console.log("\nHandover Intelligence Experience Sprint 1\n");
       /11:00|arrival/i.test(r.text);
   }), "VIP recommendation is a direct pre-arrival action");
   assert(recs.some(function (r) {
-    return /Follow up.*Room 24.*AC/i.test(r.text) && /until resolved/i.test(r.text);
-  }), "AC recommendation is follow-up until resolved");
+    return /Follow up.*(?:Room 24.*AC|AC.*Room 24)|Follow up with Maintenance regarding Room 24 AC/i.test(r.text) &&
+      /Maintenance|in-house|unresolved|this shift/i.test(r.text);
+  }), "AC recommendation is Duty Manager maintenance follow-up");
 
   const bookingOnly = consolidate(makeAnalyzed(["Room 16 – outstanding Booking.com payment"]));
   const bookingRecs = (Shift.analyze({
