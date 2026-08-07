@@ -376,7 +376,10 @@ function brainCtx(entries, rooms) {
           triggerKeywords: e.triggerKeywords || [],
           followUpInstruction: e.followUpInstruction || "",
           content: e.content || "",
-          checklistEnabled: false
+          /* Reference-only when explicitly false; actionable follow-ups default enabled. */
+          checklistEnabled: e.checklistEnabled != null
+            ? e.checklistEnabled
+            : !!e.followUpInstruction
         };
       })
     },
@@ -599,13 +602,20 @@ console.log("\n-- Hotel Brain outside recommendation generation --");
     triggerKeywords: ["vip", "champagne"],
     followUpInstruction: "Confirm VIP room allocation before arrival.",
     checklistEnabled: true
+  }, {
+    id: "room-attributes",
+    title: "Room attribute reference (staff allocation)",
+    category: "Arrivals",
+    triggerKeywords: ["twin", "accessible", "room allocation"],
+    content: "Use configured room attributes as factual reference — bed size, twin capability.",
+    checklistEnabled: false
   }]);
   /* Force checklistEnabled on normalized entry */
   brain.operationalKnowledge.knowledgeEntries[0].checklistEnabled = true;
   var knowledge = HPO.getShiftIntelligenceKnowledge(
     brain,
     "pm",
-    "VIP Mr Henderson arriving 14:00, champagne amenity"
+    "VIP Mr Henderson arriving 14:00, champagne amenity. Twin room allocation needed."
   );
   assert((knowledge.matchedActions || []).some(function (a) { return /vip/i.test(a.title || ""); }),
     "12. Hotel Brain knowledge retrieval still matches VIP notes");
@@ -614,6 +624,20 @@ console.log("\n-- Hotel Brain outside recommendation generation --");
   var reminders = HPO.getRoomAttributeReminders(brain, "Guest wants a quiet room");
   assert(reminders.some(function (r) { return /quiet/i.test(r.text || ""); }),
     "12c. Room attribute reminder retrieval remains intact");
+  assert(
+    (knowledge.matchedActions || []).some(function (a) {
+      return a.sourceId === "room-attributes" && a.checklistEnabled === false;
+    }),
+    "12d. Reference knowledge remains in matchedActions with checklistEnabled false"
+  );
+  var twinLines = ["Arrival needs twin room allocation for Room 18."];
+  var twin = analyzeWithBrain(twinLines, brain);
+  assert(
+    !(twin.recommendations || []).some(function (r) {
+      return /Room attribute reference|factual reference|staff allocation/i.test(r.text || "");
+    }),
+    "12e. Reference-only room attribute metadata never appears in user-facing recommendation text"
+  );
 })();
 
 console.log("\n" + passed + " passed, " + failed + " failed\n");

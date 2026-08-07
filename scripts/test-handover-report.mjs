@@ -143,7 +143,13 @@ if (payload.hotelSnapshot.length !== 6) {
 }
 
 if (!html.includes("hr-note-body") || html.includes("<table")) {
-  console.error("FAIL: report HTML missing vertical note blocks or uses tables");
+  console.error("FAIL: report HTML missing note blocks or uses tables");
+  failed = true;
+}
+
+/* Compact handover rows: Room N — detail on one line with emphasized lead */
+if (html.includes("hr-note-heading") && !html.includes("hr-note-sep")) {
+  console.error("FAIL: report notes should use compact Room — detail separators");
   failed = true;
 }
 

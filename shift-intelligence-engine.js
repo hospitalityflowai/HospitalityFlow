@@ -2974,10 +2974,12 @@
           else otherParas.push(p);
         });
         if (priorityParas.length > kept.length) {
-          priorityParas = priorityParas.slice(0, Math.max(kept.length, 0)).map(function (p, i) {
-            return String(p).replace(/^Priority\s+\d+/i, "Priority " + (i + 1));
-          });
+          priorityParas = priorityParas.slice(0, Math.max(kept.length, 0));
         }
+        /* Always renumber displayed priorities sequentially after gating. */
+        priorityParas = priorityParas.map(function (p, i) {
+          return String(p).replace(/^Priority\s+\d+/i, "Priority " + (i + 1));
+        });
         if (!priorityParas.length && !otherParas.length) {
           otherParas.push("Shift status\nNo urgent guest-impacting priorities for the incoming team.");
         }
@@ -5193,6 +5195,8 @@
     for (var i = 0; i < entries.length; i++) {
       var entry = entries[i];
       if (!entry || entry.active === false) continue;
+      /* Reference-only knowledge (checklistEnabled: false) must not enter chase text. */
+      if (entry.checklistEnabled === false) continue;
       var triggers = entry.triggerKeywords || [];
       var matched = topicRe.test(entry.category || "") || topicRe.test(entry.title || "") ||
         triggers.some(function (kw) { return topicRe.test(String(kw || "")); });
@@ -7040,8 +7044,16 @@
         if (!action) return;
         var match = matchBrainKnowledgeToCandidate(action, rec, analyzed);
         if (!match) return;
-        var follow = trimText(action.followUpInstruction || action.actionText || "");
-        if (/as recorded/i.test(follow) || /^arrange the guest request/i.test(follow)) follow = "";
+        /*
+         * checklistEnabled: false = reference / staff-allocation metadata.
+         * Keep DecisionTrace evidence; never paste into user-facing chase text.
+         * Actionable entries keep prior behaviour: followUpInstruction, else actionText.
+         */
+        var follow = "";
+        if (action.checklistEnabled !== false) {
+          follow = trimText(action.followUpInstruction || action.actionText || "");
+          if (/as recorded/i.test(follow) || /^arrange the guest request/i.test(follow)) follow = "";
+        }
         applyEnrichment(match, follow);
       });
 

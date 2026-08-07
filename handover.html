@@ -1317,7 +1317,7 @@
     .shift-glance-grid--alerts {
       display: grid;
       grid-template-columns: repeat(6, minmax(0, 1fr));
-      gap: 6px;
+      gap: 8px;
       align-items: stretch;
       width: 100%;
       max-width: none;
@@ -1347,8 +1347,8 @@
       min-width: 0;
       max-width: none;
       gap: 2px;
-      min-height: 56px;
-      padding: 6px 5px 5px;
+      min-height: 62px;
+      padding: 8px 6px 6px;
       border-radius: 12px;
       background: #ffffff;
       border: 1px solid rgba(18, 34, 64, 0.08);
@@ -1379,7 +1379,8 @@
     }
 
     .shift-glance-grid--alerts .glance-stat-value {
-      font-size: 1.05rem;
+      font-size: 1.12rem;
+      font-weight: 700;
       line-height: 1.1;
     }
 
@@ -1389,9 +1390,12 @@
       letter-spacing: 0.01em;
       text-transform: none;
       white-space: normal;
-      line-height: 1.15;
+      line-height: 1.2;
       max-width: 100%;
       color: var(--gray-500);
+      overflow-wrap: break-word;
+      word-break: normal;
+      hyphens: none;
     }
 
     .shift-glance-grid--snapshot .glance-snapshot {
@@ -1639,7 +1643,23 @@
       margin-top: 3px;
       line-height: 1.35;
       word-wrap: break-word;
-      overflow-wrap: anywhere;
+      overflow-wrap: break-word;
+      word-break: normal;
+      hyphens: none;
+    }
+
+    .handover-item-lead {
+      font-weight: 700;
+      color: var(--navy-900);
+    }
+
+    .handover-item-sep {
+      font-weight: 600;
+      color: var(--navy-900);
+    }
+
+    .handover-item-detail {
+      font-weight: 400;
     }
 
     @media (max-width: 900px) {
@@ -3219,7 +3239,7 @@
       }
 
       .handover-results {
-        gap: 10px !important;
+        gap: 8px !important;
       }
 
       .handover-meta.is-visible,
@@ -3576,26 +3596,26 @@
       .section-list {
         display: flex !important;
         flex-direction: column !important;
-        gap: 6px !important;
+        gap: 4px !important;
       }
 
       .section-list li,
       .handover-item {
         display: block !important;
         width: 100% !important;
-        padding: 8px 10px 8px 18px !important;
+        padding: 5px 8px 5px 16px !important;
         font-size: 10pt !important;
-        line-height: 1.45 !important;
-        break-inside: auto !important;
-        page-break-inside: auto !important;
+        line-height: 1.35 !important;
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
         min-height: 0 !important;
         max-height: none !important;
       }
 
       .handover-item-main,
       .handover-item-text {
-        display: block !important;
-        width: 100% !important;
+        display: inline !important;
+        width: auto !important;
         max-width: 100% !important;
         min-width: 0 !important;
         flex: none !important;
@@ -3603,10 +3623,18 @@
 
       .handover-item-text {
         font-size: 10pt !important;
-        line-height: 1.45 !important;
+        line-height: 1.35 !important;
         white-space: normal !important;
         overflow-wrap: break-word !important;
         word-break: normal !important;
+      }
+
+      .handover-item-lead {
+        font-weight: 700 !important;
+      }
+
+      .handover-item-detail {
+        font-weight: 400 !important;
       }
 
       .section-list li::before,
@@ -6835,6 +6863,14 @@
         return "normal";
       }
 
+      function isInternalReferenceRecommendationText(text) {
+        var t = String(text || "");
+        if (!t) return false;
+        return /\(.*staff allocation.*\)/i.test(t) ||
+          /\bas factual reference\b/i.test(t) ||
+          /\bHotel Brain (?:options|alternatives)\b/i.test(t);
+      }
+
       function normalizeRecommendation(raw) {
         if (!raw || typeof raw !== "object") {
           return {
@@ -6863,6 +6899,7 @@
 
       function formatRecommendationForExport(rec) {
         var normalized = normalizeRecommendation(rec);
+        if (!normalized.text || isInternalReferenceRecommendationText(normalized.text)) return "";
         var statusPhrase = formatStatusPhrase(normalized.status);
         return "[" + formatRecommendationPriorityLabel(normalized.priority) +
           " · " + normalized.department + "] " + normalized.text +
@@ -7202,7 +7239,11 @@
       function renderShiftIntelligence() {
         if (!shiftIntelligenceCard) return;
 
-        if (!lastRecommendations.length) {
+        var visibleRecs = (lastRecommendations || []).filter(function (rec) {
+          var text = String((rec && rec.text) || "");
+          return !!text && !isInternalReferenceRecommendationText(text);
+        });
+        if (!visibleRecs.length) {
           hideShiftIntelligencePanel();
           return;
         }
@@ -7236,8 +7277,14 @@
         recommendationsList.innerHTML = "";
 
         lastRecommendations.forEach(function (rec) {
+          var normalized = normalizeRecommendation(rec);
+          if (!normalized.text || isInternalReferenceRecommendationText(normalized.text)) return;
           recommendationsList.appendChild(buildRecommendationItemElement(rec));
         });
+        if (!recommendationsList.children.length) {
+          recommendationsList.hidden = true;
+          if (recommendationsEmpty) recommendationsEmpty.hidden = false;
+        }
       }
 
       function buildRecommendationItemElement(rec) {
@@ -7478,6 +7525,44 @@
         syncHandoverExports();
       }
 
+      function parseCompactHandoverLead(text) {
+        var raw = String(text || "").trim();
+        if (!raw || raw.indexOf("\n") !== -1) return null;
+        if (window.HandoverReport && typeof window.HandoverReport.parseNoteBlock === "function") {
+          var parsed = window.HandoverReport.parseNoteBlock(raw);
+          if (parsed && parsed.heading && parsed.body) {
+            return { lead: parsed.heading, detail: parsed.body };
+          }
+        }
+        var roomMatch = raw.match(/^(Room\s+\d+[a-z]?(?:\s*\/\s*Suite\s+\d+[a-z]?)?)\s*[:\-–—]\s*(.+)$/i);
+        if (roomMatch) return { lead: roomMatch[1], detail: roomMatch[2].trim() };
+        var dashMatch = raw.match(/^([^—–-]{3,96})\s*[—–-]\s*(.+)$/);
+        if (dashMatch) return { lead: dashMatch[1].trim(), detail: dashMatch[2].trim() };
+        return null;
+      }
+
+      function fillCompactHandoverText(el, text) {
+        var display = normalizeAdrInText(text);
+        var compact = parseCompactHandoverLead(display);
+        el.textContent = "";
+        if (!compact) {
+          el.textContent = display;
+          return;
+        }
+        var lead = document.createElement("span");
+        lead.className = "handover-item-lead";
+        lead.textContent = compact.lead;
+        var sep = document.createElement("span");
+        sep.className = "handover-item-sep";
+        sep.textContent = " \u2014 ";
+        var detail = document.createElement("span");
+        detail.className = "handover-item-detail";
+        detail.textContent = compact.detail;
+        el.appendChild(lead);
+        el.appendChild(sep);
+        el.appendChild(detail);
+      }
+
       function buildHandoverItemElement(item, sectionId) {
         var normalized = normalizeHandoverItem(item, sectionId);
         var li = document.createElement("li");
@@ -7488,7 +7573,7 @@
           li.classList.add("handover-item--heading");
           var heading = document.createElement("div");
           heading.className = "handover-item-text handover-item-text--heading";
-          heading.textContent = normalizeAdrInText(normalized.text);
+          fillCompactHandoverText(heading, normalized.text);
           li.appendChild(heading);
           return li;
         }
@@ -7506,7 +7591,7 @@
 
         var text = document.createElement("div");
         text.className = "handover-item-text";
-        text.textContent = normalizeAdrInText(normalized.text);
+        fillCompactHandoverText(text, normalized.text);
         main.appendChild(text);
         /* Imported board items stay in the Maintenance section; no module CTA badge. */
         li.appendChild(main);
@@ -9794,8 +9879,14 @@
         );
       }
 
+      function getPreSnapshotEditableInputs() {
+        return getPreSnapshotInputs().filter(function (input) {
+          return !input.readOnly && !input.disabled;
+        });
+      }
+
       function getPreSnapshotInputIndex(input) {
-        var inputs = getPreSnapshotInputs();
+        var inputs = getPreSnapshotEditableInputs();
         for (var i = 0; i < inputs.length; i++) {
           if (inputs[i] === input) return i;
         }
@@ -9803,7 +9894,7 @@
       }
 
       function focusPreSnapshotInputAt(index) {
-        var inputs = getPreSnapshotInputs();
+        var inputs = getPreSnapshotEditableInputs();
         if (!inputs.length) return;
         var target = inputs[Math.max(0, Math.min(index, inputs.length - 1))];
         if (!target) return;
@@ -9940,7 +10031,7 @@
           if (key === "Enter") {
             event.preventDefault();
             confirmPreSnapshotField(input, stat.id);
-            if (index >= getPreSnapshotInputs().length - 1) {
+            if (index >= getPreSnapshotEditableInputs().length - 1) {
               focusNextSectionAfterSnapshot();
             } else {
               focusPreSnapshotInputAt(index + 1);
@@ -10136,6 +10227,7 @@
 
         if (stat.readOnly) {
           input.readOnly = true;
+          input.tabIndex = -1;
           input.setAttribute("aria-readonly", "true");
           card.classList.add("is-readonly");
         }
@@ -10447,11 +10539,15 @@
             closeEditor();
           }
 
-          function focusAdjacentSnapshot(direction) {
-            if (!shiftSnapshotGrid) return;
-            var cards = Array.prototype.slice.call(
-              shiftSnapshotGrid.querySelectorAll(".glance-snapshot[data-snapshot]")
+          function getEditableSnapshotCards() {
+            if (!shiftSnapshotGrid) return [];
+            return Array.prototype.slice.call(
+              shiftSnapshotGrid.querySelectorAll(".glance-snapshot[data-snapshot].is-interactive")
             );
+          }
+
+          function focusAdjacentSnapshot(direction) {
+            var cards = getEditableSnapshotCards();
             var index = cards.indexOf(card);
             if (index < 0) return;
             var nextIndex = index + direction;
@@ -10461,7 +10557,7 @@
             if (!nextCard) return;
             window.setTimeout(function () {
               var refreshed = shiftSnapshotGrid.querySelector(
-                '.glance-snapshot[data-snapshot="' + nextCard.getAttribute("data-snapshot") + '"]'
+                '.glance-snapshot[data-snapshot="' + nextCard.getAttribute("data-snapshot") + '"].is-interactive'
               );
               if (refreshed) {
                 refreshed.click();
@@ -10499,18 +10595,14 @@
             }
             if (event.key === "Enter") {
               event.preventDefault();
-              var cards = shiftSnapshotGrid
-                ? Array.prototype.slice.call(
-                    shiftSnapshotGrid.querySelectorAll(".glance-snapshot[data-snapshot]")
-                  )
-                : [];
-              var index = cards.indexOf(card);
+              var editableCards = getEditableSnapshotCards();
+              var index = editableCards.indexOf(card);
               applySave();
-              if (index >= 0 && index < cards.length - 1) {
+              if (index >= 0 && index < editableCards.length - 1) {
                 window.setTimeout(function () {
-                  var nextId = cards[index + 1].getAttribute("data-snapshot");
+                  var nextId = editableCards[index + 1].getAttribute("data-snapshot");
                   var nextCard = shiftSnapshotGrid.querySelector(
-                    '.glance-snapshot[data-snapshot="' + nextId + '"]'
+                    '.glance-snapshot[data-snapshot="' + nextId + '"].is-interactive'
                   );
                   if (nextCard) nextCard.click();
                 }, 0);
@@ -10556,7 +10648,7 @@
             event.preventDefault();
             if (!shiftSnapshotGrid) return;
             var cards = Array.prototype.slice.call(
-              shiftSnapshotGrid.querySelectorAll(".glance-snapshot[data-snapshot]")
+              shiftSnapshotGrid.querySelectorAll(".glance-snapshot[data-snapshot].is-interactive")
             );
             var index = cards.indexOf(card);
             if (index < 0) return;

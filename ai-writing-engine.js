@@ -5365,10 +5365,13 @@
         maxBlocks: global.ShiftIntelligenceEngine.BRIEFING_MAX_BLOCKS || 5
       });
       objects = model.objects || objects;
-      (model.priorities || []).forEach(function (spec, index) {
+      var displayPriority = 0;
+      (model.priorities || []).forEach(function (spec) {
         var action = formatBriefingPriorityAction(spec);
         if (!action) return;
-        var label = "Priority " + (index + 1);
+        /* Display order only — skips empty format results so labels stay sequential. */
+        displayPriority += 1;
+        var label = "Priority " + displayPriority;
         paragraphs.push(label + "\n" + action.replace(/\.+$/, "") + ".");
         (spec.factIds || []).forEach(function (id) {
           if (primaryFactIds.indexOf(id) === -1) primaryFactIds.push(id);

@@ -63,14 +63,17 @@
 
   function renderNoteHtml(text) {
     var parsed = parseNoteBlock(text);
+    var body = escapeHtml(parsed.body || stripTagPrefix(text)).replace(/\n/g, "<br>");
     var html = '<div class="hr-note">';
 
     if (parsed.heading) {
-      html += '<div class="hr-note-heading">' + escapeHtml(parsed.heading) + "</div>";
+      /* Compact scan line: Room 22 — Late check-out noted. */
+      html += '<span class="hr-note-heading">' + escapeHtml(parsed.heading) + "</span>" +
+        '<span class="hr-note-sep"> \u2014 </span>' +
+        '<span class="hr-note-body">' + body + "</span>";
+    } else {
+      html += '<span class="hr-note-body">' + body + "</span>";
     }
-    html += '<div class="hr-note-body">' +
-      escapeHtml(parsed.body || stripTagPrefix(text)).replace(/\n/g, "<br>") +
-      "</div>";
     html += "</div>";
     return html;
   }
@@ -236,13 +239,25 @@
     }).join("");
   }
 
+  function isInternalReferenceRecommendationText(text) {
+    var t = String(text || "");
+    if (!t) return false;
+    /* Presentation guard for reference-only Hotel Brain metadata that must not print. */
+    return /\(.*staff allocation.*\)/i.test(t) ||
+      /\bas factual reference\b/i.test(t) ||
+      /\bHotel Brain (?:options|alternatives)\b/i.test(t);
+  }
+
   function renderRecommendationsHtml(recommendations) {
     if (!recommendations || !recommendations.length) return "";
 
     var items = recommendations.map(function (item) {
       var text = typeof item === "string" ? item : (item.text || "");
+      if (!text || isInternalReferenceRecommendationText(text)) return "";
       return '<li class="hr-bullet-item">' + escapeHtml(text) + "</li>";
-    }).join("");
+    }).filter(Boolean).join("");
+
+    if (!items) return "";
 
     return (
       '<section class="hr-section">' +
@@ -335,9 +350,9 @@
       ".hr-meta-item { min-width: 0; }",
       ".hr-meta-label { font-size: 7pt; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #5a6578; margin-bottom: 2px; }",
       ".hr-meta-value { font-size: 9.5pt; color: #0c1829; word-break: break-word; }",
-      ".hr-section { margin: 0 0 16px; break-inside: auto; page-break-inside: auto; }",
-      ".hr-section-title { margin: 0 0 9px; font-size: 11.5pt; font-weight: 700; color: #1a3055; border-bottom: 1.5px solid #4a8fc4; padding-bottom: 5px; break-after: avoid; page-break-after: avoid; }",
-      ".hr-section-intro { margin: -2px 0 9px; font-size: 9pt; color: #5a6578; }",
+      ".hr-section { margin: 0 0 12px; break-inside: auto; page-break-inside: auto; }",
+      ".hr-section-title { margin: 0 0 7px; font-size: 11.5pt; font-weight: 700; color: #1a3055; border-bottom: 1.5px solid #4a8fc4; padding-bottom: 4px; break-after: avoid; page-break-after: avoid; }",
+      ".hr-section-intro { margin: -2px 0 7px; font-size: 9pt; color: #5a6578; }",
       ".hr-snapshot-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 8px; }",
       ".hr-snapshot-card { border: 1px solid #d8e0ea; border-radius: 8px; background: #fff; padding: 9px 11px; min-height: 54px; position: relative; overflow: hidden; break-inside: avoid; page-break-inside: avoid; }",
       ".hr-snapshot-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: rgba(74, 143, 196, 0.45); }",
@@ -356,7 +371,7 @@
       ".hr-quote-text { font-size: 9pt; font-style: italic; color: #1a3055; line-height: 1.4; }",
       ".hr-quote-author { font-size: 7.5pt; color: #8a93a3; margin-top: 3px; }",
       ".hr-summary-box { background: #eef6fc; border: 1px solid rgba(74, 143, 196, 0.35); border-radius: 8px; padding: 13px 15px; }",
-      ".hr-briefing-block { margin: 0 0 10px; font-size: 10pt; color: #3d4654; white-space: pre-line; line-height: 1.45; }",
+      ".hr-briefing-block { margin: 0 0 8px; font-size: 10pt; color: #3d4654; white-space: pre-line; line-height: 1.4; }",
       ".hr-briefing-block:last-child { margin-bottom: 0; }",
       ".hr-status-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }",
       ".hr-status-card { border: 1px solid #d8e0ea; border-radius: 8px; padding: 7px 8px; background: #f8fafc; break-inside: avoid; page-break-inside: avoid; }",
@@ -371,16 +386,18 @@
       ".hr-timeline-item:first-of-type { border-top: 0; padding-top: 0; }",
       ".hr-timeline-line { font-size: 10pt; color: #24364f; line-height: 1.4; }",
       ".hr-timeline-reason { margin-top: 2px; font-size: 8pt; color: #5a6578; }",
-      ".hr-note-wrap { border-left: 3px solid #4a8fc4; padding: 0 0 0 11px; margin: 0 0 9px; break-inside: avoid; page-break-inside: avoid; }",
-      ".hr-note-heading { font-size: 9.8pt; font-weight: 700; color: #1a3055; margin-bottom: 2px; word-break: break-word; }",
-      ".hr-note-body { font-size: 10pt; color: #3d4654; white-space: normal; word-break: break-word; overflow-wrap: anywhere; line-height: 1.4; }",
+      ".hr-note-wrap { border-left: 3px solid #4a8fc4; padding: 1px 0 1px 10px; margin: 0 0 5px; break-inside: avoid; page-break-inside: avoid; }",
+      ".hr-note { font-size: 10pt; line-height: 1.35; word-break: break-word; overflow-wrap: break-word; }",
+      ".hr-note-heading { font-weight: 700; color: #1a3055; }",
+      ".hr-note-sep { color: #1a3055; font-weight: 600; }",
+      ".hr-note-body { font-weight: 400; color: #3d4654; white-space: normal; }",
       ".hr-bullet-list { margin: 0; padding: 0 0 0 16px; }",
-      ".hr-bullet-item { margin-bottom: 7px; font-size: 10pt; color: #3d4654; break-inside: avoid; page-break-inside: avoid; line-height: 1.4; }",
-      ".hr-footer { margin-top: 18px; padding-top: 9px; border-top: 1px solid #d8e0ea; font-size: 7.5pt; color: #5a6578; display: flex; justify-content: space-between; gap: 12px; }",
+      ".hr-bullet-item { margin-bottom: 5px; font-size: 10pt; color: #3d4654; break-inside: avoid; page-break-inside: avoid; line-height: 1.35; }",
+      ".hr-footer { margin-top: 14px; padding-top: 8px; border-top: 1px solid #d8e0ea; font-size: 7.5pt; color: #5a6578; display: flex; justify-content: space-between; gap: 12px; }",
       "@media print {",
-      "  .hr-section { margin-bottom: 15px; }",
+      "  .hr-section { margin-bottom: 11px; }",
       "  .hr-section-notes { break-inside: auto; page-break-inside: auto; }",
-      "  .hr-note-wrap, .hr-status-card, .hr-timeline-item, .hr-timeline-group, .hr-snapshot-card, .hr-snapshot-strip { break-inside: avoid; page-break-inside: avoid; }",
+      "  .hr-note-wrap, .hr-bullet-item, .hr-status-card, .hr-timeline-item, .hr-timeline-group, .hr-snapshot-card, .hr-snapshot-strip { break-inside: avoid; page-break-inside: avoid; }",
       "  .hr-status-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }",
       "}"
     ].join("\n");

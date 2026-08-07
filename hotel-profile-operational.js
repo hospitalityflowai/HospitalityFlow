@@ -907,6 +907,7 @@
         title: entry.title || "",
         followUpInstruction: follow,
         actionText: actionText,
+        checklistEnabled: entry.checklistEnabled !== false,
         category: entry.category || "Operations",
         department: entry.department || "Reception",
         priority: entry.priority || "normal",

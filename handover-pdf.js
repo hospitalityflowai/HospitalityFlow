@@ -28,11 +28,11 @@
     bodyFontSize: 9.2,
     sectionHeadingFontSize: 9.5,
     sectionBodyFontSize: 9.2,
-    itemGap: 2,
-    itemPaddingY: 2.5,
+    itemGap: 1.2,
+    itemPaddingY: 1.6,
     itemPaddingX: 4.5,
     accentWidth: 1.2,
-    noteSpacing: 2.2,
+    noteSpacing: 1.2,
     snapshotCols: 3,
     snapshotGap: 4,
     snapshotCellMinHeight: 17,
@@ -708,18 +708,17 @@
   PdfDocument.prototype.measureNoteBlock = function (item, textWidth) {
     var doc = this.doc;
     var parsed = parseNoteForPdfDisplay(item);
-    var headingLines = parsed.heading
-      ? measureWrappedLines(doc, parsed.heading, textWidth, LAYOUT.sectionHeadingFontSize, "bold")
-      : [];
     var bodyText = parsed.body || stripTagPrefix(item);
-    var bodyLines = measureWrappedLines(doc, bodyText, textWidth, LAYOUT.sectionBodyFontSize);
+    var compactText = parsed.heading
+      ? parsed.heading + " \u2014 " + bodyText
+      : bodyText;
+    var lines = measureWrappedLines(doc, compactText, textWidth, LAYOUT.sectionBodyFontSize);
     var height = LAYOUT.itemPaddingY * 2;
-    height += blockHeight(headingLines.length, LAYOUT.lineHeight, 1);
-    height += blockHeight(bodyLines.length, LAYOUT.lineHeight, LAYOUT.itemGap);
+    height += blockHeight(lines.length, LAYOUT.lineHeight, LAYOUT.itemGap);
     return {
       parsed: parsed,
-      headingLines: headingLines,
-      bodyLines: bodyLines,
+      compactText: compactText,
+      lines: lines,
       height: height
     };
   };
@@ -729,8 +728,10 @@
     var block = this.measureNoteBlock(item, textWidth);
     var textX = LAYOUT.marginX + LAYOUT.itemPaddingX + LAYOUT.accentWidth + 2.5;
     var shortBlock = block.height <= 36;
+    var heading = block.parsed.heading || "";
+    var prefix = heading ? heading + " \u2014 " : "";
 
-    this.ensureSpace(Math.min(block.height, shortBlock ? block.height : 16) + 1);
+    this.ensureSpace(Math.min(block.height, shortBlock ? block.height : 14) + 1);
 
     var accentTop = this.y + 1;
     setFill(doc, accent);
@@ -738,30 +739,28 @@
       LAYOUT.marginX + LAYOUT.itemPaddingX,
       accentTop,
       LAYOUT.accentWidth,
-      Math.max(5, Math.min(block.height - 2, 18)),
+      Math.max(4, Math.min(block.height - 1, 14)),
       "F"
     );
 
     this.y += LAYOUT.itemPaddingY + 1;
 
-    if (block.headingLines.length) {
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(LAYOUT.sectionHeadingFontSize);
-      setText(doc, COLORS.navy700);
-      block.headingLines.forEach(function (line) {
-        this.ensureSpace(LAYOUT.lineHeight + 0.5);
-        doc.text(line, textX, this.y);
-        this.y += LAYOUT.lineHeight;
-      }, this);
-      this.y += 0.8;
-    }
-
-    doc.setFont("helvetica", "normal");
     doc.setFontSize(LAYOUT.sectionBodyFontSize);
-    setText(doc, COLORS.gray600);
-    block.bodyLines.forEach(function (line) {
+    block.lines.forEach(function (line, lineIndex) {
       this.ensureSpace(LAYOUT.lineHeight + 0.5);
-      doc.text(line, textX, this.y);
+      if (lineIndex === 0 && prefix && line.indexOf(prefix) === 0) {
+        doc.setFont("helvetica", "bold");
+        setText(doc, COLORS.navy700);
+        doc.text(heading, textX, this.y);
+        var headingWidth = doc.getTextWidth(heading);
+        doc.setFont("helvetica", "normal");
+        setText(doc, COLORS.gray600);
+        doc.text(" \u2014 " + line.slice(prefix.length), textX + headingWidth, this.y);
+      } else {
+        doc.setFont("helvetica", "normal");
+        setText(doc, COLORS.gray600);
+        doc.text(line, textX, this.y);
+      }
       this.y += LAYOUT.lineHeight;
     }, this);
 
@@ -805,11 +804,22 @@
     this.y += LAYOUT.sectionGap;
   };
 
+  function isInternalReferenceRecommendationText(text) {
+    var t = String(text || "");
+    if (!t) return false;
+    return /\(.*staff allocation.*\)/i.test(t) ||
+      /\bas factual reference\b/i.test(t) ||
+      /\bHotel Brain (?:options|alternatives)\b/i.test(t);
+  }
+
   PdfDocument.prototype.drawRecommendations = function (recommendations) {
     if (!recommendations || !recommendations.length) return;
     var texts = recommendations.map(function (item) {
       return typeof item === "string" ? item : (item && item.text) || "";
-    }).filter(Boolean);
+    }).filter(function (text) {
+      return !!text && !isInternalReferenceRecommendationText(text);
+    });
+    if (!texts.length) return;
     this.drawBulletList("AI Recommendations", "Recommendations for the incoming shift", texts);
   };
 
