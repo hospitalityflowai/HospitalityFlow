@@ -3893,6 +3893,9 @@
     var section = sectionFromFact(mergedFact, primary.section);
     mergedFact.sectionHint = section;
 
+    var seqVals = notes.map(function (n) {
+      return typeof n._seq === "number" ? n._seq : null;
+    }).filter(function (v) { return v != null; });
     return {
       original: sourceTexts.join(" | "),
       rooms: rooms,
@@ -3911,7 +3914,9 @@
       }, null),
       fact: mergedFact,
       _mergedNotes: notes.slice(),
-      _factConsolidated: true
+      _factConsolidated: true,
+      /* Earliest source sequence — election chronology must survive consolidate/sort. */
+      _seq: seqVals.length ? Math.min.apply(null, seqVals) : undefined
     };
   }
 
@@ -3941,6 +3946,18 @@
       }
     }
     return parts.join(" | ");
+  }
+
+  /**
+   * Primary wording for hazard lifecycle election only.
+   * Must NOT include sibling archive/history — otherwise a controlled winner's
+   * archive (or an active reopen winner's archive) pollutes active vs control detection.
+   */
+  function notePrimaryElectionBlob(note) {
+    if (!note) return "";
+    if (note.original) return String(note.original);
+    if (note.fact && note.fact.sourceText) return String(note.fact.sourceText);
+    return "";
   }
 
   function isPaymentExemptFromNoCollect(text) {
@@ -4053,6 +4070,86 @@
       /\bout\s+of\s+order\b/.test(lower) ||
       /\bstill\s+open\b/.test(lower) ||
       /\bissue\s+still\s+open\b/.test(lower);
+  }
+
+  /**
+   * Reasoning Sprint 1 — hazard lifecycle class for same-incident election.
+   * Groups progressive updates (active → isolated/cleared/controlled) without
+   * collapsing unrelated faults in the same room.
+   */
+  function hazardLifecycleClass(text) {
+    var lower = String(text || "").toLowerCase();
+    if (!lower) return "";
+    /* Cash / lost-property "safe" is not an electrical hazard. */
+    if (/\b(?:cash\s+found|secured\s+in\s+(?:the\s+)?safe|lost\s+property)\b/.test(lower) &&
+        !/\b(?:burning|electrical\s+smell|extension\s+lead|cupboard|overheating)\b/.test(lower)) {
+      return "";
+    }
+    if (
+      /\b(?:burning\s+smell|electrical\s+smell|smell\s+(?:of\s+)?(?:burning|smoke)|smell\s+something\s+electrical|overheating\s+extension|extension\s+lead|no\s+fire(?:\/|\s+or\s+)smoke|fire\s+panel\s+normal|area\s+safe\s+now)\b/.test(lower) ||
+      (/\b(?:housekeeping\s+)?cupboard\b/.test(lower) &&
+        /\b(?:isolated|locked|unplugged|electrical|extension|smell)\b/.test(lower))
+    ) {
+      return "electrical_hazard";
+    }
+    if (
+      /\b(?:active\s+leak|started\s+leak(?:ing)?|ceiling\s+(?:started\s+)?leak(?:ing)?|water\s+(?:coming|isolated|running|supply)|water\s*\/\s*electrical|shower\s+above|traced\s+to\s+(?:rm|room)|flooding|water\s+near\s+(?:socket|elect)|do\s+not\s+restore\s+power|risk\s+(?:currently\s+)?controlled|sockets?\s+(?:must\s+remain\s+)?isolated)\b/.test(lower) ||
+      (/\bleak(?:ing)?\b/.test(lower) && /\b(?:water|ceiling|shower|bathroom|socket|elect)\b/.test(lower)) ||
+      (/\bwater\b/.test(lower) && /\belectrical\b/.test(lower))
+    ) {
+      return "water_leak";
+    }
+    return "";
+  }
+
+  function isHazardControlOrClearanceText(text) {
+    var lower = String(text || "").toLowerCase();
+    if (!lower) return false;
+    if (/\bnot\s+(?:yet\s+)?isolated\b/.test(lower) &&
+        !/\b(?:area\s+safe|no\s+fire|risk\s+controlled|unplugged|do\s+not\s+restore|remain(?:s)?\s+locked)\b/.test(lower)) {
+      return false;
+    }
+    return /\b(?:area\s+safe|no\s+fire|risk\s+(?:currently\s+)?controlled|water(?:\s+supply)?\s+isolated|(?:power|sockets?|cupboard|housekeeping\s+cupboard)\s+isolated|unplugged\s+and\s+removed|do\s+not\s+restore|remain(?:s)?\s+locked|must\s+not\s+be\s+used|extension\s+lead\s+must\s+not|lead\s+must\s+not)\b/.test(lower) ||
+      (/\bisolated\b/.test(lower) && /\b(?:water|power|socket|cupboard|electrical|supply)\b/.test(lower));
+  }
+
+  function isHazardActiveOpenText(text) {
+    var lower = String(text || "").toLowerCase();
+    if (!lower) return false;
+    /* Clearance/control updates are not "still active danger" for election. */
+    if (/\b(?:area\s+safe|no\s+fire|risk\s+(?:currently\s+)?controlled|water\s+isolated|unplugged\s+and\s+removed)\b/.test(lower)) {
+      return false;
+    }
+    return /\b(?:burning\s+smell|electrical\s+smell|smell\s+something\s+electrical|strong\s+burning|started\s+leak(?:ing)?|active\s+leak|water\s+coming\s+through|water\s+running\s+down|still\s+(?:smell|leaking)|not\s+(?:yet\s+)?inspect|could\s+smell)\b/.test(lower);
+  }
+
+  function hazardLifecycleNotesLink(a, b, hz, blobA, blobB, roomsA, roomsB, faultA, faultB) {
+    if (!hz) return false;
+    roomsA = roomsA || [];
+    roomsB = roomsB || [];
+    /* Area / update fragments with no room attach to the open lifecycle. */
+    if (!roomsA.length || !roomsB.length) return true;
+    if (roomsA.some(function (r) { return roomsB.indexOf(r) !== -1; })) return true;
+    /*
+     * Cross-room only when evidence links one incident (e.g. leak in 26 from 46 above).
+     * Do not merge unrelated same-class hazards in different rooms.
+     */
+    if (hz === "water_leak") {
+      var both = (String(blobA || "") + " " + String(blobB || "")).toLowerCase();
+      if (/\btraced\s+to\b|\bshower\s+above\b|\bfrom\s+(?:rm|room)\s*\d+|\binto\s+(?:rm|room)\s*\d+/.test(both)) {
+        return true;
+      }
+      if (faultA && faultB && faultA === faultB && /leak/.test(faultA)) {
+        if (roomsA.some(function (r) {
+          return new RegExp("\\b(?:rm|room)\\s*" + r + "\\b", "i").test(blobB || "");
+        }) || roomsB.some(function (r) {
+          return new RegExp("\\b(?:rm|room)\\s*" + r + "\\b", "i").test(blobA || "");
+        })) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   function isFinalAllocationText(text) {
@@ -4500,8 +4597,8 @@
 
   function electionRelation(a, b) {
     if (!a || !b || a === b) return "";
-    var blobA = noteSourceBlob(a);
-    var blobB = noteSourceBlob(b);
+    var blobA = notePrimaryElectionBlob(a) || noteSourceBlob(a);
+    var blobB = notePrimaryElectionBlob(b) || noteSourceBlob(b);
     var factA = a.fact;
     var factB = b.fact;
     var amenA = amenityKindFromNote(a);
@@ -4594,6 +4691,17 @@
       }
     }
 
+    /*
+     * Same hazard lifecycle (active → isolated/cleared/controlled).
+     * Prefer this over fingerprint family keys so progressive safety updates elect one current state.
+     */
+    var hzA = hazardLifecycleClass(blobA);
+    var hzB = hazardLifecycleClass(blobB);
+    if (hzA && hzA === hzB &&
+        hazardLifecycleNotesLink(a, b, hzA, blobA, blobB, roomsA, roomsB, faultA, faultB)) {
+      return "hazard:" + hzA;
+    }
+
     var famA = factMergeFamilyKey(factA);
     var famB = factMergeFamilyKey(factB);
     if (famA && famA === famB) {
@@ -4673,6 +4781,7 @@
 
   function terminalKindForNote(note) {
     var blob = noteSourceBlob(note);
+    var primaryBlob = notePrimaryElectionBlob(note) || blob;
     var fact = note && note.fact;
     if (isPaymentNoCollectText(blob)) return { kind: "paid", strength: 1000 };
     if (isCancelledRequestText(blob)) return { kind: "cancelled", strength: 920 };
@@ -4685,6 +4794,17 @@
           !/\bstill\s+open\b/i.test(blob))) {
       return { kind: "done", strength: 850 };
     }
+    /*
+     * Controlled/cleared hazard aftermath — stronger than open active danger,
+     * but remains a current control obligation (not amenity/payment "done").
+     * Use primary blob so sibling archive cannot flip active ↔ controlled.
+     */
+    if (isHazardControlOrClearanceText(primaryBlob)) {
+      return { kind: "hazard_controlled", strength: 820 };
+    }
+    if (isHazardActiveOpenText(primaryBlob)) {
+      return { kind: "open", strength: 200 };
+    }
     if (fact && fact.status === FACT_STATUS.confirmed) return { kind: "confirmed", strength: 700 };
     if (isOooOrOpenMaintText(blob) || (fact && fact.status === FACT_STATUS.open)) {
       return { kind: "open", strength: 200 };
@@ -4693,20 +4813,75 @@
     return { kind: "unknown", strength: FACT_STATUS_RANK[(fact && fact.status) || ""] || 10 };
   }
 
-  function electionScore(note, index, facetSize) {
+  function noteElectionSeq(note, fallbackIndex) {
+    if (note && typeof note._seq === "number") return note._seq;
+    return fallbackIndex;
+  }
+
+  function electionScore(note, index, facetSize, members) {
     var terminal = terminalKindForNote(note);
     var fact = note && note.fact;
-    var blob = noteSourceBlob(note);
+    var blob = notePrimaryElectionBlob(note) || noteSourceBlob(note);
+    var seq = noteElectionSeq(note, index);
     var score = terminal.strength;
     score += FACT_STATUS_RANK[(fact && fact.status) || ""] || 0;
     if (/\bfinal\b/i.test(blob)) score += 120;
     if (/\bupdate\b/i.test(blob)) score += 40;
-    /* Later claims win ties (segment order). */
-    score += (index + 1) * 0.01;
+    /* Later claims win ties — use source sequence, not post-consolidate array order. */
+    score += (seq + 1) * 0.01;
     /* Prefer richer identity when electing among equals. */
     if (fact && fact.guestName) score += 2;
     if (fact && fact.rooms && fact.rooms.length) score += 1;
     if (facetSize === 1) score += 0;
+
+    /*
+     * Hazard lifecycle ordering within a cluster:
+     * - later control/clearance demotes earlier active danger
+     * - later active recurrence demotes earlier control (do not suppress reopen)
+     */
+    members = members || [];
+    var controlled = isHazardControlOrClearanceText(blob);
+    var activeOpen = isHazardActiveOpenText(blob);
+    function memberSeq(m) {
+      return noteElectionSeq(m && m.note, m && m.index);
+    }
+    function memberPrimary(m) {
+      return notePrimaryElectionBlob(m && m.note) || noteSourceBlob(m && m.note);
+    }
+    if (controlled) {
+      var laterActive = members.some(function (m) {
+        if (!m || memberSeq(m) <= seq) return false;
+        var b = memberPrimary(m);
+        return isHazardActiveOpenText(b) && !isHazardControlOrClearanceText(b);
+      });
+      /* Must fall below later open-active (200) so recurrence can reopen. */
+      if (laterActive) score -= 700;
+      /* Prefer the latest control/clearance update over earlier UPDATE isolation lines. */
+      var laterControl = members.some(function (m) {
+        if (!m || memberSeq(m) <= seq) return false;
+        return isHazardControlOrClearanceText(memberPrimary(m));
+      });
+      if (laterControl) score -= 80;
+      /* Obligation-bearing aftermath outranks bare "unplugged/removed" progress notes. */
+      if (/\b(?:remain(?:s)?\s+locked|do\s+not\s+restore|must\s+not\s+be\s+used|restrictions\s+remain|not\s+be\s+used)\b/.test(blob)) {
+        score += 55;
+      }
+      if (/\b(?:area\s+safe|no\s+fire)\b/.test(blob)) score += 25;
+    } else if (activeOpen) {
+      var laterControlForActive = members.some(function (m) {
+        if (!m || memberSeq(m) <= seq) return false;
+        return isHazardControlOrClearanceText(memberPrimary(m));
+      });
+      if (laterControlForActive) score -= 600;
+      else {
+        var earlierControl = members.some(function (m) {
+          if (!m || memberSeq(m) >= seq) return false;
+          return isHazardControlOrClearanceText(memberPrimary(m));
+        });
+        /* Later recurrence after clearance — reopen as current active danger. */
+        if (earlierControl) score += 650;
+      }
+    }
     return score;
   }
 
@@ -4743,6 +4918,18 @@
     if (terminal.kind === "paid") {
       fact.paymentCollectable = false;
       fact.paymentNoCollect = true;
+    }
+    if (terminal.kind === "hazard_controlled") {
+      /*
+       * Keep actionable for remaining control obligations (locked cupboard /
+       * do not restore / monitor OOO). Do not mark completed/done — that would
+       * erase the control task while correctly retiring the old active danger.
+       */
+      fact.status = FACT_STATUS.open;
+      fact.hazardLifecycle = "controlled";
+      if (!note.section || note.section === "general" || note.section === "tasks") {
+        note.section = "maintenance";
+      }
     }
     fact.sectionHint = note.section || fact.sectionHint;
   }
@@ -4800,7 +4987,8 @@
     if (!notes.length) return analyzed || [];
 
     /* Reset prior election flags (idempotent re-runs). */
-    notes.forEach(function (note) {
+    notes.forEach(function (note, idx) {
+      if (note._seq == null) note._seq = idx;
       note._superseded = false;
       note._currentState = false;
       note._supersededReason = "";
@@ -4849,7 +5037,8 @@
         if (only.fact) only.fact.currentState = true;
         if (onlyTerminal.kind === "paid" || onlyTerminal.kind === "cancelled" ||
             onlyTerminal.kind === "done" || onlyTerminal.kind === "in_service" ||
-            onlyTerminal.kind === "final_setup" || onlyTerminal.kind === "final_allocation") {
+            onlyTerminal.kind === "final_setup" || onlyTerminal.kind === "final_allocation" ||
+            onlyTerminal.kind === "hazard_controlled") {
           applyTerminalToWinner(only, onlyTerminal);
         }
         return;
@@ -4858,7 +5047,7 @@
       var best = null;
       var bestScore = -1;
       members.forEach(function (m) {
-        var score = electionScore(m.note, m.index, members.length);
+        var score = electionScore(m.note, m.index, members.length, members);
         if (score > bestScore) {
           bestScore = score;
           best = m;
@@ -4880,6 +5069,9 @@
         }
         if (!best.note.fact.guestName && m.note.fact.guestName) {
           best.note.fact.guestName = m.note.fact.guestName;
+        }
+        if (best.note.fact && m.note.fact && m.note.fact.hazardLifecycle === "controlled") {
+          best.note.fact.hazardLifecycle = best.note.fact.hazardLifecycle || "controlled";
         }
       });
 
@@ -4905,7 +5097,7 @@
         });
       }
 
-      var winnerIsTerminal = /^(paid|done|cancelled|in_service|final_setup|final_allocation)$/.test(winnerTerminal.kind);
+      var winnerIsTerminal = /^(paid|done|cancelled|in_service|final_setup|final_allocation|hazard_controlled)$/.test(winnerTerminal.kind);
       var winnerAmenity = amenityKindFromNote(best.note);
       members.forEach(function (m) {
         if (m.note === best.note) return;
@@ -4937,6 +5129,33 @@
           markNoteSuperseded(m.note, best.note, "superseded_by_" + winnerTerminal.kind);
           return;
         }
+        /*
+         * Later active hazard reopens: retire earlier siblings in the same
+         * hazard lifecycle (prior active fragments AND prior clearance/control).
+         */
+        var winnerBlob = notePrimaryElectionBlob(best.note);
+        var loserBlobFull = notePrimaryElectionBlob(m.note);
+        var winnerHz = hazardLifecycleClass(winnerBlob);
+        var loserHz = hazardLifecycleClass(loserBlobFull);
+        if (
+          winnerHz &&
+          winnerHz === loserHz &&
+          isHazardActiveOpenText(winnerBlob) &&
+          !isHazardControlOrClearanceText(winnerBlob) &&
+          noteElectionSeq(m.note, m.index) < noteElectionSeq(best.note, best.index)
+        ) {
+          markNoteSuperseded(m.note, best.note, "superseded_by_hazard_reopen");
+          return;
+        }
+        /* Hazard lifecycle clusters keep exactly one current state. */
+        if (
+          winnerHz &&
+          winnerHz === loserHz &&
+          !m.note._superseded
+        ) {
+          markNoteSuperseded(m.note, best.note, "superseded_by_hazard_current_state");
+          return;
+        }
         if (loserTerminal.kind === "open" || loserTerminal.kind === "requested" || loserTerminal.kind === "unknown") {
           if (winnerTerminal.strength >= 700) {
             markNoteSuperseded(m.note, best.note, "superseded_by_stronger_current_state");
@@ -4960,8 +5179,10 @@
     var withFacts = [];
     var withoutFacts = [];
 
-    (analyzed || []).forEach(function (note) {
+    /* Preserve source order for later current-state election chronology. */
+    (analyzed || []).forEach(function (note, idx) {
       if (!note) return;
+      if (note._seq == null) note._seq = idx;
       var fact = ensureNoteFact(note);
       if (!fact || (!fact.subject && !fact.sourceText)) {
         withoutFacts.push(note);
@@ -6992,7 +7213,13 @@
     isNoteSuperseded: isNoteSuperseded,
     isNoteCurrentState: isNoteCurrentState,
     isPaymentNoCollectState: isPaymentNoCollectState,
-    isPaymentNoCollectText: isPaymentNoCollectText
+    isPaymentNoCollectText: isPaymentNoCollectText,
+    /* Hazard lifecycle election helpers (Sprint 1 / Sprint 2 bridge) */
+    hazardLifecycleClass: hazardLifecycleClass,
+    isHazardControlOrClearanceText: isHazardControlOrClearanceText,
+    isHazardActiveOpenText: isHazardActiveOpenText,
+    electionRelation: electionRelation,
+    clusterNotesForElection: clusterNotesForElection
   };
 
   global.AiWritingEngine = Api;

@@ -549,5 +549,106 @@ console.log("\nReasoning Sprint 1 — Canonical current-state election\n");
     "8: paid Laura is not collected alongside genuine dues");
 })();
 
+(function hazardLifecycleElectricalActiveThenControlled() {
+  console.log("\n-- Hazard lifecycle: electrical active → controlled --");
+  const lines = [
+    "URGENT - rm 35 guest called reception saying strong burning smell near corridor outside room.",
+    "Reception checked corridor and could smell something electrical near housekeeping cupboard.",
+    "UPDATE - housekeeping cupboard isolated and engineering called.",
+    "UPDATE - engineer found overheating extension lead in cupboard. Unplugged and removed.",
+    "NO fire / no smoke. Fire panel normal.",
+    "Engineer says area safe now BUT cupboard must remain locked and extension lead must NOT be used."
+  ];
+  const analyzed = Engine.electCanonicalCurrentState(
+    Engine.consolidateNotesByFacts(makeAnalyzed(lines))
+  );
+  const activeOnly = analyzed.filter(function (n) {
+    return /burning smell|smell something electrical/i.test(n.original || "") &&
+      !/area safe|remain locked|must NOT be used|isolated|unplugged/i.test(n.original || "");
+  });
+  const current = analyzed.filter(function (n) { return !n._superseded; });
+  assert(activeOnly.every(function (n) { return !!n._superseded; }),
+    "9: earlier active electrical/smell fragments are superseded");
+  assert(current.some(function (n) {
+    return (n.fact && n.fact.hazardLifecycle === "controlled") ||
+      /area safe|remain locked|must NOT be used/i.test(n.original || "");
+  }), "9: controlled/clearance winner remains current with hazardLifecycle=controlled");
+  assert(!current.some(function (n) {
+    return /burning smell/i.test(n.original || "") &&
+      !/area safe|remain locked|isolated|unplugged/i.test(n.original || "");
+  }), "9: no stale active-only smell note remains current");
+})();
+
+(function hazardLifecycleWaterActiveThenControlled() {
+  console.log("\n-- Hazard lifecycle: water/electrical active → isolated control --");
+  const lines = [
+    "At 20:05 HK noticed water running down wall close to socket.",
+    "Engineering called.",
+    "UPDATE - water isolated. Power isolated to affected corridor sockets.",
+    "Risk currently controlled but restrictions remain. Sockets must remain isolated. Do not restore power until morning manager review."
+  ];
+  const analyzed = Engine.electCanonicalCurrentState(
+    Engine.consolidateNotesByFacts(makeAnalyzed(lines))
+  );
+  const earlyActive = analyzed.filter(function (n) {
+    return /water running down wall close to socket/i.test(n.original || "");
+  });
+  assert(earlyActive.length && earlyActive.every(function (n) { return !!n._superseded; }),
+    "10: earlier active water/electrical fragment superseded");
+  assert(analyzed.some(function (n) {
+    return !n._superseded && n.fact && n.fact.hazardLifecycle === "controlled" &&
+      /do not restore|remain isolated|risk currently controlled/i.test(n.original || "");
+  }), "10: control obligation remains current (not excluded)");
+})();
+
+(function hazardLifecycleDifferentFaultsSameRoomStayOpen() {
+  console.log("\n-- Hazard lifecycle: different faults same room --");
+  const analyzed = Engine.electCanonicalCurrentState(
+    Engine.consolidateNotesByFacts(makeAnalyzed([
+      "Room 24 AC not cooling — Maintenance informed.",
+      "Room 24 shower leak started — water coming through ceiling.",
+      "UPDATE - Room 24 shower leak water isolated. Keep monitoring."
+    ]))
+  );
+  const ac = analyzed.filter(function (n) { return /\bAC\b|not cooling/i.test(n.original || ""); });
+  const leakNotes = analyzed.filter(function (n) {
+    return /shower leak|water (?:coming|isolated)/i.test(n.original || "");
+  });
+  assert(ac.some(function (n) { return !n._superseded; }),
+    "11: AC fault not superseded by leak control in same room");
+  assert(leakNotes.some(function (n) {
+    return !n._superseded && (
+      (n.fact && n.fact.hazardLifecycle === "controlled") ||
+      /water isolated/i.test(n.original || "")
+    );
+  }), "11: leak lifecycle current state is isolation control (not stale active-only)");
+  assert(!leakNotes.some(function (n) {
+    return !n._superseded &&
+      /shower leak started|water coming through/i.test(n.original || "") &&
+      !/water isolated/i.test(n.original || "");
+  }), "11: earlier leak active-only fragment is not left current without control");
+})();
+
+(function hazardLifecycleLaterRecurrenceNotSuppressed() {
+  console.log("\n-- Hazard lifecycle: later recurrence after clearance --");
+  const analyzed = Engine.electCanonicalCurrentState(
+    Engine.consolidateNotesByFacts(makeAnalyzed([
+      "Room 12 burning smell near socket — investigating.",
+      "Engineer cleared area. Area safe now. No fire/smoke.",
+      "UPDATE later: burning smell returned near socket — not yet inspected."
+    ]))
+  );
+  const recurrence = analyzed.filter(function (n) {
+    return /burning smell returned|not yet inspected/i.test(n.original || "");
+  });
+  const cleared = analyzed.filter(function (n) {
+    return /Area safe now/i.test(n.original || "");
+  });
+  assert(recurrence.some(function (n) { return !n._superseded; }),
+    "12: later active recurrence remains current");
+  assert(cleared.every(function (n) { return !!n._superseded; }),
+    "12: earlier cleared state does not suppress later recurrence");
+})();
+
 console.log("\nSprint 1 results: " + passed + " passed, " + failed + " failed\n");
 if (failed) process.exit(1);

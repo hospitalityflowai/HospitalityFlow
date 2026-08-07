@@ -152,6 +152,10 @@
  * @property {string[]} reasoning - Stable reason codes (machine-readable)
  * @property {string} [objectType] - OPERATIONAL_OBJECT_TYPE when known
  * @property {string} [canonicalPriority] - Derived E1 priority (critical|high|normal|low)
+ * @property {string} [hazardClass] - Reasoning Sprint 2 hazard class
+ * @property {string} [priorityBand] - P0|P1|P2|P3|exclude
+ * @property {number} [priorityScore] - Lower = higher urgency (shared ranking key)
+ * @property {string[]} [priorityReasons] - Explainable priority reason codes
  *
  * @typedef {Object} IntelligenceInput
  * @property {OperationalFact[]} [facts]
@@ -1450,8 +1454,478 @@
       nextAction: NEXT_ACTION_KIND.none,
       reasoning: [],
       objectType: OPERATIONAL_OBJECT_TYPE.other,
-      canonicalPriority: CANONICAL_PRIORITY.low
+      canonicalPriority: CANONICAL_PRIORITY.low,
+      hazardClass: "none",
+      priorityBand: "P3",
+      priorityScore: 75,
+      priorityReasons: []
     };
+  }
+
+  /* ------------------------------------------------------------------ */
+  /*  Reasoning Sprint 2 — Shared operational priority / severity        */
+  /* ------------------------------------------------------------------ */
+
+  var HAZARD_CLASS = {
+    none: "none",
+    safety: "safety",
+    welfare: "welfare",
+    security: "security",
+    access: "access",
+    allocation: "allocation",
+    coverage: "coverage",
+    timed: "timed",
+    financial: "financial",
+    vip_prep: "vip_prep",
+    maint_comfort: "maint_comfort",
+    complaint: "complaint",
+    info: "info"
+  };
+
+  var PRIORITY_BAND = {
+    P0: "P0",
+    P1: "P1",
+    P2: "P2",
+    P3: "P3",
+    exclude: "exclude"
+  };
+
+  var PRIORITY_BAND_RANK = {
+    P0: 0,
+    P1: 1,
+    P2: 2,
+    P3: 3,
+    exclude: 4
+  };
+
+  function priorityBandRank(band) {
+    var b = trimText(band || "");
+    return PRIORITY_BAND_RANK[b] != null ? PRIORITY_BAND_RANK[b] : PRIORITY_BAND_RANK.P3;
+  }
+
+  function textHasClearedHazardState(src) {
+    return /\b(?:cleared|all\s+clear|area\s+safe|no\s+(?:fire|smoke)|no\s+fire(?:\/|\s+or\s+)smoke|engineer\s+cleared|fire\s+brigade\s+(?:left|departed)|smell\s+(?:gone|cleared|resolved)|false\s+alarm|overheating\s+extension\s+lead\s+removed)\b/.test(src);
+  }
+
+  function textHasControlObligation(src) {
+    return /\b(?:do\s+not\s+restore|remain(?:s)?\s+locked|sockets?\s+isolated|water(?:\s+supply)?\s+isolated|risk\s+controlled|controlled\s+but|area\s+blocked|keep\s+(?:ooo|out\s+of\s+service)|not\s+reuse|cupboard\s+(?:remain|locked|secure)|restriction|morning\s+manager\s+before\s+reopen|do\s+not\s+reopen)\b/.test(src);
+  }
+
+  function textHasActiveUncontrolledSmellOrFire(src) {
+    var hazardCue =
+      /\b(?:burning\s+smell|electrical\s+smell|smell\s+of\s+(?:burning|smoke)|smoke\s+(?:alarm|detected|present)|strong\s+burning)\b/.test(src) ||
+      (/\bfire\b/.test(src) && !/\bfire\s+panel\s+normal\b/.test(src) && !/\bno\s+fire\b/.test(src));
+    if (!hazardCue) return false;
+    var needsInspect = /\b(?:not\s+(?:yet\s+)?inspect|uninspect|still\s+(?:smell|present|strong)|investigate|needs?\s+inspect)\b/.test(src);
+    if (textHasClearedHazardState(src) && !needsInspect) return false;
+    if (needsInspect) return true;
+    if (textHasClearedHazardState(src)) return false;
+    return /\b(?:burning\s+smell|electrical\s+smell|smoke\s+(?:alarm|detected|present)|strong\s+burning)\b/.test(src);
+  }
+
+  function textHasActiveUncontrolledWaterHazard(src) {
+    var waterElec =
+      /\b(?:water|leak|flood).{0,48}(?:electric|socket|power)|(?:electric|socket|power).{0,48}(?:water|leak|flood)\b/.test(src);
+    var activeLeak =
+      /\b(?:active\s+leak|still\s+leaking|heavy\s+leak|ceiling\s+(?:started\s+)?leak(?:ing)?|flooding)\b/.test(src);
+    if (!waterElec && !activeLeak) return false;
+    /* "not isolated" must not count as mitigation. */
+    if (/\bnot\s+(?:yet\s+)?isolated\b/.test(src)) return true;
+    if (
+      textHasControlObligation(src) ||
+      /\b(?:risk\s+controlled|(?:water(?:\s+supply)?|leak|power|sockets?)\s+isolated)\b/.test(src)
+    ) {
+      return false;
+    }
+    if (/\b(?:resolved|fixed|stopped|cleared|no\s+longer\s+leak)\b/.test(src) &&
+        !/\b(?:still|active|unresolved)\b/.test(src)) {
+      return false;
+    }
+    return true;
+  }
+
+  function textHasMedicalWelfare(src) {
+    if (
+      /\b(?:no\s+medical(?:\s+assistance)?(?:\s+required)?|okay,?\s+no\s+medical|not\s+(?:require|need)(?:ing)?\s+medical|no\s+(?:further\s+)?(?:medical|assistance)\s+required|declined\s+(?:further\s+)?(?:medical|ambulance)|refused\s+ambulance|medical\s+cleared)\b/.test(src)
+    ) {
+      return false;
+    }
+    return /\b(?:medical\s+(?:assistance|request|attention)|ambulance|first\s+aid(?:er)?|paramedic|collapse(?:d)?|unconscious|dizzy|faint(?:ed|ing)?|feels?\s+dizzy|guest\s+(?:unwell|ill|fell|fallen)|partner\s+feels|welfare\s+(?:check|concern|incident|follow[\s-]?up)|assist(?:ance)?\s+(?:for\s+)?(?:unwell|ill|medical))\b/.test(src);
+  }
+
+  function textHasActiveSecurityRisk(src) {
+    if (/\b(?:now\s+secure|re[\s-]?secured|secured\s+and\s+checked|locked\s+and\s+checked|door\s+secured)\b/.test(src)) {
+      return false;
+    }
+    return /\b(?:rear\s+(?:door|staff\s+entrance)|fire\s+exit|side\s+door|staff\s+entrance|external\s+door).{0,60}(?:open|insecure|propped|unlocked|not\s+secure|not\s+locking|ajar|pushed\s+open)|(?:insecure|forced\s+entry|break[\s-]?in|security\s+risk|active\s+security|door\s+left\s+open|not\s+locking\s+correctly|pushed\s+open\s+from\s+outside|can\s+be\s+pushed\s+open)\b/.test(src);
+  }
+
+  function textHasImmediateAccessBlocker(src) {
+    if (/\b(?:access\s+restored|guest\s+(?:admitted|let\s+in)|released\s+from\s+(?:the\s+)?lift|entrapment\s+resolved|extracted\s+from\s+(?:the\s+)?lift)\b/.test(src)) {
+      return false;
+    }
+    return /\b(?:locked\s+out|cannot\s+access(?:\s+(?:their\s+)?room)?|can'?t\s+get\s+(?:in|into)|trapped\s+in\s+(?:the\s+)?lift|lift\s+entrapment|stuck\s+in\s+(?:the\s+)?lift|let\s+(?:them|guest)\s+in\s+now)\b/.test(src);
+  }
+
+  function textHasLiftOosControl(src) {
+    return /\b(?:lift|elevator)\b.{0,28}\b(?:oos|out\s+of\s+(?:service|order)|not\s+in\s+service)\b|\b(?:oos|out\s+of\s+(?:service|order))\b.{0,28}\b(?:lift|elevator)\b/.test(src);
+  }
+
+  function textHasLoneStaffingCoverage(src) {
+    return /\b(?:alone\s+until|solo\s+(?:night|shift|manager)|only\s+(?:one\s+)?(?:staff|porter|manager)|night\s+manager\s+alone|lone\s+(?:working|staff)|coverage\s+risk|no\s+porter\s+until|marta\s+only)\b/.test(src);
+  }
+
+  function textHasOooAllocationImpact(src) {
+    if (/\b(?:lift|elevator)\b/.test(src) && textHasLiftOosControl(src)) return false;
+    return /\b(?:ooo|out\s+of\s+order|removed\s+from\s+service|on\s+hold|unavailable\s+tonight)\b/.test(src) ||
+      /\broom\s+\d{1,3}\s+ooo\b/.test(src);
+  }
+
+  function textHasComfortMitigation(src) {
+    return /\b(?:fan\s+(?:provided|supplied|given|left|in\s+room)|heater\s+(?:provided|supplied|given)|guest\s+(?:is\s+)?comfortable|happy\s+with\s+(?:the\s+)?(?:fan|heater|workaround)|accept(?:s|ed)?\s+(?:the\s+)?(?:fan|heater)|temporary\s+(?:fan|heater))\b/.test(src);
+  }
+
+  function textHasTomorrowEngineerOrWork(src) {
+    return /\b(?:engineer|contractor|supplier).{0,24}tomorrow|tomorrow.{0,24}(?:engineer|contractor|supplier|inspect|attendance)|attend(?:ance)?\s+tomorrow|eta\s+tomorrow\b/.test(src) ||
+      (/\btomorrow\b/.test(src) && /\b(?:engineer|fix|attend|inspect|repair)\b/.test(src));
+  }
+
+  function textHasCosmeticOrNoAction(src) {
+    return /\b(?:cosmetic(?:\s+only)?|small\s+scratch|no\s+guest\s+impact|no\s+action\s+tonight|informational\s+only|awareness\s+only)\b/.test(src);
+  }
+
+  function textHasVipAllocationBlocker(src) {
+    return /\b(?:no\s+room|not\s+ready|allocation\s+(?:issue|failed|blocker)|ooo|out\s+of\s+order|cannot\s+allocate)\b/.test(src);
+  }
+
+  function isTimedOperationalType(objectType, subject, src) {
+    return objectType === OPERATIONAL_OBJECT_TYPE.wake_up ||
+      objectType === OPERATIONAL_OBJECT_TYPE.transport ||
+      objectType === OPERATIONAL_OBJECT_TYPE.departure ||
+      objectType === OPERATIONAL_OBJECT_TYPE.timed ||
+      subject === "wake_up" || subject === "departure_followup" || subject === "transfer" ||
+      /\b(?:wake[\s-]?up|taxi|addison\s+lee|airport\s+transfer)\b/.test(src);
+  }
+
+  function isImminentTimedAction(fact, note, src, objectType, subject, timeSensitivity) {
+    if (!isTimedOperationalType(objectType, subject, src)) return false;
+    if (timeSensitivity === TIME_SENSITIVITY.imminent || timeSensitivity === TIME_SENSITIVITY.overdue) {
+      return true;
+    }
+    var unset = /\b(?:not\s+(?:yet\s+)?set|still\s+to\s+set|needs?\s+setting|unset|outstanding\s+wake|wake[\s-]?up\s+(?:not|still))\b/.test(src);
+    var earlyHours = /\b0[0-6](?:[:.]?\d{2}|\d{2})\b/.test(src);
+    if (unset || earlyHours) return true;
+    return false;
+  }
+
+  function isPaymentLikeContext(context, fact, note, src, subject, objectType) {
+    return objectType === OPERATIONAL_OBJECT_TYPE.payment ||
+      subject === "payment" || subject === "outstanding_balance" || subject === "payment_balance" ||
+      subject === "financial_settlement_unclear" ||
+      isHighFinancialRisk(fact, note) ||
+      /\b(?:poa|payment\s+on\s+arrival|balance\s+due|still\s+to\s+pay|open\s+balance|card\s+declined)\b/.test(src);
+  }
+
+  /**
+   * Reasoning Sprint 2 — elect hazardClass / priorityBand / priorityScore.
+   * Deterministic, explainable; ranks CURRENT open state only.
+   */
+  function applyOperationalPriority(context, fact, note) {
+    context = context || createEmptyOperationalContext();
+    fact = fact || {};
+    note = note || null;
+    var src = factSourceText(fact, note).toLowerCase();
+    var subject = context.subject || normalizeSubjectToken(fact.subject || fact.subjectType || "");
+    var objectType = context.objectType || OPERATIONAL_OBJECT_TYPE.other;
+    var reasons = [];
+    var hazardClass = HAZARD_CLASS.none;
+    var band = PRIORITY_BAND.P3;
+    var score = 75;
+
+    function finish() {
+      context.hazardClass = hazardClass;
+      context.priorityBand = band;
+      context.priorityScore = score;
+      context.priorityReasons = reasons.slice();
+      reasons.forEach(function (r) { pushUnique(context.reasoning, r); });
+      if (band === PRIORITY_BAND.P0) {
+        context.urgency = URGENCY_LEVEL.critical;
+        context.canonicalPriority = CANONICAL_PRIORITY.critical;
+        if (hazardClass === HAZARD_CLASS.safety || hazardClass === HAZARD_CLASS.welfare ||
+            hazardClass === HAZARD_CLASS.security || hazardClass === HAZARD_CLASS.access) {
+          context.guestImpact = maxImpact(context.guestImpact, IMPACT_LEVEL.critical);
+          context.operationalRisk = maxImpact(context.operationalRisk, IMPACT_LEVEL.critical);
+        }
+      } else if (band === PRIORITY_BAND.P1) {
+        context.urgency = URGENCY_LEVEL.high;
+        context.canonicalPriority = CANONICAL_PRIORITY.high;
+        context.guestImpact = maxImpact(context.guestImpact, IMPACT_LEVEL.high);
+        context.operationalRisk = maxImpact(context.operationalRisk, IMPACT_LEVEL.high);
+      } else if (band === PRIORITY_BAND.P2) {
+        if (context.urgency === URGENCY_LEVEL.low) context.urgency = URGENCY_LEVEL.medium;
+        if (context.canonicalPriority === CANONICAL_PRIORITY.low) {
+          context.canonicalPriority = CANONICAL_PRIORITY.normal;
+        }
+      } else if (band === PRIORITY_BAND.exclude) {
+        context.urgency = URGENCY_LEVEL.low;
+        context.canonicalPriority = CANONICAL_PRIORITY.low;
+      }
+      return context;
+    }
+
+    if (noteIsSupersededForDecision(note) || (fact && fact.superseded)) {
+      hazardClass = HAZARD_CLASS.none;
+      band = PRIORITY_BAND.exclude;
+      score = 96;
+      pushUnique(reasons, "superseded_excluded");
+      return finish();
+    }
+
+    if ((context.reasoning || []).indexOf("weak_evidence") !== -1) {
+      hazardClass = HAZARD_CLASS.info;
+      band = PRIORITY_BAND.exclude;
+      score = 94;
+      pushUnique(reasons, "weak_evidence");
+      return finish();
+    }
+
+    var controlObligation = textHasControlObligation(src);
+    var clearedHazard = textHasClearedHazardState(src);
+    var hazardLifecycleControlled =
+      (fact && fact.hazardLifecycle === "controlled") ||
+      (note && note.fact && note.fact.hazardLifecycle === "controlled");
+    /*
+     * Sprint 1 may elect a controlled winner whose archive still mentions the
+     * earlier active danger. Prefer the elected lifecycle over keyword re-escalation.
+     */
+    if (hazardLifecycleControlled) {
+      controlObligation = true;
+    }
+    var timedStillDue =
+      isTimedOperationalType(objectType, subject, src) &&
+      !/\b(?:wake[\s-]?up\s+)?(?:already\s+)?(?:done|completed|given|set\s+and\s+confirmed)\b/.test(src) &&
+      !/\b(?:wake[\s-]?up|taxi).{0,20}\b(?:done|completed|already\s+set)\b/.test(src);
+
+    if (context.currentStatus === CONTEXT_STATUS.completed) {
+      if (controlObligation || (clearedHazard && /\b(?:cupboard|locked|not\s+reuse|incident\s+record|morning\s+(?:maint|manager))\b/.test(src))) {
+        hazardClass = HAZARD_CLASS.safety;
+        band = PRIORITY_BAND.P1;
+        score = 11;
+        pushUnique(reasons, "controlled_hazard_obligation");
+        return finish();
+      }
+      if (textHasLiftOosControl(src)) {
+        hazardClass = HAZARD_CLASS.allocation;
+        band = PRIORITY_BAND.P1;
+        score = 12;
+        pushUnique(reasons, "lift_oos_control");
+        return finish();
+      }
+      hazardClass = HAZARD_CLASS.info;
+      band = PRIORITY_BAND.exclude;
+      score = 90;
+      pushUnique(reasons, "resolved_no_action");
+      return finish();
+    }
+
+    /*
+     * "Confirmed" taxi/wake means the arrangement exists — still due for the shift.
+     * Do not treat as resolved/no-action.
+     */
+    if (context.currentStatus === CONTEXT_STATUS.confirmed && !timedStillDue) {
+      if (controlObligation || (clearedHazard && /\b(?:cupboard|locked|not\s+reuse|incident\s+record|morning\s+(?:maint|manager))\b/.test(src))) {
+        hazardClass = HAZARD_CLASS.safety;
+        band = PRIORITY_BAND.P1;
+        score = 11;
+        pushUnique(reasons, "controlled_hazard_obligation");
+        return finish();
+      }
+      if (textHasLiftOosControl(src)) {
+        hazardClass = HAZARD_CLASS.allocation;
+        band = PRIORITY_BAND.P1;
+        score = 12;
+        pushUnique(reasons, "lift_oos_control");
+        return finish();
+      }
+      hazardClass = HAZARD_CLASS.info;
+      band = PRIORITY_BAND.exclude;
+      score = 90;
+      pushUnique(reasons, "resolved_no_action");
+      return finish();
+    }
+
+    /* --- P0: immediate safety / welfare / security / access --- */
+    if (!hazardLifecycleControlled && textHasActiveUncontrolledSmellOrFire(src)) {
+      hazardClass = HAZARD_CLASS.safety;
+      band = PRIORITY_BAND.P0;
+      score = 0;
+      pushUnique(reasons, "active_uncontrolled_hazard");
+      pushUnique(reasons, "guest_safety_affected");
+      return finish();
+    }
+    if (textHasMedicalWelfare(src)) {
+      hazardClass = HAZARD_CLASS.welfare;
+      band = PRIORITY_BAND.P0;
+      score = 1;
+      pushUnique(reasons, "medical_welfare_incident");
+      pushUnique(reasons, "guest_safety_affected");
+      return finish();
+    }
+    if (textHasActiveSecurityRisk(src)) {
+      hazardClass = HAZARD_CLASS.security;
+      band = PRIORITY_BAND.P0;
+      score = 2;
+      pushUnique(reasons, "active_security_risk");
+      return finish();
+    }
+    if (textHasImmediateAccessBlocker(src)) {
+      hazardClass = HAZARD_CLASS.access;
+      band = PRIORITY_BAND.P0;
+      score = 3;
+      pushUnique(reasons, "guest_access_blocker");
+      return finish();
+    }
+    if (!hazardLifecycleControlled && textHasActiveUncontrolledWaterHazard(src)) {
+      hazardClass = HAZARD_CLASS.safety;
+      band = PRIORITY_BAND.P0;
+      score = 4;
+      pushUnique(reasons, "active_water_electrical_hazard");
+      pushUnique(reasons, "guest_safety_affected");
+      return finish();
+    }
+
+    /* --- P1: shift-critical controls / coverage / blockers / imminent timed --- */
+    if (controlObligation || hazardLifecycleControlled ||
+        (clearedHazard && /\b(?:cupboard|locked|not\s+reuse|incident)\b/.test(src))) {
+      hazardClass = HAZARD_CLASS.safety;
+      band = PRIORITY_BAND.P1;
+      score = 10;
+      pushUnique(reasons, "controlled_hazard_obligation");
+      return finish();
+    }
+    if (textHasLiftOosControl(src)) {
+      hazardClass = HAZARD_CLASS.allocation;
+      band = PRIORITY_BAND.P1;
+      score = 12;
+      pushUnique(reasons, "lift_oos_control");
+      return finish();
+    }
+    if (textHasLoneStaffingCoverage(src)) {
+      hazardClass = HAZARD_CLASS.coverage;
+      band = PRIORITY_BAND.P1;
+      /* Above guest-comfort maintenance (14) so coverage is not buried by routine faults. */
+      score = 13;
+      pushUnique(reasons, "lone_staffing_coverage");
+      return finish();
+    }
+    if (textHasOooAllocationImpact(src)) {
+      hazardClass = HAZARD_CLASS.allocation;
+      band = PRIORITY_BAND.P1;
+      score = 16;
+      pushUnique(reasons, "ooo_allocation_impact");
+      return finish();
+    }
+    if (isImminentTimedAction(fact, note, src, objectType, subject, context.timeSensitivity)) {
+      hazardClass = HAZARD_CLASS.timed;
+      band = PRIORITY_BAND.P1;
+      score = 18;
+      pushUnique(reasons, "imminent_timed_action");
+      return finish();
+    }
+    if ((objectType === OPERATIONAL_OBJECT_TYPE.vip || subject === "vip_arrival" || hasVipCue(fact, note, src)) &&
+        textHasVipAllocationBlocker(src)) {
+      hazardClass = HAZARD_CLASS.allocation;
+      band = PRIORITY_BAND.P1;
+      score = 17;
+      pushUnique(reasons, "vip_allocation_blocker");
+      return finish();
+    }
+
+    var guestMaint = isGuestImpactingMaintenance(fact, note) ||
+      objectType === OPERATIONAL_OBJECT_TYPE.maintenance ||
+      subject === "maintenance";
+    /* Cash / lost-property "safe" storage is not guest-impacting maintenance. */
+    if (
+      guestMaint &&
+      /\b(?:cash\s+found|secured\s+in\s+(?:the\s+)?safe|lost\s+property|teddy|shipping\s+address)\b/.test(src) &&
+      !/\b(?:ac\b|air\s*con|leak|heating|shower|socket|electrical\s+fault|not\s+cooling)\b/.test(src)
+    ) {
+      guestMaint = false;
+    }
+    var comfortMitigated = textHasComfortMitigation(src);
+    var tomorrowWork = textHasTomorrowEngineerOrWork(src) || context.timeSensitivity === TIME_SENSITIVITY.later;
+    var cosmetic = textHasCosmeticOrNoAction(src);
+
+    if (guestMaint && (cosmetic || (comfortMitigated && tomorrowWork))) {
+      hazardClass = HAZARD_CLASS.maint_comfort;
+      band = PRIORITY_BAND.P3;
+      score = comfortMitigated && tomorrowWork ? 65 : 72;
+      pushUnique(reasons, cosmetic ? "cosmetic_or_monitor_only" : "mitigated_comfort_tomorrow");
+      return finish();
+    }
+    if (guestMaint && context.currentStatus !== CONTEXT_STATUS.completed) {
+      hazardClass = HAZARD_CLASS.maint_comfort;
+      band = PRIORITY_BAND.P1;
+      score = comfortMitigated ? 20 : 14;
+      pushUnique(reasons, "guest_impact_tonight");
+      pushUnique(reasons, "guest_impacting_maintenance");
+      return finish();
+    }
+
+    /* --- P2: actionable this shift (never above open P0/P1 by band) --- */
+    if (isPaymentLikeContext(context, fact, note, src, subject, objectType) &&
+        context.currentStatus !== CONTEXT_STATUS.completed) {
+      hazardClass = HAZARD_CLASS.financial;
+      band = PRIORITY_BAND.P2;
+      score = hasDeclinedPaymentEvidence(fact, note) ? 32 : 35;
+      pushUnique(reasons, hasDeclinedPaymentEvidence(fact, note) ? "declined_payment" : "payment_actionable");
+      pushUnique(reasons, "money_not_safety");
+      return finish();
+    }
+    if ((objectType === OPERATIONAL_OBJECT_TYPE.vip || subject === "vip_arrival" || hasVipCue(fact, note, src)) &&
+        context.currentStatus !== CONTEXT_STATUS.completed) {
+      hazardClass = HAZARD_CLASS.vip_prep;
+      band = PRIORITY_BAND.P2;
+      score = 40;
+      pushUnique(reasons, "vip_prep_actionable");
+      pushUnique(reasons, "vip_not_safety");
+      return finish();
+    }
+    if (isTimedOperationalType(objectType, subject, src)) {
+      hazardClass = HAZARD_CLASS.timed;
+      band = PRIORITY_BAND.P2;
+      score = 48;
+      pushUnique(reasons, "timed_action_due");
+      return finish();
+    }
+    if (objectType === OPERATIONAL_OBJECT_TYPE.guest_request || subject === "guest_request" ||
+        subject === "room_move" || /\b(?:complaint|unhappy|follow\s+up)\b/.test(src)) {
+      hazardClass = HAZARD_CLASS.complaint;
+      band = PRIORITY_BAND.P2;
+      score = 45;
+      pushUnique(reasons, "complaint_or_guest_follow_up");
+      return finish();
+    }
+    if (objectType === OPERATIONAL_OBJECT_TYPE.interconnect || subject === "interconnect" || tomorrowWork) {
+      hazardClass = HAZARD_CLASS.info;
+      band = PRIORITY_BAND.P3;
+      score = 68;
+      pushUnique(reasons, "tomorrow_or_next_shift");
+      return finish();
+    }
+    if (objectType === OPERATIONAL_OBJECT_TYPE.reception) {
+      hazardClass = HAZARD_CLASS.info;
+      band = PRIORITY_BAND.P3;
+      score = 74;
+      pushUnique(reasons, "routine_reception");
+      return finish();
+    }
+
+    hazardClass = HAZARD_CLASS.info;
+    band = PRIORITY_BAND.P3;
+    score = 78;
+    pushUnique(reasons, "routine_or_monitor");
+    return finish();
   }
 
   function impactRank(level) {
@@ -1814,12 +2288,23 @@
         ctx.category = OPERATIONAL_CATEGORY.unknown;
       }
       ctx.canonicalPriority = CANONICAL_PRIORITY.low;
+      applyOperationalPriority(ctx, fact, note);
       return ctx;
     }
 
     /* --- A. Guest impact --- */
     var guestImpact = IMPACT_LEVEL.none;
-    if (topic === "critical" || factGuestImpact === IMPACT_LEVEL.critical || /\bcritical|evacuat|unsafe|fire|flood\b/.test(src)) {
+    /*
+     * Do not escalate from bare fire/flood keywords alone (cleared smell / panel normal).
+     * Active uncontrolled hazards are elected in applyOperationalPriority.
+     */
+    if (
+      topic === "critical" ||
+      factGuestImpact === IMPACT_LEVEL.critical ||
+      (/\b(?:evacuat|unsafe)\b/.test(src) && !textHasClearedHazardState(src)) ||
+      textHasActiveUncontrolledSmellOrFire(src) ||
+      textHasActiveUncontrolledWaterHazard(src)
+    ) {
       guestImpact = IMPACT_LEVEL.critical;
       pushUnique(reasoning, "critical_impact");
     } else if (guestMaint) {
@@ -2109,6 +2594,8 @@
     ctx.nextAction = nextAction;
     ctx.reasoning = reasoning;
     ctx.canonicalPriority = canonicalPriority;
+    /* Reasoning Sprint 2 — shared priority band/score (authoritative for ranking). */
+    applyOperationalPriority(ctx, fact, note);
     return ctx;
   }
 
@@ -2117,124 +2604,55 @@
   }
 
   /**
-   * Map OperationalContext → legacy numeric impact score (lower = higher priority).
-   * Single scoring authority: consumes context fields; preserves existing bands.
+   * Map OperationalContext → numeric impact score (lower = higher priority).
+   * Reasoning Sprint 2: uses priorityBand / priorityScore from applyOperationalPriority.
    */
   function scoreFromOperationalContext(context, fact, note, topic) {
     context = context || createEmptyOperationalContext();
     fact = fact || {};
     note = note || null;
     topic = trimText(topic || "").toLowerCase();
-    var src = factSourceText(fact, note).toLowerCase();
-    var subject = context.subject || normalizeSubjectToken(fact.subject || fact.subjectType || "");
-    var objectType = context.objectType || OPERATIONAL_OBJECT_TYPE.other;
     var amount = extractMoneyAmount(fact, note);
-    var reasons = (context.reasoning || []).slice();
-    var score = 90;
+    var objectType = context.objectType || OPERATIONAL_OBJECT_TYPE.other;
     var confidence = context.confidenceLabel || CONFIDENCE_LABEL.medium;
 
-    if (
-      topic === "critical" ||
-      context.guestImpact === IMPACT_LEVEL.critical
-    ) {
-      score = 0;
-      pushUnique(reasons, "critical_impact");
-    } else if (
-      context.guestImpact === IMPACT_LEVEL.high &&
-      (objectType === OPERATIONAL_OBJECT_TYPE.maintenance || subject === "maintenance" ||
-        isGuestImpactingMaintenance(fact, note)) &&
-      context.currentStatus !== CONTEXT_STATUS.completed
-    ) {
-      var fault = trimText(fact.faultType || "").toLowerCase();
-      if (fault === "ac" || fault === "hot water" || /hot\s*water|not cooling|\bac\b|air\s*con/.test(src)) {
-        score = 10;
-        pushUnique(reasons, "guest_impacting_maintenance");
-      } else if (/on hold|unavailable/.test(src) || fault === "safe") {
-        score = 16;
-        pushUnique(reasons, "room_unavailable_maintenance");
-      } else {
-        score = 14;
-        pushUnique(reasons, "guest_impacting_maintenance");
-      }
-      if (/depart|check[\s-]?out|extended\s+check/.test(src)) pushUnique(reasons, "departure_dependency");
-    /*
-     * Duty Manager priority ladder (lower score = higher urgency):
-     * safety (0–16) → guest experience → time-critical → revenue → VIP → continuity → else
-     */
-    } else if (
-      objectType === OPERATIONAL_OBJECT_TYPE.wake_up ||
-      objectType === OPERATIONAL_OBJECT_TYPE.transport ||
-      objectType === OPERATIONAL_OBJECT_TYPE.departure ||
-      objectType === OPERATIONAL_OBJECT_TYPE.timed ||
-      subject === "wake_up" || subject === "departure_followup" || subject === "transfer"
-    ) {
-      score = 22;
-      pushUnique(reasons, "timed_guest_action");
-    } else if (
-      (context.revenueImpact === IMPACT_LEVEL.high || context.revenueImpact === IMPACT_LEVEL.critical) &&
-      context.currentStatus !== CONTEXT_STATUS.completed
-    ) {
-      score = 30;
-      pushUnique(reasons, "high_financial_risk");
-      if (hasDeclinedPaymentEvidence(fact, note)) pushUnique(reasons, "declined_payment");
-      if (/depart|check[\s-]?out|before\s+departure/.test(src)) pushUnique(reasons, "departure_dependency");
-    } else if (
-      objectType === OPERATIONAL_OBJECT_TYPE.payment ||
-      subject === "payment" || subject === "outstanding_balance" || subject === "payment_balance" ||
-      topic === "payment" ||
-      (/\badapter\b/.test(src) && amount != null)
-    ) {
-      score = 32;
-      pushUnique(reasons, "payment_before_departure");
-    } else if (objectType === OPERATIONAL_OBJECT_TYPE.vip || subject === "vip_arrival") {
-      score = 38;
-      pushUnique(reasons, "vip_readiness");
-      if (/champagne|welcome\s+card|amenity|quiet/.test(src)) pushUnique(reasons, "outstanding_vip_prep");
-    } else if (
-      objectType === OPERATIONAL_OBJECT_TYPE.interconnect ||
-      subject === "interconnect" || subject === "guest_preparation" || subject === "celebration" ||
-      context.timeSensitivity === TIME_SENSITIVITY.later ||
-      /tomorrow|tmrw/.test(src)
-    ) {
-      score = 55;
-      pushUnique(reasons, "tomorrow_prep");
-    } else if (subject === "maintenance" || objectType === OPERATIONAL_OBJECT_TYPE.maintenance) {
-      score = 70;
-      pushUnique(reasons, "maintenance_follow_up");
-    } else if (
-      topic === "guest" || subject === "guest_request" || subject === "lost_property" ||
-      subject === "late_checkout" || subject === "room_move" ||
-      objectType === OPERATIONAL_OBJECT_TYPE.guest_request
-    ) {
-      score = 80;
-      pushUnique(reasons, "guest_follow_up");
-    } else if (objectType === OPERATIONAL_OBJECT_TYPE.reception) {
-      score = 85;
-      pushUnique(reasons, "reception_ops");
-    } else {
-      confidence = confidence === CONFIDENCE_LABEL.high ? CONFIDENCE_LABEL.medium : confidence;
-      if (!subject && !src) {
-        confidence = CONFIDENCE_LABEL.low;
-        pushUnique(reasons, "insufficient_evidence");
-      } else {
-        pushUnique(reasons, "general");
+    if (!context.priorityBand || typeof context.priorityScore !== "number") {
+      applyOperationalPriority(context, fact, note);
+    }
+
+    /* Topic hint only for explicit critical briefing tags — not bare keywords. */
+    if (topic === "critical" && context.priorityBand !== PRIORITY_BAND.P0 &&
+        context.priorityBand !== PRIORITY_BAND.exclude) {
+      if (context.priorityBand !== PRIORITY_BAND.P1) {
+        context.priorityBand = PRIORITY_BAND.P1;
+        context.priorityScore = Math.min(context.priorityScore, 10);
+        pushUnique(context.priorityReasons, "critical_topic_hint");
+        pushUnique(context.reasoning, "critical_topic_hint");
       }
     }
 
-    if (context.currentStatus === CONTEXT_STATUS.completed) {
-      score = Math.max(score, 88);
-      confidence = context.confidenceLabel || confidence;
-    }
-    if (context.confidenceLabel === CONFIDENCE_LABEL.low) {
+    var score = typeof context.priorityScore === "number" ? context.priorityScore : 90;
+    var reasons = (context.reasoning || []).slice();
+    (context.priorityReasons || []).forEach(function (r) { pushUnique(reasons, r); });
+
+    if (context.confidenceLabel === CONFIDENCE_LABEL.low && context.priorityBand !== PRIORITY_BAND.P0) {
       confidence = CONFIDENCE_LABEL.low;
-      score = Math.max(score, 85);
+      if (priorityBandRank(context.priorityBand) >= priorityBandRank(PRIORITY_BAND.P2)) {
+        score = Math.max(score, 85);
+      }
     }
 
-    var canonicalPriority = CANONICAL_PRIORITY.normal;
-    if (score <= 10) canonicalPriority = CANONICAL_PRIORITY.critical;
-    else if (score <= 50) canonicalPriority = CANONICAL_PRIORITY.high;
-    else if (score <= 85) canonicalPriority = CANONICAL_PRIORITY.normal;
-    else canonicalPriority = CANONICAL_PRIORITY.low;
+    var canonicalPriority = context.canonicalPriority || CANONICAL_PRIORITY.normal;
+    if (context.priorityBand === PRIORITY_BAND.P0) canonicalPriority = CANONICAL_PRIORITY.critical;
+    else if (context.priorityBand === PRIORITY_BAND.P1) canonicalPriority = CANONICAL_PRIORITY.high;
+    else if (context.priorityBand === PRIORITY_BAND.P2) {
+      canonicalPriority = canonicalPriority === CANONICAL_PRIORITY.critical
+        ? CANONICAL_PRIORITY.high
+        : (canonicalPriority || CANONICAL_PRIORITY.normal);
+    } else if (context.priorityBand === PRIORITY_BAND.exclude || context.priorityBand === PRIORITY_BAND.P3) {
+      if (context.priorityBand === PRIORITY_BAND.exclude) canonicalPriority = CANONICAL_PRIORITY.low;
+      else if (canonicalPriority === CANONICAL_PRIORITY.critical) canonicalPriority = CANONICAL_PRIORITY.normal;
+    }
 
     return {
       score: score,
@@ -2244,6 +2662,8 @@
       confidence: confidence,
       reasons: reasons,
       moneyAmount: amount,
+      priorityBand: context.priorityBand,
+      hazardClass: context.hazardClass,
       operationalContext: context
     };
   }
@@ -2333,7 +2753,31 @@
     resolved_after_previous_shift: "resolved_after_previous_shift",
     reopened_after_resolution: "reopened_after_resolution",
     weak_continuity_evidence: "weak_continuity_evidence",
-    cross_shift_escalated: "cross_shift_escalated"
+    cross_shift_escalated: "cross_shift_escalated",
+    /* Reasoning Sprint 2 — priority / severity */
+    active_uncontrolled_hazard: "active_uncontrolled_hazard",
+    active_water_electrical_hazard: "active_water_electrical_hazard",
+    medical_welfare_incident: "medical_welfare_incident",
+    active_security_risk: "active_security_risk",
+    guest_access_blocker: "guest_access_blocker",
+    controlled_hazard_obligation: "controlled_hazard_obligation",
+    lift_oos_control: "lift_oos_control",
+    lone_staffing_coverage: "lone_staffing_coverage",
+    ooo_allocation_impact: "ooo_allocation_impact",
+    imminent_timed_action: "imminent_timed_action",
+    guest_impact_tonight: "guest_impact_tonight",
+    mitigated_comfort_tomorrow: "mitigated_comfort_tomorrow",
+    cosmetic_or_monitor_only: "cosmetic_or_monitor_only",
+    payment_actionable: "payment_actionable",
+    vip_prep_actionable: "vip_prep_actionable",
+    vip_allocation_blocker: "vip_allocation_blocker",
+    money_not_safety: "money_not_safety",
+    vip_not_safety: "vip_not_safety",
+    superseded_excluded: "superseded_excluded",
+    tomorrow_or_next_shift: "tomorrow_or_next_shift",
+    routine_or_monitor: "routine_or_monitor",
+    complaint_or_guest_follow_up: "complaint_or_guest_follow_up",
+    critical_topic_hint: "critical_topic_hint"
   };
 
   /**
@@ -2968,11 +3412,22 @@
 
   function passesBriefingPriorityGate(spec) {
     if (!spec) return false;
+    var ctx = spec.operationalContext;
+    var band = spec.priorityBand || (ctx && ctx.priorityBand) || "";
+    /* Reasoning Sprint 2 — never drop seated P0/P1 for thin room/confidence gates. */
+    if (band === PRIORITY_BAND.P0 || band === PRIORITY_BAND.P1) {
+      if (ctx && ctx.priorityBand === PRIORITY_BAND.exclude) return false;
+      if (ctx && ctx.currentStatus === CONTEXT_STATUS.completed &&
+          !(ctx.priorityReasons || []).length &&
+          !textHasControlObligation(String((spec.evidenceText || "")).toLowerCase())) {
+        return false;
+      }
+      return true;
+    }
     if (spec.confidence === CONFIDENCE_LABEL.low &&
         spec.objectType === OPERATIONAL_OBJECT_TYPE.other) {
       return false;
     }
-    var ctx = spec.operationalContext;
     if (ctx) {
       if (ctx.currentStatus === CONTEXT_STATUS.completed) return false;
       if (ctx.currentStatus === CONTEXT_STATUS.confirmed &&
@@ -3030,6 +3485,10 @@
 
   function recommendationPriorityFromContext(context, fallbackPriority) {
     if (!context) return fallbackPriority || "normal";
+    if (context.priorityBand === PRIORITY_BAND.P0) return "urgent";
+    if (context.priorityBand === PRIORITY_BAND.P1) return "high";
+    if (context.priorityBand === PRIORITY_BAND.exclude) return "low";
+    if (context.priorityBand === PRIORITY_BAND.P3) return "low";
     var fromCanonical = toLegacyRecommendationPriority(
       context.canonicalPriority || CANONICAL_PRIORITY.normal
     );
@@ -3042,6 +3501,9 @@
         context.timeSensitivity === TIME_SENSITIVITY.imminent)
     ) {
       return "high";
+    }
+    if (context.priorityBand === PRIORITY_BAND.P2) {
+      return fromCanonical === "urgent" ? "high" : (fromCanonical || "normal");
     }
     if (context.urgency === URGENCY_LEVEL.high || context.guestImpact === IMPACT_LEVEL.high) {
       return fromCanonical === "low" ? "high" : (fromCanonical === "normal" ? "high" : fromCanonical);
@@ -3096,12 +3558,22 @@
   }
 
   function compareByOperationalImpact(a, b) {
-    var scoreA = scoreOperationalImpact(a).score;
-    var scoreB = scoreOperationalImpact(b).score;
-    if (scoreA !== scoreB) return scoreA - scoreB;
+    var scoredA = scoreOperationalImpact(a);
+    var scoredB = scoreOperationalImpact(b);
+    var bandA = priorityBandRank(
+      (scoredA.operationalContext && scoredA.operationalContext.priorityBand) || scoredA.priorityBand
+    );
+    var bandB = priorityBandRank(
+      (scoredB.operationalContext && scoredB.operationalContext.priorityBand) || scoredB.priorityBand
+    );
+    if (bandA !== bandB) return bandA - bandB;
+    if (scoredA.score !== scoredB.score) return scoredA.score - scoredB.score;
     var roomsA = factRoomsList(a && a.fact ? a.fact : a, a && a.note).join(",");
     var roomsB = factRoomsList(b && b.fact ? b.fact : b, b && b.note).join(",");
     if (roomsA !== roomsB) return roomsA < roomsB ? -1 : 1;
+    var idA = String((a && (a.factId || (a.fact && a.fact.id))) || "");
+    var idB = String((b && (b.factId || (b.fact && b.fact.id))) || "");
+    if (idA !== idB) return idA < idB ? -1 : 1;
     return 0;
   }
 
@@ -3592,12 +4064,16 @@
 
   function isPromotableOperationalObject(obj) {
     if (!obj) return false;
-    if (obj.confidence === "low" && obj.type === OPERATIONAL_OBJECT_TYPE.other) return false;
     if (isResolvedNoiseObject(obj)) return false;
     var src = objectSourceBlob(obj);
     var primary = objectPrimaryFact(obj);
     var fact = primary && primary.fact;
     var subject = normalizeSubjectToken(fact && (fact.subject || fact.subjectType) || "");
+    /* Reasoning Sprint 2 — P0/P1 hazards must surface even if typed as "other". */
+    var band = objectPriorityBand(obj);
+    if (band === PRIORITY_BAND.exclude) return false;
+    if (band === PRIORITY_BAND.P0 || band === PRIORITY_BAND.P1) return true;
+    if (obj.confidence === "low" && obj.type === OPERATIONAL_OBJECT_TYPE.other) return false;
     /* VIP with no outstanding prep is awareness only — not a briefing/rec action. */
     if (obj.type === OPERATIONAL_OBJECT_TYPE.vip || subject === "vip_arrival") {
       var vipNote = primary && primary.note;
@@ -3623,7 +4099,7 @@
     }
     /* Promote evidence-backed "other" facts that were extracted with clear ops cues. */
     if (
-      /hot\s*water|maint|fault|outstanding|declined|wake|taxi|vip|champagne|welcome\s+card|parcel|feather|late\s+check|adapter|arriv/i.test(src) ||
+      /hot\s*water|maint|fault|outstanding|declined|wake|taxi|vip|champagne|welcome\s+card|parcel|feather|late\s+check|adapter|arriv|medical|welfare|security|locked\s+out|burning\s+smell/i.test(src) ||
       subject === "financial_settlement_unclear" || subject === "delivery" || subject === "late_checkout"
     ) {
       return true;
@@ -3656,26 +4132,42 @@
       /hot\s*water|maint|fault|broken|leak|not cooling|on hold|ac\b|air\s*con/.test(objectSourceBlob(obj));
   }
 
+  function objectPriorityBand(obj) {
+    var primary = objectPrimaryFact(obj);
+    if (!primary) return PRIORITY_BAND.P3;
+    if (obj && obj.operationalContext && obj.operationalContext.priorityBand) {
+      return obj.operationalContext.priorityBand;
+    }
+    var scored = scoreOperationalImpact(primary);
+    if (obj && scored.operationalContext) obj.operationalContext = scored.operationalContext;
+    return (scored.operationalContext && scored.operationalContext.priorityBand) ||
+      scored.priorityBand ||
+      PRIORITY_BAND.P3;
+  }
+
+  function compareOperationalObjectsByPriority(a, b) {
+    var bandA = priorityBandRank(objectPriorityBand(a));
+    var bandB = priorityBandRank(objectPriorityBand(b));
+    if (bandA !== bandB) return bandA - bandB;
+    var sa = scoreOperationalObject(a);
+    var sb = scoreOperationalObject(b);
+    if (sa !== sb) return sa - sb;
+    return String(a && a.id || "").localeCompare(String(b && b.id || ""));
+  }
+
   /**
    * Engine-owned Today's Briefing model: up to 5 highest-impact operational
    * objects as action priorities. Writing formats; must not re-rank.
+   *
+   * Reasoning Sprint 2: seat all P0/P1 before Sprint 3 diversity slots so
+   * VIP/revenue cannot displace unused immediate safety/welfare/security items.
    */
   function buildBriefingModel(items, options) {
     options = options || {};
     var maxBlocks = options.maxBlocks != null ? options.maxBlocks : BRIEFING_MAX_BLOCKS;
     var objects = groupIntoOperationalObjects(items || []);
-    var actionable = objects.filter(isPromotableOperationalObject).sort(function (a, b) {
-      var sa = scoreOperationalObject(a);
-      var sb = scoreOperationalObject(b);
-      if (sa !== sb) return sa - sb;
-      return String(a.id).localeCompare(String(b.id));
-    });
+    var actionable = objects.filter(isPromotableOperationalObject).sort(compareOperationalObjectsByPriority);
 
-    /*
-     * Sprint 3 — cannot-miss briefing slots (not "five notes"):
-     * guest risk → timed → revenue → VIP → operational blocker.
-     * Display order remains impact score (lowest = highest urgency).
-     */
     var selected = [];
     var seenIds = {};
     var slotOrder = [
@@ -3686,16 +4178,27 @@
       BRIEFING_CANNOT_MISS_SLOT.blocker
     ];
 
+    /* 1) Seat true P0 / P1 opens first (band → score → id). */
+    actionable.forEach(function (obj) {
+      if (selected.length >= maxBlocks) return;
+      var band = objectPriorityBand(obj);
+      if (band !== PRIORITY_BAND.P0 && band !== PRIORITY_BAND.P1) return;
+      if (seenIds[obj.id]) return;
+      selected.push(obj);
+      seenIds[obj.id] = true;
+    });
+
     function bestForSlot(slotId) {
       var best = null;
       actionable.forEach(function (obj) {
         if (seenIds[obj.id]) return;
         if (briefingCannotMissSlot(obj) !== slotId) return;
-        if (!best || scoreOperationalObject(obj) < scoreOperationalObject(best)) best = obj;
+        if (!best || compareOperationalObjectsByPriority(obj, best) < 0) best = obj;
       });
       return best;
     }
 
+    /* 2) Diversity slots only for remaining capacity after P0/P1. */
     slotOrder.forEach(function (slotId) {
       if (selected.length >= maxBlocks) return;
       var best = bestForSlot(slotId);
@@ -3705,41 +4208,32 @@
       }
     });
 
-    /* Fill empty slots with next highest-impact open work (still cannot-miss families first). */
-    var fillWeight = function (obj) {
-      var slot = briefingCannotMissSlot(obj);
-      if (slot === BRIEFING_CANNOT_MISS_SLOT.guest_risk || slot === BRIEFING_CANNOT_MISS_SLOT.revenue) return 0;
-      if (slot === BRIEFING_CANNOT_MISS_SLOT.timed || slot === BRIEFING_CANNOT_MISS_SLOT.vip) return 1;
-      if (slot === BRIEFING_CANNOT_MISS_SLOT.blocker) return 2;
-      return 4;
-    };
-    actionable.filter(function (obj) { return !seenIds[obj.id]; }).sort(function (a, b) {
-      var wa = fillWeight(a);
-      var wb = fillWeight(b);
-      if (wa !== wb) return wa - wb;
-      var sa = scoreOperationalObject(a);
-      var sb = scoreOperationalObject(b);
-      if (sa !== sb) return sa - sb;
-      return String(a.id).localeCompare(String(b.id));
-    }).forEach(function (obj) {
+    /* 3) Fill remaining by shared priority order. */
+    actionable.forEach(function (obj) {
       if (selected.length >= maxBlocks) return;
+      if (seenIds[obj.id]) return;
+      if (objectPriorityBand(obj) === PRIORITY_BAND.exclude) return;
       /* Soft uncategorised noise should not fill the briefing. */
-      if (!briefingCannotMissSlot(obj) && scoreOperationalObject(obj) > 70) return;
+      if (!briefingCannotMissSlot(obj) && scoreOperationalObject(obj) > 70 &&
+          priorityBandRank(objectPriorityBand(obj)) >= priorityBandRank(PRIORITY_BAND.P3)) {
+        return;
+      }
       selected.push(obj);
       seenIds[obj.id] = true;
     });
 
-    selected.sort(function (a, b) {
-      var sa = scoreOperationalObject(a);
-      var sb = scoreOperationalObject(b);
-      if (sa !== sb) return sa - sb;
-      return String(a.id).localeCompare(String(b.id));
-    });
+    selected.sort(compareOperationalObjectsByPriority);
 
     var priorities = [];
     selected.slice(0, maxBlocks).forEach(function (obj) {
       var spec = buildPriorityActionSpec(obj);
+      var band = objectPriorityBand(obj);
       spec.briefingSlot = briefingCannotMissSlot(obj) || "impact";
+      spec.priorityBand = band;
+      spec.hazardClass = (obj.operationalContext && obj.operationalContext.hazardClass) ||
+        (spec.operationalContext && spec.operationalContext.hazardClass) || "";
+      /* Set band on context before gate so P0/P1 hazards are not dropped. */
+      if (spec.operationalContext) spec.operationalContext.priorityBand = band;
       if (!passesBriefingPriorityGate(spec)) return;
       priorities.push(spec);
     });
@@ -8274,6 +8768,12 @@
     scoreOperationalImpact: scoreOperationalImpact,
     scoreFromOperationalContext: scoreFromOperationalContext,
     compareByOperationalImpact: compareByOperationalImpact,
+    /* Reasoning Sprint 2 — shared priority / severity */
+    HAZARD_CLASS: HAZARD_CLASS,
+    PRIORITY_BAND: PRIORITY_BAND,
+    applyOperationalPriority: applyOperationalPriority,
+    priorityBandRank: priorityBandRank,
+    objectPriorityBand: objectPriorityBand,
     groupIntoOperationalObjects: groupIntoOperationalObjects,
     rankByOperationalImpact: rankByOperationalImpact,
     buildBriefingModel: buildBriefingModel,
