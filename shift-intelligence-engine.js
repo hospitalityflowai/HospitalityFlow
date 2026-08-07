@@ -1110,11 +1110,19 @@
   }
 
   function factSourceText(fact, note) {
-    return String(
-      (fact && (fact.sourceText || fact.detail || fact.action)) ||
+    var parts = [];
+    var base = (fact && (fact.sourceText || fact.detail || fact.action)) ||
       (note && (note.original || note.text)) ||
-      ""
-    );
+      "";
+    if (base) parts.push(String(base));
+    /* Sibling archive (DONE/cancel/paid) must influence VIP/payment current-state checks. */
+    if (note && note._sourceArchive) {
+      var arch = Array.isArray(note._sourceArchive)
+        ? note._sourceArchive.join(" | ")
+        : String(note._sourceArchive);
+      if (arch && parts.indexOf(arch) === -1) parts.push(arch);
+    }
+    return parts.join(" | ");
   }
 
   function factRoomsList(fact, note) {
@@ -1661,9 +1669,6 @@
   function inferNextAction(fact, note, src, objectInfo, subject, currentStatus, weak) {
     if (weak) return NEXT_ACTION_KIND.none;
     if (currentStatus === CONTEXT_STATUS.completed) return NEXT_ACTION_KIND.none;
-    if (currentStatus === CONTEXT_STATUS.informational && objectInfo.type === OPERATIONAL_OBJECT_TYPE.other) {
-      return NEXT_ACTION_KIND.none;
-    }
     if (currentStatus === CONTEXT_STATUS.confirmed) {
       if (subject === "late_checkout" || /late\s+check[\s-]?out/.test(src)) {
         return NEXT_ACTION_KIND.honour_confirmed_arrangement;
@@ -1677,18 +1682,47 @@
     ) {
       return NEXT_ACTION_KIND.follow_up_until_resolved;
     }
+    /* VIP prep before payment heuristics — "outstanding" amenities are not folio dues. */
+    if (objectInfo.type === OPERATIONAL_OBJECT_TYPE.vip || subject === "vip_arrival") {
+      if (vipPreparationFullyComplete(src, note)) {
+        return NEXT_ACTION_KIND.none;
+      }
+      var vipAmenities = activeVipAmenitiesFromSource(src, note);
+      if (vipAmenities.length) return NEXT_ACTION_KIND.prepare_vip;
+      /* Twin/accessibility/quiet prep is still actionable even without amenity keywords. */
+      if (/\b(?:twin|double|accessibility|quiet|setup|prefer|amenit|prepare|request)\b/i.test(src)) {
+        return NEXT_ACTION_KIND.prepare_vip;
+      }
+      /* Arrival VIP with room/guest still needs allocation verify (not amenity chase). */
+      if (/\b(?:arriv(?:e|es|ing|al)?|eta|due|check(?:ing)?\s*in)\b/i.test(src)) {
+        return NEXT_ACTION_KIND.prepare_vip;
+      }
+      /* Bare VIP status with no arrival/prep cues = awareness only. */
+      return NEXT_ACTION_KIND.none;
+    }
+    /*
+     * Payment / POA / high-value balances before the informational-other short-circuit,
+     * so genuine unpaid POA remains actionable even when subject extraction is thin.
+     * Do not treat bare "outstanding" (VIP amenities) as payment.
+     */
     if (
       objectInfo.type === OPERATIONAL_OBJECT_TYPE.payment ||
       subject === "outstanding_balance" || subject === "payment" || subject === "payment_balance" ||
-      isHighFinancialRisk(fact, note)
+      isHighFinancialRisk(fact, note) ||
+      /\b(?:poa|payment\s+on\s+arrival|balance\s+due|still\s+to\s+pay)\b/i.test(src) ||
+      (/\boutstanding\b/i.test(src) && /\b(?:balance|payment|folio|invoice|bill|£|\$|€)\b/i.test(src))
     ) {
+      if (global.AiWritingEngine && typeof global.AiWritingEngine.isPaymentNoCollectState === "function" &&
+          global.AiWritingEngine.isPaymentNoCollectState(fact, note)) {
+        return NEXT_ACTION_KIND.none;
+      }
       if (/\badapter\b/.test(src) && !/\bdeclined|outstanding|balance\b/.test(src)) {
         return NEXT_ACTION_KIND.post_or_collect_charge;
       }
       return NEXT_ACTION_KIND.collect_before_departure;
     }
-    if (objectInfo.type === OPERATIONAL_OBJECT_TYPE.vip || subject === "vip_arrival") {
-      return NEXT_ACTION_KIND.prepare_vip;
+    if (currentStatus === CONTEXT_STATUS.informational && objectInfo.type === OPERATIONAL_OBJECT_TYPE.other) {
+      return NEXT_ACTION_KIND.none;
     }
     if (
       objectInfo.type === OPERATIONAL_OBJECT_TYPE.wake_up ||
@@ -2583,6 +2617,7 @@
    */
   function allowsOpenRecommendation(context) {
     if (!context) return false;
+    if (context.superseded === true) return false;
     if (typeof context.confidence === "number" && context.confidence < CONFIDENCE_GATE.recommendMin) {
       return false;
     }
@@ -3235,21 +3270,143 @@
     return best;
   }
 
+  function noteIsSupersededForDecision(note) {
+    if (!note) return false;
+    if (note._superseded || (note.fact && note.fact.superseded)) return true;
+    if (global.AiWritingEngine && typeof global.AiWritingEngine.isNoteSuperseded === "function") {
+      return !!global.AiWritingEngine.isNoteSuperseded(note);
+    }
+    return false;
+  }
+
   function objectPrimaryFact(object) {
     if (!object || !object.items || !object.items.length) return null;
-    var sorted = object.items.slice().sort(compareByOperationalImpact);
+    /* Prefer non-superseded current-state items (Reasoning Sprint 1). */
+    var actionable = object.items.filter(function (item) {
+      return item && item.note && !noteIsSupersededForDecision(item.note);
+    });
+    var pool = actionable.length ? actionable : object.items;
+    var sorted = pool.slice().sort(compareByOperationalImpact);
     return sorted[0] || null;
   }
 
   function objectSourceBlob(object) {
     var parts = [];
     (object && object.facts || []).forEach(function (f) {
+      if (f && f.superseded) return;
       if (f && f.sourceText) parts.push(String(f.sourceText));
     });
     (object && object.items || []).forEach(function (item) {
+      if (item && item.note && noteIsSupersededForDecision(item.note)) return;
       if (item && item.note && item.note.original) parts.push(String(item.note.original));
+      /* Include amenity/payment sibling archive so DONE/cancel evidence is visible. */
+      if (item && item.note && item.note._sourceArchive) {
+        parts.push(String(item.note._sourceArchive));
+      }
     });
     return parts.join(" | ").toLowerCase();
+  }
+
+  /**
+   * Sprint 1 — outstanding VIP prep amenities only.
+   * Cancelled / replaced / DONE amenities must not drive prepare_vip wording.
+   */
+  function activeVipAmenitiesFromSource(src, note) {
+    var text = String(src || "");
+    var lower = text.toLowerCase();
+    var amenities = [];
+    var stripped = {};
+    if (note && note._supersededAmenities && note._supersededAmenities.length) {
+      note._supersededAmenities.forEach(function (a) {
+        stripped[String(a || "").toLowerCase()] = true;
+      });
+    }
+    if (note && note.fact && note.fact.vipPrepComplete) {
+      return [];
+    }
+    function cancelled(nameRe, cancelRe) {
+      return nameRe.test(lower) && cancelRe.test(lower);
+    }
+    function keep(name) {
+      var key = String(name || "").toLowerCase();
+      if (stripped[key]) return false;
+      if (key === "welcome card" && stripped.card) return false;
+      return true;
+    }
+    /* Per-segment done/cancel so sibling "DONE" lines do not close other amenities. */
+    function segmentActive(kind, mentionRe, cancelRe, doneRe) {
+      var segments = lower.split(/\s*\|\s*/);
+      var mentioned = false;
+      var closed = false;
+      segments.forEach(function (seg) {
+        if (!mentionRe.test(seg)) return;
+        mentioned = true;
+        if (cancelRe.test(seg) || doneRe.test(seg)) closed = true;
+      });
+      return mentioned && !closed;
+    }
+
+    if (segmentActive(
+      "champagne",
+      /champagne/,
+      /(?:no|not|don't|do not)\s+champagne|champagne\s+cancell|replace(?:d)?\s+with|doesn't drink|do not (?:place|show|prepare).{0,60}champagne|champagne unavailable/,
+      /champagne.{0,50}(?:done|delivered|placed|complete)|(?:done|delivered|placed|complete).{0,50}champagne/
+    ) && keep("champagne")) {
+      amenities.push("champagne");
+    }
+    if (segmentActive(
+      "chocolates",
+      /chocolates?/,
+      /chocolates?\s+cancell|do not (?:place|show).{0,40}chocolates?/,
+      /chocolates?.{0,40}(?:done|delivered|placed|complete)/
+    ) && keep("chocolates")) {
+      amenities.push("chocolates");
+    }
+    /*
+     * Card done must use word-boundary "written" — "handwritten card" must NOT
+     * count as card-written/complete.
+     */
+    if (segmentActive(
+      "card",
+      /welcome\s+card|handwritten\s+card|\bcard\b/,
+      /card\s+cancell|no\s+card/,
+      /\bcard\s+(?:written|done|complete|placed)\b|\b(?:written|done|complete)\b.{0,20}\bcard\b/
+    ) && /(?:welcome|handwritten|card\s+still|card\s+required|card\s+written|card\s+done)/.test(lower) &&
+        keep("welcome card")) {
+      amenities.push("welcome card");
+    }
+    if (segmentActive(
+      "flowers",
+      /flowers?/,
+      /flowers?\s+cancell|do not (?:place|show).{0,40}flowers?|accidentally|not place/,
+      /flowers?.{0,40}(?:done|delivered|placed|complete)/
+    ) && keep("flowers")) {
+      amenities.push("flowers");
+    }
+    if (segmentActive(
+      "balloons",
+      /balloons?/,
+      /balloons?\s+cancell|do not (?:place|show).{0,40}balloons?/,
+      /balloons?.{0,40}(?:done|delivered|placed|complete)/
+    ) && keep("balloons")) {
+      amenities.push("balloons");
+    }
+    return amenities;
+  }
+
+  function vipPreparationFullyComplete(src, note) {
+    if (note && note.fact && note.fact.vipPrepComplete) return true;
+    var lower = String(src || "").toLowerCase();
+    if (/no preparation outstanding|no prep outstanding|preparation(?:s)? complete|all (?:approved )?amenities complete/.test(lower)) {
+      return true;
+    }
+    var active = activeVipAmenitiesFromSource(src, note);
+    if (active.length) return false;
+    /* Mentions of prep that are all done/cancelled count as complete when VIP cues exist. */
+    if (/(champagne|welcome\s+card|handwritten\s+card|chocolates?|flowers?|balloons?)/.test(lower)) {
+      return true;
+    }
+    return false;
   }
 
   function buildPriorityActionSpec(object) {
@@ -3286,10 +3443,13 @@
       amenities: [],
       requestItem: ""
     };
-    if (/champagne/.test(src)) entities.amenities.push("champagne");
-    if (/welcome\s+card/.test(src)) entities.amenities.push("welcome card");
-    if (/quiet/.test(src)) entities.amenities.push("quiet upper-floor room");
-    if (/chocolates?/.test(src)) entities.amenities.push("chocolates");
+    entities.amenities = activeVipAmenitiesFromSource(src, primary && primary.note);
+    if (/\btwin\b/i.test(src) && entities.amenities.indexOf("twin setup") === -1) {
+      entities.amenities.push("twin setup");
+    }
+    if (/\baccessibility\b/i.test(src) && entities.amenities.indexOf("accessibility preference") === -1) {
+      entities.amenities.push("accessibility preference");
+    }
     if (fact) {
       entities.requestItem = guestRequestItemLabel(fact, src) || "";
     }
@@ -3307,8 +3467,16 @@
         ? "card_declined"
         : (/adapter|not posted|post or collect/.test(src) ? "unposted_charge" : "before_departure");
     } else if (object.type === OPERATIONAL_OBJECT_TYPE.vip) {
-      actionKind = "prepare_vip";
-      reasonKind = entities.amenities.length ? "outstanding_vip_prep" : "vip_arrival";
+      if (vipPreparationFullyComplete(src, primary && primary.note) ||
+          (!entities.amenities.length &&
+            !/\b(?:twin|double|accessibility|quiet|setup|prefer|amenit|prepare|request)\b/i.test(src))) {
+        /* VIP awareness only — not an outstanding preparation action. */
+        actionKind = "vip_awareness";
+        reasonKind = "vip_arrival_awareness";
+      } else {
+        actionKind = "prepare_vip";
+        reasonKind = "outstanding_vip_prep";
+      }
     } else if (
       object.type === OPERATIONAL_OBJECT_TYPE.departure ||
       object.type === OPERATIONAL_OBJECT_TYPE.wake_up ||
@@ -3344,7 +3512,17 @@
       } else if (ctx.nextAction === NEXT_ACTION_KIND.post_or_collect_charge) {
         actionKind = "post_or_collect_charge";
       } else if (ctx.nextAction === NEXT_ACTION_KIND.prepare_vip) {
-        actionKind = "prepare_vip";
+        if (vipPreparationFullyComplete(src, primary && primary.note) ||
+            (!entities.amenities.length &&
+              !/\b(?:twin|double|accessibility|quiet|setup|prefer|amenit|prepare|request)\b/i.test(src))) {
+          actionKind = "vip_awareness";
+          reasonKind = "vip_arrival_awareness";
+        } else {
+          actionKind = "prepare_vip";
+        }
+      } else if (ctx.nextAction === NEXT_ACTION_KIND.none && object.type === OPERATIONAL_OBJECT_TYPE.vip) {
+        actionKind = "vip_awareness";
+        reasonKind = "vip_arrival_awareness";
       } else if (ctx.nextAction === NEXT_ACTION_KIND.complete_timed_actions) {
         actionKind = "complete_timed_actions";
       } else if (ctx.nextAction === NEXT_ACTION_KIND.reserve_interconnect) {
@@ -3420,6 +3598,15 @@
     var primary = objectPrimaryFact(obj);
     var fact = primary && primary.fact;
     var subject = normalizeSubjectToken(fact && (fact.subject || fact.subjectType) || "");
+    /* VIP with no outstanding prep is awareness only — not a briefing/rec action. */
+    if (obj.type === OPERATIONAL_OBJECT_TYPE.vip || subject === "vip_arrival") {
+      var vipNote = primary && primary.note;
+      if (vipPreparationFullyComplete(src, vipNote)) return false;
+      if (!activeVipAmenitiesFromSource(src, vipNote).length &&
+          !/\b(?:twin|double|accessibility|quiet|setup|prefer|amenit|prepare|request|arriv(?:e|es|ing|al)?|eta|due)\b/i.test(src)) {
+        return false;
+      }
+    }
     if (
       obj.type === OPERATIONAL_OBJECT_TYPE.maintenance ||
       obj.type === OPERATIONAL_OBJECT_TYPE.payment ||
@@ -4137,7 +4324,10 @@
         section: note.section || ""
       };
     }).filter(function (entry) {
-      return entry.note && (entry.fact || entry.note.original);
+      if (!entry.note || !(entry.fact || entry.note.original)) return false;
+      /* Superseded claims stay available on winner archives; they do not form open items. */
+      if (noteIsSupersededForDecision(entry.note)) return false;
+      return true;
     });
 
     var objects = groupIntoOperationalObjects(entries);
@@ -4161,17 +4351,25 @@
         ? obj.rooms.slice()
         : ((primary && primary.rooms) || (fact && fact.rooms) || []).slice();
       var sourceParts = [];
+      var archiveParts = [];
       if (obj && obj.items && obj.items.length) {
         obj.items.forEach(function (item) {
           var src = item && item.note && item.note.original
             ? String(item.note.original)
             : (item && item.fact && item.fact.sourceText ? String(item.fact.sourceText) : "");
-          if (src && sourceParts.indexOf(src) === -1) sourceParts.push(src);
+          if (!src) return;
+          if (item && item.note && noteIsSupersededForDecision(item.note)) {
+            if (archiveParts.indexOf(src) === -1) archiveParts.push(src);
+            return;
+          }
+          if (sourceParts.indexOf(src) === -1) sourceParts.push(src);
         });
       } else if (primary && primary.original) {
         sourceParts.push(String(primary.original));
       }
+      /* Decision display uses current-state sources only; archive kept for traceability. */
       var mergedOriginal = sourceParts.join(" // ");
+      var sourceArchive = archiveParts.length ? archiveParts.join(" // ") : "";
       var displayNote = primary
         ? Object.assign({}, primary, {
             original: mergedOriginal || primary.original,
@@ -4180,6 +4378,7 @@
             isVip: sectionId === "vip" || !!(primary.isVip),
             fact: fact || primary.fact || null,
             _operationalObjectId: obj && obj.id,
+            _sourceArchive: sourceArchive || primary._sourceArchive || "",
             _mergedNotes: (obj && obj.items)
               ? obj.items.map(function (item) { return item.note; }).filter(Boolean)
               : (primary._mergedNotes || null)
@@ -4190,7 +4389,8 @@
             section: sectionId,
             isVip: sectionId === "vip",
             fact: fact,
-            _operationalObjectId: obj && obj.id
+            _operationalObjectId: obj && obj.id,
+            _sourceArchive: sourceArchive
           };
       sections[sectionId].push({
         note: displayNote,
@@ -4867,6 +5067,10 @@
   function paymentActionText(note, shiftType, fact) {
     note = note || {};
     fact = fact || note.fact || null;
+    if (noteIsSupersededForDecision(note) || (fact && fact.superseded)) return "";
+    if (global.AiWritingEngine && typeof global.AiWritingEngine.isPaymentNoCollectState === "function") {
+      if (global.AiWritingEngine.isPaymentNoCollectState(fact, note)) return "";
+    }
     var line = note.original || (fact && fact.sourceText) || "";
     var detectLine = (global.AiWritingEngine && global.AiWritingEngine.normalizeInput)
       ? global.AiWritingEngine.normalizeInput(line)
@@ -4877,6 +5081,20 @@
     if (!amountBit && fact) {
       var detailAmt = factDetailValue(fact, "money");
       if (detailAmt) amountBit = " " + String(detailAmt).replace(/\s+/g, "");
+    }
+    /* Never emit a £0 / zero-balance collection action (whole amount only — not the "0" in 12.50). */
+    if (amountBit && /^(?:\s*)(?:£|\$|€)?\s*0(?:\.0+)?\s*$/i.test(amountBit)) return "";
+    var zeroMoneyFound = false;
+    var moneyTokenRe = /(?:£|\$|€)\s*(\d+(?:[.,]\d{1,2})?)/g;
+    var moneyTokenMatch;
+    while ((moneyTokenMatch = moneyTokenRe.exec(detectLine || line))) {
+      var parsedAmt = parseFloat(String(moneyTokenMatch[1]).replace(",", "."));
+      if (parsedAmt === 0) zeroMoneyFound = true;
+    }
+    if ((zeroMoneyFound || /\bzero\s+balance\b/i.test(detectLine || line) ||
+        /\bowes?\s+(?:£|\$|€)?\s*0\b/i.test(detectLine || line)) &&
+        !/\b(?:deposit|guarantee|disputed?|pending)\b/i.test(detectLine || line)) {
+      return "";
     }
     if (isOtaPaymentTaskLine(line) || isOtaPaymentTaskLine(detectLine) ||
         noteContains(detectLine, ["booking.com", "expedia", "city tax", "virtual card"])) {
@@ -5228,11 +5446,29 @@
     return text + ".";
   }
 
+  function vipActionSourceText(note, fact) {
+    var parts = [];
+    if (note && note.original) parts.push(String(note.original));
+    if (fact && fact.sourceText) parts.push(String(fact.sourceText));
+    if (note && note._sourceArchive) parts.push(String(note._sourceArchive));
+    if (fact && fact.sourceHistory && fact.sourceHistory.length) {
+      fact.sourceHistory.forEach(function (entry) {
+        if (entry && entry.sourceText) parts.push(String(entry.sourceText));
+      });
+    }
+    if (note && note._mergedNotes && note._mergedNotes.length) {
+      note._mergedNotes.forEach(function (child) {
+        if (child && child.original) parts.push(String(child.original));
+      });
+    }
+    return parts.join(" | ");
+  }
+
   function vipActionText(note, shiftType, brainContext, fact) {
     note = note || {};
     fact = fact || note.fact || null;
     var roomRef = roomRefFromFact(fact, note) || roomPhrase(note);
-    var line = note.original || (fact && fact.sourceText) || "";
+    var line = vipActionSourceText(note, fact);
     var guestName = (fact && fact.guestName) || "";
     if (!guestName) {
       /* Case-sensitive name capture — avoid treating "arrival"/"tomorrow" as guest names. */
@@ -5265,14 +5501,23 @@
     }
 
     var anniversary = /\banniversary\b/i.test(line);
-    var setupBits = [];
-    if (/\bchampagne\b/i.test(line)) setupBits.push("champagne");
-    if (/\bwelcome\s+card\b/i.test(line)) setupBits.push("welcome card");
-    if (/\bchocolates?\b/i.test(line)) setupBits.push("chocolates");
-    if (/\bquiet\b/i.test(line)) setupBits.push("quiet upper-floor room");
+    var setupBits = activeVipAmenitiesFromSource(line, note);
+    if (vipPreparationFullyComplete(line, note)) {
+      /* Awareness only — do not invent a prepare/complete VIP action. */
+      return "";
+    }
     var pref = extractGuestPreference(line);
-    if (pref && setupBits.indexOf(pref) === -1 && !/quiet/.test(pref)) {
+    if (pref && setupBits.indexOf(pref) === -1 && !/quiet/.test(pref) &&
+        activeVipAmenitiesFromSource(pref, note).length) {
       setupBits.push(pref);
+    }
+    if (/\btwin\b/i.test(line) && setupBits.indexOf("twin setup") === -1) setupBits.push("twin setup");
+    if (/\baccessibility\b/i.test(line) && setupBits.indexOf("accessibility preference") === -1) {
+      setupBits.push("accessibility preference");
+    }
+    if (!setupBits.length &&
+        !/\b(?:twin|double|accessibility|quiet|setup|prefer|amenit|prepare|request|card|champagne|chocolate|flower|balloon|arriv(?:e|es|ing|al)?|eta|due)\b/i.test(line)) {
+      return "";
     }
 
     var whoBit = guestName ? " for " + guestName : "";
@@ -5286,18 +5531,9 @@
       if (guestName && roomRef) {
         base = "Complete VIP " + roomRef + " anniversary setup before" + (timeBit || "") + " arrival";
       }
-    } else if (setupBits.length || vipArrival) {
+    } else {
       base = "Prepare VIP arrival" + whoBit + roomBit + amenityBit +
         ". Verify room allocation before" + (timeBit || "") + " arrival";
-      /* Keep compact Duty Manager shape when only room + arrival time. */
-      if (!setupBits.length && roomRef && !guestName) {
-        base = "Complete VIP " + roomRef + " preparation before" + (timeBit || "") + " arrival";
-      } else if (!setupBits.length && roomRef && guestName) {
-        base = "Complete VIP " + roomRef + " preparation for " + guestName +
-          " before" + (timeBit || "") + " arrival";
-      }
-    } else {
-      base = "Complete VIP" + roomBit + whoBit + " requirements this shift";
     }
 
     return appendBrainGuidance(base, findHotelBrainGuidance(brainContext, "vip"), "Hotel VIP rules");
@@ -5464,6 +5700,11 @@
   function recommendationFromFact(fact, note, departments, fallbackDept, shiftType, brainContext) {
     if (!fact || isFactClosedForRecs(fact)) return null;
     note = note || { original: fact.sourceText || "" };
+    if (noteIsSupersededForDecision(note) || fact.superseded) return null;
+    if (global.AiWritingEngine && typeof global.AiWritingEngine.isPaymentNoCollectState === "function" &&
+        global.AiWritingEngine.isPaymentNoCollectState(fact, note)) {
+      return null;
+    }
 
     var scored = scoreOperationalImpact({ fact: fact, note: note });
     var context = scored.operationalContext || buildOperationalContext(fact, {
@@ -5472,6 +5713,17 @@
       isVip: note.isVip,
       maintenancePriority: note.maintenancePriority
     });
+    if (fact.superseded || noteIsSupersededForDecision(note)) {
+      context.superseded = true;
+      context.currentStatus = CONTEXT_STATUS.completed;
+      context.nextAction = NEXT_ACTION_KIND.none;
+    }
+    if (global.AiWritingEngine && typeof global.AiWritingEngine.isPaymentNoCollectState === "function" &&
+        global.AiWritingEngine.isPaymentNoCollectState(fact, note)) {
+      context.currentStatus = CONTEXT_STATUS.completed;
+      context.nextAction = NEXT_ACTION_KIND.none;
+      context.revenueImpact = IMPACT_LEVEL.none;
+    }
 
     if (!allowsOpenRecommendation(context)) return null;
 
@@ -5549,16 +5801,16 @@
 
     if (isVipPath) {
       if (!roomRef && !/\bvip\b/i.test(src) && !(fact && fact.guestName)) return null;
-      var vipTextEarly = vipActionText(note, shiftType, brainContext, fact);
-      if (!vipTextEarly) {
-        var prefEarly = extractGuestPreference(src);
-        vipTextEarly = "Prepare VIP arrival" +
-          (fact.guestName ? " for " + fact.guestName : "") +
-          (roomRef ? (fact.guestName ? " in " : " ") + roomRef : "");
-        if (prefEarly) vipTextEarly += " — " + prefEarly;
-        vipTextEarly += ". Verify room allocation before arrival";
-        vipTextEarly = withReason(vipTextEarly, reason);
+      var vipSrcEarly = vipActionSourceText(note, fact);
+      /*
+       * Do NOT regenerate a generic "Complete/Prepare VIP preparation" action when
+       * all known prep facets are done/cancelled — VIP status is awareness only.
+       */
+      if (vipPreparationFullyComplete(vipSrcEarly, note)) {
+        return null;
       }
+      var vipTextEarly = vipActionText(note, shiftType, brainContext, fact);
+      if (!vipTextEarly) return null;
       return {
         text: vipTextEarly,
         priority: "high",
@@ -5887,13 +6139,12 @@
       };
     }
     if (action === NEXT_ACTION_KIND.prepare_vip) {
-      var vipText = vipActionText(note, shiftType, brainContext, fact);
-      if (!vipText) {
-        vipText = "Prepare VIP arrival" +
-          (fact.guestName ? " for " + fact.guestName : "") +
-          (roomRef ? (fact.guestName ? " in " : " ") + roomRef : "") +
-          ". Verify room allocation before arrival.";
+      var vipSrc = vipActionSourceText(note, fact);
+      if (vipPreparationFullyComplete(vipSrc, note)) {
+        return null;
       }
+      var vipText = vipActionText(note, shiftType, brainContext, fact);
+      if (!vipText) return null;
       return {
         text: vipText,
         priority: "high",
@@ -7109,10 +7360,36 @@
       candidates.push(normalized);
     }
 
+    /* Pre-link same room/guest evidence so VIP amenity cancel/DONE siblings are visible.
+       Include superseded notes — DONE/cancelled evidence must remain visible for wording. */
     analyzed.forEach(function (note) {
+      if (!note) return;
+      var rooms = ((note.fact && note.fact.rooms) || note.rooms || []).map(String);
+      var guest = String((note.fact && note.fact.guestName) || "").toLowerCase();
+      var related = [];
+      analyzed.forEach(function (other) {
+        if (!other) return;
+        var oroom = ((other.fact && other.fact.rooms) || other.rooms || []).map(String);
+        var oguest = String((other.fact && other.fact.guestName) || "").toLowerCase();
+        var roomHit = rooms.length && oroom.some(function (r) { return rooms.indexOf(r) !== -1; });
+        var guestHit = guest && oguest && guest === oguest;
+        if (roomHit || guestHit || other === note) {
+          if (other.original) related.push(String(other.original));
+        }
+      });
+      if (related.length) note._sourceArchive = related.join(" | ");
+    });
+
+    analyzed.forEach(function (note) {
+      if (noteIsSupersededForDecision(note)) return;
       if (isResolvedNote(note.original)) return;
       var fact = ensureNoteFact(note);
+      if (fact && fact.superseded) return;
       if (fact && isFactClosedForRecs(fact)) return;
+      if (global.AiWritingEngine && typeof global.AiWritingEngine.isPaymentNoCollectState === "function" &&
+          global.AiWritingEngine.isPaymentNoCollectState(fact, note)) {
+        return;
+      }
 
       /* E4.2: context-driven path (DecisionTrace attached inside recommendationFromFact). */
       var fromFact = recommendationFromFact(fact, note, departments, fallbackDept, shiftType, brainContext);
@@ -7127,8 +7404,13 @@
      * Uses the same context-gated recommendationFromFact — no invented text.
      */
     var promoEntries = analyzed.map(function (note, index) {
+      if (noteIsSupersededForDecision(note)) return null;
       var fact = ensureNoteFact(note);
-      if (!fact || isFactClosedForRecs(fact)) return null;
+      if (!fact || fact.superseded || isFactClosedForRecs(fact)) return null;
+      if (global.AiWritingEngine && typeof global.AiWritingEngine.isPaymentNoCollectState === "function" &&
+          global.AiWritingEngine.isPaymentNoCollectState(fact, note)) {
+        return null;
+      }
       return {
         note: note,
         fact: fact,
@@ -7139,8 +7421,25 @@
       if (!isPromotableOperationalObject(obj)) return;
       var primary = objectPrimaryFact(obj);
       if (!primary || !primary.fact) return;
+      /* Attach full object evidence so VIP amenity election sees cancel/replace siblings. */
+      if (primary.note) {
+        primary.note._sourceArchive = objectSourceBlob(obj);
+      }
       var objCtx = obj.operationalContext ||
         (scoreOperationalImpact(primary).operationalContext);
+      if (obj.type === OPERATIONAL_OBJECT_TYPE.vip ||
+          (primary.fact && primary.fact.subject === "vip_arrival")) {
+        var vipBlob = objectSourceBlob(obj);
+        var vipPrimaryNote = primary.note;
+        if (vipPreparationFullyComplete(vipBlob, vipPrimaryNote)) return;
+        if (!activeVipAmenitiesFromSource(vipBlob, vipPrimaryNote).length &&
+            !/\b(?:twin|double|accessibility|quiet|setup|prefer|amenit|prepare|request|arriv(?:e|es|ing|al)?|eta|due)\b/i.test(vipBlob)) {
+          return;
+        }
+        if (objCtx) {
+          objCtx.nextAction = NEXT_ACTION_KIND.prepare_vip;
+        }
+      }
       if (!allowsOpenRecommendation(objCtx)) return;
 
       var already = candidates.some(function (rec) {

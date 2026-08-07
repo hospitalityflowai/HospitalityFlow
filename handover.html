@@ -8782,6 +8782,17 @@
             window.ShiftIntelligenceEngine.applyEngineClassificationToNote(note, note.section);
           }
         });
+        /*
+         * Reasoning Sprint 1: elect one CURRENT state per operational facet
+         * before organised handover / briefing / recommendations consume notes.
+         * Do not refreshFact after election — that would wipe supersession flags.
+         */
+        if (
+          window.AiWritingEngine &&
+          typeof window.AiWritingEngine.electCanonicalCurrentState === "function"
+        ) {
+          analyzed = window.AiWritingEngine.electCanonicalCurrentState(analyzed);
+        }
 
         var classified = {};
         var sectionModel = null;

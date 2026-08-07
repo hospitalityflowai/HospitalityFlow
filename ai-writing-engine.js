@@ -1815,12 +1815,37 @@
     var segRooms = extractRoomNumbers(s);
     var sameRoom = segRooms.some(function (r) { return prevRooms.indexOf(r) !== -1; });
     var introducesDifferentRoom = segRooms.length > 0 && prevRooms.length > 0 && !sameRoom;
+    var newGuestLead = looksLikeGuestReservationLead(s) ||
+      /^(?:mr|mrs|ms|miss|dr)\.?\s+[A-ZÀ-ÖØ-Þ]/i.test(s) ||
+      (/^[A-ZÀ-ÖØ-Þ][a-zà-öø-ÿ'’-]+\s+[A-ZÀ-ÖØ-Þ][a-zà-öø-ÿ'’-]+/.test(s) &&
+        /\b(?:rm\.?|room)\s*\d+/i.test(s));
 
     /*
      * A new room number is a new fact subject — never attach wake/taxi/minibar
      * for Room B onto Room A's late checkout / complaint / payment.
      */
     if (introducesDifferentRoom) return false;
+
+    /*
+     * Never glue a new guest/reservation lead onto a prior UPDATE / payment-terminal
+     * line (prevents "VCC charged" + "Mr + Mrs Shah rm32" mega-segments that block
+     * payment supersession via multi-guest fail-closed clusters).
+     */
+    if (newGuestLead && segRooms.length &&
+        (/^update\b/i.test(prev) ||
+          /\b(?:paid|account\s+clear|successfully\s+charged|payment\s+sorted|fully\s+paid|received\s+in\s+full)\b/i.test(prev))) {
+      return false;
+    }
+    if (newGuestLead && segRooms.length && prevRooms.length && !sameRoom) return false;
+    /* Refunds / deposit-held notes are separate folios from paid/received terminals. */
+    if (/\b(?:refund|deposit\s+held|security\s+deposit)\b/i.test(s) &&
+        /\b(?:paid|received\s+in\s+full|account\s+clear|payment\s+sorted|fully\s+paid|successfully\s+charged)\b/i.test(prev)) {
+      return false;
+    }
+    if (/\b(?:refund|deposit\s+held|security\s+deposit)\b/i.test(prev) &&
+        /\b(?:paid|received\s+in\s+full|account\s+clear|fully\s+paid)\b/i.test(s)) {
+      return false;
+    }
 
     var maintFaultCue = /\b(?:ac\b|air\s*con|leak|shower|dryer|safe|broken|fault|dead|drip|hand\s*dryer|keypad|heat(?:ing)?|hot\s*water|not\s+working)\b/i;
     if (/^(?:maint(?:enance)?\s+aware|maintenance\s+has\s+been\s+informed)\b/i.test(s)) {
@@ -1840,10 +1865,12 @@
           /\bvip\b/i.test(prev)) {
         return true;
       }
-      /* Payment guest-name / auth fragments stay with the payment lead. */
+      /* Payment guest-name / auth fragments stay with the payment lead — not new arrivals. */
       if (
         (/\b(?:expedia|booking\.com|virtual\s+card|outstanding|payment|collect|folio|balance)\b/i.test(prev) ||
           /\boutstanding\s*[£$€]?\s*\d/i.test(prev)) &&
+        !newGuestLead &&
+        !segRooms.length &&
         (/^(?:mr|mrs|ms|miss)\b/i.test(s) ||
           /\b(?:awaiting|pending|auth|authoris|authoriz|still\s+needed)\b/i.test(s))
       ) {
@@ -3888,6 +3915,1041 @@
     };
   }
 
+  /* ------------------------------------------------------------------ */
+  /* Reasoning Sprint 1 — canonical CURRENT operational state election   */
+  /* One gate for all decision surfaces. Facet-scoped, fail-conservative. */
+  /* ------------------------------------------------------------------ */
+
+  function normalizeGuestToken(name) {
+    return String(name || "")
+      .toLowerCase()
+      .replace(/[^a-z\s]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function noteSourceBlob(note) {
+    if (!note) return "";
+    var parts = [];
+    if (note.original) parts.push(String(note.original));
+    if (note.fact) {
+      collectSourceTexts(note.fact).forEach(function (t) { parts.push(t); });
+      if (note.fact.sourceHistory && note.fact.sourceHistory.length) {
+        note.fact.sourceHistory.forEach(function (entry) {
+          if (entry && entry.sourceText) parts.push(String(entry.sourceText));
+        });
+      }
+    }
+    return parts.join(" | ");
+  }
+
+  function isPaymentExemptFromNoCollect(text) {
+    var lower = String(text || "").toLowerCase();
+    if (/\bdisputed?\b/.test(lower)) return true;
+    if (/\bdeposit\s+held\b/.test(lower) || /\bholding\s+(?:a\s+)?deposit\b/.test(lower)) return true;
+    if (/\b(?:card\s+)?guarantee\s+held\b/.test(lower) || /\bheld\s+as\s+guarantee\b/.test(lower)) return true;
+    if (/\bguarantee\b/.test(lower) && !/\b(?:paid|transferred|settled|cleared)\b/.test(lower)) return true;
+    if (/\bunresolved\b/.test(lower) && /\bvcc\b/.test(lower)) return true;
+    if (/\bpending\b/.test(lower) && !/\b(?:paid|settled|cleared|charged|transferred)\b/.test(lower) &&
+        !/(?:£|\$|€)\s*0(?:\.00)?\b/.test(lower)) {
+      return true;
+    }
+    return false;
+  }
+
+  function isZeroMoneyText(text) {
+    var lower = String(text || "").toLowerCase();
+    var moneyRe = /(?:£|\$|€)\s*(\d+(?:[.,]\d{1,2})?)/g;
+    var moneyMatch;
+    while ((moneyMatch = moneyRe.exec(lower))) {
+      if (parseFloat(String(moneyMatch[1]).replace(",", ".")) === 0) return true;
+    }
+    return /\bzero\s+balance\b/.test(lower) ||
+      /\bowes?\s+(?:£|\$|€)?\s*0\b/.test(lower) ||
+      /\boutstanding\s+balance\s+of\s+(?:£|\$|€)?\s*0\b/.test(lower) ||
+      /\bbalance\s+of\s+(?:£|\$|€)?\s*0\b/.test(lower);
+  }
+
+  function isPaymentNoCollectText(text) {
+    var lower = String(text || "").toLowerCase();
+    if (!lower) return false;
+    if (isPaymentExemptFromNoCollect(lower)) return false;
+    if (/\bnot\s+(?:yet\s+)?paid\b/.test(lower) || /\bunpaid\b/.test(lower)) return false;
+    if (/\bstill\s+to\s+pay\b/.test(lower) || /\bstill\s+outstanding\b/.test(lower)) return false;
+    if (/\bextras?\s+(?:are\s+)?poa\b/.test(lower) && !/\b(?:room|accommodation|tax)\b/.test(lower)) {
+      /* Extras POA alone is not a room-folio clear signal. */
+    }
+    if (isZeroMoneyText(lower)) return true;
+    if (/\b(?:fully\s+)?paid(?:\s+in\s+full)?\b/.test(lower)) return true;
+    if (/\baccount\s+(?:now\s+)?clear\b/.test(lower) || /\bno\s+further\s+payment\b/.test(lower)) return true;
+    if (/\bpayment\s+sorted\b/.test(lower) || /\bsuccessfully\s+charged\b/.test(lower)) return true;
+    if (/\breceived\s+in\s+full\b/.test(lower) || /\bpayment\s+received\s+(?:in\s+full|successfully)\b/.test(lower)) {
+      return true;
+    }
+    if (/\btransferred\s+to\s+company\b/.test(lower)) return true;
+    if (/\bcompany\s+pays\b/.test(lower) && /\b(?:room|tax|accommodation)\b/.test(lower)) return true;
+    if (/\bdo\s+not\s+(?:ask|request|charge)\s+(?:guest|the\s+guest).{0,40}(?:accommodation|room\s+payment|personally)/.test(lower)) {
+      return true;
+    }
+    if (/\bcompany\s+(?:billing|ledger|account)\b/.test(lower) &&
+        /\b(?:authoris|authoriz|transferred|£\s*0|owes?\s+£?\s*0|guest\s+owes|pays?)\b/.test(lower)) {
+      return true;
+    }
+    if (/\bguest\s+owes\s+(?:£|\$|€)?\s*0\b/.test(lower)) return true;
+    if (/\bcurrent\s+balance\s*=\s*(?:£|\$|€)?\s*0\b/.test(lower)) return true;
+    return false;
+  }
+
+  function paymentFacetHint(text) {
+    var lower = String(text || "").toLowerCase();
+    if (/\bminibar\b/.test(lower)) return "minibar";
+    if (/\bvcc\b/.test(lower) || /\bvirtual\s+card\b/.test(lower)) return "vcc";
+    if (/booking\.com|b\.?\s*com/.test(lower)) return "booking.com";
+    if (/\bexpedia\b/.test(lower)) return "expedia";
+    if (/\bdeposit\b/.test(lower)) return "deposit";
+    if (/\bcity\s+tax\b/.test(lower)) return "city_tax";
+    return "general";
+  }
+
+  function isTerminalDoneText(text) {
+    var lower = String(text || "").toLowerCase();
+    if (!lower) return false;
+    if (/\bnot\s+(?:yet\s+)?(?:done|completed|resolved|fixed|delivered)\b/.test(lower)) return false;
+    if (/\bstill\s+open\b/.test(lower) || /\bissue\s+still\s+open\b/.test(lower)) return false;
+    return /\b(?:has\s+been\s+)?(?:done|completed|resolved|fixed|delivered|placed\s+in\s+room)\b/.test(lower) ||
+      /\bFINAL\s*=\s*DONE\b/i.test(text || "") ||
+      /\bCOMPLETE(?:D)?\b/.test(text || "") && !/\bnot\s+complete/i.test(lower);
+  }
+
+  function isCancelledRequestText(text) {
+    var lower = String(text || "").toLowerCase();
+    if (!lower) return false;
+    return /\bcancell?ed\b/.test(lower) ||
+      /\bno\s+longer\s+(?:needed|required)\b/.test(lower) ||
+      /\bdo\s+not\s+(?:prepare|request|show|place|send|create)\b/.test(lower) ||
+      /\bdo\s+NOT\s+(?:prepare|request|show|place|send|create)\b/.test(text || "") ||
+      /\bnot\s+(?:needed|required)\s+anymore\b/.test(lower) ||
+      /\bold\s+twin\s+request\s+is\s+superseded\b/.test(lower);
+  }
+
+  function isInServiceOrNotOooText(text) {
+    var lower = String(text || "").toLowerCase();
+    if (!lower) return false;
+    return /\bnot\s+ooo\b/.test(lower) ||
+      /\bno\s+longer\s+ooo\b/.test(lower) ||
+      /\breturned\s+to\s+service\b/.test(lower) ||
+      /\bback\s+in\s+service\b/.test(lower) ||
+      /\bin\s+service\b/.test(lower) ||
+      /\broom\s+can\s+remain\s+in\s+service\b/.test(lower) ||
+      /\bavailable\s+for\s+sale\b/.test(lower) ||
+      /\brepair\s+(?:successful|completed)\b/.test(lower);
+  }
+
+  function isOooOrOpenMaintText(text) {
+    var lower = String(text || "").toLowerCase();
+    if (!lower) return false;
+    if (isInServiceOrNotOooText(lower)) return false;
+    return /\booo\b/.test(lower) ||
+      /\bout\s+of\s+order\b/.test(lower) ||
+      /\bstill\s+open\b/.test(lower) ||
+      /\bissue\s+still\s+open\b/.test(lower);
+  }
+
+  function isFinalAllocationText(text) {
+    var src = String(text || "");
+    var lower = src.toLowerCase();
+    return /\bfinal\s+room\b/.test(lower) ||
+      /\bfinal\s+current\s+room\b/.test(lower) ||
+      /\bfinal\s+room\s+setup\b/.test(lower) ||
+      /\bmoved\s+to\s+(?:rm|room)\s*\d+/i.test(src) ||
+      /\ballocation\s+changed\b/.test(lower) ||
+      /\bdo\s+not\s+(?:send|use|allocate)\b/.test(lower);
+  }
+
+  function isFinalSetupText(text) {
+    var lower = String(text || "").toLowerCase();
+    return /\bfinal\s+room\s+setup\b/.test(lower) ||
+      /\bdouble\s+is\s+fine\b/.test(lower) ||
+      /\bno\s+longer\s+needs\s+twin\b/.test(lower) ||
+      /\bdo\s+not\s+request\s+twin\b/.test(lower) ||
+      /\btwin\s+request\s+is\s+superseded\b/.test(lower) ||
+      (/\bdouble\b/.test(lower) && /\b(?:final|confirmed|fine|instead)\b/.test(lower));
+  }
+
+  function amenityKindFromNote(note) {
+    var blob = noteSourceBlob(note).toLowerCase();
+    var fact = note && note.fact;
+    var requestItem = String((fact && (fact.requestItem || detailValueFromFact(fact, "request_item"))) || "").toLowerCase();
+    var celebration = String(detailValueFromFact(fact, "celebration") || "").toLowerCase();
+    if (requestItem.indexOf("champagne") !== -1 || /\bchampagne\b/.test(blob) || celebration.indexOf("champagne") !== -1) {
+      return "champagne";
+    }
+    if (/\bprosecco\b/.test(blob) || celebration.indexOf("prosecco") !== -1) return "prosecco";
+    if (/\bflowers?\b/.test(blob)) return "flowers";
+    if (/\bballoons?\b/.test(blob) || celebration.indexOf("balloon") !== -1) return "balloons";
+    if (/\bchocolates?\b/.test(blob)) return "chocolates";
+    if (/\b(?:welcome\s+)?card\b/.test(blob) || /\bhandwritten\s+card\b/.test(blob)) return "card";
+    if (/\bcot\b/.test(blob) || requestItem.indexOf("cot") !== -1) return "cot";
+    if (requestItem) return requestItem;
+    return "";
+  }
+
+  function isPaymentSubjectFact(fact, blob) {
+    var subject = normalizeSubjectForIdentity((fact && fact.subject) || "");
+    if (/payment|balance|invoice|bill|folio|account|charge|settlement/.test(subject)) return true;
+    var lower = String(blob || "").toLowerCase();
+    return /\b(?:outstanding|balance|paid|poa|prepaid|folio|£|expedia|booking\.com|minibar|company\s+billing|account\s+clear)\b/.test(lower);
+  }
+
+  function noteRooms(note) {
+    return normalizeFactRooms(((note && note.fact && note.fact.rooms) || (note && note.rooms) || [])).slice();
+  }
+
+  function noteGuest(note) {
+    var raw = normalizeGuestToken((note && note.fact && note.fact.guestName) || "");
+    /* Extraction sometimes captures section markers / departments as guest names. */
+    if (!raw || /^(final|update|room|guest|vip|mr|mrs|ms|dr|latest)$/i.test(raw)) return "";
+    if (/^(final|update|latest)\b/.test(raw)) return "";
+    if (/^(night\s+audit|reception|finance|housekeeping|maintenance|accounts|duty\s+manager|engineer|concierge|f\s*&\s*b|front\s+office)$/i.test(raw)) {
+      return "";
+    }
+    if (/^(night|audit|manager|supervisor)\b/.test(raw) && raw.split(/\s+/).length <= 2) {
+      return "";
+    }
+    return raw;
+  }
+
+  function paymentChannel(note) {
+    var fact = note && note.fact;
+    var channel = String(detailValueFromFact(fact, "channel") || "").toLowerCase();
+    if (channel) return channel;
+    var blob = noteSourceBlob(note);
+    if (/\bexpedia\b/i.test(blob)) return "expedia";
+    if (/booking\.com|b\.?\s*com/i.test(blob)) return "booking.com";
+    return "";
+  }
+
+  function noteMoneyValues(note) {
+    var values = [];
+    var fact = note && note.fact;
+    (fact && fact.details || []).forEach(function (d) {
+      if (d && d.type === "money" && d.value != null) values.push(String(d.value).replace(/\s+/g, ""));
+    });
+    var blob = noteSourceBlob(note);
+    var matches = String(blob).match(/(?:£|\$|€)\s*\d+(?:[.,]\d{2})?/g) || [];
+    matches.forEach(function (m) {
+      values.push(m.replace(/\s+/g, ""));
+    });
+    return uniqueStrings(values);
+  }
+
+  function roomsCompatibleForElection(a, b) {
+    var ra = noteRooms(a);
+    var rb = noteRooms(b);
+    if (!ra.length || !rb.length) return true;
+    return ra.some(function (r) { return rb.indexOf(r) !== -1; });
+  }
+
+  function guestsCompatibleForElection(a, b) {
+    var ga = noteGuest(a);
+    var gb = noteGuest(b);
+    if (!ga || !gb) return true;
+    if (ga === gb) return true;
+    /* Conservative: distinct full names do not match on partial tokens alone. */
+    return false;
+  }
+
+  function moneyOverlap(a, b) {
+    var ma = noteMoneyValues(a);
+    var mb = noteMoneyValues(b);
+    if (!ma.length || !mb.length) return false;
+    return ma.some(function (x) { return mb.indexOf(x) !== -1; });
+  }
+
+  /**
+   * Payment facet link — same room always (amounts may differ for supersession).
+   * Room-less updates only attach via guest, channel, or shared money — never via
+   * empty-room wildcards (that transitively merged unrelated folios).
+   */
+  function paymentNotesLink(a, b) {
+    if (!guestsCompatibleForElection(a, b)) return false;
+    var ra = noteRooms(a);
+    var rb = noteRooms(b);
+    var sameRoom = ra.length && rb.length && ra.some(function (r) { return rb.indexOf(r) !== -1; });
+    if (sameRoom) return true;
+
+    var ca = paymentChannel(a);
+    var cb = paymentChannel(b);
+    var sameChannel = !!(ca && cb && ca === cb);
+    var ga = noteGuest(a);
+    var gb = noteGuest(b);
+    var sameGuest = !!(ga && gb && ga === gb);
+    var moneyOk = moneyOverlap(a, b);
+    var terminalPay = isPaymentNoCollectText(noteSourceBlob(a)) || isPaymentNoCollectText(noteSourceBlob(b)) ||
+      isZeroMoneyText(noteSourceBlob(a)) || isZeroMoneyText(noteSourceBlob(b));
+
+    /* Both room-less: require guest or channel, plus money or terminal paid signal. */
+    if (!ra.length && !rb.length) {
+      return (sameGuest || sameChannel) && (moneyOk || terminalPay);
+    }
+    /*
+     * One room-less: terminals may attach via guest/channel/money.
+     * Non-terminal room-less claims must not attach via guest alone (stray "£120
+     * outstanding when guest left" was joining Laura's Booking.com folio).
+     */
+    if (!ra.length || !rb.length) {
+      if (terminalPay) return sameGuest || sameChannel || moneyOk;
+      return sameChannel || moneyOk;
+    }
+    return false;
+  }
+
+  function noteElectionFault(note) {
+    var fact = note && note.fact;
+    var blob = noteSourceBlob(note);
+    var fault = String((fact && (fact.faultType || detailValueFromFact(fact, "fault_type"))) ||
+      extractFaultType(blob) || "").toLowerCase();
+    if (fault) return fault;
+    return String((note && note._electionFault) || "").toLowerCase();
+  }
+
+  function amenityKindsMentioned(note) {
+    var blob = noteSourceBlob(note).toLowerCase();
+    var kinds = [];
+    if (/\bchampagne\b/.test(blob)) kinds.push("champagne");
+    if (/\bprosecco\b/.test(blob)) kinds.push("prosecco");
+    if (/\bflowers?\b/.test(blob)) kinds.push("flowers");
+    if (/\bballoons?\b/.test(blob)) kinds.push("balloons");
+    if (/\bchocolates?\b/.test(blob)) kinds.push("chocolates");
+    if (/\b(?:welcome\s+card|handwritten\s+card)\b/.test(blob) ||
+        (/\bcard\b/.test(blob) && /(?:welcome|handwritten|card\s+still|card\s+required|card\s+written|card\s+done)/.test(blob))) {
+      kinds.push("card");
+    }
+    if (/\bcot\b/.test(blob)) kinds.push("cot");
+    return kinds;
+  }
+
+  function amenityKindTerminalInArchive(kind, archive) {
+    if (!kind) return false;
+    /*
+     * Evaluate per segment so "Champagne … DONE" does not mark a sibling
+     * "Card still …" as complete via proximity across joined archives.
+     */
+    var segments = String(archive || "").split(/\s*\|\s*/);
+    return segments.some(function (seg) {
+      var lower = String(seg || "").toLowerCase();
+      if (!lower) return false;
+      if (kind === "card") {
+        if (!/\bcard\b/.test(lower)) return false;
+        return /\bcard\s+cancell|no\s+card\b/.test(lower) ||
+          /\bcard\s+(?:written|done|complete|placed)\b/.test(lower) ||
+          /\b(?:written|done|complete)\b.{0,20}\bcard\b/.test(lower);
+      }
+      if (kind === "champagne") {
+        if (!/\bchampagne\b/.test(lower)) return false;
+        return /(?:no|not|don't|do not)\s+champagne|champagne\s+cancell|replace(?:d)?\s+with|doesn't drink|do not (?:place|show|prepare).{0,60}champagne|champagne unavailable/.test(lower) ||
+          /champagne.{0,50}(?:done|delivered|placed|complete)|(?:done|delivered|placed|complete).{0,50}champagne/.test(lower);
+      }
+      if (lower.indexOf(kind) === -1 && !(kind === "chocolates" && /chocolate/.test(lower))) return false;
+      var reCancel = new RegExp(kind + "\\s+cancell|do not (?:place|show).{0,40}" + kind, "i");
+      var reDone = new RegExp(kind + ".{0,40}(?:done|delivered|placed|complete)", "i");
+      return reCancel.test(lower) || reDone.test(lower);
+    });
+  }
+
+  /**
+   * Inherit room/guest/channel onto room-less payment / amenity / room-status terminals.
+   * For room-status terminals, inherit a fault only when that room has exactly one
+   * open fault (so IN SERVICE can close AC without suppressing a separate TV issue).
+   */
+  function enrichElectionIdentity(notes) {
+    var lastPay = null;
+    var lastPayByFacet = {};
+    var lastAmenity = null;
+    var lastAmenityByKind = {};
+    var lastVipAmenity = null;
+    var lastOpenMaint = null;
+    var openFaultsByRoom = {};
+    (notes || []).forEach(function (note) {
+      if (!note || !note.fact) return;
+      var blob = noteSourceBlob(note);
+      var rooms = noteRooms(note);
+      var fault = String((note.fact.faultType || detailValueFromFact(note.fact, "fault_type") ||
+        extractFaultType(blob) || "")).toLowerCase();
+      var terminalRoom = isInServiceOrNotOooText(blob) ||
+        (isTerminalDoneText(blob) && /repair|fixed|resolved|working|tested|repaired/i.test(blob)) ||
+        /\b(?:repaired|fixed|tested)\b/i.test(blob) &&
+          /\b(?:working|resolved|complete|done|in\s+service)\b/i.test(blob);
+      if (rooms.length === 1 && fault && !terminalRoom && !isInServiceOrNotOooText(blob)) {
+        if (!openFaultsByRoom[rooms[0]]) openFaultsByRoom[rooms[0]] = {};
+        openFaultsByRoom[rooms[0]][fault] = true;
+        lastOpenMaint = { rooms: rooms.slice(), fault: fault };
+      }
+
+      var payLike = isPaymentSubjectFact(note.fact, blob) || isPaymentNoCollectText(blob) || isZeroMoneyText(blob) ||
+        /\bminibar\b/i.test(blob);
+      if (payLike) {
+        var facet = paymentFacetHint(blob);
+        var channel = paymentChannel(note);
+        var inheritPay = lastPayByFacet[facet] ||
+          (channel && lastPayByFacet[channel]) ||
+          (facet !== "general" ? null : lastPay);
+        var payTerminal = isPaymentNoCollectText(blob) || isZeroMoneyText(blob) ||
+          /received in full|paid in full|account clear|successfully charged|payment sorted|no further payment|fully paid/i.test(blob);
+        /*
+         * Channel-only updates must inherit room/guest from the same facet — never
+         * replace facet context with an empty-room stub (broke Laura PAID linking).
+         */
+        if (inheritPay && (!rooms.length || !noteGuest(note)) &&
+            (payTerminal || (channel && inheritPay.channel && channel === inheritPay.channel))) {
+          if (!rooms.length && inheritPay.rooms && inheritPay.rooms.length) {
+            note.fact.rooms = inheritPay.rooms.slice();
+            note.rooms = inheritPay.rooms.slice();
+            rooms = noteRooms(note);
+          }
+          if (!noteGuest(note) && inheritPay.guestName) {
+            note.fact.guestName = inheritPay.guestName;
+          }
+          if (!channel && inheritPay.channel && !detailValueFromFact(note.fact, "channel")) {
+            note.fact.details = (note.fact.details || []).concat([{ type: "channel", value: inheritPay.channel }]);
+            channel = inheritPay.channel;
+          }
+        }
+        if (rooms.length || noteGuest(note) || channel) {
+          var payCtx = {
+            rooms: rooms.slice(),
+            guestName: (note.fact && note.fact.guestName) || "",
+            guestToken: noteGuest(note),
+            channel: channel,
+            facet: facet
+          };
+          if (payCtx.rooms.length || payCtx.guestToken) {
+            lastPay = payCtx;
+            lastPayByFacet[facet] = payCtx;
+            if (channel) lastPayByFacet[channel] = payCtx;
+          }
+        }
+      }
+
+      /* Amenity DONE/cancel — inherit from prior same-kind / VIP amenity context. */
+      var amenKinds = amenityKindsMentioned(note);
+      var prepClear = /no preparation outstanding|no prep outstanding/i.test(blob);
+      if (amenKinds.length || prepClear) {
+        if (note.fact.guestName && !noteGuest(note)) {
+          note.fact.guestName = "";
+        }
+        var explicitAmenRooms = extractRoomNumbers(note.original || blob);
+        var amenCtx = {
+          rooms: rooms.slice(),
+          guestName: (note.fact && note.fact.guestName) || "",
+          guestToken: noteGuest(note)
+        };
+        var amenTerminal = isTerminalDoneText(blob) || isCancelledRequestText(blob) || prepClear ||
+          /cancell|do not place|replace(?:d)?\s+with|card\s+still|still\s+needs|placed|written/i.test(blob);
+        if ((rooms.length || noteGuest(note)) && explicitAmenRooms.length) {
+          lastAmenity = amenCtx;
+          amenKinds.forEach(function (k) { lastAmenityByKind[k] = amenCtx; });
+          if (note.isVip || /vip_arrival/.test(normalizeSubjectForIdentity(note.fact.subject || ""))) {
+            lastVipAmenity = amenCtx;
+          }
+        } else if (amenTerminal) {
+          var inheritAmen = null;
+          amenKinds.forEach(function (k) {
+            if (!inheritAmen && lastAmenityByKind[k]) inheritAmen = lastAmenityByKind[k];
+          });
+          if (!inheritAmen) inheritAmen = lastVipAmenity || lastAmenity;
+          if (inheritAmen && inheritAmen.rooms && inheritAmen.rooms.length) {
+            /* Override glued wrong-room assignments when the text itself has no room. */
+            if (!explicitAmenRooms.length) {
+              note.fact.rooms = inheritAmen.rooms.slice();
+              note.rooms = inheritAmen.rooms.slice();
+            }
+            if (!noteGuest(note) && inheritAmen.guestName) {
+              note.fact.guestName = inheritAmen.guestName;
+            }
+          }
+        } else if (rooms.length || noteGuest(note)) {
+          lastAmenity = amenCtx;
+          amenKinds.forEach(function (k) { lastAmenityByKind[k] = amenCtx; });
+          if (note.isVip || /vip_arrival/.test(normalizeSubjectForIdentity(note.fact.subject || ""))) {
+            lastVipAmenity = amenCtx;
+          }
+        }
+      }
+
+      /*
+       * Room-status / repair terminals without a room number: inherit when exactly one
+       * room currently has open faults, else fall back to the latest open maint room.
+       * Same-fault room-less updates also inherit from the latest matching open fault.
+       */
+      if (!rooms.length && (terminalRoom || fault)) {
+        var roomsWithOpen = Object.keys(openFaultsByRoom);
+        var inheritRooms = null;
+        var inheritFault = "";
+        if (fault && lastOpenMaint && lastOpenMaint.fault === fault && lastOpenMaint.rooms.length === 1) {
+          inheritRooms = lastOpenMaint.rooms.slice();
+          inheritFault = fault;
+        } else if (roomsWithOpen.length === 1) {
+          inheritRooms = [roomsWithOpen[0]];
+          var faults = Object.keys(openFaultsByRoom[roomsWithOpen[0]] || {});
+          if (faults.length === 1) inheritFault = faults[0];
+          else if (fault && faults.indexOf(fault) !== -1) inheritFault = fault;
+        } else if (lastOpenMaint && lastOpenMaint.rooms && lastOpenMaint.rooms.length === 1 &&
+            (terminalRoom || (fault && fault === lastOpenMaint.fault))) {
+          inheritRooms = lastOpenMaint.rooms.slice();
+          inheritFault = lastOpenMaint.fault || fault || "";
+        }
+        if (inheritRooms && inheritRooms.length) {
+          note.fact.rooms = inheritRooms.slice();
+          note.rooms = inheritRooms.slice();
+          if (inheritFault && !fault) note._electionFault = inheritFault;
+        }
+      }
+    });
+
+    (notes || []).forEach(function (note) {
+      if (!note || !note.fact) return;
+      var blob = noteSourceBlob(note);
+      var rooms = noteRooms(note);
+      var fault = String((note.fact.faultType || detailValueFromFact(note.fact, "fault_type") ||
+        extractFaultType(blob) || note._electionFault || "")).toLowerCase();
+      if (rooms.length === 1 && isInServiceOrNotOooText(blob) && !fault) {
+        var openFaults = Object.keys(openFaultsByRoom[rooms[0]] || {});
+        if (openFaults.length === 1) {
+          note._electionFault = openFaults[0];
+        }
+      }
+    });
+  }
+
+  /**
+   * After cluster election: mark amenity facets done/cancelled via same-room/guest
+   * siblings without letting one amenity wipe an unrelated outstanding prep facet.
+   */
+  function finalizeAmenityCurrentState(notes) {
+    (notes || []).forEach(function (note) {
+      if (!note || !note.fact || isNoteSuperseded(note)) return;
+      var kinds = amenityKindsMentioned(note);
+      if (!kinds.length) return;
+      var rooms = noteRooms(note);
+      var guest = noteGuest(note);
+      var related = [];
+      var archiveParts = [];
+      (notes || []).forEach(function (other) {
+        if (!other) return;
+        var or = noteRooms(other);
+        var og = noteGuest(other);
+        var otherKinds = amenityKindsMentioned(other);
+        var roomHit = rooms.length && or.some(function (r) { return rooms.indexOf(r) !== -1; });
+        var guestHit = !!(guest && og && guest === og);
+        var sharedAmen = otherKinds.some(function (k) { return kinds.indexOf(k) !== -1; });
+        if (roomHit || guestHit || (sharedAmen && roomsCompatibleForElection(note, other) &&
+            guestsCompatibleForElection(note, other))) {
+          related.push(other);
+          var text = other.original || (other.fact && other.fact.sourceText) || "";
+          if (text) archiveParts.push(String(text));
+        }
+      });
+      if (!archiveParts.length) return;
+      var archive = archiveParts.join(" | ");
+      /*
+       * Union amenity kinds across siblings so replacement prep (chocolates/card)
+       * is not ignored when the original VIP line only listed champagne/flowers.
+       */
+      var kindSet = {};
+      related.forEach(function (other) {
+        amenityKindsMentioned(other).forEach(function (k) { kindSet[k] = true; });
+      });
+      var allKinds = Object.keys(kindSet);
+      var superseded = [];
+      var active = [];
+      allKinds.forEach(function (kind) {
+        if (amenityKindTerminalInArchive(kind, archive)) superseded.push(kind);
+        else active.push(kind);
+      });
+      var localSuperseded = kinds.filter(function (k) { return superseded.indexOf(k) !== -1; });
+      if (localSuperseded.length) {
+        note._supersededAmenities = uniqueStrings((note._supersededAmenities || []).concat(localSuperseded));
+      }
+      note._sourceArchive = archiveParts.slice();
+      if (!active.length && superseded.length) {
+        /* All known prep facets complete — VIP arrival stays as awareness, not prep chase. */
+        if (note.isVip || normalizeSubjectForIdentity(note.fact.subject || "") === "vip_arrival") {
+          note.fact.vipPrepComplete = true;
+        } else if (/^(guest_request|guest_preparation)$/.test(normalizeSubjectForIdentity(note.fact.subject || "")) ||
+            amenityKindFromNote(note)) {
+          var winner = null;
+          (notes || []).forEach(function (other) {
+            if (!other || other === note || isNoteSuperseded(other)) return;
+            if (amenityKindsMentioned(other).some(function (k) { return superseded.indexOf(k) !== -1; }) &&
+                terminalKindForNote(other).strength >= 850) {
+              winner = other;
+            }
+          });
+          if (winner) markNoteSuperseded(note, winner, "superseded_by_amenity_completion");
+          else {
+            note.fact.status = FACT_STATUS.done;
+            note.fact.vipPrepComplete = true;
+          }
+        }
+      } else if (active.length && (note.isVip || normalizeSubjectForIdentity(note.fact.subject || "") === "vip_arrival")) {
+        note.fact.vipPrepComplete = false;
+      }
+    });
+  }
+
+  function electionRelation(a, b) {
+    if (!a || !b || a === b) return "";
+    var blobA = noteSourceBlob(a);
+    var blobB = noteSourceBlob(b);
+    var factA = a.fact;
+    var factB = b.fact;
+    var amenA = amenityKindFromNote(a);
+    var amenB = amenityKindFromNote(b);
+    var faultA = noteElectionFault(a);
+    var faultB = noteElectionFault(b);
+    var subjectA = normalizeSubjectForIdentity((factA && factA.subject) || "");
+    var subjectB = normalizeSubjectForIdentity((factB && factB.subject) || "");
+    var roomsA = noteRooms(a);
+    var roomsB = noteRooms(b);
+    var sameSingleRoom = roomsA.length === 1 && roomsB.length === 1 && roomsA[0] === roomsB[0];
+
+    var kindsA = amenityKindsMentioned(a);
+    var kindsB = amenityKindsMentioned(b);
+    var sharedAmen = kindsA.filter(function (k) { return kindsB.indexOf(k) !== -1; });
+    /*
+     * Link on a single shared amenity kind only. Multi-kind notes (champagne+card)
+     * still connect per-kind; finalizeAmenityCurrentState prevents cross-facet wipe.
+     */
+    if (sharedAmen.length === 1 && roomsCompatibleForElection(a, b) && guestsCompatibleForElection(a, b)) {
+      return "amen:" + sharedAmen[0];
+    }
+    if (amenA && amenA === amenB && roomsCompatibleForElection(a, b) && guestsCompatibleForElection(a, b)) {
+      return "amen:" + amenA;
+    }
+
+    var payA = isPaymentSubjectFact(factA, blobA) || isPaymentNoCollectText(blobA) || isZeroMoneyText(blobA);
+    var payB = isPaymentSubjectFact(factB, blobB) || isPaymentNoCollectText(blobB) || isZeroMoneyText(blobB);
+    if (payA && payB && paymentNotesLink(a, b)) {
+      return "pay";
+    }
+
+    var rstatA = isInServiceOrNotOooText(blobA) || /\booo\b/i.test(blobA);
+    var rstatB = isInServiceOrNotOooText(blobB) || /\booo\b/i.test(blobB);
+    /* Room-status: require real room overlap (no empty-room wildcard). */
+    if (rstatA && rstatB && roomsA.length && roomsB.length &&
+        roomsA.some(function (r) { return roomsB.indexOf(r) !== -1; })) {
+      return "rstat";
+    }
+
+    /*
+     * Same-room maintenance/status:
+     * - OOO ↔ returned IN SERVICE / NOT OOO (room-status only)
+     * - Open fault ↔ terminal only when fault ids match (incl. single-fault inheritance)
+     * Never let generic RTS close a different unresolved fault in the same room.
+     */
+    if (sameSingleRoom) {
+      var oooOnlyA = /\booo\b/i.test(blobA) && !isInServiceOrNotOooText(blobA);
+      var oooOnlyB = /\booo\b/i.test(blobB) && !isInServiceOrNotOooText(blobB);
+      var inSvcA = isInServiceOrNotOooText(blobA);
+      var inSvcB = isInServiceOrNotOooText(blobB);
+      if ((oooOnlyA && inSvcB) || (oooOnlyB && inSvcA)) {
+        return "rstat";
+      }
+      var termFaultA = isInServiceOrNotOooText(blobA) ||
+        (isTerminalDoneText(blobA) && /repair|fixed|resolved|working|tested|repaired/i.test(blobA)) ||
+        /\b(?:repaired|fixed|tested)\b/i.test(blobA) && /\b(?:working|resolved|complete|done|in\s+service)\b/i.test(blobA);
+      var termFaultB = isInServiceOrNotOooText(blobB) ||
+        (isTerminalDoneText(blobB) && /repair|fixed|resolved|working|tested|repaired/i.test(blobB)) ||
+        /\b(?:repaired|fixed|tested)\b/i.test(blobB) && /\b(?:working|resolved|complete|done|in\s+service)\b/i.test(blobB);
+      var openFaultA = !!(faultA && !termFaultA);
+      var openFaultB = !!(faultB && !termFaultB);
+      if (faultA && faultB && faultA === faultB &&
+          ((openFaultA && termFaultB) || (openFaultB && termFaultA) || (openFaultA && openFaultB))) {
+        return "maint-status:" + roomsA[0] + ":" + faultA;
+      }
+    }
+
+    var setupA = subjectA === "twin_setup" || isFinalSetupText(blobA) ||
+      (/\btwin\b/i.test(blobA) && /\b(?:setup|beds?|request|double)\b/i.test(blobA)) ||
+      (/\bdouble\b/i.test(blobA) && /\b(?:final|confirmed|fine|instead|wants?)\b/i.test(blobA));
+    var setupB = subjectB === "twin_setup" || isFinalSetupText(blobB) ||
+      (/\btwin\b/i.test(blobB) && /\b(?:setup|beds?|request|double)\b/i.test(blobB)) ||
+      (/\bdouble\b/i.test(blobB) && /\b(?:final|confirmed|fine|instead|wants?)\b/i.test(blobB));
+    if (setupA && setupB && roomsCompatibleForElection(a, b) && guestsCompatibleForElection(a, b)) {
+      return "setup";
+    }
+
+    var allocA = subjectA === "room_move" || isFinalAllocationText(blobA);
+    var allocB = subjectB === "room_move" || isFinalAllocationText(blobB);
+    if (allocA && allocB && guestsCompatibleForElection(a, b) &&
+        (noteGuest(a) || noteGuest(b) || noteRooms(a).length || noteRooms(b).length)) {
+      return "alloc";
+    }
+
+    if ((subjectA === "maintenance" || faultA) && (subjectB === "maintenance" || faultB)) {
+      if (faultA && faultB && faultA === faultB && roomsCompatibleForElection(a, b) &&
+          noteRooms(a).length && noteRooms(b).length) {
+        return "maint:" + faultA;
+      }
+    }
+
+    var famA = factMergeFamilyKey(factA);
+    var famB = factMergeFamilyKey(factB);
+    if (famA && famA === famB) {
+      /*
+       * Empty-room payment family keys collide (fam||payment|…|payments||) and were
+       * transitively merging every folio into one multi-guest fail-closed cluster.
+       * Payments must cluster only via paymentNotesLink.
+       */
+      if (payA || payB || isPaymentSubjectFact(factA, blobA) || isPaymentSubjectFact(factB, blobB) ||
+          isPaymentNoCollectText(blobA) || isPaymentNoCollectText(blobB)) {
+        return "";
+      }
+      return "family";
+    }
+
+    return "";
+  }
+
+  /**
+   * Diagnostic / stable label for a note's primary election facet.
+   * Clustering uses electionRelation (compatibility), not this key alone.
+   */
+  function currentStateFacetKey(note) {
+    var amenity = amenityKindFromNote(note);
+    if (amenity) {
+      return ["amen", noteRooms(note).join(",") || "*", noteGuest(note) || "*", amenity].join("|");
+    }
+    var blob = noteSourceBlob(note);
+    var fact = note && note.fact;
+    if (isPaymentSubjectFact(fact, blob) || isPaymentNoCollectText(blob) || isZeroMoneyText(blob)) {
+      return ["pay", noteRooms(note).join(",") || "*", noteGuest(note) || "*"].join("|");
+    }
+    if (isInServiceOrNotOooText(blob) || /\booo\b/i.test(blob)) {
+      return ["rstat", noteRooms(note).join(",") || "*"].join("|");
+    }
+    var subject = normalizeSubjectForIdentity((fact && fact.subject) || "");
+    if (subject === "twin_setup" || isFinalSetupText(blob)) {
+      return ["setup", noteGuest(note) || "*", noteRooms(note).join(",") || "*"].join("|");
+    }
+    if (subject === "room_move" || isFinalAllocationText(blob)) {
+      return ["alloc", noteGuest(note) || "*", noteRooms(note).join(",") || "*"].join("|");
+    }
+    var fault = String((fact && (fact.faultType || detailValueFromFact(fact, "fault_type"))) || extractFaultType(blob) || "").toLowerCase();
+    if (subject === "maintenance" || fault) {
+      return ["maint", noteRooms(note).join(",") || "*", fault || "maintenance"].join("|");
+    }
+    return factMergeFamilyKey(fact) || ["misc", sourceFingerprint(blob).slice(0, 40)].join("|");
+  }
+
+  function clusterNotesForElection(notes) {
+    var parent = notes.map(function (_, i) { return i; });
+    function find(i) {
+      while (parent[i] !== i) {
+        parent[i] = parent[parent[i]];
+        i = parent[i];
+      }
+      return i;
+    }
+    function union(i, j) {
+      var ri = find(i);
+      var rj = find(j);
+      if (ri !== rj) parent[rj] = ri;
+    }
+    for (var i = 0; i < notes.length; i += 1) {
+      for (var j = i + 1; j < notes.length; j += 1) {
+        if (electionRelation(notes[i], notes[j])) union(i, j);
+      }
+    }
+    var clusters = {};
+    notes.forEach(function (note, index) {
+      var root = find(index);
+      if (!clusters[root]) clusters[root] = [];
+      clusters[root].push({ note: note, index: index });
+    });
+    return Object.keys(clusters).map(function (k) { return clusters[k]; });
+  }
+
+  function terminalKindForNote(note) {
+    var blob = noteSourceBlob(note);
+    var fact = note && note.fact;
+    if (isPaymentNoCollectText(blob)) return { kind: "paid", strength: 1000 };
+    if (isCancelledRequestText(blob)) return { kind: "cancelled", strength: 920 };
+    if (isInServiceOrNotOooText(blob)) return { kind: "in_service", strength: 900 };
+    if (isFinalSetupText(blob)) return { kind: "final_setup", strength: 880 };
+    if (isFinalAllocationText(blob) && /\bfinal\b/i.test(blob)) return { kind: "final_allocation", strength: 870 };
+    if (isTerminalDoneText(blob) || (fact && fact.status === FACT_STATUS.done) ||
+        (/\b(?:repaired|fixed|tested)\b/i.test(blob) &&
+          /\b(?:working|resolved|complete|done|in\s+service)\b/i.test(blob) &&
+          !/\bstill\s+open\b/i.test(blob))) {
+      return { kind: "done", strength: 850 };
+    }
+    if (fact && fact.status === FACT_STATUS.confirmed) return { kind: "confirmed", strength: 700 };
+    if (isOooOrOpenMaintText(blob) || (fact && fact.status === FACT_STATUS.open)) {
+      return { kind: "open", strength: 200 };
+    }
+    if (fact && fact.status === FACT_STATUS.requested) return { kind: "requested", strength: 180 };
+    return { kind: "unknown", strength: FACT_STATUS_RANK[(fact && fact.status) || ""] || 10 };
+  }
+
+  function electionScore(note, index, facetSize) {
+    var terminal = terminalKindForNote(note);
+    var fact = note && note.fact;
+    var blob = noteSourceBlob(note);
+    var score = terminal.strength;
+    score += FACT_STATUS_RANK[(fact && fact.status) || ""] || 0;
+    if (/\bfinal\b/i.test(blob)) score += 120;
+    if (/\bupdate\b/i.test(blob)) score += 40;
+    /* Later claims win ties (segment order). */
+    score += (index + 1) * 0.01;
+    /* Prefer richer identity when electing among equals. */
+    if (fact && fact.guestName) score += 2;
+    if (fact && fact.rooms && fact.rooms.length) score += 1;
+    if (facetSize === 1) score += 0;
+    return score;
+  }
+
+  function applyTerminalToWinner(note, terminal) {
+    if (!note || !note.fact || !terminal) return;
+    var fact = note.fact;
+    fact.currentState = true;
+    fact.superseded = false;
+    note._currentState = true;
+    note._superseded = false;
+    if (terminal.kind === "paid" || terminal.kind === "done" || terminal.kind === "cancelled" ||
+        terminal.kind === "in_service") {
+      fact.status = FACT_STATUS.done;
+      if (note.section !== "completed" &&
+          (terminal.kind === "paid" || terminal.kind === "cancelled" || terminal.kind === "done")) {
+        /* Keep maintenance in-service visible as maintenance/completed rather than open chase. */
+        if (terminal.kind === "in_service") {
+          note.section = note.section === "maintenance" ? "maintenance" : (note.section || "general");
+        } else if (terminal.kind === "paid") {
+          note.section = "payments";
+        } else {
+          note.section = "completed";
+        }
+      }
+    }
+    if (terminal.kind === "final_setup") {
+      fact.status = FACT_STATUS.confirmed;
+      fact.subject = fact.subject === "twin_setup" ? "guest_preparation" : fact.subject;
+      fact.requestItem = fact.requestItem && /twin/i.test(fact.requestItem) ? "" : fact.requestItem;
+    }
+    if (terminal.kind === "final_allocation") {
+      fact.status = FACT_STATUS.confirmed;
+    }
+    if (terminal.kind === "paid") {
+      fact.paymentCollectable = false;
+      fact.paymentNoCollect = true;
+    }
+    fact.sectionHint = note.section || fact.sectionHint;
+  }
+
+  function markNoteSuperseded(note, winnerNote, reason) {
+    if (!note) return;
+    note._superseded = true;
+    note._currentState = false;
+    note._supersededReason = reason || "superseded_by_current_state";
+    if (note.fact) {
+      note.fact.superseded = true;
+      note.fact.currentState = false;
+      note.fact.supersededReason = note._supersededReason;
+      if (winnerNote && winnerNote.fact) {
+        note.fact.supersededBy = factIdentityKey(winnerNote.fact) || winnerNote.original || "";
+      }
+    }
+    /* Preserve source archive on the note for traceability. */
+    note._historicalSource = note.original || (note.fact && note.fact.sourceText) || "";
+  }
+
+  function isNoteSuperseded(note) {
+    if (!note) return false;
+    if (note._superseded) return true;
+    if (note.fact && note.fact.superseded) return true;
+    return false;
+  }
+
+  function isNoteCurrentState(note) {
+    if (!note || isNoteSuperseded(note)) return false;
+    if (note._currentState) return true;
+    if (note.fact && note.fact.currentState) return true;
+    /* Untouched notes remain actionable until election marks otherwise. */
+    return true;
+  }
+
+  function isPaymentNoCollectState(fact, note) {
+    if (fact && fact.paymentNoCollect) return true;
+    if (fact && fact.paymentCollectable === false && fact.status === FACT_STATUS.done) return true;
+    var blob = noteSourceBlob(note || { fact: fact, original: (fact && fact.sourceText) || "" });
+    if (isPaymentNoCollectText(blob)) return true;
+    if (fact && isZeroMoneyText(JSON.stringify(fact.details || []) + " " + (fact.sourceText || ""))) {
+      if (!isPaymentExemptFromNoCollect(blob)) return true;
+    }
+    return false;
+  }
+
+  /**
+   * Elect one authoritative CURRENT state per operational facet.
+   * Mutates notes in place; returns the same array reference.
+   * Historical text remains on superseded notes; decision surfaces must ignore them.
+   */
+  function electCanonicalCurrentState(analyzed) {
+    var notes = (analyzed || []).filter(Boolean);
+    if (!notes.length) return analyzed || [];
+
+    /* Reset prior election flags (idempotent re-runs). */
+    notes.forEach(function (note) {
+      note._superseded = false;
+      note._currentState = false;
+      note._supersededReason = "";
+      if (note.fact) {
+        note.fact.superseded = false;
+        note.fact.currentState = false;
+        note.fact.supersededReason = "";
+        note.fact.supersededBy = "";
+      }
+    });
+
+    notes.forEach(function (note) {
+      if (!note.fact && note.original) {
+        note.fact = extractOperationalFact(note.original, {
+          rooms: note.rooms,
+          section: note.section,
+          isVip: note.isVip
+        });
+      }
+    });
+
+    enrichElectionIdentity(notes);
+
+    var clusters = clusterNotesForElection(notes);
+    clusters.forEach(function (members) {
+      if (!members.length) return;
+
+      /* Ambiguous multi-guest cluster — fail closed, do not supersede across people. */
+      var named = {};
+      members.forEach(function (m) {
+        var g = noteGuest(m.note);
+        if (g) named[g] = true;
+      });
+      if (Object.keys(named).length > 1) {
+        members.forEach(function (m) {
+          m.note._currentState = true;
+          if (m.note.fact) m.note.fact.currentState = true;
+        });
+        return;
+      }
+
+      if (members.length === 1) {
+        var only = members[0].note;
+        var onlyTerminal = terminalKindForNote(only);
+        only._currentState = true;
+        if (only.fact) only.fact.currentState = true;
+        if (onlyTerminal.kind === "paid" || onlyTerminal.kind === "cancelled" ||
+            onlyTerminal.kind === "done" || onlyTerminal.kind === "in_service" ||
+            onlyTerminal.kind === "final_setup" || onlyTerminal.kind === "final_allocation") {
+          applyTerminalToWinner(only, onlyTerminal);
+        }
+        return;
+      }
+
+      var best = null;
+      var bestScore = -1;
+      members.forEach(function (m) {
+        var score = electionScore(m.note, m.index, members.length);
+        if (score > bestScore) {
+          bestScore = score;
+          best = m;
+        }
+      });
+      if (!best) return;
+
+      var winnerTerminal = terminalKindForNote(best.note);
+      applyTerminalToWinner(best.note, winnerTerminal);
+      best.note._currentState = true;
+      if (best.note.fact) best.note.fact.currentState = true;
+
+      /* Propagate identity from cluster onto winner when update lines omitted room/guest. */
+      members.forEach(function (m) {
+        if (m.note === best.note || !m.note.fact || !best.note.fact) return;
+        if ((!best.note.fact.rooms || !best.note.fact.rooms.length) && m.note.fact.rooms && m.note.fact.rooms.length) {
+          best.note.fact.rooms = m.note.fact.rooms.slice();
+          best.note.rooms = m.note.fact.rooms.slice();
+        }
+        if (!best.note.fact.guestName && m.note.fact.guestName) {
+          best.note.fact.guestName = m.note.fact.guestName;
+        }
+      });
+
+      var archive = [];
+      members.forEach(function (m) {
+        var text = m.note.original || (m.note.fact && m.note.fact.sourceText) || "";
+        if (text && archive.indexOf(text) === -1) archive.push(text);
+      });
+      best.note._sourceArchive = archive;
+      if (best.note.fact) {
+        best.note.fact.sourceHistory = best.note.fact.sourceHistory || [];
+        archive.forEach(function (text) {
+          var exists = best.note.fact.sourceHistory.some(function (entry) {
+            return entry && entry.sourceText === text;
+          });
+          if (!exists) {
+            best.note.fact.sourceHistory.push({
+              status: best.note.fact.status,
+              sourceText: text,
+              section: best.note.section || ""
+            });
+          }
+        });
+      }
+
+      var winnerIsTerminal = /^(paid|done|cancelled|in_service|final_setup|final_allocation)$/.test(winnerTerminal.kind);
+      var winnerAmenity = amenityKindFromNote(best.note);
+      members.forEach(function (m) {
+        if (m.note === best.note) return;
+        var loserTerminal = terminalKindForNote(m.note);
+        /*
+         * Amenity facet safety: if a note also carries other prep amenities
+         * (champagne DONE must not wipe an outstanding welcome card on the same note).
+         */
+        if (winnerIsTerminal && winnerAmenity) {
+          var loserBlob = noteSourceBlob(m.note).toLowerCase();
+          var otherAmenityOutstanding = ["champagne", "prosecco", "flowers", "balloons", "chocolates", "card", "cot"].some(function (kind) {
+            if (kind === winnerAmenity) return false;
+            if (kind === "card") {
+              return /\b(?:welcome\s+card|handwritten\s+card|card\s+still|card\s+required)\b/.test(loserBlob) &&
+                !/\bcard\s+(?:written|done|complete|placed)\b/.test(loserBlob) &&
+                !/\b(?:written|done|complete)\b.{0,20}\bcard\b/.test(loserBlob);
+            }
+            return loserBlob.indexOf(kind) !== -1 &&
+              !new RegExp(kind + ".{0,40}(?:done|delivered|placed|complete|cancell)", "i").test(loserBlob);
+          });
+          if (otherAmenityOutstanding) {
+            m.note._currentState = true;
+            if (m.note.fact) m.note.fact.currentState = true;
+            m.note._supersededAmenities = (m.note._supersededAmenities || []).concat([winnerAmenity]);
+            return;
+          }
+        }
+        if (winnerIsTerminal) {
+          markNoteSuperseded(m.note, best.note, "superseded_by_" + winnerTerminal.kind);
+          return;
+        }
+        if (loserTerminal.kind === "open" || loserTerminal.kind === "requested" || loserTerminal.kind === "unknown") {
+          if (winnerTerminal.strength >= 700) {
+            markNoteSuperseded(m.note, best.note, "superseded_by_stronger_current_state");
+          }
+        }
+      });
+    });
+
+    finalizeAmenityCurrentState(notes);
+
+    return notes;
+  }
+
   /**
    * Consolidate analyzed notes using fact identity — not rewritten display text.
    * Same room + different subjects stay separate.
@@ -5187,8 +6249,10 @@
         });
       }
       if (!fact || !hasUsefulOperationalDetail(fact)) return;
+      if (isNoteSuperseded(note) || fact.superseded) return;
       if (note.section === "completed") return;
       if (isFactClosed(fact) && fact.status === FACT_STATUS.done) return;
+      if (isPaymentNoCollectState(fact, note)) return;
       if (fact.subject === "reservation_info" && fact.status === FACT_STATUS.confirmed) return;
       if (!isFactUnresolved(fact) && fact.status === FACT_STATUS.confirmed &&
           !/tomorrow|tmrw|before arrival|wake|addison|collect|protect|allocate/i.test(fact.sourceText || "")) {
@@ -5310,10 +6374,17 @@
       return "Revenue follow-up required for " + (room ? room + " " : "") +
         (e.amount || "outstanding") + " adapter charge before departures";
     }
+    if (kind === "vip_awareness") {
+      /* VIP status is awareness — not an outstanding preparation action. */
+      return "";
+    }
     if (kind === "prepare_vip") {
       var amenityBit = "";
       if (e.amenities && e.amenities.length) {
         amenityBit = " — " + joinNatural(e.amenities);
+      } else {
+        /* No outstanding amenities → do not emit generic VIP prep follow-up. */
+        return "";
       }
       if (room && e.guestName) {
         return "VIP readiness follow-up for " + e.guestName + " in " + room + amenityBit;
@@ -5914,7 +6985,14 @@
     factIdentityKey: factIdentityKey,
     factMergeFamilyKey: factMergeFamilyKey,
     consolidateNotesByFacts: consolidateNotesByFacts,
-    sectionFromFact: sectionFromFact
+    sectionFromFact: sectionFromFact,
+    /* Reasoning Sprint 1 — canonical current-state election */
+    electCanonicalCurrentState: electCanonicalCurrentState,
+    currentStateFacetKey: currentStateFacetKey,
+    isNoteSuperseded: isNoteSuperseded,
+    isNoteCurrentState: isNoteCurrentState,
+    isPaymentNoCollectState: isPaymentNoCollectState,
+    isPaymentNoCollectText: isPaymentNoCollectText
   };
 
   global.AiWritingEngine = Api;
