@@ -4241,13 +4241,28 @@
   }
 
   function roomsCompatibleForElection(a, b) {
+    /* Same resolved entity may span room history (moves) — treat as compatible. */
+    var ea = noteEntityId(a);
+    var eb = noteEntityId(b);
+    if (ea && eb && ea === eb) return true;
     var ra = noteRooms(a);
     var rb = noteRooms(b);
     if (!ra.length || !rb.length) return true;
     return ra.some(function (r) { return rb.indexOf(r) !== -1; });
   }
 
+  function noteEntityId(note) {
+    if (!note) return "";
+    if (note.entityId) return String(note.entityId);
+    if (note.fact && note.fact.entityId) return String(note.fact.entityId);
+    return "";
+  }
+
   function guestsCompatibleForElection(a, b) {
+    /* Sprint 3: entityId is the identity authority when both sides resolved. */
+    var ea = noteEntityId(a);
+    var eb = noteEntityId(b);
+    if (ea && eb) return ea === eb;
     var ga = noteGuest(a);
     var gb = noteGuest(b);
     if (!ga || !gb) return true;
@@ -4977,15 +4992,748 @@
     return false;
   }
 
+  /* ─── Reasoning Sprint 3 — operational entity resolution ───────────────
+   * Smallest practical identity layer for handover reasoning.
+   * Core principle: FALSE MERGE > MISSED MERGE — fail closed on ambiguity.
+   * Does NOT use Shift guestsMatch (last-token) as merge authority.
+   * Entity shape: { entityId, canonicalName, currentRoom, roomHistory,
+   *   resolutionState, identityEvidence }
+   */
+
+  var _operationalEntitySeq = 0;
+
+  function normalizePersonNameTokens(raw) {
+    var s = String(raw || "")
+      .toLowerCase()
+      .replace(/[’']/g, "")
+      .replace(/\b(mr|mrs|ms|miss|dr)\.?\b/g, " ")
+      .replace(/[^a-z\s-]/g, " ")
+      .replace(/-/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    return s ? s.split(" ").filter(Boolean) : [];
+  }
+
+  function personNameParts(raw) {
+    var tokens = normalizePersonNameTokens(raw);
+    if (!tokens.length) return { first: "", last: "", full: "", tokenCount: 0 };
+    if (tokens.length === 1) {
+      return { first: "", last: tokens[0], full: tokens[0], tokenCount: 1 };
+    }
+    return {
+      first: tokens[0],
+      last: tokens[tokens.length - 1],
+      full: tokens.join(" "),
+      tokenCount: tokens.length
+    };
+  }
+
+  function extractBookingRefs(text) {
+    var t = String(text || "");
+    var out = [];
+    var re = /\b(?:HF|BK|REF|RES)[- ]?[A-Z0-9]{3,}\b/gi;
+    var m;
+    while ((m = re.exec(t))) {
+      var id = String(m[0] || "").toUpperCase().replace(/\s+/g, "").replace(/-+/g, "-");
+      if (id && out.indexOf(id) === -1) out.push(id);
+    }
+    var refM = t.match(/\bbooking\s+(?:ref(?:erence)?|id)\s*[:#]?\s*([A-Z0-9-]{4,})\b/i);
+    if (refM && refM[1]) {
+      var bid = String(refM[1]).toUpperCase();
+      if (out.indexOf(bid) === -1) out.push(bid);
+    }
+    return out;
+  }
+
+  function extractExplicitRoomMove(text, rooms) {
+    var t = String(text || "");
+    var dest = "";
+    var from = "";
+    /* Prefer explicit from→to forms so "moved 214 > 318" is not read as dest=214. */
+    var fromTo = t.match(
+      /\b(?:moved|move|relocated|reallocated)\s+from\s+(?:rm\.?|room\s*)?(\d{1,4}[a-z]?)\s+to\s+(?:rm\.?|room\s*)?(\d{1,4}[a-z]?)\b/i
+    );
+    if (fromTo) {
+      from = String(fromTo[1] || "").toLowerCase();
+      dest = String(fromTo[2] || "").toLowerCase();
+      return { fromRoom: from, toRoom: dest };
+    }
+    var arrow = t.match(/\b(?:rm\.?|room\s*)?(\d{1,4}[a-z]?)\s*[>→]\s*(?:rm\.?|room\s*)?(\d{1,4}[a-z]?)\b/i);
+    if (arrow) {
+      from = String(arrow[1] || "").toLowerCase();
+      dest = String(arrow[2] || "").toLowerCase();
+      return { fromRoom: from, toRoom: dest };
+    }
+    var toM = t.match(
+      /\b(?:moved|move|relocated|reallocated|FINAL\s+(?:room\s+)?allocation|FINAL\s+room|allocation\s+changed(?:\s+to)?|now\s+in(?:\s+room)?|now\s+rm\.?)\s+(?:to\s+|changed\s+to\s+)?(?:rm\.?|room\s*)?(\d{1,4}[a-z]?)\b/i
+    );
+    if (toM) dest = String(toM[1] || "").toLowerCase() || dest;
+    var fromM = t.match(
+      /\b(?:from|was(?:\s+in)?|previously(?:\s+in)?|original(?:ly)?(?:\s+allocated)?(?:\s+to)?|old(?:\s+room)?)\s+(?:rm\.?|room\s*)?(\d{1,4}[a-z]?)\b/i
+    );
+    if (fromM) from = String(fromM[1] || "").toLowerCase() || from;
+    if (!dest && Array.isArray(rooms) && rooms.length &&
+        /\b(?:moved|FINAL\s+room|FINAL\s+allocation|reallocated|allocation\s+changed)\b/i.test(t)) {
+      dest = String(rooms[rooms.length - 1] || "").toLowerCase();
+    }
+    if (!dest || (from && dest === from)) return null;
+    return { fromRoom: from || "", toRoom: dest };
+  }
+
+  function isBogusGuestToken(raw) {
+    var p = personNameParts(raw);
+    if (!p.full) return true;
+    var stop = /^(final|update|room|guest|vip|mr|mrs|ms|dr|latest|today|please|hold|keep|extra|quiet|high|city|front|duty|main|lift|area|fire|water|smoke|staff|night|audit|manager|supervisor|original|allocation|confirmed|requested|arrival|departure|champagne|delivered|welcome|card|twin|double|feather|free|pillows|newspaper|maintenance|follow)$/i;
+    if (stop.test(p.full)) return true;
+    if (p.first && stop.test(p.first)) return true;
+    if (p.last && stop.test(p.last)) return true;
+    return false;
+  }
+
+  function textLooksLikeStaffIdentity(text) {
+    var t = String(text || "");
+    return /\b(?:staff\s+member|from\s+maintenance|maintenance\s+(?:inspected|confirmed|engineer)|night\s+manager|duty\s+manager)\b/i.test(t) &&
+      !/\b(?:vip|arrival|depart|eta|guest)\b/i.test(t);
+  }
+
+  function extractGuestRawFromText(text) {
+    var cleaned = String(text || "")
+      .replace(/\b(?:this\s+is\s+)?not\s+(?:related\s+to\s+)?(?:mr|mrs|ms|miss|dr)?\.?\s*[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?/gi, " ")
+      .replace(/\bnot\s+(?:the\s+)?(?:arriving|departing)\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?/gi, " ");
+    var skip = /^(Room|Wake|Hot|Air|Twin|Final|Update|Guest|Today|Please|House|Night|Early|Later|Keep|Hold|Extra|Quiet|High|City|Front|Duty|Main|Lift|Area|Fire|Water|Smoke|Staff)$/i;
+    var titleFull = cleaned.match(/\b(?:Mr|Mrs|Ms|Miss|Dr)\.?\s+([A-Z][a-z]+)\s+([A-Z][a-z]+)\b/);
+    if (titleFull && !skip.test(titleFull[1])) {
+      return titleFull[0];
+    }
+    var fullRe = /\b([A-Z][a-z]+)\s+([A-Z][a-z]+)\b/g;
+    var m;
+    while ((m = fullRe.exec(cleaned))) {
+      if (skip.test(m[1]) || skip.test(m[2])) continue;
+      return m[1] + " " + m[2];
+    }
+    var titleSur = cleaned.match(/\b(?:Mr|Mrs|Ms|Miss|Dr)\.?\s+([A-Z][a-z]+)\b/);
+    if (titleSur && !skip.test(titleSur[1])) return titleSur[0];
+    var bareSur = cleaned.match(/\b([A-Z][a-z]+)\s+moved\b/);
+    if (bareSur && !skip.test(bareSur[1])) return bareSur[1];
+    return "";
+  }
+
+  function noteIdentitySignals(note) {
+    var fact = note && note.fact ? note.fact : null;
+    var text = noteSourceBlob(note);
+    var guestRaw = "";
+    if (fact && fact.guestName && !isBogusGuestToken(fact.guestName)) {
+      guestRaw = String(fact.guestName);
+    } else if (note && note.guestName && !isBogusGuestToken(note.guestName)) {
+      guestRaw = String(note.guestName);
+    }
+    var parts = personNameParts(guestRaw);
+    if (isBogusGuestToken(guestRaw)) {
+      guestRaw = "";
+      parts = { first: "", last: "", full: "", tokenCount: 0 };
+    }
+    var fromText = extractGuestRawFromText(text);
+    var textParts = personNameParts(fromText);
+    if (fromText && !isBogusGuestToken(fromText) && textParts.tokenCount > parts.tokenCount) {
+      guestRaw = fromText;
+      parts = textParts;
+    } else if (parts.tokenCount < 2 && fromText && !isBogusGuestToken(fromText) && textParts.tokenCount >= 1) {
+      guestRaw = fromText || guestRaw;
+      parts = textParts;
+    }
+    /* Negated name mentions must not seed or attach identity */
+    if (parts.full && parts.tokenCount >= 2) {
+      var escFull = parts.full.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s+");
+      var nameNegated =
+        new RegExp(
+          "\\b(?:this\\s+is\\s+)?not\\s+(?:related\\s+to\\s+)?(?:mr|mrs|ms|miss|dr)?\\.?\\s*" + escFull,
+          "i"
+        ).test(text) ||
+        new RegExp(
+          "\\bnot\\s+(?:the\\s+)?(?:arriving|departing|same)\\s+(?:mr|mrs|ms|miss|dr)?\\.?\\s*" + escFull,
+          "i"
+        ).test(text) ||
+        new RegExp(
+          "\\bnot\\s+(?:the\\s+)?" + escFull,
+          "i"
+        ).test(text);
+      if (nameNegated) {
+        /* Keep only a positive name mention elsewhere in the note, if any */
+        var positive = extractGuestRawFromText(text);
+        if (positive && !isBogusGuestToken(positive) &&
+            personNameParts(positive).full !== parts.full) {
+          guestRaw = positive;
+          parts = personNameParts(positive);
+        } else if (positive && personNameParts(positive).full === parts.full) {
+          guestRaw = "";
+          parts = { first: "", last: "", full: "", tokenCount: 0 };
+        } else {
+          guestRaw = "";
+          parts = { first: "", last: "", full: "", tokenCount: 0 };
+        }
+      }
+    }
+    var rooms = noteRooms(note).map(function (r) { return String(r || "").toLowerCase(); });
+    var move = extractExplicitRoomMove(text, rooms);
+    if (fact && fact.details) {
+      var destDetail = null;
+      if (Array.isArray(fact.details)) {
+        fact.details.forEach(function (d) {
+          if (d && (d.type === "destination_room" || d.key === "destination_room") && d.value != null) {
+            destDetail = String(d.value).toLowerCase();
+          }
+        });
+      } else if (fact.details.destination_room) {
+        destDetail = String(fact.details.destination_room).toLowerCase();
+      }
+      if (destDetail) {
+        move = move || { fromRoom: "", toRoom: destDetail };
+        move.toRoom = destDetail;
+        if (rooms.indexOf(destDetail) === -1) rooms.push(destDetail);
+      }
+    }
+    if (move && move.fromRoom && rooms.indexOf(move.fromRoom) === -1) rooms.push(move.fromRoom);
+    if (move && move.toRoom && rooms.indexOf(move.toRoom) === -1) rooms.push(move.toRoom);
+    var refs = extractBookingRefs(text);
+    var staff = textLooksLikeStaffIdentity(text);
+    var doNotMerge = /\b(?:do\s+not\s+merge|not\s+the\s+(?:same|arriving|departing)|different\s+(?:guest|person)|not\s+the\s+\w+\s+in\s+room|not\s+related\s+to)\b/i.test(text);
+    return {
+      guestRaw: guestRaw,
+      parts: parts,
+      rooms: rooms,
+      move: move,
+      bookingRefs: refs,
+      staff: staff,
+      doNotMerge: doNotMerge,
+      text: text,
+      note: note
+    };
+  }
+
+  function createOperationalEntity(seed) {
+    var id = "ent_" + String(++_operationalEntitySeq);
+    return {
+      entityId: id,
+      canonicalName: seed.canonicalName || "",
+      currentRoom: seed.currentRoom || "",
+      roomHistory: Array.isArray(seed.roomHistory) ? seed.roomHistory.slice() : [],
+      resolutionState: seed.resolutionState || "resolved",
+      identityEvidence: Array.isArray(seed.identityEvidence) ? seed.identityEvidence.slice() : [],
+      entityKind: seed.entityKind || "guest",
+      nameParts: seed.nameParts || { first: "", last: "", full: "", tokenCount: 0 },
+      bookingRefs: Array.isArray(seed.bookingRefs) ? seed.bookingRefs.slice() : [],
+      noteIds: []
+    };
+  }
+
+  function entityAddRoom(entity, room, asCurrent) {
+    if (!entity || !room) return;
+    var r = String(room).toLowerCase();
+    if (!r) return;
+    if (asCurrent) {
+      if (entity.currentRoom && entity.currentRoom !== r &&
+          entity.roomHistory.indexOf(entity.currentRoom) === -1) {
+        entity.roomHistory.push(entity.currentRoom);
+      }
+      entity.currentRoom = r;
+    }
+    if (entity.roomHistory.indexOf(r) === -1) entity.roomHistory.push(r);
+    if (!entity.currentRoom) entity.currentRoom = r;
+  }
+
+  function entityAddEvidence(entity, code) {
+    if (!entity || !code) return;
+    if (entity.identityEvidence.indexOf(code) === -1) entity.identityEvidence.push(code);
+  }
+
+  function activeEntities(entities) {
+    return (entities || []).filter(function (e) {
+      return e && e.resolutionState !== "merged";
+    });
+  }
+
+  function roomsOverlapEntity(entity, rooms) {
+    if (!entity || !rooms || !rooms.length) return false;
+    return rooms.some(function (r) {
+      return r === entity.currentRoom || (entity.roomHistory && entity.roomHistory.indexOf(r) !== -1);
+    });
+  }
+
+  function applySignalRoomsToEntity(entity, sig) {
+    if (!entity || !sig) return;
+    (sig.bookingRefs || []).forEach(function (r) {
+      if (entity.bookingRefs.indexOf(r) === -1) entity.bookingRefs.push(r);
+      entityAddEvidence(entity, "booking_ref");
+    });
+    if (sig.parts.tokenCount >= 2 && (!entity.nameParts || entity.nameParts.tokenCount < 2)) {
+      entity.nameParts = sig.parts;
+      entity.canonicalName = sig.guestRaw || sig.parts.full;
+    }
+    if (sig.parts.tokenCount >= 2 && entity.nameParts && entity.nameParts.full === sig.parts.full) {
+      entityAddEvidence(entity, "exact_full_name");
+    }
+    if (sig.move && sig.move.toRoom) {
+      if (sig.move.fromRoom) entityAddRoom(entity, sig.move.fromRoom, false);
+      else if (entity.currentRoom && entity.currentRoom !== sig.move.toRoom) {
+        entityAddRoom(entity, entity.currentRoom, false);
+      }
+      entityAddRoom(entity, sig.move.toRoom, true);
+      entityAddEvidence(entity, "explicit_room_move");
+    } else if (sig.rooms && sig.rooms.length) {
+      if (!entity.currentRoom) entityAddRoom(entity, sig.rooms[0], true);
+      else {
+        sig.rooms.forEach(function (r) {
+          if (r === entity.currentRoom) entityAddRoom(entity, r, true);
+          else if (entity.roomHistory.indexOf(r) === -1) entityAddRoom(entity, r, false);
+        });
+      }
+    }
+  }
+
+  /**
+   * Decide merge strength of a note signal against an entity.
+   * Returns "strong" | "medium" | "" (no merge).
+   * Weak signals (first name only, VIP, fuzzy spelling) never return a strength.
+   */
+  function mergeEvidenceAgainstEntity(sig, entity, live, mode) {
+    if (!sig || !entity) return "";
+    if (sig.doNotMerge && !(sig.parts.tokenCount >= 2 && entity.nameParts &&
+        entity.nameParts.full === sig.parts.full)) {
+      /* Negation blocks weak/medium links; strong same-full-name still allowed when rooms fit */
+      if (mode !== "strong" && mode !== "all") return "";
+    }
+    if (entity.entityKind === "staff" || sig.staff) {
+      if (entity.entityKind === "staff" && sig.staff) {
+        if (sig.parts.full && entity.nameParts.full && sig.parts.full === entity.nameParts.full) {
+          return "strong";
+        }
+      }
+      return "";
+    }
+
+    var parts = sig.parts || {};
+    var ep = entity.nameParts || {};
+    var allowMedium = mode === "medium" || mode === "all";
+    var allowStrong = mode === "strong" || mode === "all";
+
+    /* Strong: booking/reference match */
+    if (allowStrong && sig.bookingRefs && sig.bookingRefs.length && entity.bookingRefs.length) {
+      for (var bi = 0; bi < sig.bookingRefs.length; bi++) {
+        if (entity.bookingRefs.indexOf(sig.bookingRefs[bi]) !== -1) return "strong";
+      }
+    }
+
+    /* Distinct full names — never merge */
+    if (parts.full && ep.full && parts.tokenCount >= 2 && ep.tokenCount >= 2 && parts.full !== ep.full) {
+      return "";
+    }
+    if (parts.first && ep.first && parts.first === ep.first &&
+        parts.last && ep.last && parts.last !== ep.last) {
+      return "";
+    }
+    if (parts.last && ep.last && parts.last === ep.last &&
+        parts.first && ep.first && parts.first !== ep.first) {
+      return "";
+    }
+
+    /* Strong: exact normalized full name + room / move / roomless continuity */
+    if (allowStrong && parts.full && ep.full && parts.full === ep.full && parts.tokenCount >= 2) {
+      if (sig.move && sig.move.toRoom) return "strong";
+      if (roomsOverlapEntity(entity, sig.rooms || [])) return "strong";
+      if (!entity.currentRoom || !(sig.rooms && sig.rooms.length)) return "strong";
+      return "";
+    }
+
+    if (!allowMedium) return "";
+
+    /* Medium/strong-ish: surname + explicit move from a room with one matching occupant */
+    if (parts.last && sig.move && sig.move.fromRoom) {
+      var fromPeers = live.filter(function (e) {
+        return e.entityKind !== "staff" && e.currentRoom === sig.move.fromRoom &&
+          e.nameParts && e.nameParts.last === parts.last;
+      });
+      if (fromPeers.length === 1 && fromPeers[0].entityId === entity.entityId) {
+        if (!parts.first || !entity.nameParts.first || parts.first === entity.nameParts.first) {
+          return "strong";
+        }
+      }
+    }
+
+    /* Medium: surname/title + exactly one compatible known guest — REQUIRES room overlap */
+    if (parts.last && parts.tokenCount === 1 && ep.last && parts.last === ep.last) {
+      var surnamePeers = live.filter(function (e) {
+        return e.entityKind !== "staff" && e.nameParts && e.nameParts.last === parts.last;
+      });
+      if (surnamePeers.length === 1 && surnamePeers[0].entityId === entity.entityId) {
+        if (roomsOverlapEntity(entity, sig.rooms || []) ||
+            (sig.move && roomsOverlapEntity(entity, [sig.move.fromRoom, sig.move.toRoom].filter(Boolean)))) {
+          return "medium";
+        }
+      }
+      return "";
+    }
+
+    /* Medium: room-only + exactly one known current occupant */
+    if (parts.tokenCount < 2 && sig.rooms && sig.rooms.length === 1 && !sig.move) {
+      var room = sig.rooms[0];
+      var occ = live.filter(function (e) {
+        return e.entityKind !== "staff" && e.currentRoom === room;
+      });
+      if (occ.length === 1 && occ[0].entityId === entity.entityId) return "medium";
+      return "";
+    }
+
+    /* Medium: partial name + room + unique compatible chronology */
+    if (parts.last && ep.last && parts.last === ep.last && sig.rooms && sig.rooms.length &&
+        roomsOverlapEntity(entity, sig.rooms)) {
+      if (parts.first && ep.first && parts.first !== ep.first) return "";
+      var peers = live.filter(function (e) {
+        return e.entityKind !== "staff" && e.nameParts && e.nameParts.last === parts.last &&
+          roomsOverlapEntity(e, sig.rooms);
+      });
+      if (peers.length === 1 && peers[0].entityId === entity.entityId) return "medium";
+    }
+
+    return "";
+  }
+
+  function attachEntityToNote(note, entity, evidenceExtra) {
+    if (!note || !entity) return;
+    var nid = note.id != null ? String(note.id) : "";
+    if (nid && entity.noteIds.indexOf(nid) === -1) entity.noteIds.push(nid);
+    if (evidenceExtra) entityAddEvidence(entity, evidenceExtra);
+    note.entityId = entity.entityId;
+    note.canonicalName = entity.canonicalName || "";
+    note.currentRoom = entity.currentRoom || "";
+    note.roomHistory = entity.roomHistory.slice();
+    note.resolutionState = entity.resolutionState || "resolved";
+    note.identityEvidence = (entity.identityEvidence || []).slice();
+    note.operationalEntity = {
+      entityId: entity.entityId,
+      canonicalName: entity.canonicalName,
+      currentRoom: entity.currentRoom,
+      roomHistory: entity.roomHistory.slice(),
+      resolutionState: entity.resolutionState,
+      identityEvidence: note.identityEvidence.slice()
+    };
+    var fact = note.fact;
+    if (fact) {
+      fact.entityId = entity.entityId;
+      fact.canonicalName = entity.canonicalName;
+      fact.currentRoom = entity.currentRoom;
+      fact.roomHistory = entity.roomHistory.slice();
+      fact.resolutionState = entity.resolutionState;
+      fact.identityEvidence = note.identityEvidence.slice();
+      /*
+       * Do not invent guestName on room-only notes — that poisons re-resolve
+       * (sole-occupant notes would look like strong full-name matches).
+       */
+      if (entity.canonicalName) {
+        var ownName = extractGuestRawFromText(noteSourceBlob(note));
+        var fg = personNameParts(fact.guestName || "");
+        if (ownName && !isBogusGuestToken(ownName)) {
+          if (!fg.full || fg.tokenCount < 2 || fg.full === entity.nameParts.full || isBogusGuestToken(fact.guestName)) {
+            fact.guestName = entity.canonicalName;
+          }
+        } else if (fg.full && fg.tokenCount >= 2 && fg.full === entity.nameParts.full) {
+          fact.guestName = entity.canonicalName;
+        }
+      }
+      if (entity.currentRoom) {
+        var cr = entity.currentRoom;
+        var existing = Array.isArray(fact.rooms) ? fact.rooms.map(function (r) {
+          return String(r || "").toLowerCase();
+        }) : [];
+        var next = [cr].concat(existing.filter(function (r) { return r && r !== cr; }));
+        (entity.roomHistory || []).forEach(function (r) {
+          if (r && next.indexOf(r) === -1) next.push(r);
+        });
+        fact.rooms = next;
+      }
+    }
+  }
+
+  function markNoteUnresolved(note, state, evidence) {
+    note.entityId = null;
+    note.resolutionState = state || "unresolved";
+    note.identityEvidence = [evidence || "fail_closed_ambiguous"];
+    if (note.currentRoom == null && note.fact && note.fact.rooms && note.fact.rooms[0]) {
+      note.currentRoom = String(note.fact.rooms[0]).toLowerCase();
+    }
+    if (note.fact) {
+      note.fact.entityId = null;
+      note.fact.resolutionState = note.resolutionState;
+      note.fact.identityEvidence = note.identityEvidence.slice();
+      if (note.currentRoom) note.fact.currentRoom = note.currentRoom;
+    }
+  }
+
+  function collectCandidates(sig, live, mode) {
+    var candidates = [];
+    var seen = {};
+    live.forEach(function (ent) {
+      var strength = mergeEvidenceAgainstEntity(sig, ent, live, mode);
+      if (!strength) return;
+      if (mode === "strong" && strength !== "strong") return;
+      if (seen[ent.entityId]) {
+        if (strength === "strong") {
+          for (var i = 0; i < candidates.length; i++) {
+            if (candidates[i].entity.entityId === ent.entityId) candidates[i].strength = "strong";
+          }
+        }
+        return;
+      }
+      seen[ent.entityId] = true;
+      candidates.push({ entity: ent, strength: strength });
+    });
+    return candidates;
+  }
+
+  function chooseUniqueCandidate(candidates) {
+    var strong = candidates.filter(function (c) { return c.strength === "strong"; });
+    var medium = candidates.filter(function (c) { return c.strength === "medium"; });
+    if (strong.length === 1) return { entity: strong[0].entity, evidence: "strong_identity" };
+    if (strong.length > 1) return null;
+    if (medium.length === 1) return { entity: medium[0].entity, evidence: "medium_unique" };
+    return null;
+  }
+
+  /**
+   * Resolve operational guest/room entities across analyzed notes.
+   * Two-phase: seed/merge strong full-name & booking evidence first, then
+   * medium unique attachments. Fail closed on ambiguity.
+   */
+  function resolveOperationalEntities(analyzed) {
+    var notes = Array.isArray(analyzed) ? analyzed : [];
+    if (!notes.length) return notes;
+    if (notes._operationalEntitiesResolved) return notes;
+
+    _operationalEntitySeq = 0;
+    var entities = [];
+
+    var ordered = notes.map(function (n, idx) {
+      if (!n.fact && n.original) {
+        n.fact = extractOperationalFact(n.original, {
+          rooms: n.rooms,
+          section: n.section,
+          isVip: n.isVip
+        });
+      }
+      if (n._seq == null) n._seq = idx;
+      return { note: n, idx: idx, seq: n._seq, sig: noteIdentitySignals(n) };
+    }).sort(function (a, b) { return a.seq - b.seq; });
+
+    /* Phase 1 — strong identity only (full name / booking / explicit named move) */
+    ordered.forEach(function (item) {
+      var note = item.note;
+      var sig = item.sig;
+      var live = activeEntities(entities);
+      var strongCapable = (sig.parts.tokenCount >= 2) || (sig.bookingRefs && sig.bookingRefs.length);
+      if (!strongCapable) return;
+
+      var chosenWrap = chooseUniqueCandidate(collectCandidates(sig, live, "strong"));
+      if (chosenWrap) {
+        applySignalRoomsToEntity(chosenWrap.entity, sig);
+        entityAddEvidence(chosenWrap.entity, chosenWrap.evidence);
+        attachEntityToNote(note, chosenWrap.entity, null);
+        return;
+      }
+
+      if (sig.staff) {
+        var staffEnt = createOperationalEntity({
+          canonicalName: sig.guestRaw || sig.parts.full || "",
+          nameParts: sig.parts,
+          currentRoom: "",
+          roomHistory: [],
+          resolutionState: "resolved",
+          identityEvidence: ["staff_identity"],
+          entityKind: "staff"
+        });
+        entities.push(staffEnt);
+        attachEntityToNote(note, staffEnt, null);
+        return;
+      }
+
+      /* Same full name + conflicting room without move → separate entity (new stay) */
+      var seedRoom = (sig.move && sig.move.toRoom) || (sig.rooms && sig.rooms[0]) || "";
+      var seeded = createOperationalEntity({
+        canonicalName: sig.guestRaw || sig.parts.full || "",
+        nameParts: sig.parts,
+        currentRoom: seedRoom,
+        roomHistory: seedRoom ? [seedRoom] : [],
+        resolutionState: "resolved",
+        identityEvidence: sig.parts.tokenCount >= 2 ? ["seed_full_name"] : ["seed_booking_ref"],
+        bookingRefs: sig.bookingRefs,
+        entityKind: "guest"
+      });
+      if (sig.move && sig.move.fromRoom) entityAddRoom(seeded, sig.move.fromRoom, false);
+      if (sig.move && sig.move.toRoom) entityAddRoom(seeded, sig.move.toRoom, true);
+      if (sig.rooms) {
+        sig.rooms.forEach(function (r) {
+          if (r !== seeded.currentRoom) entityAddRoom(seeded, r, false);
+        });
+      }
+      entities.push(seeded);
+      attachEntityToNote(note, seeded, null);
+    });
+
+    /* Phase 2 — medium unique attachments + remaining notes */
+    ordered.forEach(function (item) {
+      var note = item.note;
+      if (note.entityId) return;
+      var sig = noteIdentitySignals(note); /* refresh after phase-1 room moves */
+      item.sig = sig;
+      var live = activeEntities(entities);
+
+      var hasIdentity = (sig.parts.tokenCount >= 1) || (sig.rooms && sig.rooms.length) ||
+        (sig.bookingRefs && sig.bookingRefs.length) || sig.move;
+      if (!hasIdentity) {
+        markNoteUnresolved(note, "unresolved", "no_identity_signal");
+        return;
+      }
+
+      /* Explicit do-not-merge / negation notes stay unresolved or room-based */
+      if (sig.doNotMerge && sig.parts.tokenCount < 2) {
+        if (sig.rooms && sig.rooms.length === 1) {
+          markNoteUnresolved(note, "room_based", "fail_closed_do_not_merge");
+          note.currentRoom = sig.rooms[0];
+        } else {
+          markNoteUnresolved(note, "unresolved", "fail_closed_do_not_merge");
+        }
+        return;
+      }
+
+      var chosenWrap = chooseUniqueCandidate(collectCandidates(sig, live, "all"));
+      if (chosenWrap) {
+        applySignalRoomsToEntity(chosenWrap.entity, sig);
+        entityAddEvidence(chosenWrap.entity, chosenWrap.evidence);
+        attachEntityToNote(note, chosenWrap.entity,
+          chosenWrap.evidence === "medium_unique" && sig.parts.tokenCount < 2 && sig.rooms.length === 1
+            ? "sole_occupant_room"
+            : null);
+        return;
+      }
+
+      if (sig.parts.last && sig.parts.tokenCount === 1 && !sig.staff) {
+        var surnameCount = live.filter(function (e) {
+          return e.entityKind !== "staff" && e.nameParts && e.nameParts.last === sig.parts.last;
+        }).length;
+        if (surnameCount > 1 || !sig.rooms.length) {
+          markNoteUnresolved(note, "unresolved", "fail_closed_ambiguous_surname");
+          if (sig.rooms[0]) note.currentRoom = sig.rooms[0];
+          return;
+        }
+      }
+
+      if (sig.parts.tokenCount < 2 && sig.rooms && sig.rooms.length === 1) {
+        var occCount = live.filter(function (e) {
+          return e.entityKind !== "staff" && e.currentRoom === sig.rooms[0];
+        }).length;
+        if (occCount > 1) {
+          markNoteUnresolved(note, "room_based", "fail_closed_multi_occupant_room");
+          note.currentRoom = sig.rooms[0];
+          if (note.fact) note.fact.currentRoom = sig.rooms[0];
+          return;
+        }
+      }
+
+      if (sig.staff) {
+        var staffEnt2 = createOperationalEntity({
+          canonicalName: sig.guestRaw || sig.parts.full || "",
+          nameParts: sig.parts,
+          currentRoom: "",
+          roomHistory: [],
+          resolutionState: "resolved",
+          identityEvidence: ["staff_identity"],
+          entityKind: "staff"
+        });
+        entities.push(staffEnt2);
+        attachEntityToNote(note, staffEnt2, null);
+        return;
+      }
+
+      if (sig.parts.last && sig.rooms && sig.rooms.length === 1) {
+        var peers = live.filter(function (e) {
+          return e.entityKind !== "staff" && e.nameParts && e.nameParts.last === sig.parts.last;
+        });
+        if (peers.length === 0) {
+          var surSeed = createOperationalEntity({
+            canonicalName: sig.guestRaw || sig.parts.last,
+            nameParts: sig.parts,
+            currentRoom: sig.rooms[0],
+            roomHistory: [sig.rooms[0]],
+            resolutionState: "resolved",
+            identityEvidence: ["seed_surname_room"],
+            entityKind: "guest"
+          });
+          entities.push(surSeed);
+          attachEntityToNote(note, surSeed, null);
+          return;
+        }
+        markNoteUnresolved(note, "unresolved", "fail_closed_ambiguous_surname");
+        note.currentRoom = sig.rooms[0];
+        return;
+      }
+
+      if (sig.rooms && sig.rooms.length === 1 && sig.parts.tokenCount < 2) {
+        markNoteUnresolved(note, "room_based", "room_only");
+        note.currentRoom = sig.rooms[0];
+        if (note.fact) note.fact.currentRoom = sig.rooms[0];
+        return;
+      }
+
+      markNoteUnresolved(note, "unresolved", "unresolved_identity");
+    });
+
+    /* Phase 3 — sole-occupant room attachment for leftover room_only notes */
+    var live2 = activeEntities(entities).filter(function (e) { return e.entityKind !== "staff"; });
+    notes.forEach(function (note) {
+      if (note.entityId) return;
+      if (note.identityEvidence && (
+        note.identityEvidence.indexOf("fail_closed_ambiguous_surname") !== -1 ||
+        note.identityEvidence.indexOf("fail_closed_do_not_merge") !== -1
+      )) {
+        return;
+      }
+      var sig = noteIdentitySignals(note);
+      if (sig.parts.tokenCount >= 2 || sig.staff || sig.doNotMerge) return;
+      if (!(sig.rooms && sig.rooms.length === 1)) return;
+      var room = sig.rooms[0];
+      var occ = live2.filter(function (e) { return e.currentRoom === room; });
+      if (occ.length !== 1) return;
+      attachEntityToNote(note, occ[0], "sole_occupant_room");
+    });
+
+    var byId = {};
+    activeEntities(entities).forEach(function (e) { byId[e.entityId] = e; });
+    notes.forEach(function (note) {
+      if (!note.entityId || !byId[note.entityId]) return;
+      attachEntityToNote(note, byId[note.entityId], null);
+    });
+
+    notes._operationalEntitiesResolved = true;
+    notes._operationalEntities = activeEntities(entities);
+    return notes;
+  }
+
   /**
    * Elect one authoritative CURRENT state per operational facet.
    * Mutates notes in place; returns the same array reference.
    * Historical text remains on superseded notes; decision surfaces must ignore them.
+   * Sprint 3: resolveOperationalEntities runs first (shared identity authority).
    */
   function electCanonicalCurrentState(analyzed) {
     var notes = (analyzed || []).filter(Boolean);
     if (!notes.length) return analyzed || [];
 
+    /* Preserve prior resolve flag across filter() (new array wrapper). */
+    if (analyzed && analyzed._operationalEntitiesResolved) {
+      notes._operationalEntitiesResolved = true;
+      notes._operationalEntities = analyzed._operationalEntities;
+    }
+    resolveOperationalEntities(notes);
+
+    /* Reset prior election flags (idempotent re-runs). */
     /* Reset prior election flags (idempotent re-runs). */
     notes.forEach(function (note, idx) {
       if (note._seq == null) note._seq = idx;
@@ -7219,7 +7967,10 @@
     isHazardControlOrClearanceText: isHazardControlOrClearanceText,
     isHazardActiveOpenText: isHazardActiveOpenText,
     electionRelation: electionRelation,
-    clusterNotesForElection: clusterNotesForElection
+    clusterNotesForElection: clusterNotesForElection,
+    /* Reasoning Sprint 3 — operational entity resolution */
+    resolveOperationalEntities: resolveOperationalEntities,
+    personNameParts: personNameParts
   };
 
   global.AiWritingEngine = Api;

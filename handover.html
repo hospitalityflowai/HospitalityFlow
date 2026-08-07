@@ -8783,6 +8783,17 @@
           }
         });
         /*
+         * Reasoning Sprint 3: resolve operational entities (identity authority)
+         * before Sprint 1 CURRENT-state election. Fail closed on ambiguity.
+         */
+        if (
+          window.AiWritingEngine &&
+          typeof window.AiWritingEngine.resolveOperationalEntities === "function"
+        ) {
+          analyzed = window.AiWritingEngine.resolveOperationalEntities(analyzed);
+        }
+
+        /*
          * Reasoning Sprint 1: elect one CURRENT state per operational facet
          * before organised handover / briefing / recommendations consume notes.
          * Do not refreshFact after election — that would wipe supersession flags.

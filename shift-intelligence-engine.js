@@ -1131,6 +1131,11 @@
 
   function factRoomsList(fact, note) {
     var rooms = [];
+    /* Sprint 3: prefer current operational room when entity resolution attached it. */
+    var currentRoom = normalizeRoomNumber(
+      (fact && fact.currentRoom) || (note && note.currentRoom) || ""
+    );
+    if (currentRoom) rooms.push(currentRoom);
     if (fact) {
       if (Array.isArray(fact.rooms)) {
         fact.rooms.forEach(function (r) {
@@ -1160,12 +1165,21 @@
   }
 
   function factGuestName(fact, note) {
+    /* Sprint 3: prefer resolved canonical name over raw extraction. */
+    if (fact && fact.canonicalName) return trimText(fact.canonicalName);
+    if (note && note.canonicalName) return trimText(note.canonicalName);
     if (fact && fact.guestName) return trimText(fact.guestName);
     if (fact && fact.guest) {
       if (typeof fact.guest === "string") return trimText(fact.guest);
       return trimText(fact.guest.name || fact.guest.label || "");
     }
     if (note && note.guestName) return trimText(note.guestName);
+    return "";
+  }
+
+  function factEntityId(fact, note) {
+    if (fact && fact.entityId) return String(fact.entityId);
+    if (note && note.entityId) return String(note.entityId);
     return "";
   }
 
@@ -3581,28 +3595,32 @@
     var type = (objectInfo && objectInfo.type) || OPERATIONAL_OBJECT_TYPE.other;
     var rooms = factRoomsList(fact, note);
     var guest = factGuestName(fact, note).toLowerCase();
+    var entityId = factEntityId(fact, note);
     var subject = normalizeSubjectToken(fact && (fact.subject || fact.subjectType) || "");
     var fault = trimText((fact && fact.faultType) || "").toLowerCase();
+    var room = (fact && fact.currentRoom) || (note && note.currentRoom) || rooms[0] || "";
+    room = normalizeRoomNumber(room) || room;
+    /* Sprint 3: prefer entityId over raw guest-name strings for guest-linked objects. */
     if (type === OPERATIONAL_OBJECT_TYPE.vip) {
-      return ["vip", guest || rooms[0] || subject || "unknown"].join("|");
+      return ["vip", entityId || guest || room || subject || "unknown"].join("|");
     }
     if (type === OPERATIONAL_OBJECT_TYPE.maintenance) {
       return ["maintenance", rooms[0] || "area", fault || subject || "issue"].join("|");
     }
     if (type === OPERATIONAL_OBJECT_TYPE.payment) {
-      return ["payment", rooms[0] || guest || "folio"].join("|");
+      return ["payment", entityId || room || guest || "folio"].join("|");
     }
     if (
       type === OPERATIONAL_OBJECT_TYPE.wake_up ||
       type === OPERATIONAL_OBJECT_TYPE.transport ||
       type === OPERATIONAL_OBJECT_TYPE.departure
     ) {
-      return ["departure", rooms[0] || guest || "guest"].join("|");
+      return ["departure", entityId || room || guest || "guest"].join("|");
     }
     if (type === OPERATIONAL_OBJECT_TYPE.interconnect) {
-      return ["interconnect", guest || rooms.slice().sort().join("+") || "group"].join("|");
+      return ["interconnect", entityId || guest || rooms.slice().sort().join("+") || "group"].join("|");
     }
-    return [type, rooms[0] || guest || subject || "item"].join("|");
+    return [type, entityId || room || guest || subject || "item"].join("|");
   }
 
   /**
@@ -3884,10 +3902,19 @@
   function buildPriorityActionSpec(object) {
     var primary = objectPrimaryFact(object);
     var fact = primary && primary.fact ? primary.fact : null;
+    var primaryNote = primary && primary.note ? primary.note : null;
     var src = objectSourceBlob(object);
-    var room = (object.rooms && object.rooms[0]) || (fact && fact.rooms && fact.rooms[0]) || "";
+    var room = (fact && fact.currentRoom) ||
+      (primaryNote && primaryNote.currentRoom) ||
+      (object.rooms && object.rooms[0]) ||
+      (fact && fact.rooms && fact.rooms[0]) ||
+      "";
     var roomLabel = room ? "Room " + room : "";
-    var guest = object.guestName || (fact && fact.guestName) || "";
+    var guest = (fact && fact.canonicalName) ||
+      (primaryNote && primaryNote.canonicalName) ||
+      object.guestName ||
+      (fact && fact.guestName) ||
+      "";
     var amount = fact ? extractMoneyAmount(fact, primary && primary.note) : null;
     var amountLabel = amount != null ? ("£" + amount.toFixed(amount % 1 ? 2 : 0)) : "";
     var fault = trimText(fact && fact.faultType || "");
@@ -7615,10 +7642,19 @@
           memory.lifecycleStatus === MEMORY_LIFECYCLE.reopened) &&
         !/previous shift|reopened after/i.test(rec.text || "")
       ) {
-        var suffix = memory.lifecycleStatus === MEMORY_LIFECYCLE.reopened
-          ? " Reopened after prior resolution."
-          : " Still unresolved from previous shift.";
-        rec.text = String(rec.text || "").replace(/\.+$/, "") + "." + suffix;
+        /*
+         * Fold continuity into the last sentence so limitRecommendationText
+         * (max 2 sentences) cannot drop the cross-shift signal.
+         */
+        var clause = memory.lifecycleStatus === MEMORY_LIFECYCLE.reopened
+          ? "reopened after prior resolution"
+          : "still unresolved from previous shift";
+        var base = String(rec.text || "").replace(/\.+$/, "").trim();
+        if (/still unresolved(?:\s+this\s+shift)?$/i.test(base)) {
+          rec.text = base.replace(/still unresolved(?:\s+this\s+shift)?$/i, clause) + ".";
+        } else {
+          rec.text = base + "; " + clause + ".";
+        }
       }
     });
     return candidates;
