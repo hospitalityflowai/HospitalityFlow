@@ -276,9 +276,20 @@
         num = global.ShiftIntelligenceEngine.normalizeRoomNumber(num);
         if (!num) return;
       } else {
-        num = String(num).toUpperCase();
-        var parsed = parseInt(num, 10);
-        if (isNaN(parsed) || parsed < 1 || parsed > 9999) return;
+        /* Sprint 12 fallback when Shift engine not loaded — mirror prefix preservation. */
+        var raw = String(num || "").replace(/[*_`~]+/g, " ").trim().toUpperCase();
+        if (!raw) return;
+        var hy = raw.match(/\b([A-Z]{1,3}-\d{1,2}[A-Z]?)\b/);
+        var multi = raw.match(/\b(LG\d{1,4}[A-Z]?)\b/) ||
+          raw.match(/\b(?!RM\d)([A-Z]{2,3}\d{1,4}[A-Z]?)\b/);
+        var single = raw.match(/\b([A-NP-Z]\d{1,4}[A-Z]?)\b/);
+        var bare = raw.match(/\b(\d{1,4}[A-Z]?)\b/);
+        num = (hy && hy[1]) || (multi && multi[1]) || (single && single[1]) || "";
+        if (!num && bare) {
+          var parsed = parseInt(bare[1], 10);
+          if (!isNaN(parsed) && parsed >= 1 && parsed <= 9999) num = bare[1];
+        }
+        if (!num) return;
       }
       if (seen[num]) return;
       seen[num] = true;
@@ -286,6 +297,36 @@
     }
 
     var source = String(text || "");
+
+    /*
+     * Sprint 12 — prefixed operational room / space IDs (generic, not hotel-named).
+     * LG08, CX07, MS03, MA02, M124, TR-2. Excludes bare R#### (legacy r24 → 24).
+     */
+    var prefixedPatterns = [
+      /\b(LG\d{1,4}[A-Za-z]?)\b/gi,
+      /\b([A-Za-z]{1,3}-\d{1,2}[A-Za-z]?)\b/gi,
+      /\b(?![Rr][Mm]\d)([A-Za-z]{2,3}\d{1,4}[A-Za-z]?)\b/gi,
+      /* Single-letter floor/wing codes (M124). Skip R/r — legacy r24 → 24. */
+      /\b([A-Za-z]\d{1,4}[A-Za-z]?)\b/g
+    ];
+    prefixedPatterns.forEach(function (pattern) {
+      var match;
+      pattern.lastIndex = 0;
+      while ((match = pattern.exec(source)) !== null) {
+        var tok = match[1];
+        if (/^RM\d/i.test(tok)) continue;
+        if (/^[Rr]\d/.test(tok)) continue;
+        addRoom(tok);
+      }
+    });
+    /* Ranges: M210–M215 / M210-M215 / CX04-CX06 */
+    var rangeRe =
+      /\b((?:LG|[A-Z]{2,3}|[A-NP-Z])\d{1,4}[A-Z]?)\s*[–—-]\s*((?:LG|[A-Z]{2,3}|[A-NP-Z])\d{1,4}[A-Z]?)\b/gi;
+    var rangeMatch;
+    while ((rangeMatch = rangeRe.exec(source)) !== null) {
+      addRoom(rangeMatch[1]);
+      addRoom(rangeMatch[2]);
+    }
 
     /* Multi-room lists: "Rooms 12 and 14", "Rooms 12, 14 & 16" */
     var listPattern = /\brooms?\s+((?:\d{1,4}[a-z]?)(?:\s*(?:,|&|and|\/)\s*\d{1,4}[a-z]?)*)/gi;
@@ -318,14 +359,15 @@
       });
     }
 
-    /* Interconnecting pairs: "interconnect 14+15", "14 + 15 interconnecting" */
+    /* Interconnecting pairs: "interconnect 14+15", "M114 + M115 interconnecting" */
+    var roomTok = "(?:LG\\d{1,4}[A-Za-z]?|[A-Za-z]{1,3}-\\d{1,2}[A-Za-z]?|[A-Za-z]{2,3}\\d{1,4}[A-Za-z]?|[A-NP-Z]\\d{1,4}[A-Za-z]?|\\d{1,4}[A-Za-z]?)";
     var interconnectPair = source.match(
-      /\binterconnect(?:ing)?\s+(\d{1,4}[a-z]?)\s*[+\/&]\s*(\d{1,4}[a-z]?)/i
+      new RegExp("\\binterconnect(?:ing)?\\s+(" + roomTok + ")\\s*[+\\/&]\\s*(" + roomTok + ")", "i")
     ) || source.match(
-      /\b(\d{1,4}[a-z]?)\s*[+\/&]\s*(\d{1,4}[a-z]?)\s+interconnect/i
+      new RegExp("\\b(" + roomTok + ")\\s*[+\\/&]\\s*(" + roomTok + ")\\s+interconnect", "i")
     ) || (
       /\binterconnect/i.test(source)
-        ? source.match(/\b(\d{1,4}[a-z]?)\s*\+\s*(\d{1,4}[a-z]?)\b/)
+        ? source.match(new RegExp("\\b(" + roomTok + ")\\s*\\+\\s*(" + roomTok + ")\\b", "i"))
         : null
     );
     if (interconnectPair) {

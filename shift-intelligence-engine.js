@@ -279,10 +279,29 @@
   /**
    * Canonical room token: "Room 24" / "24" / "room24" → "24" (uppercase suffix).
    */
+  /**
+   * Sprint 12 — operational room / space identity.
+   * Preserves prefixed atomic IDs (LG08, M124, CX07, MS03, MA02, TR-2).
+   * Never collapses CX07→7 or M124→124. Numeric rooms unchanged.
+   * Single-letter R#### excluded (legacy r24 / rm 24 digit capture).
+   */
   function normalizeRoomNumber(value) {
     var s = trimText(value);
     if (!s) return "";
-    var m = s.match(/(\d{1,4}[a-z]?)/i);
+    s = s.replace(/[*_`~]+/g, " ").replace(/\s+/g, " ").trim().toUpperCase();
+    if (!s) return "";
+    /* Hyphenated operational spaces: TR-2 (1–2 digits; not MG-55201 booking codes). */
+    var hy = s.match(/\b([A-Z]{1,3}-\d{1,2}[A-Z]?)\b/);
+    if (hy) return hy[1];
+    /* LG / multi-letter prefix + digits: LG08, CX07, MS03, MA02 (not RM32 — rm shorthand). */
+    var multi = s.match(/\b(LG\d{1,4}[A-Z]?)\b/) ||
+      s.match(/\b(?!RM\d)([A-Z]{2,3}\d{1,4}[A-Z]?)\b/);
+    if (multi) return multi[1];
+    /* Single-letter floor/wing prefix except R (r24 shorthand stays numeric). */
+    var single = s.match(/\b([A-NP-Z]\d{1,4}[A-Z]?)\b/);
+    if (single) return single[1];
+    /* Bare numeric rooms: 315, 24A */
+    var m = s.match(/\b(\d{1,4}[A-Z]?)\b/);
     if (!m) return "";
     var num = String(m[1]).toUpperCase();
     var parsed = parseInt(num, 10);
@@ -9101,8 +9120,20 @@
   function extractSameNoteRoomBinding(src) {
     var text = String(src || "");
     if (!text) return "";
+    /* rm32 / r24 shorthand before prefixed tokens (RM is not a wing code). */
+    var rmEarly = text.match(/\brm\.?\s*(\d{1,4}[a-z]?)\b/i) ||
+      text.match(/\br\.?\s*(\d{1,4}[a-z]?)\b/i);
+    if (rmEarly && !/\broom\b/i.test(rmEarly[0])) {
+      return normalizeRoomNumber(rmEarly[1]) || String(rmEarly[1]);
+    }
+    var pref = text.match(
+      /\b(LG\d{1,4}[A-Z]?|[A-Z]{1,3}-\d{1,2}[A-Z]?|(?!RM)[A-Z]{2,3}\d{1,4}[A-Z]?|[A-NP-Z]\d{1,4}[A-Z]?)\b/i
+    );
+    if (pref && !/^RM\d/i.test(pref[1])) {
+      return normalizeRoomNumber(pref[1]) || String(pref[1]).toUpperCase();
+    }
     var rm = text.match(/\brm\.?\s*(\d{1,4}[a-z]?)\b/i) ||
-      text.match(/\broom\s+(\d{1,4}[a-z]?)\b/i);
+      text.match(/\broom\s+(\d{1,4}[a-z]?|[A-Z]{1,3}\d{1,4}[A-Z]?|[A-Z]{1,3}-\d{1,2}[A-Z]?)\b/i);
     if (rm) return normalizeRoomNumber(rm[1]) || String(rm[1]);
     /* Tab arrivals: NAME <tabs> ROOM <tabs> DD/MM/YYYY */
     var tabRoom = text.match(
@@ -9284,8 +9315,9 @@
           if (n) out[n] = true;
         });
       }
-      /* Sprint 11: "315 CHECKED OUT" / "Room 315 checked out" rack lines. */
-      var reSolo = /\b(?:room\s+)?(\d{1,4}[a-z]?)\s+checked\s+out\b/gi;
+      /* Sprint 11/12: "315 CHECKED OUT" / "CX07 checked out" / "Room M124 checked out". */
+      var reSolo =
+        /\b(?:room\s+)?(lg\d{1,4}[a-z]?|[a-z]{1,3}-\d{1,2}[a-z]?|[a-z]{2,3}\d{1,4}[a-z]?|[a-np-z]\d{1,4}[a-z]?|\d{1,4}[a-z]?)\s+checked\s+out\b/gi;
       var sm;
       while ((sm = reSolo.exec(norm)) !== null) {
         var rn = normalizeRoomNumber(sm[1]) || String(sm[1]).toUpperCase();
@@ -9296,14 +9328,10 @@
   }
 
   /**
-   * Sprint 11 — preserve LG08-style tokens; numeric rooms via normalizeRoomNumber.
+   * Sprint 11/12 — allocation room token = Sprint 12 normalizeRoomNumber identity.
    */
   function normalizeAllocationRoomToken(value) {
-    var s = String(value || "").replace(/[*_`~]+/g, " ").trim().toUpperCase();
-    if (!s) return "";
-    var lg = s.match(/\b(LG\d{1,4}[A-Z]?)\b/);
-    if (lg) return lg[1];
-    return normalizeRoomNumber(s) || "";
+    return normalizeRoomNumber(value) || "";
   }
 
   /**
@@ -9341,11 +9369,18 @@
       var entityId = note.entityId || (note.fact && note.fact.entityId) || null;
 
       var roomTokens = [];
-      var reAlloc =
-        /\b(?:originally\s+)?allocated(?:\s+to)?\s+(?:room\s+)?([a-z]{0,3}\d{1,4}[a-z]?)\b/gi;
-      var reSys = /\bsystem\s+allocation\s+(?:room\s+)?([a-z]{0,3}\d{1,4}[a-z]?)\b/gi;
-      var reRoom = /\broom\s+(\d{1,4}[a-z]?)\b/gi;
-      var reLg = /\b(lg\d{1,4}[a-z]?)\b/gi;
+      var tokClass =
+        "lg\\d{1,4}[a-z]?|[a-z]{1,3}-\\d{1,2}[a-z]?|[a-z]{2,3}\\d{1,4}[a-z]?|[a-np-z]\\d{1,4}[a-z]?|\\d{1,4}[a-z]?";
+      var reAlloc = new RegExp(
+        "\\b(?:originally\\s+)?allocated(?:\\s+to)?\\s+(?:room\\s+)?(" + tokClass + ")\\b",
+        "gi"
+      );
+      var reSys = new RegExp(
+        "\\bsystem\\s+allocation\\s+(?:room\\s+)?(" + tokClass + ")\\b",
+        "gi"
+      );
+      var reRoom = new RegExp("\\broom\\s+(" + tokClass + ")\\b", "gi");
+      var reBarePref = new RegExp("\\b(" + tokClass + ")\\b", "gi");
       var rm;
       while ((rm = reAlloc.exec(norm)) !== null) {
         roomTokens.push(normalizeAllocationRoomToken(rm[1]));
@@ -9356,20 +9391,31 @@
       while ((rm = reRoom.exec(norm)) !== null) {
         roomTokens.push(normalizeAllocationRoomToken(rm[1]));
       }
-      while ((rm = reLg.exec(norm)) !== null) {
-        roomTokens.push(normalizeAllocationRoomToken(rm[1]));
-      }
+      /* Prefer fact/note rooms (Sprint 12 extraction) over re-scraping whole note. */
       ((note.fact && note.fact.rooms) || note.rooms || []).forEach(function (r) {
         roomTokens.push(normalizeAllocationRoomToken(r));
       });
+      /* When note mentions hold/block/allocation cues, also harvest prefixed tokens. */
+      if (/\b(?:allocated|allocation|ooo|occupied|checked\s+out|stayover|vacant|hold|sell|interconnect)\b/.test(norm)) {
+        var bm;
+        while ((bm = reBarePref.exec(norm)) !== null) {
+          var bt = normalizeAllocationRoomToken(bm[1]);
+          /* Skip pure tiny numerics from times (07, 05) unless already a fact room. */
+          if (bt && !/^\d{1,2}$/.test(bt)) roomTokens.push(bt);
+          else if (bt && /^\d{3,4}[A-Z]?$/.test(bt)) roomTokens.push(bt);
+        }
+      }
       roomTokens = roomTokens.filter(Boolean);
 
       roomTokens.forEach(function (r) { addCorpus(r, src); });
 
       if (/\booo\b/.test(norm) || /\bout\s+of\s+order\b/.test(norm)) {
         roomTokens.forEach(function (r) { oooRooms[r] = true; });
-        var oooLine = norm.match(/\b(?:room\s+)?(\d{1,4}[a-z]?|lg\d{1,4}[a-z]?)\s+[—\-:].{0,12}\booo\b/i) ||
-          norm.match(/\booo\b.{0,12}(?:room\s+)?(\d{1,4}[a-z]?|lg\d{1,4}[a-z]?)/i);
+        var oooLine = norm.match(
+          new RegExp("\\b(?:room\\s+)?(" + tokClass + ")\\s+[—\\-:].{0,12}\\booo\\b", "i")
+        ) || norm.match(
+          new RegExp("\\booo\\b.{0,12}(?:room\\s+)?(" + tokClass + ")", "i")
+        );
         if (oooLine) {
           var oroom = normalizeAllocationRoomToken(oooLine[1]);
           if (oroom) {
@@ -9381,9 +9427,12 @@
 
       if (/\b(?:still\s+occupied|occupied\s+by|not\s+available|extended)\b/.test(norm) ||
           /\bcannot\s+go\s+into\b/.test(norm) ||
+          /\bcannot\s+stay\s+(?:on|in)\b/.test(norm) ||
+          /\bdo\s+not\s+sell\b/.test(norm) ||
           /\bdo\s+not\s+(?:mark\s+)?(?:\w+\s+)?sellable\b/.test(norm) ||
           /\bnot\s+a\s+release\b/.test(norm) ||
-          /\bnot\s+released\b/.test(norm)) {
+          /\bnot\s+released\b/.test(norm) ||
+          /\bcontractual\b/.test(norm) && /\bhold\b/.test(norm)) {
         roomTokens.forEach(function (r) { unavailableRooms[r] = true; });
       }
 
@@ -9392,13 +9441,19 @@
         (/\barriv|\bdue\b|\btonight\b|\bevening\b|\bfor\s+tonight\b/.test(norm) ||
           /\bneeds\b/.test(norm) ||
           /\bbooking\b/.test(norm));
-      if (isArrivalAlloc || /\bcannot\s+go\s+into\b/.test(norm)) {
+      if (isArrivalAlloc || /\bcannot\s+go\s+into\b/.test(norm) ||
+          /\bcannot\s+stay\s+(?:on|in)\b/.test(norm)) {
         var guest = note.canonicalName || (note.fact && (note.fact.canonicalName || note.fact.guestName)) ||
           extractGuestNearAllocation(src);
         var allocRooms = [];
-        var reA2 =
-          /\b(?:originally\s+)?allocated(?:\s+to)?\s+(?:room\s+)?([a-z]{0,3}\d{1,4}[a-z]?)\b/gi;
-        var reS2 = /\bsystem\s+allocation\s+(?:room\s+)?([a-z]{0,3}\d{1,4}[a-z]?)\b/gi;
+        var reA2 = new RegExp(
+          "\\b(?:originally\\s+)?allocated(?:\\s+to)?\\s+(?:room\\s+)?(" + tokClass + ")\\b",
+          "gi"
+        );
+        var reS2 = new RegExp(
+          "\\bsystem\\s+allocation\\s+(?:room\\s+)?(" + tokClass + ")\\b",
+          "gi"
+        );
         var am;
         while ((am = reA2.exec(norm)) !== null) {
           allocRooms.push(normalizeAllocationRoomToken(am[1]));
@@ -9406,8 +9461,11 @@
         while ((am = reS2.exec(norm)) !== null) {
           allocRooms.push(normalizeAllocationRoomToken(am[1]));
         }
-        if (!allocRooms.length && /\bcannot\s+go\s+into\b/.test(norm)) {
-          var into = norm.match(/\bgo\s+into\s+(\d{1,4}[a-z]?|lg\d{1,4}[a-z]?)\b/i);
+        if (!allocRooms.length &&
+            (/\bcannot\s+go\s+into\b/.test(norm) || /\bcannot\s+stay\s+(?:on|in)\b/.test(norm))) {
+          var into = norm.match(
+            new RegExp("\\b(?:go\\s+into|stay\\s+on|stay\\s+in)\\s+(" + tokClass + ")\\b", "i")
+          );
           if (into) allocRooms.push(normalizeAllocationRoomToken(into[1]));
         }
         allocRooms.filter(Boolean).forEach(function (room) {
@@ -9482,8 +9540,8 @@
           entityId: arr.entityId || null,
           resolutionState: "unresolved",
           canonicalName: guest,
-          room: /^\d/.test(arr.room) ? arr.room : "",
-          rooms: /^\d/.test(arr.room) ? [arr.room] : [],
+          room: arr.room || "",
+          rooms: arr.room ? [arr.room] : [],
           facetKey: "occupancy_conflict:clarify",
           actionType: NEXT_ACTION_KIND.operational_follow_up,
           actionState: ACTION_STATE.open,
@@ -9494,7 +9552,11 @@
           actionability: ACTIONABILITY.actionable,
           priorityBand: PRIORITY_BAND.P1,
           priorityScore: 20,
-          priorityReasons: ["occupancy_conflict_clarify", "sprint11_blocked_allocation"],
+          priorityReasons: [
+            "occupancy_conflict_clarify",
+            "sprint11_blocked_allocation",
+            "sprint12_room_token_identity"
+          ],
           currentStateEligible: true,
           sourceFactIds: arr.factId ? [arr.factId] : [],
           confidence: 0.72
@@ -9506,8 +9568,8 @@
         entityId: arr.entityId || null,
         resolutionState: "unresolved",
         canonicalName: guest,
-        room: /^\d/.test(arr.room) ? arr.room : "",
-        rooms: /^\d/.test(arr.room) ? [arr.room] : [],
+        room: arr.room || "",
+        rooms: arr.room ? [arr.room] : [],
         facetKey: "allocation:blocked_assigned",
         actionType: NEXT_ACTION_KIND.operational_follow_up,
         actionState: ACTION_STATE.open,
@@ -9519,7 +9581,11 @@
         actionability: ACTIONABILITY.actionable,
         priorityBand: PRIORITY_BAND.P1,
         priorityScore: 18,
-        priorityReasons: ["allocation_blocked_assigned", "sprint11_blocked_allocation"],
+        priorityReasons: [
+          "allocation_blocked_assigned",
+          "sprint11_blocked_allocation",
+          "sprint12_room_token_identity"
+        ],
         currentStateEligible: true,
         sourceFactIds: arr.factId ? [arr.factId] : [],
         confidence: 0.74
