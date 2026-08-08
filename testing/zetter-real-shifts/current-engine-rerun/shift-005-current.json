@@ -1,0 +1,281 @@
+{
+  "label": "CURRENT POST-SPRINT-4 OUTPUT",
+  "shift": "005",
+  "recordId": "ffff255d-75a9-4842-8272-75116dfeff56",
+  "gitCommit": "c986991efcd29b87fe9a083515bb1d5be08d5794",
+  "expectedGitCommit": "c986991efcd29b87fe9a083515bb1d5be08d5794",
+  "engineVersion": 1,
+  "contractVersion": "E1",
+  "ranAt": "2026-08-08T09:14:29.307Z",
+  "pipeline": [
+    "extractOperationalFact / sectionFromFact",
+    "consolidateNotesByFacts",
+    "resolveOperationalEntities (Sprint 3)",
+    "electCanonicalCurrentState (Sprint 1)",
+    "resolveOperationalDependencies (Sprint 4)",
+    "buildOrganisedSectionModel",
+    "buildTodaysBriefing",
+    "ShiftIntelligenceEngine.analyze (priority + recommendations)"
+  ],
+  "inputIntegrity": {
+    "inputAuthority": "CSV source_notes (Supabase export)",
+    "markdownBodyMatchesCsvIgnoringTrailingWhitespace": true,
+    "markdownExactByteMatchCsv": false,
+    "trailingWhitespaceOnlyDiffVsMarkdown": true,
+    "sourceSha256": "ed06b255060db5e9c89ca97b36e2a09df951251f05405d95b81c44a9f5d9794b",
+    "sourceLength": 697,
+    "lineCount": 9,
+    "brainContext": null,
+    "hotelSnapshotKeys": [
+      "adr",
+      "revpar",
+      "inHouse",
+      "arrivals",
+      "oooRooms",
+      "occupancy",
+      "roomsSold",
+      "stayovers",
+      "departures",
+      "revparValue",
+      "sellableRooms",
+      "occupancyValue",
+      "roomsAvailable"
+    ]
+  },
+  "exactSourceInput": "=== TODAY'S ARRIVALS ===\nLaura Godfrey\t\trm\t25\t20% off food and beverage (once per stay)\t\t\t\t\t\t\t\t\t\n\nBenjamin James\t\trm\t51\t\t\t\tPOA / Friends of Armi please ensure guest is looked after. / Comp upgrade to the loft. / Place fruit plate in the room, comp drinks in the parlour, card under Armi's name for Ben and Sophie.\t\t\n\nAndrew Nott\t\trm\t2\t\t\t\t20% off food and beverage (once per stay)\t\t\nMme Brittany Stewart\t\trm\t14\t\t\tIroning board and iron / Charge £28 on guest's personal CC for breakfast (Fixed charges added)\n\n=== TODAY'S DEPARTURES ===\nrooms 2 and 23 checked out.\n\n=== GENERAL HOTEL / SHIFT NOTES ===\nTaxi booked at am for room 5&15  and  they together. Also they will store their bags for 2 weeks.",
+  "hotelSnapshot": {
+    "adr": "£2.00",
+    "revpar": "£2.00",
+    "inHouse": "38",
+    "arrivals": "10",
+    "oooRooms": "0",
+    "occupancy": "100.0%",
+    "roomsSold": "24",
+    "stayovers": "14",
+    "departures": "6",
+    "revparValue": 2,
+    "sellableRooms": 24,
+    "occupancyValue": 100,
+    "roomsAvailable": "0"
+  },
+  "aiSummaryBriefing": "Shift status\nNo urgent guest-impacting priorities for the incoming team.",
+  "briefingParagraphs": [
+    "Shift status\nNo urgent guest-impacting priorities for the incoming team."
+  ],
+  "organisedHandover": {
+    "urgent": [],
+    "vip": [],
+    "guest": [
+      "Taxi booked at am for room 5&15  and  they together. Also they will store their bags for 2 weeks."
+    ],
+    "maintenance": [],
+    "payments": [],
+    "events": [],
+    "preparations": [],
+    "openQuestions": [],
+    "tasks": [],
+    "inventory": [],
+    "deliveries": [],
+    "lostproperty": [],
+    "general": [
+      "Laura Godfrey\t\trm\t25\t20% off food and beverage (once per stay)\t\t\t\t\t\t\t\t\t",
+      "Benjamin James\t\trm\t51\t\t\t\tPOA / Friends of Armi please ensure guest is looked after. / Comp upgrade to the loft. / Place fruit plate in the room, comp drinks in the parlour, card under Armi's name for Ben and Sophie.\t\t",
+      "Andrew Nott\t\trm\t2\t\t\t\t20% off food and beverage (once per stay)\t\t",
+      "=== TODAY'S ARRIVALS ===",
+      "=== TODAY'S DEPARTURES ===",
+      "rooms 2 and 23 checked out.",
+      "=== GENERAL HOTEL / SHIFT NOTES ==="
+    ],
+    "completed": [
+      "Mme Brittany Stewart\t\trm\t14\t\t\tIroning board and iron / Charge £28 on guest's personal CC for breakfast (Fixed charges added)"
+    ]
+  },
+  "recommendations": [],
+  "reasoningMetadata": {
+    "noteCountAfterPipeline": 9,
+    "dependencyEdgeCount": 0,
+    "dependencyEdges": [],
+    "analyzeKeys": [
+      "engineVersion",
+      "signals",
+      "recommendations",
+      "checklist",
+      "facts",
+      "operationalMemories",
+      "guestObservations",
+      "guestObservationRejections",
+      "guestCandidates",
+      "guestCandidateRejections"
+    ],
+    "quietShift": null
+  },
+  "noteEvidence": [
+    {
+      "original": "Taxi booked at am for room 5&15  and  they together. Also they will store their bags for 2 weeks.",
+      "section": "guest",
+      "rooms": [
+        "5",
+        "15"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "5",
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "departure_followup",
+      "factStatus": "confirmed"
+    },
+    {
+      "original": "=== TODAY'S ARRIVALS ===",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Laura Godfrey\t\trm\t25\t20% off food and beverage (once per stay)\t\t\t\t\t\t\t\t\t",
+      "section": "general",
+      "rooms": [
+        "25"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_1",
+      "canonicalName": "Laura Godfrey",
+      "currentRoom": "25",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Benjamin James\t\trm\t51\t\t\t\tPOA / Friends of Armi please ensure guest is looked after. / Comp upgrade to the loft. / Place fruit plate in the room, comp drinks in the parlour, card under Armi's name for Ben and Sophie.\t\t",
+      "section": "general",
+      "rooms": [
+        "51"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_2",
+      "canonicalName": "Benjamin James",
+      "currentRoom": "51",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Andrew Nott\t\trm\t2\t\t\t\t20% off food and beverage (once per stay)\t\t",
+      "section": "general",
+      "rooms": [
+        "2"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_3",
+      "canonicalName": "Andrew Nott",
+      "currentRoom": "2",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Mme Brittany Stewart\t\trm\t14\t\t\tIroning board and iron / Charge £28 on guest's personal CC for breakfast (Fixed charges added)",
+      "section": "completed",
+      "rooms": [
+        "14"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_4",
+      "canonicalName": "Mme Brittany Stewart",
+      "currentRoom": "14",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "guest_request",
+      "factStatus": "done"
+    },
+    {
+      "original": "=== TODAY'S DEPARTURES ===",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "rooms 2 and 23 checked out.",
+      "section": "general",
+      "rooms": [
+        "2",
+        "23"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "2",
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "=== GENERAL HOTEL / SHIFT NOTES ===",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    }
+  ]
+}

@@ -1,0 +1,664 @@
+{
+  "label": "SPRINT 5 VALIDATION OUTPUT",
+  "shift": "002",
+  "recordId": "89a40e9f-594b-4287-8fa5-8bae551c841c",
+  "gitCommit": "c986991efcd29b87fe9a083515bb1d5be08d5794",
+  "engineVersion": 1,
+  "contractVersion": "E1",
+  "ranAt": "2026-08-08T09:44:02.493Z",
+  "pipeline": [
+    "extractOperationalFact / sectionFromFact",
+    "consolidateNotesByFacts",
+    "resolveOperationalEntities (Sprint 3)",
+    "electCanonicalCurrentState (Sprint 1)",
+    "resolveOperationalDependencies (Sprint 4)",
+    "buildCanonicalOperationalActions (Sprint 5)",
+    "buildOrganisedSectionModel",
+    "buildTodaysBriefing",
+    "ShiftIntelligenceEngine.analyze (priority + recommendations)"
+  ],
+  "canonicalActions": [
+    {
+      "actionId": "act|noent|51|maintenance|follow_up_until_resolved|zetter_rerun_29",
+      "actionState": "monitor",
+      "actionType": "follow_up_until_resolved",
+      "facetKey": "maintenance",
+      "room": "51",
+      "entityId": null,
+      "canonicalName": "The Duty Manager",
+      "actionText": "Follow up maintenance for Room 51",
+      "priorityBand": "P1",
+      "priorityScore": 14,
+      "evidenceText": "Polk, Jacqui\"\tTZM\trm51\tThe guest called to report a smell of gas coming from the terrace vent at 22:35 pm\tThe Duty Manager attended the room to investigate. The smell appeared to be coming from outside rather than from within the room. As a"
+    },
+    {
+      "actionId": "act|ent_3|35|amenity_prep|prepare_vip|zetter_rerun_3",
+      "actionState": "open",
+      "actionType": "prepare_vip",
+      "facetKey": "amenity:prep",
+      "room": "35",
+      "entityId": "ent_3",
+      "canonicalName": "-Gill Beagent",
+      "actionText": "Prepare champagne + chocolates + flowers for -Gill Beagent in Room 35",
+      "priorityBand": "P2",
+      "priorityScore": 32,
+      "evidenceText": "VIP -Gill Beagent\trm 35 dep 06/08 \t- POA // Room and tax // Card on file guarantee only / Please advice of the complimentary upgrade to balance availability // From DD / VVIP-Place a bottle of champagne, fruits and flowers, chocolate (if we"
+    },
+    {
+      "actionId": "act|ent_8|34|guest_request_iron_and_ironing_board|guest_follow_up|zetter_rerun_13",
+      "actionState": "open",
+      "actionType": "guest_follow_up",
+      "facetKey": "guest_request:iron_and_ironing_board",
+      "room": "34",
+      "entityId": "ent_8",
+      "canonicalName": "Mme Sue Hamilton",
+      "actionText": "Arrange iron and ironing board for Room 34",
+      "priorityBand": "P2",
+      "priorityScore": 45,
+      "evidenceText": "Mme Sue Hamilton   rm 34\tdep\t10/08/2026\t-\tI will be on my own when I arrive, my husband will join me on Saturday Ironing board and iron.  • Welcome bottle of wine in room on arrival • Daily a la carte breakfast at The Parlour • One daily dr"
+    },
+    {
+      "actionId": "act|ent_9|21|guest_request_foam_pillows|guest_follow_up|zetter_rerun_15",
+      "actionState": "open",
+      "actionType": "guest_follow_up",
+      "facetKey": "guest_request:foam_pillows",
+      "room": "21",
+      "entityId": "ent_9",
+      "canonicalName": "Mme Kelly Killian",
+      "actionText": "Arrange foam pillows for Room 21",
+      "priorityBand": "P2",
+      "priorityScore": 45,
+      "evidenceText": "Mme Kelly Killian\trm21\tdep\t10/08/2026\t-\trequest - Foam pillows as options to traditional"
+    },
+    {
+      "actionId": "act|ent_3|35|allocation_balance_availability|type|zetter_rerun_3",
+      "actionState": "information",
+      "actionType": "operational_follow_up",
+      "facetKey": "allocation:balance_availability",
+      "room": "35",
+      "entityId": "ent_3",
+      "canonicalName": "-Gill Beagent",
+      "actionText": "Complimentary upgrade / balance availability note for Room 35",
+      "priorityBand": "P3",
+      "priorityScore": 70,
+      "evidenceText": "VIP -Gill Beagent\trm 35 dep 06/08 \t- POA // Room and tax // Card on file guarantee only / Please advice of the complimentary upgrade to balance availability // From DD / VVIP-Place a bottle of champagne, fruits and flowers, chocolate (if we"
+    },
+    {
+      "actionId": "act|ent_2|33|reservation_info|type|zetter_rerun_1",
+      "actionState": "information",
+      "actionType": "operational_follow_up",
+      "facetKey": "reservation_info",
+      "room": "33",
+      "entityId": "ent_2",
+      "canonicalName": "Jonathan Bailey",
+      "actionText": "Jonathan Bailey — Reservation / POA information (not VIP prep)",
+      "priorityBand": "P3",
+      "priorityScore": 80,
+      "evidenceText": "Jonathan Bailey - rm 33 dep 07/08  / POA // 20%  off food and beverage (once per stay)"
+    },
+    {
+      "actionId": "act|ent_4|12|reservation_info|type|zetter_rerun_5",
+      "actionState": "information",
+      "actionType": "operational_follow_up",
+      "facetKey": "reservation_info",
+      "room": "12",
+      "entityId": "ent_4",
+      "canonicalName": "Stacia Price",
+      "actionText": "Stacia Price — Reservation / POA information (not VIP prep)",
+      "priorityBand": "P3",
+      "priorityScore": 80,
+      "evidenceText": "Stacia Price stay dates 04/08-09/08  - rm 12 checked in on opera its pre reg will be checking on only on the 6th - it's prepaid"
+    },
+    {
+      "actionId": "act|ent_7|4|reservation_info|type|zetter_rerun_12",
+      "actionState": "information",
+      "actionType": "operational_follow_up",
+      "facetKey": "reservation_info",
+      "room": "4",
+      "entityId": "ent_7",
+      "canonicalName": "Bahren Haji Shaari",
+      "actionText": "Bahren Haji Shaari — Reservation / POA information (not VIP prep)",
+      "priorityBand": "P3",
+      "priorityScore": 80,
+      "evidenceText": "M. Bahren Haji Shaari\trm 4\t\tdep 07/08/2026\t\tPOA  / Add Promotion: 20% off food and beverage (once per stay)"
+    },
+    {
+      "actionId": "act|ent_10|11|vip_no_active_amenity|type|zetter_rerun_17",
+      "actionState": "information",
+      "actionType": "operational_follow_up",
+      "facetKey": "vip:no_active_amenity",
+      "room": "11",
+      "entityId": "ent_10",
+      "canonicalName": "Sasha Logie",
+      "actionText": "Sasha Logie — No active VIP amenity outstanding",
+      "priorityBand": "P3",
+      "priorityScore": 82,
+      "evidenceText": "M. Sasha Logie\t\trm\t11\t\tdep 06/08/2026\t-\tIroning board and iron From crm / ~GUEST It is our 10 year anniversary. Is there anything special you can do? GUEST~"
+    },
+    {
+      "actionId": "act|ent_11|32|vip_no_active_amenity|type|zetter_rerun_19",
+      "actionState": "information",
+      "actionType": "operational_follow_up",
+      "facetKey": "vip:no_active_amenity",
+      "room": "32",
+      "entityId": "ent_11",
+      "canonicalName": "Helene Egebol",
+      "actionText": "Helene Egebol — No active VIP amenity outstanding",
+      "priorityBand": "P3",
+      "priorityScore": 82,
+      "evidenceText": "Helene Egebol\t\tvip\trm32\tdep \t07/08/2026\t-\tRegular Guest / unable to allocate on Opera room 32 shows still svailable"
+    },
+    {
+      "actionId": "act|ent_5|16|vip_no_active_amenity|type|zetter_rerun_9",
+      "actionState": "information",
+      "actionType": "operational_follow_up",
+      "facetKey": "vip:no_active_amenity",
+      "room": "16",
+      "entityId": "ent_5",
+      "canonicalName": "Richard Gooc",
+      "actionText": "Richard Gooc — No active VIP amenity outstanding",
+      "priorityBand": "P3",
+      "priorityScore": 82,
+      "evidenceText": "Richard Gooc\trm16\tdep 10/08/2026\tMcLean Smithson will be celebrating his 40th birthday on August 6. please please comp mini bar in the room."
+    },
+    {
+      "actionId": "act|ent_1|22|payment_no_collect|type|zetter_rerun_0",
+      "actionState": "resolved",
+      "actionType": "operational_follow_up",
+      "facetKey": "payment:no_collect",
+      "room": "22",
+      "entityId": "ent_1",
+      "canonicalName": "MONA ALABOOD",
+      "actionText": "Payment settled / no collect required for Room 22",
+      "priorityBand": "exclude",
+      "priorityScore": 92,
+      "evidenceText": "MONA ALABOOD\trm 22 dep 07/08/2026 - stayover - Paid"
+    }
+  ],
+  "inputIntegrity": {
+    "inputAuthority": "CSV source_notes (Supabase export)",
+    "markdownBodyMatchesCsvIgnoringTrailingWhitespace": true,
+    "markdownExactByteMatchCsv": false,
+    "trailingWhitespaceOnlyDiffVsMarkdown": true,
+    "sourceSha256": "9cc24e24a455655231c0ec09bc6bec3b1533c58631ac1be9407f45ab6d672623",
+    "sourceLength": 2345,
+    "lineCount": 16,
+    "brainContext": null,
+    "hotelSnapshotKeys": [
+      "adr",
+      "adults",
+      "revpar",
+      "inHouse",
+      "arrivals",
+      "children",
+      "occupancy",
+      "roomsSold",
+      "stayovers",
+      "departures",
+      "roomsAvailable"
+    ]
+  },
+  "exactSourceInput": "MONA ALABOOD\trm 22 dep 07/08/2026 - stayover - Paid\nJonathan Bailey - rm 33 dep 07/08  / POA // 20%  off food and beverage (once per stay)\n\nVIP -Gill Beagent\trm 35 dep 06/08 \t- POA // Room and tax // Card on file guarantee only / Please advice of the complimentary upgrade to balance availability // From DD / VVIP-Place a bottle of champagne, fruits and flowers, chocolate (if we have), in the room. DM needs to reinspect the room and make sure it's spotless.\t\n\nStacia Price stay dates 04/08-09/08  - rm 12 checked in on opera its pre reg will be checking on only on the 6th - it's prepaid\nroom 11 cc not tokenised as PDQ machine did not work again\nrm 33 late c/o at 12\n\nRichard Gooc\trm16\tdep 10/08/2026\tMcLean Smithson will be celebrating his 40th birthday on August 6. please please comp mini bar in the room.\t\nHenry Gottfried\trm 1\t\tdep 06/08/2026\t-\tComp upgrade to balance the house\t\t\t\n\t\t\t\t\t\t\t\t\nM. Bahren Haji Shaari\trm 4\t\tdep 07/08/2026\t\tPOA  / Add Promotion: 20% off food and beverage (once per stay)\t\t\nMme Sue Hamilton   rm 34\tdep\t10/08/2026\t-\tI will be on my own when I arrive, my husband will join me on Saturday Ironing board and iron.  • Welcome bottle of wine in room on arrival • Daily a la carte breakfast at The Parlour • One daily drink per person at The Parlour • Inclusions valid for two guests -  Luxury Escapes Amenities\n\nMme Kelly Killian\trm21\tdep\t10/08/2026\t-\trequest - Foam pillows as options to traditional\t\t\n\nM. Sasha Logie\t\trm\t11\t\tdep 06/08/2026\t-\tIroning board and iron From crm / ~GUEST It is our 10 year anniversary. Is there anything special you can do? GUEST~\t\t\t\n\nHelene Egebol\t\tvip\trm32\tdep \t07/08/2026\t-\tRegular Guest / unable to allocate on Opera room 32 shows still svailable\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\n\t\t\t\t\t\t\t\n\t\n\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\n\n\t\t\t\t\t\t\t\n\n Glitch report - \"\t\nPolk, Jacqui\"\tTZM\trm51\tThe guest called to report a smell of gas coming from the terrace vent at 22:35 pm\tThe Duty Manager attended the room to investigate. The smell appeared to be coming from outside rather than from within the room. As a precaution, the issue has been logged, and the Maintenance team will inspect the room and terrace vent tomorrow to ensure there are no faults.\n\nquote of the day : “There is only one boss. The Guest. And he can fire everybody in the company from the chairman on down, simply by spending his money somewhere else”.\n\n\n\n\t\t\t\n",
+  "hotelSnapshot": {
+    "adr": "£263.35",
+    "adults": "40",
+    "revpar": "£52.27",
+    "inHouse": "40",
+    "arrivals": "14",
+    "children": "0",
+    "occupancy": "100%",
+    "roomsSold": "24",
+    "stayovers": "10",
+    "departures": "10",
+    "roomsAvailable": "0"
+  },
+  "aiSummaryBriefing": "Priority 1\nFollow up with Maintenance regarding Room 51 maintenance issue before further guest impact.\n\nPriority 2\nArrange iron and ironing board for Room 11.\n\nPriority 3\nComplete outstanding guest follow-up for Room 33.\n\nPriority 4\nArrange iron and ironing board for Room 34.",
+  "briefingParagraphs": [
+    "Priority 1\nFollow up with Maintenance regarding Room 51 maintenance issue before further guest impact.",
+    "Priority 2\nArrange iron and ironing board for Room 11.",
+    "Priority 3\nComplete outstanding guest follow-up for Room 33.",
+    "Priority 4\nArrange iron and ironing board for Room 34."
+  ],
+  "organisedHandover": {
+    "urgent": [],
+    "vip": [
+      "Helene Egebol\t\tvip\trm32\tdep \t07/08/2026\t-\tRegular Guest / unable to allocate on Opera room 32 shows still svailable\t\t\t\t\t\t\t\t\t",
+      "VIP -Gill Beagent\trm 35 dep 06/08 \t- POA // Room and tax // Card on file guarantee only / Please advice of the complimentary upgrade to balance availability // From DD / VVIP-Place a bottle of champagne, fruits and flowers, chocolate (if we have), in the room. DM needs to reinspect the room and make sure it's spotless.\t"
+    ],
+    "guest": [
+      "rm 33 late c/o at 12",
+      "Mme Kelly Killian\trm21\tdep\t10/08/2026\t-\trequest - Foam pillows as options to traditional\t\t"
+    ],
+    "maintenance": [
+      "Polk, Jacqui\"\tTZM\trm51\tThe guest called to report a smell of gas coming from the terrace vent at 22:35 pm\tThe Duty Manager attended the room to investigate. The smell appeared to be coming from outside rather than from within the room. As a precaution, the issue has been logged, and the Maintenance team will inspect the room and terrace vent tomorrow to ensure there are no faults."
+    ],
+    "payments": [
+      "Henry Gottfried\trm 1\t\tdep 06/08/2026\t-\tComp upgrade to balance the house\t\t\t",
+      "MONA ALABOOD\trm 22 dep 07/08/2026 - stayover - Paid"
+    ],
+    "events": [],
+    "preparations": [
+      "M. Sasha Logie\t\trm\t11\t\tdep 06/08/2026\t-\tIroning board and iron From crm / ~GUEST It is our 10 year anniversary. Is there anything special you can do? GUEST~\t\t\t",
+      "Mme Sue Hamilton   rm 34\tdep\t10/08/2026\t-\tI will be on my own when I arrive, my husband will join me on Saturday Ironing board and iron.  • Welcome bottle of wine in room on arrival • Daily a la carte breakfast at The Parlour • One daily drink per person at The Parlour • Inclusions valid for two guests -  Luxury Escapes Amenities",
+      "Richard Gooc\trm16\tdep 10/08/2026\tMcLean Smithson will be celebrating his 40th birthday on August 6. please please comp mini bar in the room.\t"
+    ],
+    "openQuestions": [],
+    "tasks": [],
+    "inventory": [],
+    "deliveries": [],
+    "lostproperty": [],
+    "general": [
+      "room 11 cc not tokenised as PDQ machine did not work again",
+      "Jonathan Bailey - rm 33 dep 07/08  / POA // 20%  off food and beverage (once per stay)",
+      "Stacia Price stay dates 04/08-09/08  - rm 12 checked in on opera its pre reg will be checking on only on the 6th - it's prepaid",
+      "M. Bahren Haji Shaari\trm 4\t\tdep 07/08/2026\t\tPOA  / Add Promotion: 20% off food and beverage (once per stay)\t\t",
+      " Glitch report - \"\t",
+      "quote of the day : “There is only one boss. The Guest. And he can fire everybody in the company from the chairman on down, simply by spending his money somewhere else”."
+    ],
+    "completed": []
+  },
+  "recommendations": [
+    {
+      "id": "msk6sf3p-b0t76",
+      "text": "Follow up with Maintenance regarding Room 51 Polk, Jacqui\" TZM rm51 The guest called to report a…. The fault remains open and needs resolution this shift.",
+      "priority": "high",
+      "department": "Maintenance",
+      "status": "open",
+      "reasonCodes": [
+        "guest_comfort_affected",
+        "guest_in_house",
+        "maintenance_unresolved",
+        "timed_action",
+        "guest_impact_tonight",
+        "guest_impacting_maintenance",
+        "timed_action_due",
+        "cross_department_dependency"
+      ]
+    },
+    {
+      "id": "act|ent_3|35|amenity_prep|prepare_vip|handover_note_0_vip_gill_beagent_rm_35_dep_0608_",
+      "text": "Prepare champagne + chocolates + flowers for -Gill Beagent in Room 35 this shift.",
+      "priority": "normal",
+      "department": "Housekeeping",
+      "status": "open",
+      "reasonCodes": [
+        "resolved_no_action",
+        "amenity_prep_open"
+      ]
+    },
+    {
+      "id": "msk6sf3m-z15s5",
+      "text": "Collect outstanding balance for Room 33 before departure.",
+      "priority": "normal",
+      "department": "Housekeeping",
+      "status": "open",
+      "reasonCodes": [
+        "late_checkout_arrangement",
+        "payment_actionable",
+        "money_not_safety",
+        "cross_department_dependency"
+      ]
+    },
+    {
+      "id": "msk6sf3n-uqazh",
+      "text": "Arrange iron and ironing board for Room 34 this shift.",
+      "priority": "normal",
+      "department": "Reception",
+      "status": "open",
+      "reasonCodes": [
+        "guest_follow_up",
+        "arrival_today",
+        "complaint_or_guest_follow_up",
+        "cross_department_dependency"
+      ]
+    },
+    {
+      "id": "msk6sf3n-4s5l1",
+      "text": "Arrange anniversary recognition for Sasha Logie in Room 11 before arrival.",
+      "priority": "normal",
+      "department": "Reception",
+      "status": "open",
+      "reasonCodes": [
+        "guest_follow_up",
+        "timed_action",
+        "complaint_or_guest_follow_up",
+        "timed_action_due",
+        "cross_department_dependency"
+      ]
+    },
+    {
+      "id": "msk6sf3p-4qo14",
+      "text": "Arrange foam pillows for Room 21 this shift.",
+      "priority": "normal",
+      "department": "Housekeeping",
+      "status": "open",
+      "reasonCodes": [
+        "guest_follow_up",
+        "timed_action",
+        "complaint_or_guest_follow_up",
+        "timed_action_due",
+        "cross_department_dependency"
+      ]
+    }
+  ],
+  "reasoningMetadata": {
+    "noteCountAfterPipeline": 16,
+    "dependencyEdgeCount": 0,
+    "dependencyEdges": [],
+    "analyzeKeys": [
+      "engineVersion",
+      "signals",
+      "recommendations",
+      "checklist",
+      "facts",
+      "operationalMemories",
+      "guestObservations",
+      "guestObservationRejections",
+      "guestCandidates",
+      "guestCandidateRejections"
+    ],
+    "quietShift": null
+  },
+  "noteEvidence": [
+    {
+      "original": "VIP -Gill Beagent\trm 35 dep 06/08 \t- POA // Room and tax // Card on file guarantee only / Please advice of the complimentary upgrade to balance availability // From DD / VVIP-Place a bottle of champagne, fruits and flowers, chocolate (if we have), in the room. DM needs to reinspect the room and make sure it's spotless.\t",
+      "section": "vip",
+      "rooms": [
+        "35"
+      ],
+      "isVip": true,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_3",
+      "canonicalName": "-Gill Beagent",
+      "currentRoom": "35",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "vip_arrival",
+      "factStatus": "confirmed"
+    },
+    {
+      "original": "Helene Egebol\t\tvip\trm32\tdep \t07/08/2026\t-\tRegular Guest / unable to allocate on Opera room 32 shows still svailable\t\t\t\t\t\t\t\t\t",
+      "section": "vip",
+      "rooms": [
+        "32"
+      ],
+      "isVip": true,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_11",
+      "canonicalName": "Helene Egebol",
+      "currentRoom": "32",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "vip_arrival",
+      "factStatus": "confirmed"
+    },
+    {
+      "original": "rm 33 late c/o at 12",
+      "section": "guest",
+      "rooms": [
+        "33"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_2",
+      "canonicalName": "Jonathan Bailey",
+      "currentRoom": "33",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "late_checkout",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Richard Gooc\trm16\tdep 10/08/2026\tMcLean Smithson will be celebrating his 40th birthday on August 6. please please comp mini bar in the room.\t",
+      "section": "guest",
+      "rooms": [
+        "16"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_5",
+      "canonicalName": "Richard Gooc",
+      "currentRoom": "16",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "celebration",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Mme Sue Hamilton   rm 34\tdep\t10/08/2026\t-\tI will be on my own when I arrive, my husband will join me on Saturday Ironing board and iron.  • Welcome bottle of wine in room on arrival • Daily a la carte breakfast at The Parlour • One daily drink per person at The Parlour • Inclusions valid for two guests -  Luxury Escapes Amenities",
+      "section": "guest",
+      "rooms": [
+        "34"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_8",
+      "canonicalName": "Mme Sue Hamilton",
+      "currentRoom": "34",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "guest_request",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "M. Sasha Logie\t\trm\t11\t\tdep 06/08/2026\t-\tIroning board and iron From crm / ~GUEST It is our 10 year anniversary. Is there anything special you can do? GUEST~\t\t\t",
+      "section": "guest",
+      "rooms": [
+        "11"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_10",
+      "canonicalName": "Sasha Logie",
+      "currentRoom": "11",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "guest_request",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Polk, Jacqui\"\tTZM\trm51\tThe guest called to report a smell of gas coming from the terrace vent at 22:35 pm\tThe Duty Manager attended the room to investigate. The smell appeared to be coming from outside rather than from within the room. As a precaution, the issue has been logged, and the Maintenance team will inspect the room and terrace vent tomorrow to ensure there are no faults.",
+      "section": "maintenance",
+      "rooms": [
+        "51"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "51",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "maintenance",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Mme Kelly Killian\trm21\tdep\t10/08/2026\t-\trequest - Foam pillows as options to traditional\t\t",
+      "section": "tasks",
+      "rooms": [
+        "21"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_9",
+      "canonicalName": "Mme Kelly Killian",
+      "currentRoom": "21",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "guest_request",
+      "factStatus": "requested"
+    },
+    {
+      "original": "Jonathan Bailey - rm 33 dep 07/08  / POA // 20%  off food and beverage (once per stay)",
+      "section": "general",
+      "rooms": [
+        "33"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_2",
+      "canonicalName": "Jonathan Bailey",
+      "currentRoom": "33",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "reservation_info",
+      "factStatus": "confirmed"
+    },
+    {
+      "original": "Stacia Price stay dates 04/08-09/08  - rm 12 checked in on opera its pre reg will be checking on only on the 6th - it's prepaid",
+      "section": "general",
+      "rooms": [
+        "12"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_4",
+      "canonicalName": "Stacia Price",
+      "currentRoom": "12",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "reservation_info",
+      "factStatus": "confirmed"
+    },
+    {
+      "original": "room 11 cc not tokenised as PDQ machine did not work again",
+      "section": "general",
+      "rooms": [
+        "11"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_10",
+      "canonicalName": "Sasha Logie",
+      "currentRoom": "11",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Henry Gottfried\trm 1\t\tdep 06/08/2026\t-\tComp upgrade to balance the house\t\t\t",
+      "section": "general",
+      "rooms": [
+        "1"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_6",
+      "canonicalName": "Henry Gottfried",
+      "currentRoom": "1",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "M. Bahren Haji Shaari\trm 4\t\tdep 07/08/2026\t\tPOA  / Add Promotion: 20% off food and beverage (once per stay)\t\t",
+      "section": "general",
+      "rooms": [
+        "4"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_7",
+      "canonicalName": "Bahren Haji Shaari",
+      "currentRoom": "4",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "reservation_info",
+      "factStatus": "confirmed"
+    },
+    {
+      "original": " Glitch report - \"\t",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "quote of the day : “There is only one boss. The Guest. And he can fire everybody in the company from the chairman on down, simply by spending his money somewhere else”.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "MONA ALABOOD\trm 22 dep 07/08/2026 - stayover - Paid",
+      "section": "payments",
+      "rooms": [
+        "22"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_1",
+      "canonicalName": "MONA ALABOOD",
+      "currentRoom": "22",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "done"
+    }
+  ]
+}

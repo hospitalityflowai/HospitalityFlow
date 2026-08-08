@@ -1,0 +1,310 @@
+{
+  "label": "CURRENT POST-SPRINT-4 OUTPUT",
+  "shift": "004",
+  "recordId": "7a6c925c-7beb-439f-b579-ff9839a66f83",
+  "gitCommit": "c986991efcd29b87fe9a083515bb1d5be08d5794",
+  "expectedGitCommit": "c986991efcd29b87fe9a083515bb1d5be08d5794",
+  "engineVersion": 1,
+  "contractVersion": "E1",
+  "ranAt": "2026-08-08T09:14:29.307Z",
+  "pipeline": [
+    "extractOperationalFact / sectionFromFact",
+    "consolidateNotesByFacts",
+    "resolveOperationalEntities (Sprint 3)",
+    "electCanonicalCurrentState (Sprint 1)",
+    "resolveOperationalDependencies (Sprint 4)",
+    "buildOrganisedSectionModel",
+    "buildTodaysBriefing",
+    "ShiftIntelligenceEngine.analyze (priority + recommendations)"
+  ],
+  "inputIntegrity": {
+    "inputAuthority": "CSV source_notes (Supabase export)",
+    "markdownBodyMatchesCsvIgnoringTrailingWhitespace": true,
+    "markdownExactByteMatchCsv": false,
+    "trailingWhitespaceOnlyDiffVsMarkdown": true,
+    "sourceSha256": "7bcb322bcf804fd3104f071cc0e25393ae926b9351ecdc95b55f427168b832b4",
+    "sourceLength": 1179,
+    "lineCount": 10,
+    "brainContext": null,
+    "hotelSnapshotKeys": [
+      "adr",
+      "revpar",
+      "inHouse",
+      "arrivals",
+      "oooRooms",
+      "occupancy",
+      "roomsSold",
+      "stayovers",
+      "departures",
+      "revparValue",
+      "sellableRooms",
+      "occupancyValue",
+      "roomsAvailable"
+    ]
+  },
+  "exactSourceInput": "=== TODAY'S ARRIVALS ===\nJIHYUN AN\t\t\t2\t\t09/08/2026\t\tHi, We arrive with morning flight at Gatwick 10:20 am and would like to leave our luggage at the hotel around lunch if that is possible. Also on the 9th August after checking out, we would like to keep our luggage at the hotel and pick them up in the late evening around 10 pm before our midnight train, if it’s possible. Best wishes, Jihyeon and Jim\" / EA 11am // Please advice of the complimentary upgrade to balance availability // From DD\t\t\t\n\nM. Phoebe Barnard Fukutomi\t\trm\t1\tdeparting\t08/08/2026\t\tPOA // Room and tax // Card on file guarantee only // Please advice of the complimentary upgrade to accommodate another reservation // From DD\t\t\t\t\t\t\t\t\t\n\nMrs. Anne Molyneux\t\trm\t33 & 31\tdeparting\t09/08/2026\t\tIroning board and iron / ~GUEST If possible may one of the rooms be a Twin. (So 1 x twin and 1 x double) Also please NOT in the basement Many thanks GUEST~ // room 33 set as TWIN\n\n=== TODAY'S DEPARTURES ===\n22 late c/o @12\n32 checked out\ntaxi money left for Andrea\n\n=== GENERAL HOTEL / SHIFT NOTES ===\nSayli called in sick 4:30am she was ment to work Clerkenwell - informed Armi, And called clerkenwell, emailed iswell.",
+  "hotelSnapshot": {
+    "adr": "£2.00",
+    "revpar": "£1.67",
+    "inHouse": "38",
+    "arrivals": "6",
+    "oooRooms": "0",
+    "occupancy": "83.3%",
+    "roomsSold": "20",
+    "stayovers": "14",
+    "departures": "1",
+    "revparValue": 1.67,
+    "sellableRooms": 24,
+    "occupancyValue": 83.33333333333334,
+    "roomsAvailable": "4"
+  },
+  "aiSummaryBriefing": "Priority 1\nRevenue follow-up required for outstanding channel payment before departures.\n\nPriority 2\nComplete outstanding guest follow-up for Room 22.\n\nPriority 3\nArrange iron and ironing board for Room 33.",
+  "briefingParagraphs": [
+    "Priority 1\nRevenue follow-up required for outstanding channel payment before departures.",
+    "Priority 2\nComplete outstanding guest follow-up for Room 22.",
+    "Priority 3\nArrange iron and ironing board for Room 33."
+  ],
+  "organisedHandover": {
+    "urgent": [],
+    "vip": [
+      "M. Phoebe Barnard Fukutomi\t\trm\t1\tdeparting\t08/08/2026\t\tPOA // Room and tax // Card on file guarantee only // Please advice of the complimentary upgrade to accommodate another reservation // From DD\t\t\t\t\t\t\t\t\t"
+    ],
+    "guest": [
+      "22 late c/o @12",
+      "taxi money left for Andrea"
+    ],
+    "maintenance": [],
+    "payments": [
+      "JIHYUN AN\t\t\t2\t\t09/08/2026\t\tHi, We arrive with morning flight at Gatwick 10:20 am and would like to leave our luggage at the hotel around lunch if that is possible. Also on the 9th August after checking out, we would like to keep our luggage at the hotel and pick them up in the late evening around 10 pm before our midnight train, if it’s possible. Best wishes, Jihyeon and Jim\" / EA 11am // Please advice of the complimentary upgrade to balance availability // From DD\t\t\t"
+    ],
+    "events": [],
+    "preparations": [
+      "Mrs. Anne Molyneux\t\trm\t33 & 31\tdeparting\t09/08/2026\t\tIroning board and iron / ~GUEST If possible may one of the rooms be a Twin. (So 1 x twin and 1 x double) Also please NOT in the basement Many thanks GUEST~ // room 33 set as TWIN"
+    ],
+    "openQuestions": [],
+    "tasks": [],
+    "inventory": [],
+    "deliveries": [],
+    "lostproperty": [],
+    "general": [
+      "=== TODAY'S ARRIVALS ===",
+      "=== TODAY'S DEPARTURES ===",
+      "32 checked out",
+      "=== GENERAL HOTEL / SHIFT NOTES ===",
+      "Sayli called in sick 4:30am she was ment to work Clerkenwell - informed Armi, And called clerkenwell, emailed iswell."
+    ],
+    "completed": []
+  },
+  "recommendations": [
+    {
+      "id": "msk5qexd-axckf",
+      "text": "Arrange iron and ironing board for Room 33 this shift.",
+      "priority": "normal",
+      "department": "Reception",
+      "status": "open",
+      "reasonCodes": [
+        "guest_follow_up",
+        "complaint_or_guest_follow_up",
+        "cross_department_dependency"
+      ]
+    }
+  ],
+  "reasoningMetadata": {
+    "noteCountAfterPipeline": 10,
+    "dependencyEdgeCount": 0,
+    "dependencyEdges": [],
+    "analyzeKeys": [
+      "engineVersion",
+      "signals",
+      "recommendations",
+      "checklist",
+      "facts",
+      "operationalMemories",
+      "guestObservations",
+      "guestObservationRejections",
+      "guestCandidates",
+      "guestCandidateRejections"
+    ],
+    "quietShift": null
+  },
+  "noteEvidence": [
+    {
+      "original": "M. Phoebe Barnard Fukutomi\t\trm\t1\tdeparting\t08/08/2026\t\tPOA // Room and tax // Card on file guarantee only // Please advice of the complimentary upgrade to accommodate another reservation // From DD\t\t\t\t\t\t\t\t\t",
+      "section": "vip",
+      "rooms": [
+        "1"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_1",
+      "canonicalName": "Phoebe Barnard Fukutomi",
+      "currentRoom": "1",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "reservation_info",
+      "factStatus": "confirmed"
+    },
+    {
+      "original": "Mrs. Anne Molyneux\t\trm\t33 & 31\tdeparting\t09/08/2026\t\tIroning board and iron / ~GUEST If possible may one of the rooms be a Twin. (So 1 x twin and 1 x double) Also please NOT in the basement Many thanks GUEST~ // room 33 set as TWIN",
+      "section": "guest",
+      "rooms": [
+        "33"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_2",
+      "canonicalName": "Mrs. Anne Molyneux",
+      "currentRoom": "33",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "guest_request",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "22 late c/o @12",
+      "section": "guest",
+      "rooms": [
+        "22"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "22",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "late_checkout",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "taxi money left for Andrea",
+      "section": "guest",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "departure_followup",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "=== TODAY'S ARRIVALS ===",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "JIHYUN AN\t\t\t2\t\t09/08/2026\t\tHi, We arrive with morning flight at Gatwick 10:20 am and would like to leave our luggage at the hotel around lunch if that is possible. Also on the 9th August after checking out, we would like to keep our luggage at the hotel and pick them up in the late evening around 10 pm before our midnight train, if it’s possible. Best wishes, Jihyeon and Jim\" / EA 11am // Please advice of the complimentary upgrade to balance availability // From DD\t\t\t",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "requested"
+    },
+    {
+      "original": "=== TODAY'S DEPARTURES ===",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "32 checked out",
+      "section": "general",
+      "rooms": [
+        "32"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "32",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "=== GENERAL HOTEL / SHIFT NOTES ===",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Sayli called in sick 4:30am she was ment to work Clerkenwell - informed Armi, And called clerkenwell, emailed iswell.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    }
+  ]
+}
