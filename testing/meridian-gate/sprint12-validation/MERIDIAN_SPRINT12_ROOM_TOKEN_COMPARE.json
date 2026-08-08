@@ -1,0 +1,428 @@
+{
+  "label": "MERIDIAN BASELINE → SPRINT 12 ROOM-TOKEN COMPARE",
+  "focus": [
+    "006",
+    "009",
+    "011",
+    "013",
+    "018"
+  ],
+  "scenarios": [
+    {
+      "id": "001",
+      "title": "Quiet Tuesday After Crew Turn",
+      "focus": false,
+      "baselineRooms": [],
+      "sprint12Rooms": [
+        "M210",
+        "M215",
+        "MS02",
+        "TR-2",
+        "TR-3"
+      ],
+      "baselineOpen": [],
+      "sprint12Open": [],
+      "openCountDelta": 0,
+      "roomsDelta": 5,
+      "briefingChanged": false,
+      "sourceShaMatch": true
+    },
+    {
+      "id": "002",
+      "title": "Midweek PM Shuttle and Prepaid Arrival",
+      "focus": false,
+      "baselineRooms": [],
+      "sprint12Rooms": [
+        "CX08",
+        "M118",
+        "M119",
+        "M301"
+      ],
+      "baselineOpen": [],
+      "sprint12Open": [],
+      "openCountDelta": 0,
+      "roomsDelta": 4,
+      "briefingChanged": false,
+      "sourceShaMatch": true
+    },
+    {
+      "id": "003",
+      "title": "Lean Night, Soft Leak, Early Crew Window",
+      "focus": false,
+      "baselineRooms": [],
+      "sprint12Rooms": [
+        "CX12",
+        "M108",
+        "M212",
+        "M215"
+      ],
+      "baselineOpen": [
+        "[maintenance] rm= :: Follow up open maintenance"
+      ],
+      "sprint12Open": [
+        "[maintenance] rm= :: Follow up open maintenance"
+      ],
+      "openCountDelta": 0,
+      "roomsDelta": 4,
+      "briefingChanged": true,
+      "sourceShaMatch": true
+    },
+    {
+      "id": "004",
+      "title": "Busy AM: Annex Backlog Meets Main Arrivals",
+      "focus": false,
+      "baselineRooms": [],
+      "sprint12Rooms": [
+        "CX03",
+        "CX04",
+        "CX05",
+        "CX09",
+        "CX11",
+        "M116",
+        "M122",
+        "M205"
+      ],
+      "baselineOpen": [
+        "[guest_request:luggage_ea] rm= :: Honour luggage / early-arrival arrangements for Ms Trent"
+      ],
+      "sprint12Open": [
+        "[guest_request:luggage_ea] rm=M122 :: Honour luggage / early-arrival arrangements for Ms Trent (Room M122)"
+      ],
+      "openCountDelta": 0,
+      "roomsDelta": 8,
+      "briefingChanged": true,
+      "sourceShaMatch": true
+    },
+    {
+      "id": "005",
+      "title": "Spa Day Member Asking to Stay Overnight",
+      "focus": false,
+      "baselineRooms": [],
+      "sprint12Rooms": [
+        "M203",
+        "MS03",
+        "TR-1",
+        "TR-4"
+      ],
+      "baselineOpen": [
+        "[guest_request:iron_and_ironing_board] rm= :: Arrange iron and ironing board"
+      ],
+      "sprint12Open": [
+        "[guest_request:iron_and_ironing_board] rm=M203 :: Arrange iron and ironing board for Room M203"
+      ],
+      "openCountDelta": 0,
+      "roomsDelta": 4,
+      "briefingChanged": true,
+      "sourceShaMatch": true
+    },
+    {
+      "id": "006",
+      "title": "Crew Block vs Quiet-Wing Sell Pressure",
+      "focus": true,
+      "baselineRooms": [],
+      "sprint12Rooms": [
+        "M210",
+        "M212",
+        "M214",
+        "M215",
+        "M216",
+        "M217",
+        "M218"
+      ],
+      "baselineOpen": [],
+      "sprint12Open": [
+        "[allocation:blocked_assigned] rm=M212 :: Clarify / reallocate arrival for Mr Patel — assigned Room M212 is unavailable or blocked (do not invent a replacement room)"
+      ],
+      "openCountDelta": 1,
+      "roomsDelta": 7,
+      "briefingChanged": true,
+      "sourceShaMatch": true
+    },
+    {
+      "id": "007",
+      "title": "Valet Full and Pavilion Prefunction",
+      "focus": false,
+      "baselineRooms": [],
+      "sprint12Rooms": [
+        "M109"
+      ],
+      "baselineOpen": [],
+      "sprint12Open": [],
+      "openCountDelta": 0,
+      "roomsDelta": 1,
+      "briefingChanged": false,
+      "sourceShaMatch": true
+    },
+    {
+      "id": "008",
+      "title": "Truly Quiet Night Control",
+      "focus": false,
+      "baselineRooms": [],
+      "sprint12Rooms": [
+        "M117",
+        "M304"
+      ],
+      "baselineOpen": [],
+      "sprint12Open": [],
+      "openCountDelta": 0,
+      "roomsDelta": 2,
+      "briefingChanged": false,
+      "sourceShaMatch": true
+    },
+    {
+      "id": "009",
+      "title": "Stale Annex Board vs Main Allocation Conflict",
+      "focus": true,
+      "baselineRooms": [],
+      "sprint12Rooms": [
+        "CX07",
+        "MS01"
+      ],
+      "baselineOpen": [],
+      "sprint12Open": [
+        "[occupancy_conflict:clarify] rm=CX07 :: Clarify Room CX07 status/readiness for Ms Renée — conflicting occupancy evidence (do not invent a different room)"
+      ],
+      "openCountDelta": 1,
+      "roomsDelta": 2,
+      "briefingChanged": true,
+      "sourceShaMatch": true
+    },
+    {
+      "id": "010",
+      "title": "Wedding Day Pavilion Pressure",
+      "focus": false,
+      "baselineRooms": [],
+      "sprint12Rooms": [
+        "CX14",
+        "CX15",
+        "CX16",
+        "M318",
+        "MS04"
+      ],
+      "baselineOpen": [
+        "[payment:collect] rm= :: Collect outstanding payment before departure"
+      ],
+      "sprint12Open": [
+        "[payment:collect] rm=CX14 :: Collect outstanding payment for Room CX14 before departure"
+      ],
+      "openCountDelta": 0,
+      "roomsDelta": 5,
+      "briefingChanged": true,
+      "sourceShaMatch": true
+    },
+    {
+      "id": "011",
+      "title": "Accessible Arrival and Interconnect Family",
+      "focus": true,
+      "baselineRooms": [],
+      "sprint12Rooms": [
+        "CX03",
+        "M114",
+        "M115",
+        "M201",
+        "MA02",
+        "MA14"
+      ],
+      "baselineOpen": [],
+      "sprint12Open": [],
+      "openCountDelta": 0,
+      "roomsDelta": 6,
+      "briefingChanged": true,
+      "sourceShaMatch": true
+    },
+    {
+      "id": "012",
+      "title": "Night Information Heavy, MONITOR Only",
+      "focus": false,
+      "baselineRooms": [],
+      "sprint12Rooms": [
+        "CX09",
+        "M305"
+      ],
+      "baselineOpen": [],
+      "sprint12Open": [],
+      "openCountDelta": 0,
+      "roomsDelta": 2,
+      "briefingChanged": true,
+      "sourceShaMatch": true
+    },
+    {
+      "id": "013",
+      "title": "Treatment Room Sold as Bedroom (Adversarial)",
+      "focus": true,
+      "baselineRooms": [],
+      "sprint12Rooms": [
+        "CX02",
+        "M126",
+        "M130",
+        "MS01",
+        "MS02",
+        "MS04",
+        "TR-2"
+      ],
+      "baselineOpen": [],
+      "sprint12Open": [],
+      "openCountDelta": 0,
+      "roomsDelta": 7,
+      "briefingChanged": false,
+      "sourceShaMatch": true
+    },
+    {
+      "id": "014",
+      "title": "Night Payment Contrast and Lean Cover",
+      "focus": false,
+      "baselineRooms": [],
+      "sprint12Rooms": [
+        "CX06",
+        "M124",
+        "M133",
+        "M220",
+        "M311"
+      ],
+      "baselineOpen": [
+        "[maintenance] rm= :: Follow up open maintenance",
+        "[maintenance] rm= :: Follow up open maintenance"
+      ],
+      "sprint12Open": [
+        "[maintenance] rm=M311 :: Follow up maintenance for Room M311",
+        "[maintenance] rm= :: Follow up open maintenance",
+        "[payment:collect] rm=M124 :: Collect outstanding payment for Room M124 before departure"
+      ],
+      "openCountDelta": 1,
+      "roomsDelta": 5,
+      "briefingChanged": true,
+      "sourceShaMatch": true
+    },
+    {
+      "id": "015",
+      "title": "Early-AM Airport Pressure Stack",
+      "focus": false,
+      "baselineRooms": [],
+      "sprint12Rooms": [
+        "CX03",
+        "M101",
+        "M104",
+        "M126"
+      ],
+      "baselineOpen": [
+        "[guest_request:ea_luggage_near] rm= :: Honour early arrival / lunch luggage arrangements for Acc Okonkwo",
+        "[guest_request:luggage_ea] rm= :: Honour luggage / early-arrival arrangements"
+      ],
+      "sprint12Open": [
+        "[guest_request:ea_luggage_near] rm=CX03 :: Honour early arrival / lunch luggage arrangements for Acc Okonkwo (Room CX03)",
+        "[guest_request:luggage_ea] rm=M101 :: Honour luggage / early-arrival arrangements (Room M101)"
+      ],
+      "openCountDelta": 0,
+      "roomsDelta": 4,
+      "briefingChanged": true,
+      "sourceShaMatch": true
+    },
+    {
+      "id": "016",
+      "title": "Conditional Champagne and Genuine Twin Prep",
+      "focus": false,
+      "baselineRooms": [],
+      "sprint12Rooms": [
+        "M140",
+        "M206",
+        "MS03"
+      ],
+      "baselineOpen": [
+        "[amenity:twin] rm= :: Prepare twin beds for Mrs Nwosu"
+      ],
+      "sprint12Open": [
+        "[amenity:twin] rm=M206 :: Prepare twin beds for Room M206 (Mrs Nwosu)"
+      ],
+      "openCountDelta": 0,
+      "roomsDelta": 3,
+      "briefingChanged": true,
+      "sourceShaMatch": true
+    },
+    {
+      "id": "017",
+      "title": "Busy PM: Crew Inbound, Spa Close, Valet Leftover",
+      "focus": false,
+      "baselineRooms": [],
+      "sprint12Rooms": [
+        "CX18",
+        "M210",
+        "M213"
+      ],
+      "baselineOpen": [],
+      "sprint12Open": [],
+      "openCountDelta": 0,
+      "roomsDelta": 3,
+      "briefingChanged": false,
+      "sourceShaMatch": true
+    },
+    {
+      "id": "018",
+      "title": "Interconnect Broken Across Buildings",
+      "focus": true,
+      "baselineRooms": [],
+      "sprint12Rooms": [
+        "CX10",
+        "M152",
+        "M153",
+        "M154",
+        "M155"
+      ],
+      "baselineOpen": [],
+      "sprint12Open": [],
+      "openCountDelta": 0,
+      "roomsDelta": 5,
+      "briefingChanged": true,
+      "sourceShaMatch": true
+    },
+    {
+      "id": "019",
+      "title": "Settled Folio Afternoon, Almost Nothing To Do",
+      "focus": false,
+      "baselineRooms": [],
+      "sprint12Rooms": [
+        "CX05",
+        "M108",
+        "M111",
+        "M119",
+        "M300"
+      ],
+      "baselineOpen": [],
+      "sprint12Open": [],
+      "openCountDelta": 0,
+      "roomsDelta": 5,
+      "briefingChanged": false,
+      "sourceShaMatch": true
+    },
+    {
+      "id": "020",
+      "title": "Adversarial Night Paste: Everything Competing",
+      "focus": false,
+      "baselineRooms": [
+        "32"
+      ],
+      "sprint12Rooms": [
+        "32",
+        "CX03",
+        "CX11",
+        "CX17",
+        "M126",
+        "M128",
+        "M140",
+        "M210",
+        "M212",
+        "MS04",
+        "TR-3"
+      ],
+      "baselineOpen": [
+        "[payment:collect] rm= :: Collect outstanding payment before departure"
+      ],
+      "sprint12Open": [
+        "[payment:collect] rm=M128 :: Collect outstanding payment for Room M128 before departure"
+      ],
+      "openCountDelta": 0,
+      "roomsDelta": 10,
+      "briefingChanged": true,
+      "sourceShaMatch": true
+    }
+  ]
+}

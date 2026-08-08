@@ -1,0 +1,523 @@
+{
+  "label": "MERIDIAN GATE Sprint 12 room-token validation OUTPUT",
+  "scenarioId": "010",
+  "title": "Wedding Day Pavilion Pressure",
+  "recordId": null,
+  "gitCommit": "092d35708fec5dc8b193402317ae92eef4f7690a",
+  "engineVersion": 1,
+  "contractVersion": "E1",
+  "ranAt": "2026-08-08T13:42:10.304Z",
+  "pipeline": [
+    "extractOperationalFact / sectionFromFact",
+    "consolidateNotesByFacts",
+    "resolveOperationalEntities (Sprint 3)",
+    "electCanonicalCurrentState (Sprint 1)",
+    "resolveOperationalDependencies (Sprint 4)",
+    "buildCanonicalOperationalActions (Sprint 5/6/8/9/10/11 — current HEAD)",
+    "buildOrganisedSectionModel",
+    "buildTodaysBriefing (decision seating)",
+    "ShiftIntelligenceEngine.analyze (recommendation seating)"
+  ],
+  "scenarioMeta": {
+    "shift": "PM",
+    "operationalLoad": "Busy",
+    "ambiguity": "Partial",
+    "departments": "Events, F&B, Valet, Reception, Housekeeping",
+    "preparedBy": "Aisha Rahman — Events Coordinator (fictional) / FO log",
+    "sourceFile": "scenario-010.md",
+    "scenarioFileSha256": "8aec629a23f78e448ee5f87d372be9d329694f9e4eccd84db007850626c60f30"
+  },
+  "humanExpectedTruth": {
+    "currentOperationalFacts": [
+      "Pavilion ceremony 15:00; florist/chairs DONE; cake ETA 14:20 at pavilion loading door — OPEN accept.",
+      "MS04 bridal + M318 parents interconnect DONE.",
+      "Valet surge; two van tickets unprinted — OPEN.",
+      "CX16 not clean — do not check in.",
+      "Master prepaid; no invented £40 minibar collect."
+    ],
+    "open": [
+      "Accept / coordinate cake delivery ~14:20 at pavilion loading door (Events/F&B).",
+      "Clear unprinted valet tickets for vans before ceremony surge.",
+      "Hold CX16 check-in until HK release."
+    ],
+    "monitor": [
+      "Rain plan for cocktails; valet capacity through 16:00.",
+      "CX16 cleaning progress."
+    ],
+    "information": [
+      "Florist/chairs/interconnect DONE; master account prepaid pattern; CX14/CX15 clean."
+    ],
+    "unresolved": [
+      "Whether showers force colonnade move — weather-dependent; do not invent weather outcome."
+    ],
+    "completedMustNotReopen": [
+      "Florist, chairs, interconnect unlock — DONE — must not reopen.",
+      "Unposted minibar — must not become OPEN collect."
+    ],
+    "bindings": [
+      "MS04 / M318; CX14–CX16; cake 14:20 pavilion door; ceremony 15:00."
+    ],
+    "mustNotInfer": [
+      "Checking into CX16 dirty.",
+      "Individual room collects against master prepaid without guest due.",
+      "Putting wedding guests into crew quiet wing.",
+      "Cake delivery at Main lobby instead of pavilion door."
+    ],
+    "rationale": [
+      "Busy event day: pavilion + valet real work; room inventory honesty; payment fail-closed on master account."
+    ],
+    "rawTruthMarkdown": "### Current operational facts\r\n- Pavilion ceremony 15:00; florist/chairs DONE; cake ETA 14:20 at pavilion loading door — OPEN accept.\r\n- MS04 bridal + M318 parents interconnect DONE.\r\n- Valet surge; two van tickets unprinted — OPEN.\r\n- CX16 not clean — do not check in.\r\n- Master prepaid; no invented £40 minibar collect.\r\n\r\n### Expected OPEN actions\r\n- Accept / coordinate cake delivery ~14:20 at pavilion loading door (Events/F&B).\r\n- Clear unprinted valet tickets for vans before ceremony surge.\r\n- Hold CX16 check-in until HK release.\r\n\r\n### Expected MONITOR items\r\n- Rain plan for cocktails; valet capacity through 16:00.\r\n- CX16 cleaning progress.\r\n\r\n### Expected INFORMATION\r\n- Florist/chairs/interconnect DONE; master account prepaid pattern; CX14/CX15 clean.\r\n\r\n### Expected UNRESOLVED / clarifications\r\n- Whether showers force colonnade move — weather-dependent; do not invent weather outcome.\r\n\r\n### Explicit completed / resolved / superseded (must not reopen)\r\n- Florist, chairs, interconnect unlock — DONE — must not reopen.\r\n- Unposted minibar — must not become OPEN collect.\r\n\r\n### Important entity / room / time bindings\r\n- MS04 / M318; CX14–CX16; cake 14:20 pavilion door; ceremony 15:00.\r\n\r\n### Must not invent\r\n- Checking into CX16 dirty.\r\n- Individual room collects against master prepaid without guest due.\r\n- Putting wedding guests into crew quiet wing.\r\n- Cake delivery at Main lobby instead of pavilion door.\r\n\r\n### Short human rationale\r\nBusy event day: pavilion + valet real work; room inventory honesty; payment fail-closed on master account."
+  },
+  "canonicalActions": [
+    {
+      "actionId": "act|ent_1|cx14|payment_collect|collect_before_departure|meridian_baseline_17",
+      "actionState": "open",
+      "actionType": "collect_before_departure",
+      "facetKey": "payment:collect",
+      "room": "CX14",
+      "rooms": [
+        "CX14"
+      ],
+      "entityId": "ent_1",
+      "canonicalName": "Hargreaves Wedding",
+      "actionText": "Collect outstanding payment for Room CX14 before departure",
+      "priorityBand": "P2",
+      "priorityScore": 35,
+      "priorityReasons": [
+        "payment_actionable",
+        "money_not_safety",
+        "payment_collect_evidenced",
+        "sprint9_fail_closed",
+        "temporal:no_temporal_evidence"
+      ],
+      "temporalScope": "information",
+      "serviceDate": "",
+      "deadlineHint": "collect",
+      "relativeCue": "",
+      "temporalConfidence": "low",
+      "temporalReasons": [
+        "no_temporal_evidence"
+      ],
+      "evidenceText": "Many wedding rooms prepaid master account “Hargreaves Wedding” — do not collect room/tax from individuals unless folio shows guest due. Mr Guest (CX14) asking about £40 minibar — **not posted yet** — do not invent collect."
+    }
+  ],
+  "actionStateCounts": {
+    "open": 1,
+    "monitor": 0,
+    "information": 0,
+    "unresolved": 0,
+    "blocked": 0,
+    "resolved": 0,
+    "other": 0
+  },
+  "temporalAnchor": {
+    "handoverDate": "2026-09-13",
+    "shift": "PM",
+    "createdAt": "2026-09-13T15:45:00.000Z"
+  },
+  "decisionSeats": {
+    "seats": [
+      {
+        "action": {
+          "actionId": "act|ent_1|cx14|payment_collect|collect_before_departure|meridian_baseline_17",
+          "objectId": "",
+          "entityId": "ent_1",
+          "resolutionState": "resolved",
+          "canonicalName": "Hargreaves Wedding",
+          "room": "CX14",
+          "rooms": [
+            "CX14"
+          ],
+          "actionType": "collect_before_departure",
+          "actionState": "open",
+          "facetKey": "payment:collect",
+          "actionText": "Collect outstanding payment for Room CX14 before departure",
+          "displayLabel": "Collect outstanding payment for Room CX14 before departure",
+          "evidenceText": "Many wedding rooms prepaid master account “Hargreaves Wedding” — do not collect room/tax from individuals unless folio shows guest due. Mr Guest (CX14) asking about £40 minibar — **not posted yet** — do not invent collect.",
+          "actionability": "actionable",
+          "blockedBy": [],
+          "blocks": [],
+          "priorityBand": "P2",
+          "priorityScore": 35,
+          "priorityReasons": [
+            "payment_actionable",
+            "money_not_safety",
+            "payment_collect_evidenced",
+            "sprint9_fail_closed",
+            "temporal:no_temporal_evidence"
+          ],
+          "currentStateEligible": true,
+          "sourceFactIds": [
+            "meridian-baseline-17"
+          ],
+          "confidence": 0.85,
+          "temporalScope": "information",
+          "serviceDate": "",
+          "deadlineHint": "collect",
+          "relativeCue": "",
+          "temporalConfidence": "low",
+          "temporalReasons": [
+            "no_temporal_evidence"
+          ]
+        },
+        "actionId": "act|ent_1|cx14|payment_collect|collect_before_departure|meridian_baseline_17",
+        "facetKey": "payment:collect",
+        "actionState": "open",
+        "priorityBand": "P2",
+        "priorityScore": 35,
+        "seatKind": "do_now",
+        "canonicalSeed": true,
+        "workKey": "payment:collect|CX14|hargreaves wedding|collect_before_departure",
+        "text": "Collect outstanding payment for Room CX14 before departure",
+        "legacy": null
+      }
+    ],
+    "seatedCanonicalIds": [
+      "act|ent_1|cx14|payment_collect|collect_before_departure|meridian_baseline_17"
+    ],
+    "source": "canonical_decision_seats",
+    "surface": "briefing",
+    "maxN": 5
+  },
+  "inputIntegrity": {
+    "inputAuthority": "scenario-XXX.md Original Input / Raw Source Notes",
+    "scenarioFileSha256": "8aec629a23f78e448ee5f87d372be9d329694f9e4eccd84db007850626c60f30",
+    "sourceSha256": "d6fed6f917bc6f23936e53f5245069b52b6dbd54d21899d3c123d36a90e5108e",
+    "sourceLength": 1010,
+    "lineCount": 13,
+    "brainContext": null,
+    "hotelSnapshotKeys": [],
+    "humanExpectedTruthPreserved": true,
+    "freezeStatus": "FROZEN BEFORE FIRST HF RUN"
+  },
+  "exactSourceInput": "Sunday wedding — Hargreaves — busy but keep rooms honest.\n\nPAVILION / EVENTS\nCeremony 15:00 pavilion. Florist done AM — DONE. Chairs final set — DONE.\nStill OPEN for Events/F&B: **cake delivery ETA 14:20** — must be accepted at pavilion loading door (not Main lobby). Rain plan: move cocktails under colonnade if showers — DM aware.\n\nGUEST ROOMS\nBridal suite **MS04** — Ms Hargreaves in-house. Connecting **M318** for parents — interconnect unlocked earlier — DONE.\nDo **not** put random wedding guests into crew quiet wing.\n\nVALET\nSurge 14:00–16:00. Overflow map in use. Two tickets still unprinted for vans — Concierge/Valet to clear before ceremony.\n\nANNEX\nWedding guests on CX14/CX15 — both clean. CX16 requested late — **not clean yet** — do not check in until HK releases.\n\nPAYMENT\nMany wedding rooms prepaid master account “Hargreaves Wedding” — do not collect room/tax from individuals unless folio shows guest due. Mr Guest (CX14) asking about £40 minibar — **not posted yet** — do not invent collect.",
+  "hotelSnapshot": {},
+  "aiSummaryBriefing": "Priority 1\nCollect outstanding payment for Room CX14 before departure.\n\nPriority 2\nRevenue follow-up required for Room cx14 outstanding £40 before departures.",
+  "briefingParagraphs": [
+    "Priority 1\nCollect outstanding payment for Room CX14 before departure.",
+    "Priority 2\nRevenue follow-up required for Room cx14 outstanding £40 before departures."
+  ],
+  "organisedHandover": {
+    "urgent": [],
+    "vip": [],
+    "guest": [
+      "Still OPEN for Events/F&B: **cake delivery ETA 14:20** — must be accepted at pavilion loading door (not Main lobby). Rain plan: move cocktails under colonnade if showers — DM aware."
+    ],
+    "maintenance": [],
+    "payments": [
+      "Many wedding rooms prepaid master account “Hargreaves Wedding” — do not collect room/tax from individuals unless folio shows guest due. Mr Guest (CX14) asking about £40 minibar — **not posted yet** — do not invent collect."
+    ],
+    "events": [],
+    "preparations": [],
+    "openQuestions": [],
+    "tasks": [],
+    "inventory": [],
+    "deliveries": [],
+    "lostproperty": [],
+    "general": [
+      "PAYMENT",
+      "Sunday wedding — Hargreaves — busy but keep rooms honest.",
+      "PAVILION / EVENTS",
+      "GUEST ROOMS",
+      "Do **not** put random wedding guests into crew quiet wing.",
+      "VALET",
+      "Surge 14:00–16:00. Overflow map in use. Two tickets still unprinted for vans — Concierge/Valet to clear before ceremony.",
+      "ANNEX",
+      "Wedding guests on CX14/CX15 — both clean. CX16 requested late — **not clean yet** — do not check in until HK releases."
+    ],
+    "completed": [
+      "Bridal suite **MS04** — Ms Hargreaves in-house. Connecting **M318** for parents — interconnect unlocked earlier — DONE.",
+      "Ceremony 15:00 pavilion. Florist done AM — DONE. Chairs final set — DONE."
+    ]
+  },
+  "recommendations": [
+    {
+      "id": "act|ent_1|cx14|payment_collect|collect_before_departure|meridian_baseline_17",
+      "text": "Collect outstanding payment for Room CX14 before departure.",
+      "priority": "normal",
+      "department": "Reception",
+      "status": "open",
+      "reasonCodes": [
+        "payment_actionable",
+        "money_not_safety",
+        "payment_collect_evidenced",
+        "sprint9_fail_closed",
+        "temporal:no_temporal_evidence",
+        "canonical_decision_seat"
+      ]
+    }
+  ],
+  "reasoningMetadata": {
+    "noteCountAfterPipeline": 13,
+    "dependencyEdgeCount": 0,
+    "dependencyEdges": [],
+    "analyzeKeys": [
+      "engineVersion",
+      "signals",
+      "recommendations",
+      "checklist",
+      "facts",
+      "operationalMemories",
+      "guestObservations",
+      "guestObservationRejections",
+      "guestCandidates",
+      "guestCandidateRejections"
+    ],
+    "quietShift": null,
+    "decisionSeating": {
+      "briefingUsesCanonicalActions": true,
+      "recommendationsFromAnalyze": true,
+      "sharedCanonicalList": true,
+      "selectDecisionSeatsCaptured": true
+    }
+  },
+  "noteEvidence": [
+    {
+      "original": "Still OPEN for Events/F&B: **cake delivery ETA 14:20** — must be accepted at pavilion loading door (not Main lobby). Rain plan: move cocktails under colonnade if showers — DM aware.",
+      "section": "guest",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "room_move",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Many wedding rooms prepaid master account “Hargreaves Wedding” — do not collect room/tax from individuals unless folio shows guest due. Mr Guest (CX14) asking about £40 minibar — **not posted yet** — do not invent collect.",
+      "section": "payments",
+      "rooms": [
+        "CX14"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_1",
+      "canonicalName": "Hargreaves Wedding",
+      "currentRoom": "cx14",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "charge",
+      "factStatus": "requested"
+    },
+    {
+      "original": "Sunday wedding — Hargreaves — busy but keep rooms honest.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "PAVILION / EVENTS",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "GUEST ROOMS",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Bridal suite **MS04** — Ms Hargreaves in-house. Connecting **M318** for parents — interconnect unlocked earlier — DONE.",
+      "section": "completed",
+      "rooms": [
+        "MS04",
+        "M318"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "ms04",
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "interconnect",
+      "factStatus": "done"
+    },
+    {
+      "original": "Do **not** put random wedding guests into crew quiet wing.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "VALET",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Surge 14:00–16:00. Overflow map in use. Two tickets still unprinted for vans — Concierge/Valet to clear before ceremony.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "ANNEX",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Wedding guests on CX14/CX15 — both clean. CX16 requested late — **not clean yet** — do not check in until HK releases.",
+      "section": "general",
+      "rooms": [
+        "CX14",
+        "CX15",
+        "CX16"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "cx14",
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "requested"
+    },
+    {
+      "original": "PAYMENT",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Ceremony 15:00 pavilion. Florist done AM — DONE. Chairs final set — DONE.",
+      "section": "completed",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "done"
+    }
+  ],
+  "reviewPlaceholder": {
+    "status": "PENDING_HUMAN_REVIEW",
+    "note": "Sprint 12 room-token validation only. Compare to frozen Human Expected Truth. Do not modify engine or scenarios."
+  }
+}

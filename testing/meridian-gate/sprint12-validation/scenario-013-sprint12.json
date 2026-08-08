@@ -1,0 +1,376 @@
+{
+  "label": "MERIDIAN GATE Sprint 12 room-token validation OUTPUT",
+  "scenarioId": "013",
+  "title": "Treatment Room Sold as Bedroom (Adversarial)",
+  "recordId": null,
+  "gitCommit": "092d35708fec5dc8b193402317ae92eef4f7690a",
+  "engineVersion": 1,
+  "contractVersion": "E1",
+  "ranAt": "2026-08-08T13:42:10.304Z",
+  "pipeline": [
+    "extractOperationalFact / sectionFromFact",
+    "consolidateNotesByFacts",
+    "resolveOperationalEntities (Sprint 3)",
+    "electCanonicalCurrentState (Sprint 1)",
+    "resolveOperationalDependencies (Sprint 4)",
+    "buildCanonicalOperationalActions (Sprint 5/6/8/9/10/11 — current HEAD)",
+    "buildOrganisedSectionModel",
+    "buildTodaysBriefing (decision seating)",
+    "ShiftIntelligenceEngine.analyze (recommendation seating)"
+  ],
+  "scenarioMeta": {
+    "shift": "PM",
+    "operationalLoad": "Adversarial / ambiguous",
+    "ambiguity": "Yes (primary)",
+    "departments": "Spa, Reception, Duty Manager, Reservations",
+    "preparedBy": "Elena Vogt — Spa Manager (fictional) / escalated to DM",
+    "sourceFile": "scenario-013.md",
+    "scenarioFileSha256": "cdee33fb6029279974c99906c4d93ac73930a3442d49c626331bdfd2bc130fce"
+  },
+  "humanExpectedTruth": {
+    "currentOperationalFacts": [
+      "Crowe wrongly allocated to TR-2 treatment room — invalid as bedroom.",
+      "Needs clarify/reallocate to real guest room; prepaid; preference Main near spa unconfirmed.",
+      "M126 VD soft maybe 19:30; CX02 clean possible; MS01 soft OOO not released; MS02 occupied.",
+      "M130 flowers cancelled/declined."
+    ],
+    "open": [
+      "Clarify / reallocate Crowe away from TR-2 to a real sellable guest room (DM/Reception with Spa) — do not invent final room number as solved."
+    ],
+    "monitor": [
+      "M126 soft ready language; MS01 soft OOO not sellable."
+    ],
+    "information": [
+      "Prepaid Crowe; spa 19:00 massage in TR-2 for day member; cancelled flowers M130."
+    ],
+    "unresolved": [
+      "Final room for Crowe (Main vs CX02) until written allocation — intentional."
+    ],
+    "completedMustNotReopen": [
+      "TR-2 as bedroom allocation — invalid / superseded — must not honour as room assign.",
+      "M130 flowers — cancelled/declined — must not OPEN amenity prep."
+    ],
+    "bindings": [
+      "Crowe ≠ TR-2; due ~18:30; M126 / CX02 / MS* constraints; spa massage 19:00 in TR-2."
+    ],
+    "mustNotInfer": [
+      "Checking Crowe into TR-2.",
+      "Declaring MS01 sellable / released.",
+      "Auto-assigning a specific room as confirmed without evidence.",
+      "Preparing cancelled flowers."
+    ],
+    "rationale": [
+      "Adversarial Meridian-native: treatment vs bedroom; OPEN clarify; cancelled amenity stays closed."
+    ],
+    "rawTruthMarkdown": "### Current operational facts\r\n- Crowe wrongly allocated to TR-2 treatment room — invalid as bedroom.\r\n- Needs clarify/reallocate to real guest room; prepaid; preference Main near spa unconfirmed.\r\n- M126 VD soft maybe 19:30; CX02 clean possible; MS01 soft OOO not released; MS02 occupied.\r\n- M130 flowers cancelled/declined.\r\n\r\n### Expected OPEN actions\r\n- Clarify / reallocate Crowe away from TR-2 to a real sellable guest room (DM/Reception with Spa) — do not invent final room number as solved.\r\n\r\n### Expected MONITOR items\r\n- M126 soft ready language; MS01 soft OOO not sellable.\r\n\r\n### Expected INFORMATION\r\n- Prepaid Crowe; spa 19:00 massage in TR-2 for day member; cancelled flowers M130.\r\n\r\n### Expected UNRESOLVED / clarifications\r\n- Final room for Crowe (Main vs CX02) until written allocation — intentional.\r\n\r\n### Explicit completed / resolved / superseded (must not reopen)\r\n- TR-2 as bedroom allocation — invalid / superseded — must not honour as room assign.\r\n- M130 flowers — cancelled/declined — must not OPEN amenity prep.\r\n\r\n### Important entity / room / time bindings\r\n- Crowe ≠ TR-2; due ~18:30; M126 / CX02 / MS* constraints; spa massage 19:00 in TR-2.\r\n\r\n### Must not invent\r\n- Checking Crowe into TR-2.\r\n- Declaring MS01 sellable / released.\r\n- Auto-assigning a specific room as confirmed without evidence.\r\n- Preparing cancelled flowers.\r\n\r\n### Short human rationale\r\nAdversarial Meridian-native: treatment vs bedroom; OPEN clarify; cancelled amenity stays closed."
+  },
+  "canonicalActions": [
+    {
+      "actionId": "act|noent|m130|vip_prep_complete|type|meridian_baseline_12",
+      "actionState": "information",
+      "actionType": "operational_follow_up",
+      "facetKey": "vip:prep_complete",
+      "room": "M130",
+      "rooms": [
+        "M130"
+      ],
+      "entityId": null,
+      "canonicalName": "",
+      "actionText": "VIP prep complete / awareness only",
+      "priorityBand": "P3",
+      "priorityScore": 78,
+      "priorityReasons": [
+        "vip_prep_complete"
+      ],
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "Also: flowers cancelled for M130 — guest declined — **cancelled**. Do not prep."
+    },
+    {
+      "actionId": "act|noent|tr_2|payment_no_collect|type|meridian_baseline_8",
+      "actionState": "resolved",
+      "actionType": "operational_follow_up",
+      "facetKey": "payment:no_collect",
+      "room": "TR-2",
+      "rooms": [
+        "TR-2",
+        "CX02",
+        "M126"
+      ],
+      "entityId": null,
+      "canonicalName": "",
+      "actionText": "Payment settled / no collect required for Room TR-2",
+      "priorityBand": "exclude",
+      "priorityScore": 92,
+      "priorityReasons": [
+        "payment_no_collect"
+      ],
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "Due ~18:30. Prepaid. Needs a real guest room. Main has **M126** vacant dirty (HK: maybe 19:30) — **not promised**. Annex CX02 clean — possible — but Crowe asked for Main near spa if possible. **No confirmed room yet** after we blocked TR-2."
+    }
+  ],
+  "actionStateCounts": {
+    "open": 0,
+    "monitor": 0,
+    "information": 1,
+    "unresolved": 0,
+    "blocked": 0,
+    "resolved": 1,
+    "other": 0
+  },
+  "temporalAnchor": {
+    "handoverDate": "2026-09-18",
+    "shift": "PM",
+    "createdAt": "2026-09-18T15:45:00.000Z"
+  },
+  "decisionSeats": {
+    "seats": [],
+    "seatedCanonicalIds": [],
+    "source": "canonical_decision_seats",
+    "surface": "briefing",
+    "maxN": 5
+  },
+  "inputIntegrity": {
+    "inputAuthority": "scenario-XXX.md Original Input / Raw Source Notes",
+    "scenarioFileSha256": "cdee33fb6029279974c99906c4d93ac73930a3442d49c626331bdfd2bc130fce",
+    "sourceSha256": "40e613b1a2ff99b4c3c3907656c76909a0c593a7935e6cdb8a6a6342ddf1c115",
+    "sourceLength": 913,
+    "lineCount": 8,
+    "brainContext": null,
+    "hotelSnapshotKeys": [],
+    "humanExpectedTruthPreserved": true,
+    "freezeStatus": "FROZEN BEFORE FIRST HF RUN"
+  },
+  "exactSourceInput": "Stop — do not check anyone into a treatment room.\n\nPROBLEM\nReservations (new starter) put arrival **Mr Julian Crowe** tonight into **“TR-2”** on the booking remarks / allocation field. TR-2 is a **spa treatment room**, not a bedroom. PMS may look “empty” because treatment rooms aren’t guest inventory.\n\nSpa: TR-2 booked for massage 19:00 day member. **Cannot** be a hotel room.\n\nCROWE\nDue ~18:30. Prepaid. Needs a real guest room. Main has **M126** vacant dirty (HK: maybe 19:30) — **not promised**. Annex CX02 clean — possible — but Crowe asked for Main near spa if possible. **No confirmed room yet** after we blocked TR-2.\n\nDM: clarify / reallocate Crowe to a real sellable room; do not invent “TR-2 suite”. Do not use MS01–MS04 unless actually clean & assigned in writing (MS02 occupied; MS01 OOO soft lighting — not released).\n\nAlso: flowers cancelled for M130 — guest declined — **cancelled**. Do not prep.",
+  "hotelSnapshot": {},
+  "aiSummaryBriefing": "Shift status\nNo urgent guest-impacting priorities for the incoming team.",
+  "briefingParagraphs": [
+    "Shift status\nNo urgent guest-impacting priorities for the incoming team."
+  ],
+  "organisedHandover": {
+    "urgent": [],
+    "vip": [],
+    "guest": [],
+    "maintenance": [],
+    "payments": [
+      "Also: flowers cancelled for M130 — guest declined — **cancelled**. Do not prep.",
+      "Due ~18:30. Prepaid. Needs a real guest room. Main has **M126** vacant dirty (HK: maybe 19:30) — **not promised**. Annex CX02 clean — possible — but Crowe asked for Main near spa if possible. **No confirmed room yet** after we blocked TR-2."
+    ],
+    "events": [
+      "Reservations (new starter) put arrival **Mr Julian Crowe** tonight into **“TR-2”** on the booking remarks / allocation field. TR-2 is a **spa treatment room**, not a bedroom. PMS may look “empty” because treatment rooms aren’t guest inventory."
+    ],
+    "preparations": [],
+    "openQuestions": [],
+    "tasks": [],
+    "inventory": [],
+    "deliveries": [],
+    "lostproperty": [],
+    "general": [
+      "DM: clarify / reallocate Crowe to a real sellable room; do not invent “TR-2 suite”. Do not use MS01–MS04 unless actually clean & assigned in writing (MS02 occupied; MS01 OOO soft lighting — not released).",
+      "Stop — do not check anyone into a treatment room.",
+      "Spa: TR-2 booked for massage 19:00 day member. **Cannot** be a hotel room.",
+      "PROBLEM",
+      "CROWE"
+    ],
+    "completed": []
+  },
+  "recommendations": [],
+  "reasoningMetadata": {
+    "noteCountAfterPipeline": 8,
+    "dependencyEdgeCount": 0,
+    "dependencyEdges": [],
+    "analyzeKeys": [
+      "engineVersion",
+      "signals",
+      "recommendations",
+      "checklist",
+      "facts",
+      "operationalMemories",
+      "guestObservations",
+      "guestObservationRejections",
+      "guestCandidates",
+      "guestCandidateRejections"
+    ],
+    "quietShift": null,
+    "decisionSeating": {
+      "briefingUsesCanonicalActions": true,
+      "recommendationsFromAnalyze": true,
+      "sharedCanonicalList": true,
+      "selectDecisionSeatsCaptured": true
+    }
+  },
+  "noteEvidence": [
+    {
+      "original": "Stop — do not check anyone into a treatment room.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "PROBLEM",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Reservations (new starter) put arrival **Mr Julian Crowe** tonight into **“TR-2”** on the booking remarks / allocation field. TR-2 is a **spa treatment room**, not a bedroom. PMS may look “empty” because treatment rooms aren’t guest inventory.",
+      "section": "general",
+      "rooms": [
+        "TR-2"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_1",
+      "canonicalName": "Mr Julian Crowe",
+      "currentRoom": "tr-2",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Spa: TR-2 booked for massage 19:00 day member. **Cannot** be a hotel room.",
+      "section": "general",
+      "rooms": [
+        "TR-2"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_1",
+      "canonicalName": "Mr Julian Crowe",
+      "currentRoom": "tr-2",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "confirmed"
+    },
+    {
+      "original": "CROWE",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Due ~18:30. Prepaid. Needs a real guest room. Main has **M126** vacant dirty (HK: maybe 19:30) — **not promised**. Annex CX02 clean — possible — but Crowe asked for Main near spa if possible. **No confirmed room yet** after we blocked TR-2.",
+      "section": "payments",
+      "rooms": [
+        "TR-2",
+        "CX02",
+        "M126"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "tr-2",
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "done"
+    },
+    {
+      "original": "DM: clarify / reallocate Crowe to a real sellable room; do not invent “TR-2 suite”. Do not use MS01–MS04 unless actually clean & assigned in writing (MS02 occupied; MS01 OOO soft lighting — not released).",
+      "section": "general",
+      "rooms": [
+        "TR-2",
+        "MS01",
+        "MS04",
+        "MS02"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "tr-2",
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Also: flowers cancelled for M130 — guest declined — **cancelled**. Do not prep.",
+      "section": "completed",
+      "rooms": [
+        "M130"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "m130",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "done"
+    }
+  ],
+  "reviewPlaceholder": {
+    "status": "PENDING_HUMAN_REVIEW",
+    "note": "Sprint 12 room-token validation only. Compare to frozen Human Expected Truth. Do not modify engine or scenarios."
+  }
+}

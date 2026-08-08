@@ -1,0 +1,527 @@
+{
+  "label": "MERIDIAN GATE Sprint 12 room-token validation OUTPUT",
+  "scenarioId": "004",
+  "title": "Busy AM: Annex Backlog Meets Main Arrivals",
+  "recordId": null,
+  "gitCommit": "092d35708fec5dc8b193402317ae92eef4f7690a",
+  "engineVersion": 1,
+  "contractVersion": "E1",
+  "ranAt": "2026-08-08T13:42:10.304Z",
+  "pipeline": [
+    "extractOperationalFact / sectionFromFact",
+    "consolidateNotesByFacts",
+    "resolveOperationalEntities (Sprint 3)",
+    "electCanonicalCurrentState (Sprint 1)",
+    "resolveOperationalDependencies (Sprint 4)",
+    "buildCanonicalOperationalActions (Sprint 5/6/8/9/10/11 — current HEAD)",
+    "buildOrganisedSectionModel",
+    "buildTodaysBriefing (decision seating)",
+    "ShiftIntelligenceEngine.analyze (recommendation seating)"
+  ],
+  "scenarioMeta": {
+    "shift": "AM",
+    "operationalLoad": "Busy",
+    "ambiguity": "Partial (annex ready times soft)",
+    "departments": "Housekeeping, Reception, Shuttle/Transport, Duty Manager",
+    "preparedBy": "Priya Nair — Duty Manager (fictional)",
+    "sourceFile": "scenario-004.md",
+    "scenarioFileSha256": "097b25b91193892f900476fc96cc7af6d43250a2cbb903e3de0e903d75bed279"
+  },
+  "humanExpectedTruth": {
+    "currentOperationalFacts": [
+      "Annex CX04/05/09/11 vacant dirty with unconfirmed ~13:00 ready — not promised.",
+      "CX03 accessible held for Okonkwo ~14:00.",
+      "Main due-ins afternoon; must not invent cross-building moves to annex.",
+      "Shuttle 11:30 luggage/keys for Trent M122 and Iyer M205.",
+      "Brennan prepaid settled; breakfast is F&B."
+    ],
+    "open": [
+      "Coordinate annex HK prioritisation / readiness communication for CX04/05/09/11 without declaring ready-now.",
+      "Protect CX03 Acc hold for Okonkwo; confirm accessible arrival path.",
+      "Stage keys/luggage readiness for Trent + Iyer on 11:30 shuttle return."
+    ],
+    "monitor": [
+      "Soft annex ready-from-13:00 language — status unknown until HK confirms.",
+      "Afternoon Main arrival stack pressure."
+    ],
+    "information": [
+      "Breakfast complaint F&B; Brennan prepaid settled; crew quiet until tomorrow."
+    ],
+    "unresolved": [
+      "Exact annex ready times — intentional soft ambiguity."
+    ],
+    "completedMustNotReopen": [
+      "Brennan collect stamp — void against prepaid settled — must not OPEN collect.",
+      "Breakfast cold eggs — F&B ownership; must not become room maintenance OPEN."
+    ],
+    "bindings": [
+      "Okonkwo → CX03 Acc ~14:00; Trent → M122; Iyer → M205; dirty CX04/05/09/11.",
+      "Shuttle 09:15 / 11:30; Main vs Annex separation."
+    ],
+    "mustNotInfer": [
+      "Declaring annex rooms ready now.",
+      "Moving Main arrivals into CX without confirmed inventory + written reallocation.",
+      "Payment collect on Brennan.",
+      "Treating F&B breakfast as room defect OPEN."
+    ],
+    "rationale": [
+      "Busy AM stress-tests dual-building inventory honesty and shuttle timing without inventing annex capacity."
+    ],
+    "rawTruthMarkdown": "### Current operational facts\r\n- Annex CX04/05/09/11 vacant dirty with unconfirmed ~13:00 ready — not promised.\r\n- CX03 accessible held for Okonkwo ~14:00.\r\n- Main due-ins afternoon; must not invent cross-building moves to annex.\r\n- Shuttle 11:30 luggage/keys for Trent M122 and Iyer M205.\r\n- Brennan prepaid settled; breakfast is F&B.\r\n\r\n### Expected OPEN actions\r\n- Coordinate annex HK prioritisation / readiness communication for CX04/05/09/11 without declaring ready-now.\r\n- Protect CX03 Acc hold for Okonkwo; confirm accessible arrival path.\r\n- Stage keys/luggage readiness for Trent + Iyer on 11:30 shuttle return.\r\n\r\n### Expected MONITOR items\r\n- Soft annex ready-from-13:00 language — status unknown until HK confirms.\r\n- Afternoon Main arrival stack pressure.\r\n\r\n### Expected INFORMATION\r\n- Breakfast complaint F&B; Brennan prepaid settled; crew quiet until tomorrow.\r\n\r\n### Expected UNRESOLVED / clarifications\r\n- Exact annex ready times — intentional soft ambiguity.\r\n\r\n### Explicit completed / resolved / superseded (must not reopen)\r\n- Brennan collect stamp — void against prepaid settled — must not OPEN collect.\r\n- Breakfast cold eggs — F&B ownership; must not become room maintenance OPEN.\r\n\r\n### Important entity / room / time bindings\r\n- Okonkwo → CX03 Acc ~14:00; Trent → M122; Iyer → M205; dirty CX04/05/09/11.\r\n- Shuttle 09:15 / 11:30; Main vs Annex separation.\r\n\r\n### Must not invent\r\n- Declaring annex rooms ready now.\r\n- Moving Main arrivals into CX without confirmed inventory + written reallocation.\r\n- Payment collect on Brennan.\r\n- Treating F&B breakfast as room defect OPEN.\r\n\r\n### Short human rationale\r\nBusy AM stress-tests dual-building inventory honesty and shuttle timing without inventing annex capacity."
+  },
+  "canonicalActions": [
+    {
+      "actionId": "act|noent|m122|guest_request_luggage_ea|guest_follow_up|meridian_baseline_9",
+      "actionState": "open",
+      "actionType": "guest_follow_up",
+      "facetKey": "guest_request:luggage_ea",
+      "room": "M122",
+      "rooms": [
+        "M122",
+        "M205"
+      ],
+      "entityId": null,
+      "canonicalName": "Ms Trent",
+      "actionText": "Honour luggage / early-arrival arrangements for Ms Trent (Room M122)",
+      "priorityBand": "P2",
+      "priorityScore": 38,
+      "priorityReasons": [
+        "luggage_ea_follow_up",
+        "temporal:no_temporal_evidence"
+      ],
+      "temporalScope": "information",
+      "serviceDate": "",
+      "deadlineHint": "09:15",
+      "relativeCue": "",
+      "temporalConfidence": "low",
+      "temporalReasons": [
+        "no_temporal_evidence"
+      ],
+      "evidenceText": "09:15 and 11:30 loops full. Driver asks Reception to stage luggage for returning 11:30 pax (names on whiteboard — Ms Trent M122, Mr Iyer M205). Keys ready?"
+    },
+    {
+      "actionId": "act|ent_1|m116|payment_no_collect|type|meridian_baseline_15",
+      "actionState": "resolved",
+      "actionType": "operational_follow_up",
+      "facetKey": "payment:no_collect",
+      "room": "M116",
+      "rooms": [
+        "M116"
+      ],
+      "entityId": "ent_1",
+      "canonicalName": "Ms Brennan",
+      "actionText": "Payment settled / no collect required for Room M116",
+      "priorityBand": "exclude",
+      "priorityScore": 92,
+      "priorityReasons": [
+        "payment_no_collect"
+      ],
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "M116 Ms Brennan — prepaid direct — settled. Ignore collect stamp."
+    }
+  ],
+  "actionStateCounts": {
+    "open": 1,
+    "monitor": 0,
+    "information": 0,
+    "unresolved": 0,
+    "blocked": 0,
+    "resolved": 1,
+    "other": 0
+  },
+  "temporalAnchor": {
+    "handoverDate": "2026-09-11",
+    "shift": "AM",
+    "createdAt": "2026-09-11T07:15:00.000Z"
+  },
+  "decisionSeats": {
+    "seats": [
+      {
+        "action": {
+          "actionId": "act|noent|m122|guest_request_luggage_ea|guest_follow_up|meridian_baseline_9",
+          "objectId": "",
+          "entityId": null,
+          "resolutionState": "unresolved",
+          "canonicalName": "Ms Trent",
+          "room": "M122",
+          "rooms": [
+            "M122",
+            "M205"
+          ],
+          "actionType": "guest_follow_up",
+          "actionState": "open",
+          "facetKey": "guest_request:luggage_ea",
+          "actionText": "Honour luggage / early-arrival arrangements for Ms Trent (Room M122)",
+          "displayLabel": "Honour luggage / early-arrival arrangements for Ms Trent (Room M122)",
+          "evidenceText": "09:15 and 11:30 loops full. Driver asks Reception to stage luggage for returning 11:30 pax (names on whiteboard — Ms Trent M122, Mr Iyer M205). Keys ready?",
+          "actionability": "actionable",
+          "blockedBy": [],
+          "blocks": [],
+          "priorityBand": "P2",
+          "priorityScore": 38,
+          "priorityReasons": [
+            "luggage_ea_follow_up",
+            "temporal:no_temporal_evidence"
+          ],
+          "currentStateEligible": true,
+          "sourceFactIds": [
+            "meridian-baseline-9"
+          ],
+          "confidence": 0.6,
+          "temporalScope": "information",
+          "serviceDate": "",
+          "deadlineHint": "09:15",
+          "relativeCue": "",
+          "temporalConfidence": "low",
+          "temporalReasons": [
+            "no_temporal_evidence"
+          ]
+        },
+        "actionId": "act|noent|m122|guest_request_luggage_ea|guest_follow_up|meridian_baseline_9",
+        "facetKey": "guest_request:luggage_ea",
+        "actionState": "open",
+        "priorityBand": "P2",
+        "priorityScore": 38,
+        "seatKind": "do_now",
+        "canonicalSeed": true,
+        "workKey": "guest_request:luggage_ea|M122|ms trent|guest_follow_up",
+        "text": "Honour luggage / early-arrival arrangements for Ms Trent (Room M122)",
+        "legacy": null
+      }
+    ],
+    "seatedCanonicalIds": [
+      "act|noent|m122|guest_request_luggage_ea|guest_follow_up|meridian_baseline_9"
+    ],
+    "source": "canonical_decision_seats",
+    "surface": "briefing",
+    "maxN": 5
+  },
+  "inputIntegrity": {
+    "inputAuthority": "scenario-XXX.md Original Input / Raw Source Notes",
+    "scenarioFileSha256": "097b25b91193892f900476fc96cc7af6d43250a2cbb903e3de0e903d75bed279",
+    "sourceSha256": "144dcf603db27f19690fd023344b651ae0b3ed474915576e52dfb4dd25cd6a18",
+    "sourceLength": 789,
+    "lineCount": 12,
+    "brainContext": null,
+    "hotelSnapshotKeys": [],
+    "humanExpectedTruthPreserved": true,
+    "freezeStatus": "FROZEN BEFORE FIRST HF RUN"
+  },
+  "exactSourceInput": "Busy AM — please read both boards.\n\nANNEX HK (copied WhatsApp 07:50)\nCX04 / CX05 / CX09 / CX11 still vacant dirty from early outs — “maybe ready from 13:00 if we prioritise” — **not promised**. CX03 Acc is clean and held for arrival Mr Okonkwo (wheelchair) due ~14:00 — keep held.\n\nMAIN\nDue-ins stacking 14:00–16:00 on Main. Do **not** auto-move Main arrivals into Annex just because Main looks tight — annex readiness unconfirmed except CX03 hold.\n\nSHUTTLE\n09:15 and 11:30 loops full. Driver asks Reception to stage luggage for returning 11:30 pax (names on whiteboard — Ms Trent M122, Mr Iyer M205). Keys ready?\n\nBREAKFAST\nTable 9 cold eggs — F&B sorting comps — not rooms.\n\nPAYMENT\nM116 Ms Brennan — prepaid direct — settled. Ignore collect stamp.\n\nCrew quiet wing clear until tomorrow.",
+  "hotelSnapshot": {},
+  "aiSummaryBriefing": "Priority 1\nHonour luggage / early-arrival arrangements for Ms Trent (Room M122).\n\nPriority 2\nComplete outstanding guest follow-up for Room cx03.",
+  "briefingParagraphs": [
+    "Priority 1\nHonour luggage / early-arrival arrangements for Ms Trent (Room M122).",
+    "Priority 2\nComplete outstanding guest follow-up for Room cx03."
+  ],
+  "organisedHandover": {
+    "urgent": [],
+    "vip": [],
+    "guest": [
+      "Due-ins stacking 14:00–16:00 on Main. Do **not** auto-move Main arrivals into Annex just because Main looks tight — annex readiness unconfirmed except CX03 hold."
+    ],
+    "maintenance": [],
+    "payments": [
+      "M116 Ms Brennan — prepaid direct — settled. Ignore collect stamp."
+    ],
+    "events": [],
+    "preparations": [],
+    "openQuestions": [],
+    "tasks": [],
+    "inventory": [],
+    "deliveries": [],
+    "lostproperty": [],
+    "general": [
+      "PAYMENT",
+      "Busy AM — please read both boards.",
+      "ANNEX HK (copied WhatsApp 07:50)",
+      "CX04 / CX05 / CX09 / CX11 still vacant dirty from early outs — “maybe ready from 13:00 if we prioritise” — **not promised**. CX03 Acc is clean and held for arrival Mr Okonkwo (wheelchair) due ~14:00 — keep held.",
+      "MAIN",
+      "SHUTTLE",
+      "09:15 and 11:30 loops full. Driver asks Reception to stage luggage for returning 11:30 pax (names on whiteboard — Ms Trent M122, Mr Iyer M205). Keys ready?",
+      "BREAKFAST",
+      "Table 9 cold eggs — F&B sorting comps — not rooms.",
+      "Crew quiet wing clear until tomorrow."
+    ],
+    "completed": []
+  },
+  "recommendations": [
+    {
+      "id": "act|noent|m122|guest_request_luggage_ea|guest_follow_up|meridian_baseline_9",
+      "text": "Honour luggage / early-arrival arrangements for Ms Trent (Room M122).",
+      "priority": "normal",
+      "department": "Reception",
+      "status": "open",
+      "reasonCodes": [
+        "luggage_ea_follow_up",
+        "temporal:no_temporal_evidence",
+        "canonical_decision_seat",
+        "legacy_wording_enrich"
+      ]
+    }
+  ],
+  "reasoningMetadata": {
+    "noteCountAfterPipeline": 12,
+    "dependencyEdgeCount": 0,
+    "dependencyEdges": [],
+    "analyzeKeys": [
+      "engineVersion",
+      "signals",
+      "recommendations",
+      "checklist",
+      "facts",
+      "operationalMemories",
+      "guestObservations",
+      "guestObservationRejections",
+      "guestCandidates",
+      "guestCandidateRejections"
+    ],
+    "quietShift": null,
+    "decisionSeating": {
+      "briefingUsesCanonicalActions": true,
+      "recommendationsFromAnalyze": true,
+      "sharedCanonicalList": true,
+      "selectDecisionSeatsCaptured": true
+    }
+  },
+  "noteEvidence": [
+    {
+      "original": "Due-ins stacking 14:00–16:00 on Main. Do **not** auto-move Main arrivals into Annex just because Main looks tight — annex readiness unconfirmed except CX03 hold.",
+      "section": "guest",
+      "rooms": [
+        "CX03"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "cx03",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "room_move",
+      "factStatus": "requested"
+    },
+    {
+      "original": "Busy AM — please read both boards.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "ANNEX HK (copied WhatsApp 07:50)",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "CX04 / CX05 / CX09 / CX11 still vacant dirty from early outs — “maybe ready from 13:00 if we prioritise” — **not promised**. CX03 Acc is clean and held for arrival Mr Okonkwo (wheelchair) due ~14:00 — keep held.",
+      "section": "general",
+      "rooms": [
+        "CX04",
+        "CX05",
+        "CX09",
+        "CX11",
+        "CX03"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "cx04",
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "requested"
+    },
+    {
+      "original": "MAIN",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "SHUTTLE",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "09:15 and 11:30 loops full. Driver asks Reception to stage luggage for returning 11:30 pax (names on whiteboard — Ms Trent M122, Mr Iyer M205). Keys ready?",
+      "section": "general",
+      "rooms": [
+        "M122",
+        "M205"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "m122",
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "BREAKFAST",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Table 9 cold eggs — F&B sorting comps — not rooms.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "PAYMENT",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "M116 Ms Brennan — prepaid direct — settled. Ignore collect stamp.",
+      "section": "payments",
+      "rooms": [
+        "M116"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_1",
+      "canonicalName": "Ms Brennan",
+      "currentRoom": "m116",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "done"
+    },
+    {
+      "original": "Crew quiet wing clear until tomorrow.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    }
+  ],
+  "reviewPlaceholder": {
+    "status": "PENDING_HUMAN_REVIEW",
+    "note": "Sprint 12 room-token validation only. Compare to frozen Human Expected Truth. Do not modify engine or scenarios."
+  }
+}

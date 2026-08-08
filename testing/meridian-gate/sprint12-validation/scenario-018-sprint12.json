@@ -1,0 +1,414 @@
+{
+  "label": "MERIDIAN GATE Sprint 12 room-token validation OUTPUT",
+  "scenarioId": "018",
+  "title": "Interconnect Broken Across Buildings",
+  "recordId": null,
+  "gitCommit": "092d35708fec5dc8b193402317ae92eef4f7690a",
+  "engineVersion": 1,
+  "contractVersion": "E1",
+  "ranAt": "2026-08-08T13:42:10.304Z",
+  "pipeline": [
+    "extractOperationalFact / sectionFromFact",
+    "consolidateNotesByFacts",
+    "resolveOperationalEntities (Sprint 3)",
+    "electCanonicalCurrentState (Sprint 1)",
+    "resolveOperationalDependencies (Sprint 4)",
+    "buildCanonicalOperationalActions (Sprint 5/6/8/9/10/11 — current HEAD)",
+    "buildOrganisedSectionModel",
+    "buildTodaysBriefing (decision seating)",
+    "ShiftIntelligenceEngine.analyze (recommendation seating)"
+  ],
+  "scenarioMeta": {
+    "shift": "AM",
+    "operationalLoad": "Adversarial / ambiguous",
+    "ambiguity": "Yes (primary)",
+    "departments": "Reception, Reservations, Housekeeping",
+    "preparedBy": "Priya Nair — Duty Manager (fictional)",
+    "sourceFile": "scenario-018.md",
+    "scenarioFileSha256": "4fd33e04451b503a18800f4202ca8331a2506042bb61e6623ae20144007db699"
+  },
+  "humanExpectedTruth": {
+    "currentOperationalFacts": [
+      "Okada family needs interconnect; system M152+CX10 is invalid cross-building pair.",
+      "True interconnects Main-only; M153 stayover blocks prior pair; M154 clean; M155 VD.",
+      "Prepaid Okada; no invent early Pike out."
+    ],
+    "open": [
+      "Clarify / reallocate Okada to a valid Main interconnect configuration — do not treat M152+CX10 as solved product."
+    ],
+    "monitor": [
+      "M155 VD readiness as possible pair component — unconfirmed.",
+      "Pike M153 stayover until tomorrow — not early-out assumption."
+    ],
+    "information": [
+      "Prepaid; spa day list unrelated; Main-only interconnect house rule."
+    ],
+    "unresolved": [
+      "Final interconnect room numbers until written — intentional ambiguity."
+    ],
+    "completedMustNotReopen": [
+      "M152+CX10 as interconnect — invalid / must not honour as completed assignment."
+    ],
+    "bindings": [
+      "Okada family; M152/CX10 invalid; M153 Pike stayover; M154/M155; due ~14:30."
+    ],
+    "mustNotInfer": [
+      "Corridor “counts as interconnect” across buildings.",
+      "Pike early departure.",
+      "Specific final rooms as confirmed without evidence.",
+      "Collect on prepaid Okada."
+    ],
+    "rationale": [
+      "Adversarial: Main vs Annex interconnect impossibility — OPEN clarify, no invented solve."
+    ],
+    "rawTruthMarkdown": "### Current operational facts\r\n- Okada family needs interconnect; system M152+CX10 is invalid cross-building pair.\r\n- True interconnects Main-only; M153 stayover blocks prior pair; M154 clean; M155 VD.\r\n- Prepaid Okada; no invent early Pike out.\r\n\r\n### Expected OPEN actions\r\n- Clarify / reallocate Okada to a valid Main interconnect configuration — do not treat M152+CX10 as solved product.\r\n\r\n### Expected MONITOR items\r\n- M155 VD readiness as possible pair component — unconfirmed.\r\n- Pike M153 stayover until tomorrow — not early-out assumption.\r\n\r\n### Expected INFORMATION\r\n- Prepaid; spa day list unrelated; Main-only interconnect house rule.\r\n\r\n### Expected UNRESOLVED / clarifications\r\n- Final interconnect room numbers until written — intentional ambiguity.\r\n\r\n### Explicit completed / resolved / superseded (must not reopen)\r\n- M152+CX10 as interconnect — invalid / must not honour as completed assignment.\r\n\r\n### Important entity / room / time bindings\r\n- Okada family; M152/CX10 invalid; M153 Pike stayover; M154/M155; due ~14:30.\r\n\r\n### Must not invent\r\n- Corridor “counts as interconnect” across buildings.\r\n- Pike early departure.\r\n- Specific final rooms as confirmed without evidence.\r\n- Collect on prepaid Okada.\r\n\r\n### Short human rationale\r\nAdversarial: Main vs Annex interconnect impossibility — OPEN clarify, no invented solve."
+  },
+  "canonicalActions": [
+    {
+      "actionId": "act|noent|noroom|reservation_info|type|meridian_baseline_13",
+      "actionState": "information",
+      "actionType": "operational_follow_up",
+      "facetKey": "reservation_info",
+      "room": "",
+      "rooms": [],
+      "entityId": null,
+      "canonicalName": "",
+      "actionText": "Reservation / POA information (not VIP prep)",
+      "priorityBand": "P3",
+      "priorityScore": 80,
+      "priorityReasons": [
+        "reservation_info_not_vip"
+      ],
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "Okada prepaid. Pike POA — no collect evidenced."
+    }
+  ],
+  "actionStateCounts": {
+    "open": 0,
+    "monitor": 0,
+    "information": 1,
+    "unresolved": 0,
+    "blocked": 0,
+    "resolved": 0,
+    "other": 0
+  },
+  "temporalAnchor": {
+    "handoverDate": "2026-09-23",
+    "shift": "AM",
+    "createdAt": "2026-09-23T07:15:00.000Z"
+  },
+  "decisionSeats": {
+    "seats": [],
+    "seatedCanonicalIds": [],
+    "source": "canonical_decision_seats",
+    "surface": "briefing",
+    "maxN": 5
+  },
+  "inputIntegrity": {
+    "inputAuthority": "scenario-XXX.md Original Input / Raw Source Notes",
+    "scenarioFileSha256": "4fd33e04451b503a18800f4202ca8331a2506042bb61e6623ae20144007db699",
+    "sourceSha256": "2c0e0ac3a8b1129a8c3bda04fb157452c18e07e2e320bef037f3699408bfd68a",
+    "sourceLength": 780,
+    "lineCount": 11,
+    "brainContext": null,
+    "hotelSnapshotKeys": [],
+    "humanExpectedTruthPreserved": true,
+    "freezeStatus": "FROZEN BEFORE FIRST HF RUN"
+  },
+  "exactSourceInput": "Do not “fix” this by guessing.\n\nFAMILY\n**Mr & Mrs Okada + grandmother** — booking MG-66011 — due ~14:30 — need **interconnecting rooms**.\n\nSYSTEM MESS\n- Allocation line shows **M152 + CX10** — that is **Main + Annex**. Interconnects exist **Main only**. These two rooms do **not** interconnect. Physically impossible.\n- Older note said M152 + M153 interconnect pair — M153 now occupied stayover (Mr Pike) until tomorrow.\n- HK: M154 clean; M155 vacant dirty.\n\nDM instruction: clarify / reallocate to a real Main interconnect pair when available; **do not** tell the guest CX10 “connects by corridor” as interconnect product. **Do not invent** that Pike will check out early.\n\nPAYMENT\nOkada prepaid. Pike POA — no collect evidenced.\n\nAlso: spa day list unrelated — ignore for rooms.",
+  "hotelSnapshot": {},
+  "aiSummaryBriefing": "Priority 1\nReserve interconnecting rooms.\n\nPriority 2\nReserve interconnecting Rooms CX10 & M152.\n\nPriority 3\nReserve interconnecting Rooms M152 & M153 for Mr Pike.\n\nPriority 4\nReserve interconnecting rooms for Mrs Okada.",
+  "briefingParagraphs": [
+    "Priority 1\nReserve interconnecting rooms.",
+    "Priority 2\nReserve interconnecting Rooms CX10 & M152.",
+    "Priority 3\nReserve interconnecting Rooms M152 & M153 for Mr Pike.",
+    "Priority 4\nReserve interconnecting rooms for Mrs Okada."
+  ],
+  "organisedHandover": {
+    "urgent": [],
+    "vip": [],
+    "guest": [
+      "DM instruction: clarify / reallocate to a real Main interconnect pair when available; **do not** tell the guest CX10 “connects by corridor” as interconnect product. **Do not invent** that Pike will check out early.",
+      "- Allocation line shows **M152 + CX10** — that is **Main + Annex**. Interconnects exist **Main only**. These two rooms do **not** interconnect. Physically impossible.",
+      "- Older note said M152 + M153 interconnect pair — M153 now occupied stayover (Mr Pike) until tomorrow.",
+      "**Mr & Mrs Okada + grandmother** — booking MG-66011 — due ~14:30 — need **interconnecting rooms**."
+    ],
+    "maintenance": [],
+    "payments": [],
+    "events": [],
+    "preparations": [],
+    "openQuestions": [],
+    "tasks": [],
+    "inventory": [],
+    "deliveries": [],
+    "lostproperty": [],
+    "general": [
+      "PAYMENT",
+      "Do not “fix” this by guessing.",
+      "FAMILY",
+      "SYSTEM MESS",
+      "- HK: M154 clean; M155 vacant dirty.",
+      "Okada prepaid. Pike POA — no collect evidenced.",
+      "Also: spa day list unrelated — ignore for rooms."
+    ],
+    "completed": []
+  },
+  "recommendations": [
+    {
+      "id": "mskfanw7-n5dpf",
+      "text": "Reserve interconnecting rooms for tomorrow's Mrs Okada arrival.",
+      "priority": "low",
+      "department": "Reception",
+      "status": "open",
+      "reasonCodes": [
+        "arrival_today",
+        "tomorrow_or_next_shift",
+        "cross_department_dependency"
+      ]
+    }
+  ],
+  "reasoningMetadata": {
+    "noteCountAfterPipeline": 11,
+    "dependencyEdgeCount": 0,
+    "dependencyEdges": [],
+    "analyzeKeys": [
+      "engineVersion",
+      "signals",
+      "recommendations",
+      "checklist",
+      "facts",
+      "operationalMemories",
+      "guestObservations",
+      "guestObservationRejections",
+      "guestCandidates",
+      "guestCandidateRejections"
+    ],
+    "quietShift": null,
+    "decisionSeating": {
+      "briefingUsesCanonicalActions": true,
+      "recommendationsFromAnalyze": true,
+      "sharedCanonicalList": true,
+      "selectDecisionSeatsCaptured": true
+    }
+  },
+  "noteEvidence": [
+    {
+      "original": "**Mr & Mrs Okada + grandmother** — booking MG-66011 — due ~14:30 — need **interconnecting rooms**.",
+      "section": "guest",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "interconnect",
+      "factStatus": "requested"
+    },
+    {
+      "original": "- Allocation line shows **M152 + CX10** — that is **Main + Annex**. Interconnects exist **Main only**. These two rooms do **not** interconnect. Physically impossible.",
+      "section": "guest",
+      "rooms": [
+        "CX10",
+        "M152"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "cx10",
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "interconnect",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- Older note said M152 + M153 interconnect pair — M153 now occupied stayover (Mr Pike) until tomorrow.",
+      "section": "guest",
+      "rooms": [
+        "M152",
+        "M153"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "m152",
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "interconnect",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "DM instruction: clarify / reallocate to a real Main interconnect pair when available; **do not** tell the guest CX10 “connects by corridor” as interconnect product. **Do not invent** that Pike will check out early.",
+      "section": "guest",
+      "rooms": [
+        "CX10"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "cx10",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "interconnect",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Do not “fix” this by guessing.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "FAMILY",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "SYSTEM MESS",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- HK: M154 clean; M155 vacant dirty.",
+      "section": "general",
+      "rooms": [
+        "M154",
+        "M155"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "m154",
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "PAYMENT",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Okada prepaid. Pike POA — no collect evidenced.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Also: spa day list unrelated — ignore for rooms.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    }
+  ],
+  "reviewPlaceholder": {
+    "status": "PENDING_HUMAN_REVIEW",
+    "note": "Sprint 12 room-token validation only. Compare to frozen Human Expected Truth. Do not modify engine or scenarios."
+  }
+}

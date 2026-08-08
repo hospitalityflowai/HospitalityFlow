@@ -1,0 +1,572 @@
+{
+  "label": "MERIDIAN GATE Sprint 12 room-token validation SUMMARY",
+  "gitCommit": "092d35708fec5dc8b193402317ae92eef4f7690a",
+  "engineVersion": 1,
+  "contractVersion": "E1",
+  "ranAt": "2026-08-08T13:42:10.304Z",
+  "hotel": "The Meridian Gate Hotel & Spa (fictional)",
+  "freezeManifestLabel": "MERIDIAN_GATE_PHASE_B_FREEZE_MANIFEST",
+  "freezeVerified": true,
+  "scenarios": [
+    {
+      "scenarioId": "001",
+      "title": "Quiet Tuesday After Crew Turn",
+      "shift": "AM",
+      "load": "Quiet / easy control",
+      "scenarioFileSha256": "d9b8bb7097fbf6f5e2f7d5366ff884ee753fa4b0e02561c06396581ce3b1b443",
+      "sourceSha256": "3aed46770187a18edb8c96b1d6dbe3e6d276c1a8ce1f340028dbc5e7b7252b6c",
+      "recommendationCount": 1,
+      "noteCount": 11,
+      "dependencyEdges": 0,
+      "canonicalActionCount": 1,
+      "actionStateCounts": {
+        "open": 0,
+        "monitor": 0,
+        "information": 1,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 0,
+        "other": 0
+      },
+      "openPaymentCollectCount": 0,
+      "briefingChars": 72,
+      "quietShift": null,
+      "files": [
+        "scenario-001-sprint12.json",
+        "scenario-001-sprint12.md"
+      ]
+    },
+    {
+      "scenarioId": "002",
+      "title": "Midweek PM Shuttle and Prepaid Arrival",
+      "shift": "PM",
+      "load": "Normal",
+      "scenarioFileSha256": "4eba062458b99cd2df59df4af461d417ce8ccc56fc6724ea26f23bc2e2ebc14e",
+      "sourceSha256": "9ef6579ca5fdfcc048de3a24acc6d8db90ebcbd99b46ff5973df278e277b8cde",
+      "recommendationCount": 1,
+      "noteCount": 13,
+      "dependencyEdges": 0,
+      "canonicalActionCount": 5,
+      "actionStateCounts": {
+        "open": 0,
+        "monitor": 0,
+        "information": 2,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 3,
+        "other": 0
+      },
+      "openPaymentCollectCount": 0,
+      "briefingChars": 72,
+      "quietShift": null,
+      "files": [
+        "scenario-002-sprint12.json",
+        "scenario-002-sprint12.md"
+      ]
+    },
+    {
+      "scenarioId": "003",
+      "title": "Lean Night, Soft Leak, Early Crew Window",
+      "shift": "Night",
+      "load": "Normal",
+      "scenarioFileSha256": "1f092e98683c7e2d51a179a5483b230ee62e1acd9a2e470437aade4f2cc51575",
+      "sourceSha256": "d6a83e5e793a5c7702b6e687a51a082c1277bc4281f232cf216f93ce58e5effb",
+      "recommendationCount": 2,
+      "noteCount": 8,
+      "dependencyEdges": 0,
+      "canonicalActionCount": 2,
+      "actionStateCounts": {
+        "open": 1,
+        "monitor": 0,
+        "information": 0,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 1,
+        "other": 0
+      },
+      "openPaymentCollectCount": 0,
+      "briefingChars": 198,
+      "quietShift": null,
+      "files": [
+        "scenario-003-sprint12.json",
+        "scenario-003-sprint12.md"
+      ]
+    },
+    {
+      "scenarioId": "004",
+      "title": "Busy AM: Annex Backlog Meets Main Arrivals",
+      "shift": "AM",
+      "load": "Busy",
+      "scenarioFileSha256": "097b25b91193892f900476fc96cc7af6d43250a2cbb903e3de0e903d75bed279",
+      "sourceSha256": "144dcf603db27f19690fd023344b651ae0b3ed474915576e52dfb4dd25cd6a18",
+      "recommendationCount": 1,
+      "noteCount": 12,
+      "dependencyEdges": 0,
+      "canonicalActionCount": 2,
+      "actionStateCounts": {
+        "open": 1,
+        "monitor": 0,
+        "information": 0,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 1,
+        "other": 0
+      },
+      "openPaymentCollectCount": 0,
+      "briefingChars": 144,
+      "quietShift": null,
+      "files": [
+        "scenario-004-sprint12.json",
+        "scenario-004-sprint12.md"
+      ]
+    },
+    {
+      "scenarioId": "005",
+      "title": "Spa Day Member Asking to Stay Overnight",
+      "shift": "PM",
+      "load": "Normal",
+      "scenarioFileSha256": "531e01cf172e4fb1fa17afffbaff2f6c834ad2285f099afe3d15e7ce5ce2b406",
+      "sourceSha256": "2019476f6034ae84f0007e6686c0dfd8e29e3212b7267c19a1e558d34ea06311",
+      "recommendationCount": 1,
+      "noteCount": 8,
+      "dependencyEdges": 0,
+      "canonicalActionCount": 1,
+      "actionStateCounts": {
+        "open": 1,
+        "monitor": 0,
+        "information": 0,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 0,
+        "other": 0
+      },
+      "openPaymentCollectCount": 0,
+      "briefingChars": 56,
+      "quietShift": null,
+      "files": [
+        "scenario-005-sprint12.json",
+        "scenario-005-sprint12.md"
+      ]
+    },
+    {
+      "scenarioId": "006",
+      "title": "Crew Block vs Quiet-Wing Sell Pressure",
+      "shift": "AM",
+      "load": "Busy",
+      "scenarioFileSha256": "4dba441c4645ec52bf76125e6a91b867e01ff1e30c1e859a70c77ff46c4c5674",
+      "sourceSha256": "7d926d812d2fa9771fb95e2e7e9942a0699569f32ae689cd384e7770effdefae",
+      "recommendationCount": 1,
+      "noteCount": 10,
+      "dependencyEdges": 0,
+      "canonicalActionCount": 1,
+      "actionStateCounts": {
+        "open": 1,
+        "monitor": 0,
+        "information": 0,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 0,
+        "other": 0
+      },
+      "openPaymentCollectCount": 0,
+      "briefingChars": 135,
+      "quietShift": null,
+      "files": [
+        "scenario-006-sprint12.json",
+        "scenario-006-sprint12.md"
+      ]
+    },
+    {
+      "scenarioId": "007",
+      "title": "Valet Full and Pavilion Prefunction",
+      "shift": "PM",
+      "load": "Normal",
+      "scenarioFileSha256": "4e14eaef073010daeb95dfb9936db7488205b005839329120622c4e17f218eb8",
+      "sourceSha256": "f005b46f2855dfc613f858a59b1c2c9e80d886b1f17439566e29d6587aae0d7a",
+      "recommendationCount": 0,
+      "noteCount": 9,
+      "dependencyEdges": 0,
+      "canonicalActionCount": 0,
+      "actionStateCounts": {
+        "open": 0,
+        "monitor": 0,
+        "information": 0,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 0,
+        "other": 0
+      },
+      "openPaymentCollectCount": 0,
+      "briefingChars": 72,
+      "quietShift": null,
+      "files": [
+        "scenario-007-sprint12.json",
+        "scenario-007-sprint12.md"
+      ]
+    },
+    {
+      "scenarioId": "008",
+      "title": "Truly Quiet Night Control",
+      "shift": "Night",
+      "load": "Quiet / easy control",
+      "scenarioFileSha256": "9777cf6d1644e083e29ee75070e6b767f3611c128ceac9a463946012cddd335c",
+      "sourceSha256": "2b0beb60b6ec3ddb1e45354d1f6f9d022fb9b85fcd969c1ed66f167f3b9becc5",
+      "recommendationCount": 0,
+      "noteCount": 9,
+      "dependencyEdges": 0,
+      "canonicalActionCount": 2,
+      "actionStateCounts": {
+        "open": 0,
+        "monitor": 0,
+        "information": 2,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 0,
+        "other": 0
+      },
+      "openPaymentCollectCount": 0,
+      "briefingChars": 72,
+      "quietShift": null,
+      "files": [
+        "scenario-008-sprint12.json",
+        "scenario-008-sprint12.md"
+      ]
+    },
+    {
+      "scenarioId": "009",
+      "title": "Stale Annex Board vs Main Allocation Conflict",
+      "shift": "AM",
+      "load": "Adversarial / ambiguous",
+      "scenarioFileSha256": "96a8a9b18cf24f2711f92f57cd52ec2547caf1e7af417e3317551788b1fa9a24",
+      "sourceSha256": "4ce7f850f7b92cb0827a34839cdd5e85b4ddcb25fc5f74f475900af14363c6d2",
+      "recommendationCount": 1,
+      "noteCount": 13,
+      "dependencyEdges": 0,
+      "canonicalActionCount": 3,
+      "actionStateCounts": {
+        "open": 1,
+        "monitor": 0,
+        "information": 1,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 1,
+        "other": 0
+      },
+      "openPaymentCollectCount": 0,
+      "briefingChars": 125,
+      "quietShift": null,
+      "files": [
+        "scenario-009-sprint12.json",
+        "scenario-009-sprint12.md"
+      ]
+    },
+    {
+      "scenarioId": "010",
+      "title": "Wedding Day Pavilion Pressure",
+      "shift": "PM",
+      "load": "Busy",
+      "scenarioFileSha256": "8aec629a23f78e448ee5f87d372be9d329694f9e4eccd84db007850626c60f30",
+      "sourceSha256": "d6fed6f917bc6f23936e53f5245069b52b6dbd54d21899d3c123d36a90e5108e",
+      "recommendationCount": 1,
+      "noteCount": 13,
+      "dependencyEdges": 0,
+      "canonicalActionCount": 1,
+      "actionStateCounts": {
+        "open": 1,
+        "monitor": 0,
+        "information": 0,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 0,
+        "other": 0
+      },
+      "openPaymentCollectCount": 1,
+      "briefingChars": 158,
+      "quietShift": null,
+      "files": [
+        "scenario-010-sprint12.json",
+        "scenario-010-sprint12.md"
+      ]
+    },
+    {
+      "scenarioId": "011",
+      "title": "Accessible Arrival and Interconnect Family",
+      "shift": "AM",
+      "load": "Normal",
+      "scenarioFileSha256": "5ffa74f6e47b1a3df206ab6dd1fa64e6dd1ebb23484b9d6b4c7f5c3885d16f7d",
+      "sourceSha256": "b154f065efd029a80daf640107e43cb4478e060d16c8c0d0963566b880be6e60",
+      "recommendationCount": 1,
+      "noteCount": 10,
+      "dependencyEdges": 0,
+      "canonicalActionCount": 0,
+      "actionStateCounts": {
+        "open": 0,
+        "monitor": 0,
+        "information": 0,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 0,
+        "other": 0
+      },
+      "openPaymentCollectCount": 0,
+      "briefingChars": 67,
+      "quietShift": null,
+      "files": [
+        "scenario-011-sprint12.json",
+        "scenario-011-sprint12.md"
+      ]
+    },
+    {
+      "scenarioId": "012",
+      "title": "Night Information Heavy, MONITOR Only",
+      "shift": "Night",
+      "load": "Quiet / easy control",
+      "scenarioFileSha256": "60ac2af959debe7b35c09a97e76a8715a3bb73fdc46e81e3d2d2bdeb82c0f4b4",
+      "sourceSha256": "045cea0c031912cd3b6fad2346b5fd206d28028a06a242e1ea867f11a761ddad",
+      "recommendationCount": 0,
+      "noteCount": 9,
+      "dependencyEdges": 0,
+      "canonicalActionCount": 2,
+      "actionStateCounts": {
+        "open": 0,
+        "monitor": 1,
+        "information": 0,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 1,
+        "other": 0
+      },
+      "openPaymentCollectCount": 0,
+      "briefingChars": 186,
+      "quietShift": null,
+      "files": [
+        "scenario-012-sprint12.json",
+        "scenario-012-sprint12.md"
+      ]
+    },
+    {
+      "scenarioId": "013",
+      "title": "Treatment Room Sold as Bedroom (Adversarial)",
+      "shift": "PM",
+      "load": "Adversarial / ambiguous",
+      "scenarioFileSha256": "cdee33fb6029279974c99906c4d93ac73930a3442d49c626331bdfd2bc130fce",
+      "sourceSha256": "40e613b1a2ff99b4c3c3907656c76909a0c593a7935e6cdb8a6a6342ddf1c115",
+      "recommendationCount": 0,
+      "noteCount": 8,
+      "dependencyEdges": 0,
+      "canonicalActionCount": 2,
+      "actionStateCounts": {
+        "open": 0,
+        "monitor": 0,
+        "information": 1,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 1,
+        "other": 0
+      },
+      "openPaymentCollectCount": 0,
+      "briefingChars": 72,
+      "quietShift": null,
+      "files": [
+        "scenario-013-sprint12.json",
+        "scenario-013-sprint12.md"
+      ]
+    },
+    {
+      "scenarioId": "014",
+      "title": "Night Payment Contrast and Lean Cover",
+      "shift": "Night",
+      "load": "Normal",
+      "scenarioFileSha256": "ab93232e930f16165e649694fa83536f787330ed47774756fb58535f05a94638",
+      "sourceSha256": "3fcf325044851dc5a923afcba55bbfa77b16255df5aa9e7f8a8d891482d12a62",
+      "recommendationCount": 3,
+      "noteCount": 8,
+      "dependencyEdges": 0,
+      "canonicalActionCount": 6,
+      "actionStateCounts": {
+        "open": 3,
+        "monitor": 0,
+        "information": 2,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 1,
+        "other": 0
+      },
+      "openPaymentCollectCount": 1,
+      "briefingChars": 340,
+      "quietShift": null,
+      "files": [
+        "scenario-014-sprint12.json",
+        "scenario-014-sprint12.md"
+      ]
+    },
+    {
+      "scenarioId": "015",
+      "title": "Early-AM Airport Pressure Stack",
+      "shift": "AM",
+      "load": "Busy",
+      "scenarioFileSha256": "6366dc52da82d5a60d9270acda42fe37112316ae8527aa8c6bc97c10a0593ac6",
+      "sourceSha256": "296dd471122951cfbdd8dabb48964fc6f546a0bcabaf440b36893240f0dd02c2",
+      "recommendationCount": 3,
+      "noteCount": 13,
+      "dependencyEdges": 0,
+      "canonicalActionCount": 3,
+      "actionStateCounts": {
+        "open": 2,
+        "monitor": 0,
+        "information": 0,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 1,
+        "other": 0
+      },
+      "openPaymentCollectCount": 0,
+      "briefingChars": 238,
+      "quietShift": null,
+      "files": [
+        "scenario-015-sprint12.json",
+        "scenario-015-sprint12.md"
+      ]
+    },
+    {
+      "scenarioId": "016",
+      "title": "Conditional Champagne and Genuine Twin Prep",
+      "shift": "PM",
+      "load": "Normal",
+      "scenarioFileSha256": "336a3af5ecfee9b5d2afc3af71d26520cb43089c89559fe3c39a09ddaceff312",
+      "sourceSha256": "5198569f80d6059f185c27ff197e6558c080fbf4237fee042863b093dc602bf3",
+      "recommendationCount": 1,
+      "noteCount": 10,
+      "dependencyEdges": 0,
+      "canonicalActionCount": 5,
+      "actionStateCounts": {
+        "open": 1,
+        "monitor": 0,
+        "information": 3,
+        "unresolved": 1,
+        "blocked": 0,
+        "resolved": 0,
+        "other": 0
+      },
+      "openPaymentCollectCount": 0,
+      "briefingChars": 55,
+      "quietShift": null,
+      "files": [
+        "scenario-016-sprint12.json",
+        "scenario-016-sprint12.md"
+      ]
+    },
+    {
+      "scenarioId": "017",
+      "title": "Busy PM: Crew Inbound, Spa Close, Valet Leftover",
+      "shift": "PM",
+      "load": "Busy",
+      "scenarioFileSha256": "2ae06d1fb3081e138fb3cf3ddf64bf42ba6027bef3f1381e5ebf0a20e659399d",
+      "sourceSha256": "9472978a3c8229e3d1ce5c68c8c53c912ce7e600359ffc2baa6be7717b630d9c",
+      "recommendationCount": 0,
+      "noteCount": 11,
+      "dependencyEdges": 0,
+      "canonicalActionCount": 2,
+      "actionStateCounts": {
+        "open": 0,
+        "monitor": 0,
+        "information": 0,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 2,
+        "other": 0
+      },
+      "openPaymentCollectCount": 0,
+      "briefingChars": 72,
+      "quietShift": null,
+      "files": [
+        "scenario-017-sprint12.json",
+        "scenario-017-sprint12.md"
+      ]
+    },
+    {
+      "scenarioId": "018",
+      "title": "Interconnect Broken Across Buildings",
+      "shift": "AM",
+      "load": "Adversarial / ambiguous",
+      "scenarioFileSha256": "4fd33e04451b503a18800f4202ca8331a2506042bb61e6623ae20144007db699",
+      "sourceSha256": "2c0e0ac3a8b1129a8c3bda04fb157452c18e07e2e320bef037f3699408bfd68a",
+      "recommendationCount": 1,
+      "noteCount": 11,
+      "dependencyEdges": 0,
+      "canonicalActionCount": 1,
+      "actionStateCounts": {
+        "open": 0,
+        "monitor": 0,
+        "information": 1,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 0,
+        "other": 0
+      },
+      "openPaymentCollectCount": 0,
+      "briefingChars": 220,
+      "quietShift": null,
+      "files": [
+        "scenario-018-sprint12.json",
+        "scenario-018-sprint12.md"
+      ]
+    },
+    {
+      "scenarioId": "019",
+      "title": "Settled Folio Afternoon, Almost Nothing To Do",
+      "shift": "PM",
+      "load": "Quiet / easy control",
+      "scenarioFileSha256": "bc3fb9737abfafeddce7a722b42a2aca605fc6b95fb355a7d3838664de0e8c33",
+      "sourceSha256": "ed700985ecaad7b500300ad2327b48a361db0df061dae415bef8c500911800cb",
+      "recommendationCount": 0,
+      "noteCount": 7,
+      "dependencyEdges": 0,
+      "canonicalActionCount": 3,
+      "actionStateCounts": {
+        "open": 0,
+        "monitor": 0,
+        "information": 1,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 2,
+        "other": 0
+      },
+      "openPaymentCollectCount": 0,
+      "briefingChars": 72,
+      "quietShift": null,
+      "files": [
+        "scenario-019-sprint12.json",
+        "scenario-019-sprint12.md"
+      ]
+    },
+    {
+      "scenarioId": "020",
+      "title": "Adversarial Night Paste: Everything Competing",
+      "shift": "Night",
+      "load": "Adversarial / ambiguous",
+      "scenarioFileSha256": "ce93966beb7c7027381cbd67fc6ec23519de9faad1eb285b2dfc0355fbbe4949",
+      "sourceSha256": "536ff32bd18c051b7ab455145ec421e983e87ed042af17178fbb60690adf4791",
+      "recommendationCount": 2,
+      "noteCount": 14,
+      "dependencyEdges": 0,
+      "canonicalActionCount": 5,
+      "actionStateCounts": {
+        "open": 1,
+        "monitor": 0,
+        "information": 3,
+        "unresolved": 1,
+        "blocked": 0,
+        "resolved": 0,
+        "other": 0
+      },
+      "openPaymentCollectCount": 1,
+      "briefingChars": 330,
+      "quietShift": null,
+      "files": [
+        "scenario-020-sprint12.json",
+        "scenario-020-sprint12.md"
+      ]
+    }
+  ]
+}
