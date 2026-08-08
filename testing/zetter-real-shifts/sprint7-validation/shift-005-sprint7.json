@@ -1,0 +1,448 @@
+{
+  "label": "Sprint 7 VALIDATION OUTPUT",
+  "shift": "005",
+  "recordId": "ffff255d-75a9-4842-8272-75116dfeff56",
+  "gitCommit": "69711673426afd910be98ccd87275acf874e7686",
+  "engineVersion": 1,
+  "contractVersion": "E1",
+  "ranAt": "2026-08-08T10:37:30.747Z",
+  "pipeline": [
+    "extractOperationalFact / sectionFromFact",
+    "consolidateNotesByFacts",
+    "resolveOperationalEntities (Sprint 3)",
+    "electCanonicalCurrentState (Sprint 1)",
+    "resolveOperationalDependencies (Sprint 4)",
+    "buildCanonicalOperationalActions (Sprint 5/6)",
+    "buildOrganisedSectionModel",
+    "buildTodaysBriefing (Sprint 7 decision seating)",
+    "ShiftIntelligenceEngine.analyze (Sprint 7 recommendation seating)"
+  ],
+  "canonicalActions": [
+    {
+      "actionId": "act|ent_2|51|arrival_prep_high_touch|prepare_vip|zetter_rerun_3",
+      "actionState": "open",
+      "actionType": "prepare_vip",
+      "facetKey": "arrival_prep:high_touch",
+      "room": "51",
+      "entityId": "ent_2",
+      "canonicalName": "Benjamin James",
+      "actionText": "Prepare arrival amenities for Benjamin James in Room 51 — comp loft upgrade, fruit plate, comp drinks, welcome card",
+      "priorityBand": "P1",
+      "priorityScore": 22,
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "Benjamin James\t\trm\t51\t\t\t\tPOA / Friends of Armi please ensure guest is looked after. / Comp upgrade to the loft. / Place fruit plate in the room, comp drinks in the parlour, card under Armi's name for Ben and Sophie."
+    },
+    {
+      "actionId": "act|noent|5|timed_am_taxi|complete_timed_actions|zetter_rerun_12",
+      "actionState": "open",
+      "actionType": "complete_timed_actions",
+      "facetKey": "timed:am_taxi",
+      "room": "5",
+      "entityId": null,
+      "canonicalName": "",
+      "actionText": "Ensure AM taxi runs for Rooms 5 & 15 (together)",
+      "priorityBand": "P2",
+      "priorityScore": 34,
+      "temporalScope": "today",
+      "serviceDate": "2026-08-07",
+      "deadlineHint": "am",
+      "relativeCue": "am",
+      "temporalConfidence": "medium",
+      "temporalReasons": [
+        "am_window_night_handover"
+      ],
+      "evidenceText": "Taxi booked at am for room 5&15  and  they together. Also they will store their bags for 2 weeks."
+    },
+    {
+      "actionId": "act|ent_3|2|occupancy_conflict|operational_follow_up|zetter_rerun_5",
+      "actionState": "unresolved",
+      "actionType": "operational_follow_up",
+      "facetKey": "occupancy_conflict",
+      "room": "2",
+      "entityId": "ent_3",
+      "canonicalName": "Andrew Nott",
+      "actionText": "Clarify occupancy for Room 2 — arrival assignment conflicts with checked-out rooms note",
+      "priorityBand": "P2",
+      "priorityScore": 35,
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "Andrew Nott\t\trm\t2\t\t\t\t20% off food and beverage (once per stay)"
+    },
+    {
+      "actionId": "act|ent_4|14|guest_request_iron|guest_follow_up|zetter_rerun_6",
+      "actionState": "open",
+      "actionType": "guest_follow_up",
+      "facetKey": "guest_request:iron",
+      "room": "14",
+      "entityId": "ent_4",
+      "canonicalName": "Mme Brittany Stewart",
+      "actionText": "Arrange iron and ironing board for Room 14",
+      "priorityBand": "P2",
+      "priorityScore": 40,
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "Mme Brittany Stewart\t\trm\t14\t\t\tIroning board and iron / Charge £28 on guest's personal CC for breakfast (Fixed charges added)"
+    },
+    {
+      "actionId": "act|noent|5|continuity_bag_storage|type|zetter_rerun_12",
+      "actionState": "information",
+      "actionType": "operational_follow_up",
+      "facetKey": "continuity:bag_storage",
+      "room": "5",
+      "entityId": null,
+      "canonicalName": "",
+      "actionText": "Bag storage continuity (multi-week) — not the same as AM taxi execution",
+      "priorityBand": "P3",
+      "priorityScore": 78,
+      "temporalScope": "future",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "high",
+      "temporalReasons": [
+        "multi_week_storage"
+      ],
+      "evidenceText": "Taxi booked at am for room 5&15  and  they together. Also they will store their bags for 2 weeks."
+    },
+    {
+      "actionId": "act|ent_4|14|payment_breakfast|type|zetter_rerun_6",
+      "actionState": "resolved",
+      "actionType": "operational_follow_up",
+      "facetKey": "payment:breakfast",
+      "room": "14",
+      "entityId": "ent_4",
+      "canonicalName": "Mme Brittany Stewart",
+      "actionText": "Breakfast charge posted (fixed charges added)",
+      "priorityBand": "exclude",
+      "priorityScore": 90,
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "Mme Brittany Stewart\t\trm\t14\t\t\tIroning board and iron / Charge £28 on guest's personal CC for breakfast (Fixed charges added)"
+    }
+  ],
+  "temporalAnchor": {
+    "handoverDate": "2026-08-07",
+    "shift": "Night",
+    "createdAt": "2026-08-08 05:29:27.025884+00"
+  },
+  "inputIntegrity": {
+    "inputAuthority": "CSV source_notes (Supabase export)",
+    "markdownBodyMatchesCsvIgnoringTrailingWhitespace": true,
+    "markdownExactByteMatchCsv": false,
+    "trailingWhitespaceOnlyDiffVsMarkdown": true,
+    "sourceSha256": "ed06b255060db5e9c89ca97b36e2a09df951251f05405d95b81c44a9f5d9794b",
+    "sourceLength": 697,
+    "lineCount": 9,
+    "brainContext": null,
+    "hotelSnapshotKeys": [
+      "adr",
+      "revpar",
+      "inHouse",
+      "arrivals",
+      "oooRooms",
+      "occupancy",
+      "roomsSold",
+      "stayovers",
+      "departures",
+      "revparValue",
+      "sellableRooms",
+      "occupancyValue",
+      "roomsAvailable"
+    ]
+  },
+  "exactSourceInput": "=== TODAY'S ARRIVALS ===\nLaura Godfrey\t\trm\t25\t20% off food and beverage (once per stay)\t\t\t\t\t\t\t\t\t\n\nBenjamin James\t\trm\t51\t\t\t\tPOA / Friends of Armi please ensure guest is looked after. / Comp upgrade to the loft. / Place fruit plate in the room, comp drinks in the parlour, card under Armi's name for Ben and Sophie.\t\t\n\nAndrew Nott\t\trm\t2\t\t\t\t20% off food and beverage (once per stay)\t\t\nMme Brittany Stewart\t\trm\t14\t\t\tIroning board and iron / Charge £28 on guest's personal CC for breakfast (Fixed charges added)\n\n=== TODAY'S DEPARTURES ===\nrooms 2 and 23 checked out.\n\n=== GENERAL HOTEL / SHIFT NOTES ===\nTaxi booked at am for room 5&15  and  they together. Also they will store their bags for 2 weeks.",
+  "hotelSnapshot": {
+    "adr": "£2.00",
+    "revpar": "£2.00",
+    "inHouse": "38",
+    "arrivals": "10",
+    "oooRooms": "0",
+    "occupancy": "100.0%",
+    "roomsSold": "24",
+    "stayovers": "14",
+    "departures": "6",
+    "revparValue": 2,
+    "sellableRooms": 24,
+    "occupancyValue": 100,
+    "roomsAvailable": "0"
+  },
+  "aiSummaryBriefing": "Priority 1\nPrepare arrival amenities for Benjamin James in Room 51 — comp loft upgrade, fruit plate, comp drinks, welcome card.\n\nPriority 2\nEnsure AM taxi runs for Rooms 5 & 15 (together).\n\nPriority 3\nArrange iron and ironing board for Room 14.",
+  "briefingParagraphs": [
+    "Priority 1\nPrepare arrival amenities for Benjamin James in Room 51 — comp loft upgrade, fruit plate, comp drinks, welcome card.",
+    "Priority 2\nEnsure AM taxi runs for Rooms 5 & 15 (together).",
+    "Priority 3\nArrange iron and ironing board for Room 14."
+  ],
+  "organisedHandover": {
+    "urgent": [],
+    "vip": [],
+    "guest": [
+      "Taxi booked at am for room 5&15  and  they together. Also they will store their bags for 2 weeks."
+    ],
+    "maintenance": [],
+    "payments": [],
+    "events": [],
+    "preparations": [],
+    "openQuestions": [],
+    "tasks": [
+      "Mme Brittany Stewart\t\trm\t14\t\t\tIroning board and iron / Charge £28 on guest's personal CC for breakfast (Fixed charges added)"
+    ],
+    "inventory": [],
+    "deliveries": [],
+    "lostproperty": [],
+    "general": [
+      "Laura Godfrey\t\trm\t25\t20% off food and beverage (once per stay)\t\t\t\t\t\t\t\t\t",
+      "Benjamin James\t\trm\t51\t\t\t\tPOA / Friends of Armi please ensure guest is looked after. / Comp upgrade to the loft. / Place fruit plate in the room, comp drinks in the parlour, card under Armi's name for Ben and Sophie.\t\t",
+      "Andrew Nott\t\trm\t2\t\t\t\t20% off food and beverage (once per stay)\t\t",
+      "=== TODAY'S ARRIVALS ===",
+      "=== TODAY'S DEPARTURES ===",
+      "rooms 2 and 23 checked out.",
+      "=== GENERAL HOTEL / SHIFT NOTES ==="
+    ],
+    "completed": []
+  },
+  "recommendations": [
+    {
+      "id": "act|ent_2|51|arrival_prep_high_touch|prepare_vip|zetter_rerun_3",
+      "text": "Prepare arrival amenities for Benjamin James in Room 51 — comp loft upgrade, fruit plate, comp drinks, welcome card.",
+      "priority": "high",
+      "department": "Housekeeping",
+      "status": "open",
+      "reasonCodes": [
+        "high_touch_arrival_prep",
+        "canonical_decision_seat",
+        "legacy_wording_enrich"
+      ]
+    },
+    {
+      "id": "act|noent|5|timed_am_taxi|complete_timed_actions|zetter_rerun_12",
+      "text": "Ensure AM taxi runs for Rooms 5 & 15 (together).",
+      "priority": "normal",
+      "department": "Reception",
+      "status": "open",
+      "reasonCodes": [
+        "timed_action_due",
+        "am_taxi_timed",
+        "temporal:am_window_night_handover",
+        "canonical_decision_seat",
+        "legacy_wording_enrich"
+      ]
+    },
+    {
+      "id": "act|ent_4|14|guest_request_iron|guest_follow_up|zetter_rerun_6",
+      "text": "Arrange iron and ironing board for Room 14 this shift.",
+      "priority": "normal",
+      "department": "Reception",
+      "status": "open",
+      "reasonCodes": [
+        "complaint_or_guest_follow_up",
+        "facet_guest_request_open",
+        "canonical_decision_seat",
+        "legacy_wording_enrich"
+      ]
+    }
+  ],
+  "reasoningMetadata": {
+    "noteCountAfterPipeline": 9,
+    "dependencyEdgeCount": 0,
+    "dependencyEdges": [],
+    "analyzeKeys": [
+      "engineVersion",
+      "signals",
+      "recommendations",
+      "checklist",
+      "facts",
+      "operationalMemories",
+      "guestObservations",
+      "guestObservationRejections",
+      "guestCandidates",
+      "guestCandidateRejections"
+    ],
+    "quietShift": null
+  },
+  "noteEvidence": [
+    {
+      "original": "Mme Brittany Stewart\t\trm\t14\t\t\tIroning board and iron / Charge £28 on guest's personal CC for breakfast (Fixed charges added)",
+      "section": "guest",
+      "rooms": [
+        "14"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_4",
+      "canonicalName": "Mme Brittany Stewart",
+      "currentRoom": "14",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "guest_request",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Taxi booked at am for room 5&15  and  they together. Also they will store their bags for 2 weeks.",
+      "section": "guest",
+      "rooms": [
+        "5",
+        "15"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "5",
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "departure_followup",
+      "factStatus": "confirmed"
+    },
+    {
+      "original": "=== TODAY'S ARRIVALS ===",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Laura Godfrey\t\trm\t25\t20% off food and beverage (once per stay)\t\t\t\t\t\t\t\t\t",
+      "section": "general",
+      "rooms": [
+        "25"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_1",
+      "canonicalName": "Laura Godfrey",
+      "currentRoom": "25",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Benjamin James\t\trm\t51\t\t\t\tPOA / Friends of Armi please ensure guest is looked after. / Comp upgrade to the loft. / Place fruit plate in the room, comp drinks in the parlour, card under Armi's name for Ben and Sophie.\t\t",
+      "section": "general",
+      "rooms": [
+        "51"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_2",
+      "canonicalName": "Benjamin James",
+      "currentRoom": "51",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Andrew Nott\t\trm\t2\t\t\t\t20% off food and beverage (once per stay)\t\t",
+      "section": "general",
+      "rooms": [
+        "2"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_3",
+      "canonicalName": "Andrew Nott",
+      "currentRoom": "2",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "=== TODAY'S DEPARTURES ===",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "rooms 2 and 23 checked out.",
+      "section": "general",
+      "rooms": [
+        "2",
+        "23"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "2",
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "=== GENERAL HOTEL / SHIFT NOTES ===",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    }
+  ]
+}
