@@ -1468,7 +1468,14 @@
   function extractRequestItem(text) {
     var src = String(text || "");
     if (/\bextra\s+bed\b|\brollaway\b/i.test(src)) return "extra bed";
-    if (/\bpillows?\b/i.test(src)) return "extra pillows";
+    /* Source fidelity: never upgrade "foam pillows" / bare pillows into "extra pillows". */
+    if (/\bfoam\s+pillows?\b/i.test(src)) return "foam pillows";
+    if (/\bextra\s+pillows?\b/i.test(src)) return "extra pillows";
+    if (/\bpillows?\b/i.test(src)) {
+      var pillowPhrase = src.match(/\b([A-Za-z]+(?:\s+[A-Za-z]+)?\s+pillows?)\b/);
+      if (pillowPhrase && pillowPhrase[1]) return String(pillowPhrase[1]).toLowerCase();
+      return "pillows";
+    }
     if (/\biron(?:ing)?\s+board\b|\biron\b/i.test(src)) return "iron and ironing board";
     if (/\badapters?\b/i.test(src)) return "travel adapter";
     if (/\btowels?\b/i.test(src)) return "towels";
@@ -1674,7 +1681,8 @@
       /\bcleared\b/.test(lower) ||
       /\bcompleted\b/.test(lower) ||
       /\bresolved\b/.test(lower) ||
-      /\bfixed\b/.test(lower) ||
+      /* "Fixed charges added" is payment-posting language — not whole-note completion. */
+      (/\bfixed\b/.test(lower) && !/\bfixed\s+charges?\b/.test(lower)) ||
       /\bcollected\b/.test(lower) ||
       /\bdelivered\b/.test(lower) ||
       /\bdone\b/.test(lower) ||
@@ -3656,7 +3664,13 @@
     /* Subject authority wins over stale general hints so misfiles can be corrected. */
     if (normalized === "payment_balance") return "payments";
     if (subject === "maintenance") return "maintenance";
-    if (subject === "vip_arrival" || subject === "reservation_info") return "vip";
+    if (subject === "vip_arrival") return "vip";
+    /* POA / reservation metadata is not automatically VIP without VIP evidence. */
+    if (subject === "reservation_info") {
+      var resSrc = String(fact.sourceText || fact.summary || "");
+      if (/\bvip\b/i.test(resSrc) || fact.isVip) return "vip";
+      return fallback || "general";
+    }
     if (subject === "guest_arrangement" || subject === "guest_preparation" || subject === "interconnect" ||
         subject === "celebration") {
       return "guest";
@@ -4033,6 +4047,11 @@
     if (!lower) return false;
     if (/\bnot\s+(?:yet\s+)?(?:done|completed|resolved|fixed|delivered)\b/.test(lower)) return false;
     if (/\bstill\s+open\b/.test(lower) || /\bissue\s+still\s+open\b/.test(lower)) return false;
+    /*
+     * Sprint 5: "Fixed charges added" is payment-posting language — must not mark
+     * the whole note (e.g. sibling iron request) as terminal done.
+     */
+    lower = lower.replace(/\bfixed\s+charges?\b/g, " ");
     return /\b(?:has\s+been\s+)?(?:done|completed|resolved|fixed|delivered|placed\s+in\s+room)\b/.test(lower) ||
       /\bFINAL\s*=\s*DONE\b/i.test(text || "") ||
       /\bCOMPLETE(?:D)?\b/.test(text || "") && !/\bnot\s+complete/i.test(lower);
@@ -7306,7 +7325,12 @@
   }
 
   function formatBriefingPriorityAction(spec) {
-    if (!spec || !spec.entities) return "";
+    if (!spec) return "";
+    /* Sprint 5: prefer shared canonical action wording — no independent reinterpretation. */
+    if (spec.canonicalActionText) {
+      return String(spec.canonicalActionText).replace(/\.+$/, "");
+    }
+    if (!spec.entities) return "";
     var e = spec.entities;
     var room = e.room ? "Room " + e.room : "";
     var fault = e.faultType || "maintenance issue";
@@ -7328,7 +7352,10 @@
       /*
        * Briefing summarises revenue attention — recommendation cards own the
        * exact "Collect …" duty instruction.
+       * Sprint 5: fail closed — never invent "channel payment" without evidence.
        */
+      var evidenceBlob = String(spec.evidenceText || (e && e.sourceText) || "").toLowerCase();
+      var hasChannel = /\b(?:booking\.com|expedia|ota|virtual\s+card|\bvcc\b|channel\s+payment)\b/.test(evidenceBlob);
       if (e.amount && room) {
         return "Revenue follow-up required for " + room + " outstanding " + e.amount +
           (spec.reasonKind === "card_declined" ? " after declined card" : "") +
@@ -7337,7 +7364,11 @@
       if (e.amount) {
         return "Revenue follow-up required for outstanding " + e.amount + " before departures";
       }
-      return "Revenue follow-up required for outstanding channel payment before departures";
+      if (hasChannel) {
+        return "Revenue follow-up required for outstanding channel payment before departures";
+      }
+      /* Amount-less non-OTA: do not invent a channel-payment chase. */
+      return "";
     }
     if (kind === "post_or_collect_charge") {
       return "Revenue follow-up required for " + (room ? room + " " : "") +

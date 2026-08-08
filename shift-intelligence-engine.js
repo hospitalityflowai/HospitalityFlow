@@ -1212,10 +1212,16 @@
       return { type: OPERATIONAL_OBJECT_TYPE.guest_request, confidence: "high" };
     }
     /* Pure collection notes may extract as departure_followup — keep them payments. */
-    var paymentCue = /\b(minibar|city\s+tax|outstanding|folio|balance|booking\.com|expedia|declined)\b/.test(src) ||
+    /* Sprint 5: "balance availability" is inventory/allocation — not folio payment. */
+    var nonPaymentBalance = /\bbalance\s+availability\b/.test(src) ||
+      /\bto\s+balance\s+(?:availability|the\s+house|occupancy)\b/.test(src);
+    var paymentCue = !nonPaymentBalance && (
+      /\b(minibar|city\s+tax|outstanding|folio|booking\.com|expedia|declined)\b/.test(src) ||
+      (/\bbalance\b/.test(src) && !/\bbalance\s+availability\b/.test(src)) ||
       subject === "payment" || subject === "outstanding_balance" || subject === "payment_balance" ||
       subject === "financial_settlement_unclear" || subject === "invoice" || subject === "folio" ||
-      subject === "charge" || subject === "bill";
+      subject === "charge" || subject === "bill"
+    );
     var timedDepartureCue = /\bwake\b/.test(src) || /\baddison|taxi|transfer\b/.test(src) ||
       subject === "wake_up" || subject === "transfer";
     if (paymentCue && !timedDepartureCue &&
@@ -1242,11 +1248,13 @@
     }
     if (
       !/\badapter/.test(src) &&
+      !nonPaymentBalance &&
       (
         subject === "payment" || subject === "outstanding_balance" || subject === "payment_balance" ||
         subject === "invoice" || subject === "folio" || subject === "bill" ||
-        section === "payments" ||
-        /\b(minibar|city\s+tax|outstanding|folio|balance|booking\.com|expedia)\b/.test(src)
+        (section === "payments" && !/\bbalance\s+availability\b/.test(src)) ||
+        /\b(minibar|city\s+tax|outstanding|folio|booking\.com|expedia)\b/.test(src) ||
+        (/\bbalance\b/.test(src) && !/\bbalance\s+availability\b/.test(src))
       )
     ) {
       return { type: OPERATIONAL_OBJECT_TYPE.payment, confidence: subject || section === "payments" ? "high" : "medium" };
@@ -3601,9 +3609,14 @@
     var fault = trimText((fact && fact.faultType) || "").toLowerCase();
     var room = (fact && fact.currentRoom) || (note && note.currentRoom) || rooms[0] || "";
     room = normalizeRoomNumber(room) || room;
-    /* Sprint 3: prefer entityId over raw guest-name strings for guest-linked objects. */
+    /* Sprint 3: prefer entityId over raw guest-name strings for guest-linked objects.
+     * Sprint 5: never bucket all unresolved VIP fragments into vip|unknown together. */
     if (type === OPERATIONAL_OBJECT_TYPE.vip) {
-      return ["vip", entityId || guest || room || subject || "unknown"].join("|");
+      if (entityId) return ["vip", entityId].join("|");
+      if (guest) return ["vip", "guest", guest].join("|");
+      if (room) return ["vip", "room", room].join("|");
+      var singleton = (fact && fact.id) || (note && (note._neutralFactId || note._seq)) || subject || "frag";
+      return ["vip", "singleton", String(singleton)].join("|");
     }
     if (type === OPERATIONAL_OBJECT_TYPE.maintenance) {
       return ["maintenance", rooms[0] || "area", fault || subject || "issue"].join("|");
@@ -3688,7 +3701,8 @@
 
     var list = order.map(function (key) { return groups[key]; });
 
-    /* Merge amenity / preference VIP fragments into one guest preparation block. */
+    /* Merge amenity / preference VIP fragments into one guest preparation block.
+     * Sprint 5: NEVER cross-merge different resolved entityIds (Josh↛Helene). */
     var primaryVip = null;
     list.forEach(function (g) {
       if (g.type !== OPERATIONAL_OBJECT_TYPE.vip) return;
@@ -3705,11 +3719,48 @@
     });
     if (primaryVip) {
       var vipGuestKey = String(primaryVip.guestName || "").toLowerCase();
+      var primaryVipEntityId = "";
+      (primaryVip.items || []).forEach(function (item) {
+        if (primaryVipEntityId) return;
+        primaryVipEntityId = factEntityId(item && item.fact, item && item.note);
+      });
+      if (!primaryVipEntityId && primaryVip.facts && primaryVip.facts[0]) {
+        primaryVipEntityId = factEntityId(primaryVip.facts[0], null);
+      }
       list = list.filter(function (g) {
         if (g === primaryVip) return true;
         var src = objectSourceBlob(g);
+        var gEntityId = "";
+        (g.items || []).forEach(function (item) {
+          if (gEntityId) return;
+          gEntityId = factEntityId(item && item.fact, item && item.note);
+        });
+        if (!gEntityId && g.facts && g.facts[0]) gEntityId = factEntityId(g.facts[0], null);
         var sameGuest = vipGuestKey && g.guestName &&
           String(g.guestName).toLowerCase() === vipGuestKey;
+        var bothResolved = !!(primaryVipEntityId && gEntityId);
+        /* Sprint 5: merge only with shared entityId, or same named guest if unresolved.
+         * Never merge on amenity wording alone when identities differ or are missing. */
+        if (bothResolved && primaryVipEntityId !== gEntityId) return true;
+        function surnameOf(name) {
+          var parts = String(name || "").toLowerCase().trim().split(/\s+/).filter(Boolean);
+          return parts.length ? parts[parts.length - 1] : "";
+        }
+        var sameSurname = !!(surnameOf(primaryVip.guestName) && surnameOf(g.guestName) &&
+          surnameOf(primaryVip.guestName) === surnameOf(g.guestName) &&
+          surnameOf(primaryVip.guestName).length >= 3);
+        var roomOverlap = false;
+        (primaryVip.rooms || []).forEach(function (r) {
+          if ((g.rooms || []).indexOf(r) !== -1) roomOverlap = true;
+        });
+        var conflictingGuest = vipGuestKey && g.guestName && !sameGuest && !sameSurname;
+        var primarySurname = surnameOf(primaryVip.guestName);
+        var srcMentionsPrimary = !!(primarySurname && primarySurname.length >= 3 &&
+          new RegExp("\\b" + primarySurname.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\b", "i").test(src));
+        var identityOk = bothResolved
+          ? primaryVipEntityId === gEntityId
+          : !!(sameGuest || sameSurname || srcMentionsPrimary || (roomOverlap && !conflictingGuest));
+        if (!identityOk) return true;
         var amenityFragment = /\bchampagne\b|\bwelcome\s+card\b|\bamenity\b|\bquiet\b|\bchocolates?\b/.test(src);
         var mergeVip = g.type === OPERATIONAL_OBJECT_TYPE.vip && (amenityFragment || sameGuest);
         var mergePref = sameGuest && amenityFragment &&
@@ -3910,7 +3961,6 @@
       (object.rooms && object.rooms[0]) ||
       (fact && fact.rooms && fact.rooms[0]) ||
       "";
-    var roomLabel = room ? "Room " + room : "";
     var guest = (fact && fact.canonicalName) ||
       (primaryNote && primaryNote.canonicalName) ||
       object.guestName ||
@@ -3947,6 +3997,19 @@
     if (/\btwin\b/i.test(src) && entities.amenities.indexOf("twin setup") === -1) {
       entities.amenities.push("twin setup");
     }
+    /* Sprint 5: amenity-scoped room beats entity currentRoom for twin/setup actions. */
+    if (/\btwin\b/i.test(src)) {
+      var scopedTwinRoom = amenityScopedRoomFromText(
+        src,
+        (object.rooms || (fact && fact.rooms) || []).slice(),
+        room
+      );
+      if (scopedTwinRoom) {
+        room = scopedTwinRoom;
+        entities.room = scopedTwinRoom;
+      }
+    }
+    var roomLabel = room ? "Room " + room : "";
     if (/\baccessibility\b/i.test(src) && entities.amenities.indexOf("accessibility preference") === -1) {
       entities.amenities.push("accessibility preference");
     }
@@ -4151,10 +4214,12 @@
     if (/\badapter/.test(src) && !/\b(?:declined|folio|invoice|city\s*tax|minibar)\b/.test(src)) {
       return false;
     }
+    if (/\bbalance\s+availability\b/.test(src)) return false;
     return subject === "payment" || subject === "outstanding_balance" || subject === "payment_balance" ||
       subject === "financial_settlement_unclear" || subject === "invoice" || subject === "folio" ||
       subject === "charge" ||
-      /\b(outstanding|declined|minibar|city\s+tax|folio|balance)\b/.test(src);
+      /\b(outstanding|declined|minibar|city\s+tax|folio)\b/.test(src) ||
+      (/\bbalance\b/.test(src) && !/\bbalance\s+availability\b/.test(src));
   }
 
   function objectLooksLikeMaintenance(obj) {
@@ -4199,10 +4264,6 @@
     options = options || {};
     var maxBlocks = options.maxBlocks != null ? options.maxBlocks : BRIEFING_MAX_BLOCKS;
     var objects = groupIntoOperationalObjects(items || []);
-    var actionable = objects.filter(isPromotableOperationalObject).sort(compareOperationalObjectsByPriority);
-
-    var selected = [];
-    var seenIds = {};
     var slotOrder = [
       BRIEFING_CANNOT_MISS_SLOT.guest_risk,
       BRIEFING_CANNOT_MISS_SLOT.timed,
@@ -4210,6 +4271,26 @@
       BRIEFING_CANNOT_MISS_SLOT.vip,
       BRIEFING_CANNOT_MISS_SLOT.blocker
     ];
+
+    /* Sprint 5: build shared canonical actions; prefer them when they carry P0/P1,
+     * otherwise keep Sprint 2 object seating so safety is never displaced. */
+    var notesForActions = [];
+    (items || []).forEach(function (item) {
+      if (item && item.note) notesForActions.push(item.note);
+      else if (item && item.original) notesForActions.push(item);
+    });
+    var canonicalActions = options.canonicalActions || null;
+    if (!canonicalActions && notesForActions.length) {
+      canonicalActions = buildCanonicalOperationalActions(notesForActions);
+    }
+    var fromCanonical = canonicalActions && canonicalActions.length
+      ? briefingSpecsFromCanonicalActions(canonicalActions, maxBlocks)
+      : [];
+
+    var actionable = objects.filter(isPromotableOperationalObject).sort(compareOperationalObjectsByPriority);
+
+    var selected = [];
+    var seenIds = {};
 
     /* 1) Seat true P0 / P1 opens first (band → score → id). */
     actionable.forEach(function (obj) {
@@ -4267,16 +4348,67 @@
         (spec.operationalContext && spec.operationalContext.hazardClass) || "";
       /* Set band on context before gate so P0/P1 hazards are not dropped. */
       if (spec.operationalContext) spec.operationalContext.priorityBand = band;
+      /* Overlay faithful canonical wording — factIds or same guest+twin/request facet. */
+      if (canonicalActions && canonicalActions.length) {
+        var match = null;
+        openCanonicalActions(canonicalActions).forEach(function (action) {
+          if (match) return;
+          var overlap = (action.sourceFactIds || []).some(function (id) {
+            return (spec.factIds || []).indexOf(id) !== -1;
+          });
+          if (!overlap && action.canonicalName && spec.entities && spec.entities.guestName) {
+            var sameGuest = String(action.canonicalName).toLowerCase() ===
+              String(spec.entities.guestName).toLowerCase();
+            var twinish = /twin/i.test(action.facetKey + action.actionText) &&
+              ((spec.entities.amenities || []).some(function (a) { return /twin/i.test(a); }) ||
+                /twin|prepare_vip/i.test(spec.actionKind || ""));
+            var requestish = /guest_request|iron|pillow/i.test(action.facetKey) &&
+              /guest_follow_up|arrange/i.test(spec.actionKind || "");
+            if (sameGuest && (twinish || requestish)) overlap = true;
+          }
+          if (overlap) match = action;
+        });
+        if (match && match.actionText) {
+          spec.canonicalActionText = match.actionText;
+          spec.evidenceText = match.evidenceText || spec.evidenceText;
+          if (match.room && spec.entities) spec.entities.room = match.room;
+        }
+      }
       if (!passesBriefingPriorityGate(spec)) return;
       priorities.push(spec);
     });
+
+    var objectHasP0P1 = priorities.some(function (p) {
+      return p.priorityBand === PRIORITY_BAND.P0 || p.priorityBand === PRIORITY_BAND.P1;
+    });
+    var canonHasP0P1 = fromCanonical.some(function (p) {
+      return p.priorityBand === PRIORITY_BAND.P0 || p.priorityBand === PRIORITY_BAND.P1;
+    });
+    /*
+     * Prefer Sprint 2 object seating whenever it produced priorities (keeps P0/P1 /
+     * timed cannot-miss slots). Use canonical-only when objects yield nothing
+     * (e.g. high-touch arrival with thin subjects).
+     */
+    if (fromCanonical.length && priorities.length === 0) {
+      return {
+        priorities: fromCanonical,
+        objects: objects,
+        maxBlocks: maxBlocks,
+        generatedFromObjectCount: objects.length,
+        cannotMissSlots: slotOrder.slice(),
+        canonicalActions: canonicalActions || [],
+        source: "canonical_actions"
+      };
+    }
 
     return {
       priorities: priorities,
       objects: objects,
       maxBlocks: maxBlocks,
       generatedFromObjectCount: objects.length,
-      cannotMissSlots: slotOrder.slice()
+      cannotMissSlots: slotOrder.slice(),
+      canonicalActions: canonicalActions || [],
+      source: "operational_objects"
     };
   }
 
@@ -4755,6 +4887,18 @@
     var subject = normalizeSubjectToken(fact && (fact.subject || fact.subjectType) || "");
     var status = String((fact && fact.status) || "").toLowerCase();
 
+    /*
+     * Sprint 5: open guest-request facets (e.g. iron) must not be filed Completed
+     * because a sibling payment clause says "Fixed charges added".
+     */
+    var openRequestAlive = /\b(?:iron(?:ing)?(?:\s+board)?|foam\s+pillows?|extra\s+pillows?|pillows?|towels?|adapter)\b/i.test(src) &&
+      !/\b(?:iron(?:ing)?(?:\s+board)?|pillows?|towels?|adapter).{0,40}(?:done|delivered|complete|cancelled)\b/i.test(src);
+    var paymentPostedSibling = /\bfixed\s+charges?\s+added\b/i.test(src) ||
+      (/\bcharge\b/i.test(src) && /\bbreakfast\b/i.test(src));
+    if (openRequestAlive && paymentPostedSibling) {
+      return subject === "guest_request" || openRequestAlive ? "tasks" : "guest";
+    }
+
     /* Closed guest-status notes (e.g. resolved noise) belong in Completed Actions. */
     if (
       (
@@ -4765,7 +4909,8 @@
       ) &&
       !objectLooksLikePayment(object) &&
       !objectLooksLikeMaintenance(object) &&
-      object.type !== OPERATIONAL_OBJECT_TYPE.vip
+      object.type !== OPERATIONAL_OBJECT_TYPE.vip &&
+      !openRequestAlive
     ) {
       return "completed";
     }
@@ -4841,6 +4986,14 @@
     sectionIds.forEach(function (id) { sections[id] = []; });
 
     var analyzed = (analyzedNotes || []).filter(Boolean);
+    if (analyzedNotes && analyzedNotes._operationalDependenciesResolved) {
+      analyzed._operationalDependenciesResolved = true;
+      analyzed._operationalDependencies = analyzedNotes._operationalDependencies;
+    }
+    /* Sprint 5: stamp shared canonical actions for consumers (entity-safe grouping below). */
+    if (analyzed.length) {
+      buildCanonicalOperationalActions(analyzed);
+    }
     var entries = analyzed.map(function (note, index) {
       var fact = note.fact || null;
       return {
@@ -4943,6 +5096,18 @@
       }
       var sectionId = suggestHandoverSectionForObject(obj);
       if (sectionIds.indexOf(sectionId) === -1) sectionId = "general";
+      /* Sprint 5: never file a note Completed when a canonical OPEN facet exists. */
+      if (sectionId === "completed" && analyzed._canonicalActions) {
+        var objFactIds = obj.factIds || [];
+        var hasOpenFacet = openCanonicalActions(analyzed._canonicalActions).some(function (action) {
+          return (action.sourceFactIds || []).some(function (id) {
+            return objFactIds.indexOf(id) !== -1;
+          });
+        });
+        if (hasOpenFacet) {
+          sectionId = /\biron|pillow|towel|adapter/i.test(src) ? "tasks" : "guest";
+        }
+      }
       /* Safety/urgent override only when explicitly critical. */
       if (
         sectionId === "maintenance" &&
@@ -4991,7 +5156,8 @@
       objects: objects,
       analyzed: analyzed,
       sectionIds: sectionIds,
-      generatedFromObjectCount: objects.length
+      generatedFromObjectCount: objects.length,
+      canonicalActions: analyzed._canonicalActions || []
     };
   }
 
@@ -6166,10 +6332,21 @@
   }
 
   function guestRequestItemLabel(fact, src) {
-    return fact.requestItem || factDetailValue(fact, "request_item") ||
-      (global.AiWritingEngine && global.AiWritingEngine.extractRequestItem
-        ? global.AiWritingEngine.extractRequestItem(src)
-        : "");
+    var text = String(src || (fact && fact.sourceText) || "");
+    /* Sprint 5 source fidelity: never upgrade foam/bare pillows via stale requestItem. */
+    if (/\bfoam\s+pillows?\b/i.test(text)) return "foam pillows";
+    var fromFact = fact && fact.requestItem ? String(fact.requestItem) : "";
+    if (fromFact && /^extra pillows$/i.test(fromFact) && !/\bextra\s+pillows?\b/i.test(text)) {
+      fromFact = "";
+    }
+    if (fromFact) return fromFact;
+    var detail = factDetailValue(fact, "request_item");
+    if (detail && !(/^extra pillows$/i.test(detail) && !/\bextra\s+pillows?\b/i.test(text))) {
+      return detail;
+    }
+    return global.AiWritingEngine && global.AiWritingEngine.extractRequestItem
+      ? global.AiWritingEngine.extractRequestItem(text)
+      : "";
   }
 
   function recommendationReason(fact, subject) {
@@ -8122,6 +8299,1176 @@
     });
   }
 
+  /* ─── Reasoning Sprint 5 — Canonical Night Manager open-action contract ─
+   * ONE shared decision layer after Sprint 1–4. Briefing / Recommendations /
+   * Organised consume these actions instead of re-interpreting source strings.
+   * Fail closed: insufficient evidence → information / unresolved, never invent.
+   */
+
+  var ACTION_STATE = {
+    open: "open",
+    blocked: "blocked",
+    monitor: "monitor",
+    information: "information",
+    resolved: "resolved",
+    unresolved: "unresolved"
+  };
+
+  function stableActionToken(value) {
+    return String(value || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_|_$/g, "")
+      .slice(0, 48);
+  }
+
+  function makeCanonicalActionId(parts) {
+    return [
+      "act",
+      stableActionToken(parts.entityId || "noent"),
+      stableActionToken(parts.room || "noroom"),
+      stableActionToken(parts.facetKey || "facet"),
+      stableActionToken(parts.actionType || "type"),
+      stableActionToken(parts.factId || "fact")
+    ].join("|");
+  }
+
+  function noteEvidenceText(note, fact) {
+    return trimText(
+      (note && note.original) ||
+      (fact && (fact.sourceText || fact.summary)) ||
+      ""
+    );
+  }
+
+  function hasChannelPaymentEvidence(src) {
+    return /\b(?:booking\.com|expedia|ota|virtual\s+card|\bvcc\b|channel\s+payment|channel\s+collect)\b/i.test(src || "");
+  }
+
+  function hasCollectablePaymentEvidence(src, fact) {
+    var text = String(src || "");
+    if (/\bbalance\s+availability\b/i.test(text)) return false;
+    if (hasChannelPaymentEvidence(text)) return true;
+    if (/\b(?:declined|still\s+to\s+pay|balance\s+due|outstanding\s+balance|folio|minibar|city\s+tax)\b/i.test(text)) {
+      return true;
+    }
+    var amount = fact && (
+      (global.AiWritingEngine && global.AiWritingEngine.extractMoney
+        ? (global.AiWritingEngine.extractMoney(text) || [])[0]
+        : null) ||
+      (fact.details || []).some(function (d) { return d && d.type === "money"; })
+    );
+    if (amount && /\b(?:collect|outstanding|unpaid|due|balance|charge|payment)\b/i.test(text) &&
+        !/\bfixed\s+charges?\s+added\b/i.test(text) &&
+        !/\bcomp(?:limentary)?\b/i.test(text)) {
+      return true;
+    }
+    return false;
+  }
+
+  function isReservationInfoOnly(src, fact) {
+    var subject = normalizeSubjectToken(fact && (fact.subject || fact.subjectType) || "");
+    if (subject === "reservation_info") return !/\bvip\b/i.test(src || "");
+    if (/\b(?:poa|payment\s+on\s+arrival)\b/i.test(src || "") &&
+        !/\bvip\b/i.test(src || "") &&
+        !hasHighTouchArrivalPrep(src) &&
+        !/\b(?:champagne|fruit|iron|pillow|twin|luggage|wake|taxi)\b/i.test(src || "")) {
+      return true;
+    }
+    return false;
+  }
+
+  function hasHighTouchArrivalPrep(src) {
+    var text = String(src || "");
+    var cues = 0;
+    if (/\bfruit(?:s|\s+plate)?\b/i.test(text)) cues += 1;
+    if (/\bcomp(?:limentary)?\s+drinks?\b/i.test(text)) cues += 1;
+    if (/\bchampagne\b|\btruffles?\b/i.test(text)) cues += 1;
+    /* Welcome/handwritten card only — never "card on file" / guarantee card. */
+    if (/\b(?:welcome|handwritten)\s+card\b/i.test(text) ||
+        (/\bcard\b/i.test(text) && /\bunder\b.{0,48}\bname\b/i.test(text))) {
+      cues += 1;
+    }
+    /* Loft / amenity upgrade only — never "upgrade to balance availability". */
+    if (/\bloft\b/i.test(text)) cues += 1;
+    else if (/\bcomp(?:limentary)?\s+upgrade\b/i.test(text) &&
+        !/\bbalance\s+availability\b/i.test(text) &&
+        !/\bto\s+balance\s+(?:the\s+house|availability|occupancy)\b/i.test(text)) {
+      cues += 1;
+    }
+    if (/\bfriends?\s+of\b/i.test(text)) cues += 1;
+    if (/\bplease\s+ensure\b|\blooked\s+after\b/i.test(text)) cues += 1;
+    return cues >= 2;
+  }
+
+  /** Evidence-backed amenity phrases only — never invent loft/card package fillers. */
+  function highTouchAmenityBitsFromSource(src) {
+    var text = String(src || "");
+    var bits = [];
+    if (/\bloft\b/i.test(text)) bits.push("comp loft upgrade");
+    else if (/\bcomp(?:limentary)?\s+upgrade\b/i.test(text) &&
+        !/\bbalance\s+availability\b/i.test(text) &&
+        !/\bto\s+balance\s+(?:the\s+house|availability|occupancy)\b/i.test(text)) {
+      bits.push("comp upgrade");
+    }
+    if (/\bfruit\s+plate\b/i.test(text)) bits.push("fruit plate");
+    else if (/\bfruits?\b/i.test(text)) bits.push("fruit");
+    if (/\bcomp(?:limentary)?\s+drinks?\b/i.test(text)) bits.push("comp drinks");
+    if (/\bchampagne\b/i.test(text)) bits.push("champagne");
+    if (/\bflowers?\b/i.test(text)) bits.push("flowers");
+    if (/\bchocolates?\b/i.test(text)) bits.push("chocolate");
+    if (/\b(?:welcome|handwritten)\s+card\b/i.test(text) ||
+        (/\bcard\b/i.test(text) && /\bunder\b.{0,48}\bname\b/i.test(text))) {
+      bits.push("welcome card");
+    }
+    return bits;
+  }
+
+  function hasOpenGuestRequestCue(src) {
+    return /\b(?:iron(?:ing)?(?:\s+board)?|foam\s+pillows?|extra\s+pillows?|pillows?|towels?|adapter|rollaway|extra\s+bed)\b/i.test(src || "");
+  }
+
+  function hasAmenityPrepCue(src) {
+    return /\b(?:champagne|truffles?|flowers?|welcome\s+card|anniversary|birthday|balloons?|fruit\s+plate|comp\s+drinks?)\b/i.test(src || "");
+  }
+
+  function amenityScopedRoomFromText(src, rooms, currentRoom) {
+    var text = String(src || "");
+    var m = text.match(/\b(?:twin(?:\s+beds?)?|double(?:\s+beds?)?)\s+only\s+for\s+room\s+(\d{1,4})\b/i) ||
+      text.match(/\bonly\s+for\s+room\s+(\d{1,4})\b/i);
+    if (m) {
+      var scoped = normalizeRoomNumber(m[1]) || String(m[1]);
+      return scoped;
+    }
+    if (currentRoom) return normalizeRoomNumber(currentRoom) || String(currentRoom);
+    if (rooms && rooms.length) return normalizeRoomNumber(rooms[0]) || String(rooms[0]);
+    return "";
+  }
+
+  function faithfulRequestLabel(src, fact) {
+    var text = String(src || "");
+    if (/\bfoam\s+pillows?\b/i.test(text)) return "foam pillows";
+    if (fact && fact.requestItem && !/^extra pillows$/i.test(fact.requestItem)) {
+      if (new RegExp(String(fact.requestItem).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i").test(text)) {
+        return String(fact.requestItem);
+      }
+    }
+    if (global.AiWritingEngine && typeof global.AiWritingEngine.extractRequestItem === "function") {
+      return global.AiWritingEngine.extractRequestItem(text) || "";
+    }
+    return "";
+  }
+
+  function noteIsCurrentEligible(note, fact) {
+    if (!note && !fact) return false;
+    if (note && note._superseded) return false;
+    if (fact && fact.superseded) return false;
+    if (typeof noteIsSupersededForDecision === "function" && note && noteIsSupersededForDecision(note)) {
+      return false;
+    }
+    return true;
+  }
+
+  function priorityFromNoteFact(note, fact) {
+    var scored = scoreOperationalImpact({ fact: fact || {}, note: note || null });
+    var ctx = scored.operationalContext || createEmptyOperationalContext();
+    return {
+      priorityBand: ctx.priorityBand || PRIORITY_BAND.P3,
+      priorityScore: typeof ctx.priorityScore === "number" ? ctx.priorityScore : scored.score,
+      priorityReasons: (ctx.priorityReasons || []).slice(),
+      confidence: typeof ctx.confidence === "number" ? ctx.confidence : 0.5,
+      nextAction: ctx.nextAction || "",
+      operationalContext: ctx,
+      impactScore: scored.score
+    };
+  }
+
+  function createCanonicalAction(opts) {
+    opts = opts || {};
+    var actionId = makeCanonicalActionId({
+      entityId: opts.entityId,
+      room: opts.room,
+      facetKey: opts.facetKey,
+      actionType: opts.actionType,
+      factId: (opts.sourceFactIds && opts.sourceFactIds[0]) || ""
+    });
+    return {
+      actionId: actionId,
+      objectId: opts.objectId || "",
+      entityId: opts.entityId || null,
+      resolutionState: opts.resolutionState || "",
+      canonicalName: opts.canonicalName || "",
+      room: opts.room || "",
+      rooms: Array.isArray(opts.rooms) ? opts.rooms.slice() : (opts.room ? [opts.room] : []),
+      actionType: opts.actionType || NEXT_ACTION_KIND.operational_follow_up,
+      actionState: opts.actionState || ACTION_STATE.information,
+      facetKey: opts.facetKey || "general",
+      actionText: trimText(opts.actionText || ""),
+      displayLabel: trimText(opts.displayLabel || opts.actionText || ""),
+      evidenceText: trimText(opts.evidenceText || ""),
+      actionability: opts.actionability || ACTIONABILITY.actionable,
+      blockedBy: Array.isArray(opts.blockedBy) ? opts.blockedBy.slice() : [],
+      blocks: Array.isArray(opts.blocks) ? opts.blocks.slice() : [],
+      priorityBand: opts.priorityBand || PRIORITY_BAND.P3,
+      priorityScore: typeof opts.priorityScore === "number" ? opts.priorityScore : 75,
+      priorityReasons: Array.isArray(opts.priorityReasons) ? opts.priorityReasons.slice() : [],
+      currentStateEligible: opts.currentStateEligible !== false,
+      sourceFactIds: Array.isArray(opts.sourceFactIds) ? opts.sourceFactIds.slice() : [],
+      confidence: typeof opts.confidence === "number" ? opts.confidence : 0.5
+    };
+  }
+
+  function compareCanonicalActions(a, b) {
+    var bandA = priorityBandRank(a.priorityBand);
+    var bandB = priorityBandRank(b.priorityBand);
+    if (bandA !== bandB) return bandA - bandB;
+    if (a.priorityScore !== b.priorityScore) return a.priorityScore - b.priorityScore;
+    return String(a.actionId).localeCompare(String(b.actionId));
+  }
+
+  function detectCheckedOutRooms(notes) {
+    var out = {};
+    (notes || []).forEach(function (note) {
+      var src = noteEvidenceText(note, note && note.fact);
+      var m = src.match(/\brooms?\s+([\d\s,and&]+)\s+checked\s+out\b/i);
+      if (!m) return;
+      String(m[1]).split(/\s*(?:,|&|and)\s*/i).forEach(function (part) {
+        var n = normalizeRoomNumber(part) || String(part).replace(/\D/g, "");
+        if (n) out[n] = true;
+      });
+    });
+    return out;
+  }
+
+  /**
+   * Build shared canonical Night Manager actions from post-Sprint-1–4 notes.
+   * Does not force every fact into an action.
+   */
+  function buildCanonicalOperationalActions(analyzed) {
+    var notes = Array.isArray(analyzed) ? analyzed : [];
+    var actions = [];
+    var seenIds = {};
+    var checkedOut = detectCheckedOutRooms(notes);
+
+    function pushAction(action) {
+      if (!action || !action.actionId) return;
+      if (seenIds[action.actionId]) return;
+      if (!action.actionText && action.actionState === ACTION_STATE.open) return;
+      seenIds[action.actionId] = true;
+      actions.push(action);
+    }
+
+    notes.forEach(function (note, index) {
+      if (!note) return;
+      var fact = note.fact || null;
+      var src = noteEvidenceText(note, fact);
+      if (!src) return;
+      var factId = note._neutralFactId || (fact && fact.id) || ("note-" + index);
+      var entityId = note.entityId || (fact && fact.entityId) || null;
+      var resolutionState = note.resolutionState || (fact && fact.resolutionState) || "";
+      var canonicalName = note.canonicalName || (fact && fact.canonicalName) ||
+        (fact && fact.guestName) || "";
+      var rooms = ((fact && fact.rooms) || note.rooms || []).map(function (r) {
+        return normalizeRoomNumber(r) || String(r);
+      }).filter(Boolean);
+      var currentRoom = normalizeRoomNumber(note.currentRoom || (fact && fact.currentRoom) || "") ||
+        (rooms[0] || "");
+      var eligible = noteIsCurrentEligible(note, fact);
+      var actionability = note.actionability || (fact && fact.actionability) || ACTIONABILITY.actionable;
+      var blockedBy = note.blockedBy || (fact && fact.blockedBy) || [];
+      var pri = priorityFromNoteFact(note, fact || {});
+      var subject = normalizeSubjectToken(fact && (fact.subject || fact.subjectType) || "");
+      var objectInfo = classifyOperationalObject(fact || {}, note);
+
+      /* Facet split: iron request + completed breakfast charge on same note. */
+      var hasIron = /\biron(?:ing)?(?:\s+board)?\b/i.test(src);
+      var hasFixedBreakfast = /\bfixed\s+charges?\s+added\b/i.test(src) ||
+        (/\bcharge\b/i.test(src) && /\bbreakfast\b/i.test(src) && /\b£\s*\d+/i.test(src));
+      if (hasIron && hasFixedBreakfast) {
+        var ironRoom = currentRoom || (rooms[0] || "");
+        pushAction(createCanonicalAction({
+          entityId: entityId,
+          resolutionState: resolutionState,
+          canonicalName: canonicalName,
+          room: ironRoom,
+          rooms: rooms,
+          facetKey: "guest_request:iron",
+          actionType: NEXT_ACTION_KIND.guest_follow_up,
+          actionState: eligible
+            ? (actionability === ACTIONABILITY.blocked ? ACTION_STATE.blocked : ACTION_STATE.open)
+            : ACTION_STATE.resolved,
+          actionText: ironRoom
+            ? "Arrange iron and ironing board for Room " + ironRoom
+            : "Arrange iron and ironing board",
+          displayLabel: "Iron / ironing board",
+          evidenceText: src,
+          actionability: actionability,
+          blockedBy: blockedBy,
+          priorityBand: pri.priorityBand === PRIORITY_BAND.exclude ? PRIORITY_BAND.P2 : pri.priorityBand,
+          priorityScore: Math.min(pri.priorityScore, 40),
+          priorityReasons: pri.priorityReasons.concat(["facet_guest_request_open"]),
+          currentStateEligible: eligible,
+          sourceFactIds: [factId],
+          confidence: pri.confidence
+        }));
+        pushAction(createCanonicalAction({
+          entityId: entityId,
+          resolutionState: resolutionState,
+          canonicalName: canonicalName,
+          room: ironRoom,
+          rooms: rooms,
+          facetKey: "payment:breakfast",
+          actionType: NEXT_ACTION_KIND.none,
+          actionState: ACTION_STATE.resolved,
+          actionText: "Breakfast charge posted (fixed charges added)",
+          displayLabel: "Breakfast charge posted",
+          evidenceText: src,
+          actionability: ACTIONABILITY.satisfied,
+          priorityBand: PRIORITY_BAND.exclude,
+          priorityScore: 90,
+          priorityReasons: ["facet_payment_resolved"],
+          currentStateEligible: true,
+          sourceFactIds: [factId],
+          confidence: 0.8
+        }));
+        return;
+      }
+
+      if (!eligible) {
+        pushAction(createCanonicalAction({
+          entityId: entityId,
+          resolutionState: resolutionState,
+          canonicalName: canonicalName,
+          room: currentRoom,
+          rooms: rooms,
+          facetKey: subject || "superseded",
+          actionType: NEXT_ACTION_KIND.none,
+          actionState: ACTION_STATE.resolved,
+          actionText: "Superseded current-state fact",
+          evidenceText: src,
+          actionability: ACTIONABILITY.satisfied,
+          priorityBand: PRIORITY_BAND.exclude,
+          priorityScore: 95,
+          priorityReasons: ["superseded_excluded"],
+          currentStateEligible: false,
+          sourceFactIds: [factId],
+          confidence: 0.9
+        }));
+        return;
+      }
+
+      /* Occupancy conflict: arrival still on a room marked checked out. */
+      if (currentRoom && checkedOut[currentRoom] && canonicalName &&
+          !/\bchecked\s+out\b/i.test(src)) {
+        pushAction(createCanonicalAction({
+          entityId: entityId,
+          resolutionState: resolutionState || "unresolved",
+          canonicalName: canonicalName,
+          room: currentRoom,
+          rooms: rooms,
+          facetKey: "occupancy_conflict",
+          actionType: NEXT_ACTION_KIND.operational_follow_up,
+          actionState: ACTION_STATE.unresolved,
+          actionText: "Clarify occupancy for Room " + currentRoom +
+            " — arrival assignment conflicts with checked-out rooms note",
+          evidenceText: src,
+          actionability: ACTIONABILITY.unresolved,
+          priorityBand: PRIORITY_BAND.P2,
+          priorityScore: 35,
+          priorityReasons: ["occupancy_conflict"],
+          currentStateEligible: true,
+          sourceFactIds: [factId],
+          confidence: 0.55
+        }));
+      }
+
+      /* Non-payment "balance availability". */
+      if (/\bbalance\s+availability\b/i.test(src)) {
+        pushAction(createCanonicalAction({
+          entityId: entityId,
+          resolutionState: resolutionState,
+          canonicalName: canonicalName,
+          room: currentRoom,
+          rooms: rooms,
+          facetKey: "allocation:balance_availability",
+          actionType: NEXT_ACTION_KIND.none,
+          actionState: ACTION_STATE.information,
+          actionText: "Complimentary upgrade / balance availability note" +
+            (currentRoom ? " for Room " + currentRoom : ""),
+          evidenceText: src,
+          actionability: ACTIONABILITY.actionable,
+          priorityBand: PRIORITY_BAND.P3,
+          priorityScore: 70,
+          priorityReasons: ["non_payment_balance_language"],
+          currentStateEligible: true,
+          sourceFactIds: [factId],
+          confidence: 0.7
+        }));
+        /* Continue — luggage/EA may still need open actions from same note. */
+      }
+
+      /* POA / reservation without VIP → information only. */
+      if (isReservationInfoOnly(src, fact) && !hasAmenityPrepCue(src) && !hasOpenGuestRequestCue(src) &&
+          !hasHighTouchArrivalPrep(src)) {
+        pushAction(createCanonicalAction({
+          entityId: entityId,
+          resolutionState: resolutionState,
+          canonicalName: canonicalName,
+          room: currentRoom,
+          rooms: rooms,
+          facetKey: "reservation_info",
+          actionType: NEXT_ACTION_KIND.none,
+          actionState: ACTION_STATE.information,
+          actionText: (canonicalName ? canonicalName + " — " : "") +
+            "Reservation / POA information (not VIP prep)",
+          evidenceText: src,
+          actionability: ACTIONABILITY.actionable,
+          priorityBand: PRIORITY_BAND.P3,
+          priorityScore: 80,
+          priorityReasons: ["reservation_info_not_vip"],
+          currentStateEligible: true,
+          sourceFactIds: [factId],
+          confidence: 0.75
+        }));
+        return;
+      }
+
+      /* Twin / amenity room scoping — respect final double / cancelled twin. */
+      if (subject === "twin_setup" || /\btwin(?:\s+beds?)?\b/i.test(src)) {
+        if (/\b(?:do\s+not\s+request\s+twin|twin\s+request\s+is\s+superseded|old\s+twin\s+request|not\s+twin)\b/i.test(src) ||
+            (/\bfinal\s+room\b/i.test(src) && /\btwin\b/i.test(src) && /\bsuperseded\b/i.test(src))) {
+          pushAction(createCanonicalAction({
+            entityId: entityId,
+            resolutionState: resolutionState,
+            canonicalName: canonicalName,
+            room: currentRoom,
+            rooms: rooms,
+            facetKey: "amenity:twin_superseded",
+            actionType: NEXT_ACTION_KIND.none,
+            actionState: ACTION_STATE.resolved,
+            actionText: "Twin setup superseded — follow final room / double allocation",
+            evidenceText: src,
+            actionability: ACTIONABILITY.satisfied,
+            priorityBand: PRIORITY_BAND.exclude,
+            priorityScore: 90,
+            priorityReasons: ["twin_request_superseded"],
+            currentStateEligible: true,
+            sourceFactIds: [factId],
+            confidence: 0.8
+          }));
+          return;
+        }
+        if (/\bdouble\b/i.test(src) && /\b(?:not\s+twin|wants?\s+double|final|confirmed|actually)\b/i.test(src)) {
+          pushAction(createCanonicalAction({
+            entityId: entityId,
+            resolutionState: resolutionState,
+            canonicalName: canonicalName,
+            room: currentRoom,
+            rooms: rooms,
+            facetKey: "amenity:double",
+            actionType: NEXT_ACTION_KIND.guest_follow_up,
+            actionState: ACTION_STATE.open,
+            actionText: currentRoom
+              ? "Prepare double setup for Room " + currentRoom
+              : "Prepare double setup (twin superseded)",
+            evidenceText: src,
+            actionability: actionability,
+            blockedBy: blockedBy,
+            priorityBand: PRIORITY_BAND.P2,
+            priorityScore: 34,
+            priorityReasons: ["twin_superseded_by_double"],
+            currentStateEligible: true,
+            sourceFactIds: [factId],
+            confidence: pri.confidence
+          }));
+          return;
+        }
+        if (/\btwin\b/i.test(src) && !/\bdouble\b/i.test(src)) {
+          var twinRoom = amenityScopedRoomFromText(src, rooms, currentRoom);
+          var twinState = actionability === ACTIONABILITY.blocked
+            ? ACTION_STATE.blocked
+            : ACTION_STATE.open;
+          pushAction(createCanonicalAction({
+            entityId: entityId,
+            resolutionState: resolutionState,
+            canonicalName: canonicalName,
+            room: twinRoom,
+            rooms: rooms,
+            facetKey: "amenity:twin",
+            actionType: NEXT_ACTION_KIND.prepare_vip,
+            actionState: twinState,
+            actionText: twinRoom
+              ? ("Prepare twin beds for Room " + twinRoom +
+                (canonicalName ? " (" + canonicalName + ")" : ""))
+              : "Prepare twin beds" + (canonicalName ? " for " + canonicalName : ""),
+            evidenceText: src,
+            actionability: actionability,
+            blockedBy: blockedBy,
+            priorityBand: pri.priorityBand === PRIORITY_BAND.exclude ? PRIORITY_BAND.P2 : pri.priorityBand,
+            priorityScore: Math.min(pri.priorityScore, 28),
+            priorityReasons: pri.priorityReasons.concat(["amenity_room_scoped"]),
+            currentStateEligible: true,
+            sourceFactIds: [factId],
+            confidence: pri.confidence
+          }));
+          return;
+        }
+      }
+
+      /*
+       * Explicit VIP amenity lists (champagne/flowers/chocolate) take amenity:prep —
+       * do not invent loft/card package fillers over them (Gill VVIP pattern).
+       * Friends-of / loft / fruit-plate packages still use high-touch below.
+       */
+      var explicitVipAmenityList = /\b(?:champagne|truffles?|flowers?|chocolates?|balloons?)\b/i.test(src);
+
+      /* High-touch arrival prep (Friends-of / loft / fruit / drinks / card) — evidence only. */
+      if (hasHighTouchArrivalPrep(src) && !explicitVipAmenityList) {
+        var prepState = actionability === ACTIONABILITY.blocked
+          ? ACTION_STATE.blocked
+          : ACTION_STATE.open;
+        var prepBits = highTouchAmenityBitsFromSource(src);
+        pushAction(createCanonicalAction({
+          entityId: entityId,
+          resolutionState: resolutionState,
+          canonicalName: canonicalName,
+          room: currentRoom,
+          rooms: rooms,
+          facetKey: "arrival_prep:high_touch",
+          actionType: NEXT_ACTION_KIND.prepare_vip,
+          actionState: prepState,
+          actionText: "Prepare arrival amenities" +
+            (canonicalName ? " for " + canonicalName : "") +
+            (currentRoom ? " in Room " + currentRoom : "") +
+            (prepBits.length ? " — " + prepBits.join(", ") : "") +
+            (prepBits.length ? "" : " — follow source setup notes"),
+          evidenceText: src,
+          actionability: actionability,
+          blockedBy: blockedBy,
+          priorityBand: PRIORITY_BAND.P1,
+          priorityScore: 22,
+          priorityReasons: ["high_touch_arrival_prep"],
+          currentStateEligible: true,
+          sourceFactIds: [factId],
+          confidence: Math.max(pri.confidence, 0.65)
+        }));
+        return;
+      }
+
+      /* Amenity prep — only ACTIVE amenities (respect Sprint 1 DONE/cancel election). */
+      if ((hasAmenityPrepCue(src) || objectInfo.type === OPERATIONAL_OBJECT_TYPE.vip || subject === "vip_arrival") &&
+          !/\bminibar\b/i.test(src)) {
+        if (vipPreparationFullyComplete(src, note)) {
+          pushAction(createCanonicalAction({
+            entityId: entityId,
+            resolutionState: resolutionState,
+            canonicalName: canonicalName,
+            room: currentRoom,
+            rooms: rooms,
+            facetKey: "vip:prep_complete",
+            actionType: NEXT_ACTION_KIND.none,
+            actionState: ACTION_STATE.information,
+            actionText: (canonicalName ? canonicalName + " — " : "") + "VIP prep complete / awareness only",
+            evidenceText: src,
+            actionability: ACTIONABILITY.satisfied,
+            priorityBand: PRIORITY_BAND.P3,
+            priorityScore: 78,
+            priorityReasons: ["vip_prep_complete"],
+            currentStateEligible: true,
+            sourceFactIds: [factId],
+            confidence: 0.7
+          }));
+          return;
+        }
+        var activeAmenities = activeVipAmenitiesFromSource(src, note);
+        if (!activeAmenities.length && !/\btwin\b/i.test(src)) {
+          /* Mentions only cancelled/DONE amenities — do not invent OPEN prep. */
+          pushAction(createCanonicalAction({
+            entityId: entityId,
+            resolutionState: resolutionState,
+            canonicalName: canonicalName,
+            room: currentRoom,
+            rooms: rooms,
+            facetKey: "vip:no_active_amenity",
+            actionType: NEXT_ACTION_KIND.none,
+            actionState: ACTION_STATE.information,
+            actionText: (canonicalName ? canonicalName + " — " : "") + "No active VIP amenity outstanding",
+            evidenceText: src,
+            actionability: ACTIONABILITY.satisfied,
+            priorityBand: PRIORITY_BAND.P3,
+            priorityScore: 82,
+            priorityReasons: ["no_active_vip_amenity"],
+            currentStateEligible: true,
+            sourceFactIds: [factId],
+            confidence: 0.65
+          }));
+          return;
+        }
+        if (activeAmenities.length) {
+          var amenityState = actionability === ACTIONABILITY.blocked
+            ? ACTION_STATE.blocked
+            : ACTION_STATE.open;
+          pushAction(createCanonicalAction({
+            entityId: entityId,
+            resolutionState: resolutionState,
+            canonicalName: canonicalName,
+            room: currentRoom,
+            rooms: rooms,
+            facetKey: "amenity:prep",
+            actionType: NEXT_ACTION_KIND.prepare_vip,
+            actionState: amenityState,
+            actionText: "Prepare " + activeAmenities.join(" + ") +
+              (canonicalName ? " for " + canonicalName : "") +
+              (currentRoom ? " in Room " + currentRoom : ""),
+            evidenceText: src,
+            actionability: actionability,
+            blockedBy: blockedBy,
+            priorityBand: pri.priorityBand === PRIORITY_BAND.exclude ? PRIORITY_BAND.P2 : pri.priorityBand,
+            priorityScore: Math.min(pri.priorityScore, 32),
+            priorityReasons: pri.priorityReasons.concat(["amenity_prep_open"]),
+            currentStateEligible: true,
+            sourceFactIds: [factId],
+            confidence: pri.confidence
+          }));
+          return;
+        }
+      }
+
+      /* Guest request with faithful wording (foam pillows, iron, etc.). */
+      if (subject === "guest_request" || hasOpenGuestRequestCue(src)) {
+        var reqLabel = faithfulRequestLabel(src, fact);
+        if (reqLabel) {
+          var reqState = actionability === ACTIONABILITY.blocked
+            ? ACTION_STATE.blocked
+            : ACTION_STATE.open;
+          pushAction(createCanonicalAction({
+            entityId: entityId,
+            resolutionState: resolutionState,
+            canonicalName: canonicalName,
+            room: currentRoom,
+            rooms: rooms,
+            facetKey: "guest_request:" + stableActionToken(reqLabel),
+            actionType: NEXT_ACTION_KIND.guest_follow_up,
+            actionState: reqState,
+            actionText: currentRoom
+              ? ("Arrange " + reqLabel + " for Room " + currentRoom)
+              : ("Arrange " + reqLabel),
+            evidenceText: src,
+            actionability: actionability,
+            blockedBy: blockedBy,
+            priorityBand: pri.priorityBand === PRIORITY_BAND.exclude ? PRIORITY_BAND.P2 : pri.priorityBand,
+            priorityScore: Math.min(pri.priorityScore, 45),
+            priorityReasons: pri.priorityReasons.concat(["guest_request_open"]),
+            currentStateEligible: true,
+            sourceFactIds: [factId],
+            confidence: pri.confidence
+          }));
+          return;
+        }
+      }
+
+      /* Luggage / EA style prep from long guest notes (non-payment). */
+      if (/\bluggage\b/i.test(src) || /\bEA\s*\d|\bearly\s+arrival\b/i.test(src)) {
+        pushAction(createCanonicalAction({
+          entityId: entityId,
+          resolutionState: resolutionState,
+          canonicalName: canonicalName,
+          room: currentRoom,
+          rooms: rooms,
+          facetKey: "guest_request:luggage_ea",
+          actionType: NEXT_ACTION_KIND.guest_follow_up,
+          actionState: actionability === ACTIONABILITY.blocked
+            ? ACTION_STATE.blocked
+            : ACTION_STATE.open,
+          actionText: "Honour luggage / early-arrival arrangements" +
+            (canonicalName ? " for " + canonicalName : "") +
+            (currentRoom ? " (Room " + currentRoom + ")" : ""),
+          evidenceText: src,
+          actionability: actionability,
+          blockedBy: blockedBy,
+          priorityBand: PRIORITY_BAND.P2,
+          priorityScore: 38,
+          priorityReasons: ["luggage_ea_follow_up"],
+          currentStateEligible: true,
+          sourceFactIds: [factId],
+          confidence: 0.6
+        }));
+        return;
+      }
+
+      /* Payment: only OPEN collect when evidence supports it; never invent channel payment. */
+      if (objectInfo.type === OPERATIONAL_OBJECT_TYPE.payment || subject === "payment" ||
+          subject === "outstanding_balance" || subject === "payment_balance" ||
+          hasCollectablePaymentEvidence(src, fact)) {
+        if (global.AiWritingEngine && typeof global.AiWritingEngine.isPaymentNoCollectState === "function" &&
+            global.AiWritingEngine.isPaymentNoCollectState(fact, note)) {
+          pushAction(createCanonicalAction({
+            entityId: entityId,
+            resolutionState: resolutionState,
+            canonicalName: canonicalName,
+            room: currentRoom,
+            rooms: rooms,
+            facetKey: "payment:no_collect",
+            actionType: NEXT_ACTION_KIND.none,
+            actionState: ACTION_STATE.resolved,
+            actionText: "Payment settled / no collect required" +
+              (currentRoom ? " for Room " + currentRoom : ""),
+            evidenceText: src,
+            actionability: ACTIONABILITY.satisfied,
+            priorityBand: PRIORITY_BAND.exclude,
+            priorityScore: 92,
+            priorityReasons: ["payment_no_collect"],
+            currentStateEligible: true,
+            sourceFactIds: [factId],
+            confidence: 0.85
+          }));
+          return;
+        }
+        if (/\bbalance\s+availability\b/i.test(src)) {
+          /* already handled as information */
+        } else if (!hasCollectablePaymentEvidence(src, fact)) {
+          pushAction(createCanonicalAction({
+            entityId: entityId,
+            resolutionState: resolutionState,
+            canonicalName: canonicalName,
+            room: currentRoom,
+            rooms: rooms,
+            facetKey: "payment:insufficient_evidence",
+            actionType: NEXT_ACTION_KIND.none,
+            actionState: ACTION_STATE.information,
+            actionText: "Payment-related note retained — insufficient evidence for collect chase",
+            evidenceText: src,
+            actionability: ACTIONABILITY.actionable,
+            priorityBand: PRIORITY_BAND.P3,
+            priorityScore: 85,
+            priorityReasons: ["fail_closed_payment"],
+            currentStateEligible: true,
+            sourceFactIds: [factId],
+            confidence: 0.4
+          }));
+        } else {
+          var payState = actionability === ACTIONABILITY.blocked
+            ? ACTION_STATE.blocked
+            : ACTION_STATE.open;
+          var payText = currentRoom
+            ? "Collect outstanding payment for Room " + currentRoom + " before departure"
+            : "Collect outstanding payment before departure";
+          if (hasChannelPaymentEvidence(src)) {
+            payText = currentRoom
+              ? "Collect outstanding channel payment for Room " + currentRoom + " before departure"
+              : "Collect outstanding channel payment before departure";
+          }
+          pushAction(createCanonicalAction({
+            entityId: entityId,
+            resolutionState: resolutionState,
+            canonicalName: canonicalName,
+            room: currentRoom,
+            rooms: rooms,
+            facetKey: "payment:collect",
+            actionType: NEXT_ACTION_KIND.collect_before_departure,
+            actionState: payState,
+            actionText: payText,
+            evidenceText: src,
+            actionability: actionability,
+            blockedBy: blockedBy,
+            priorityBand: pri.priorityBand,
+            priorityScore: pri.priorityScore,
+            priorityReasons: pri.priorityReasons.concat(["payment_collect_evidenced"]),
+            currentStateEligible: true,
+            sourceFactIds: [factId],
+            confidence: pri.confidence
+          }));
+        }
+        return;
+      }
+
+      /* Maintenance open follow-up. */
+      if (objectInfo.type === OPERATIONAL_OBJECT_TYPE.maintenance || subject === "maintenance") {
+        var maintState = actionability === ACTIONABILITY.blocked
+          ? ACTION_STATE.blocked
+          : ACTION_STATE.open;
+        if (/\btomorrow\b/i.test(src) && /\binspect\b/i.test(src)) {
+          maintState = ACTION_STATE.monitor;
+        }
+        pushAction(createCanonicalAction({
+          entityId: entityId,
+          resolutionState: resolutionState,
+          canonicalName: canonicalName,
+          room: currentRoom,
+          rooms: rooms,
+          facetKey: "maintenance",
+          actionType: NEXT_ACTION_KIND.follow_up_until_resolved,
+          actionState: maintState,
+          actionText: currentRoom
+            ? "Follow up maintenance for Room " + currentRoom
+            : "Follow up open maintenance",
+          evidenceText: src,
+          actionability: actionability,
+          blockedBy: blockedBy,
+          priorityBand: pri.priorityBand,
+          priorityScore: pri.priorityScore,
+          priorityReasons: pri.priorityReasons,
+          currentStateEligible: true,
+          sourceFactIds: [factId],
+          confidence: pri.confidence
+        }));
+        return;
+      }
+
+      /* Timed transport / airport: useful timed action OR unresolved fragment. */
+      if (/\b(?:heathrow|gatwick|stansted|luton)\b/i.test(src) ||
+          (objectInfo.type === OPERATIONAL_OBJECT_TYPE.transport || subject === "transfer")) {
+        var hasTime = /\b\d{1,2}:\d{2}\b/.test(src);
+        var hasGuest = !!canonicalName || /\b[A-Z][a-z]+\s+[A-Z][a-z]+\b/.test(src);
+        if (hasTime && (hasGuest || currentRoom)) {
+          pushAction(createCanonicalAction({
+            entityId: entityId,
+            resolutionState: resolutionState,
+            canonicalName: canonicalName,
+            room: currentRoom,
+            rooms: rooms,
+            facetKey: "timed:airport",
+            actionType: NEXT_ACTION_KIND.complete_timed_actions,
+            actionState: ACTION_STATE.open,
+            actionText: "Complete airport / transfer follow-up" +
+              (currentRoom ? " for Room " + currentRoom : "") +
+              " at noted time",
+            evidenceText: src,
+            actionability: actionability,
+            blockedBy: blockedBy,
+            priorityBand: PRIORITY_BAND.P1,
+            priorityScore: 20,
+            priorityReasons: ["timed_airport"],
+            currentStateEligible: true,
+            sourceFactIds: [factId],
+            confidence: 0.55
+          }));
+        } else {
+          pushAction(createCanonicalAction({
+            entityId: entityId,
+            resolutionState: resolutionState || "unresolved",
+            canonicalName: canonicalName,
+            room: currentRoom,
+            rooms: rooms,
+            facetKey: "timed:airport_fragment",
+            actionType: NEXT_ACTION_KIND.operational_follow_up,
+            actionState: ACTION_STATE.unresolved,
+            actionText: "Unresolved airport / transfer fragment — confirm guest, room, and pickup time",
+            evidenceText: src,
+            actionability: ACTIONABILITY.unresolved,
+            priorityBand: PRIORITY_BAND.P2,
+            priorityScore: 36,
+            priorityReasons: ["airport_fragment_unresolved"],
+            currentStateEligible: true,
+            sourceFactIds: [factId],
+            confidence: 0.35
+          }));
+        }
+        return;
+      }
+
+      /* VIP awareness without outstanding prep → information. */
+      if ((objectInfo.type === OPERATIONAL_OBJECT_TYPE.vip || subject === "vip_arrival" || note.isVip) &&
+          !hasAmenityPrepCue(src) && !/\btwin\b/i.test(src)) {
+        pushAction(createCanonicalAction({
+          entityId: entityId,
+          resolutionState: resolutionState,
+          canonicalName: canonicalName,
+          room: currentRoom,
+          rooms: rooms,
+          facetKey: "vip:awareness",
+          actionType: NEXT_ACTION_KIND.none,
+          actionState: ACTION_STATE.information,
+          actionText: (canonicalName ? canonicalName + " — " : "") + "VIP awareness (no outstanding prep action)",
+          evidenceText: src,
+          actionability: ACTIONABILITY.actionable,
+          priorityBand: PRIORITY_BAND.P3,
+          priorityScore: 72,
+          priorityReasons: ["vip_awareness_only"],
+          currentStateEligible: true,
+          sourceFactIds: [factId],
+          confidence: 0.6
+        }));
+        return;
+      }
+
+      /* Unresolved identity with actionable-looking content. */
+      if (resolutionState === "unresolved" && (hasOpenGuestRequestCue(src) || hasAmenityPrepCue(src))) {
+        pushAction(createCanonicalAction({
+          entityId: null,
+          resolutionState: "unresolved",
+          canonicalName: canonicalName,
+          room: currentRoom,
+          rooms: rooms,
+          facetKey: "identity:unresolved",
+          actionType: NEXT_ACTION_KIND.operational_follow_up,
+          actionState: ACTION_STATE.unresolved,
+          actionText: "Unresolved guest identity — retain note for clarification before actioning",
+          evidenceText: src,
+          actionability: ACTIONABILITY.unresolved,
+          priorityBand: PRIORITY_BAND.P2,
+          priorityScore: 40,
+          priorityReasons: ["unresolved_identity"],
+          currentStateEligible: true,
+          sourceFactIds: [factId],
+          confidence: 0.3
+        }));
+      }
+    });
+
+    actions.sort(compareCanonicalActions);
+    notes._canonicalActions = actions;
+    notes._canonicalActionsBuilt = true;
+    return actions;
+  }
+
+  function openCanonicalActions(actions) {
+    return (actions || []).filter(function (a) {
+      return a && a.actionState === ACTION_STATE.open && a.currentStateEligible !== false;
+    });
+  }
+
+  /**
+   * Sprint 5 consistency: replace recommendations only when they CONFLICT with a
+   * canonical OPEN action (wrong room / wrong entity binding). Do not downgrade
+   * richer Duty Manager wording that already agrees with the canonical binding.
+   */
+  function reconcileRecommendationsWithCanonicalActions(candidates, canonicalActions) {
+    var open = openCanonicalActions(canonicalActions);
+    if (!open.length) return candidates || [];
+    var list = (candidates || []).slice();
+
+    function recMentionsRoom(text, room) {
+      if (!room) return false;
+      return new RegExp("\\bRoom(?:s)?\\s+" + room + "\\b", "i").test(String(text || ""));
+    }
+
+    function recOtherRooms(text, room) {
+      var others = [];
+      var re = /\bRoom(?:s)?\s+(\d{1,4})\b/gi;
+      var m;
+      while ((m = re.exec(String(text || "")))) {
+        if (String(m[1]) !== String(room)) others.push(String(m[1]));
+      }
+      return others;
+    }
+
+    function isTwinAction(action) {
+      return /twin/i.test(String((action && action.facetKey) || "") + " " + ((action && action.actionText) || ""));
+    }
+
+    function sameGuestRec(rec, action) {
+      if (!action.canonicalName) return false;
+      return String(rec && rec.text || "").toLowerCase()
+        .indexOf(String(action.canonicalName).toLowerCase()) !== -1;
+    }
+
+    function conflictsWithAction(rec, action) {
+      var text = String(rec && rec.text || "");
+      if (!text || !action) return false;
+      /* Amenity-scoped twin: legacy VIP text binding a different room is a conflict. */
+      if (isTwinAction(action) && action.room) {
+        var twinish = /\btwin\b/i.test(text);
+        if (!twinish && !sameGuestRec(rec, action)) return false;
+        if (!twinish && sameGuestRec(rec, action) && /prepare vip|vip arrival/i.test(text)) {
+          /* Same guest VIP prep that omits scoped twin room / uses another room. */
+          if (recOtherRooms(text, action.room).length) return true;
+          if (!recMentionsRoom(text, action.room)) return true;
+        }
+        if (twinish) {
+          if (recOtherRooms(text, action.room).length) return true;
+          if (!recMentionsRoom(text, action.room)) return true;
+          if (/Verify room allocation before arrival \(Room \d+\)/i.test(text) &&
+              !new RegExp("\\(Room\\s+" + action.room + "\\)", "i").test(text)) {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    function alreadyCoversAction(rec, action) {
+      var text = String(rec && rec.text || "");
+      if (!text) return false;
+      if (isTwinAction(action) && action.room) {
+        return /\btwin\b/i.test(text) && recMentionsRoom(text, action.room) &&
+          !recOtherRooms(text, action.room).length;
+      }
+      if (/guest_request:iron|iron/i.test(action.facetKey || "") && /iron/i.test(text)) {
+        return !action.room || recMentionsRoom(text, action.room);
+      }
+      if (/foam_pillows|pillow/i.test(action.facetKey || "") && /pillow/i.test(text)) {
+        return !action.room || recMentionsRoom(text, action.room);
+      }
+      if (/amenity:prep|arrival_prep/i.test(action.facetKey || "")) {
+        return sameGuestRec(rec, action) ||
+          (action.room && recMentionsRoom(text, action.room) &&
+            /champagne|flower|amenit|fruit|prepare/i.test(text));
+      }
+      return false;
+    }
+
+    function toCanonicalRec(action, department) {
+      var band = action.priorityBand || PRIORITY_BAND.P2;
+      var legacyPriority = band === PRIORITY_BAND.P0
+        ? "urgent"
+        : (band === PRIORITY_BAND.P1 ? "high" : (band === PRIORITY_BAND.P3 ? "low" : "normal"));
+      return {
+        id: action.actionId,
+        text: String(action.actionText || "").replace(/\.+$/, "") + ".",
+        priority: legacyPriority,
+        canonicalPriority: band === PRIORITY_BAND.P0
+          ? CANONICAL_PRIORITY.critical
+          : (band === PRIORITY_BAND.P1 ? CANONICAL_PRIORITY.high : CANONICAL_PRIORITY.normal),
+        department: department ||
+          (/pillow|iron|towel|twin|amenit|fruit|champagne|flower/i.test(action.actionText || "")
+            ? "Housekeeping"
+            : "Reception"),
+        status: "open",
+        sourceFactIds: action.sourceFactIds || [],
+        reasonCodes: (action.priorityReasons || []).concat(["canonical_action_authority"]),
+        decisionTrace: {
+          sourceFactId: (action.sourceFactIds && action.sourceFactIds[0]) || "",
+          sourceFactIds: action.sourceFactIds || [],
+          objectType: action.actionType,
+          score: action.priorityScore,
+          priority: legacyPriority,
+          recommendationKind: action.actionType,
+          nextAction: action.actionType,
+          reasonCodes: action.priorityReasons || [],
+          evidence: { room: action.room, guestName: action.canonicalName },
+          confidence: action.confidence,
+          operationalContext: {
+            priorityBand: action.priorityBand,
+            priorityScore: action.priorityScore,
+            nextAction: action.actionType
+          }
+        }
+      };
+    }
+
+    var kept = [];
+    var coveredActionIds = {};
+    list.forEach(function (rec) {
+      var conflict = null;
+      open.forEach(function (action) {
+        if (!conflict && conflictsWithAction(rec, action)) conflict = action;
+      });
+      if (conflict) {
+        kept.push(toCanonicalRec(conflict, rec.department));
+        coveredActionIds[conflict.actionId] = true;
+        return;
+      }
+      open.forEach(function (action) {
+        if (alreadyCoversAction(rec, action)) coveredActionIds[action.actionId] = true;
+      });
+      kept.push(rec);
+    });
+
+    /* Ensure unresolved OPEN canonical twin/request/amenity actions are present. */
+    open.forEach(function (action) {
+      if (coveredActionIds[action.actionId]) return;
+      var needsEnsure = isTwinAction(action) ||
+        /guest_request:|amenity:prep|arrival_prep/i.test(action.facetKey || "");
+      if (!needsEnsure) return;
+      if (kept.some(function (rec) { return alreadyCoversAction(rec, action); })) return;
+      kept.push(toCanonicalRec(action, null));
+    });
+
+    var seen = {};
+    return kept.filter(function (rec) {
+      if (!rec || !rec.text) return false;
+      var sig = recommendationSignature(rec.text);
+      if (seen[sig]) return false;
+      seen[sig] = true;
+      return true;
+    });
+  }
+
+  function briefingSpecsFromCanonicalActions(actions, maxBlocks) {
+    var open = openCanonicalActions(actions).slice().sort(compareCanonicalActions);
+    var unresolved = (actions || []).filter(function (a) {
+      return a && a.actionState === ACTION_STATE.unresolved;
+    }).sort(compareCanonicalActions);
+    var selected = [];
+    open.forEach(function (a) {
+      if (selected.length >= maxBlocks) return;
+      selected.push(a);
+    });
+    unresolved.forEach(function (a) {
+      if (selected.length >= maxBlocks) return;
+      if (priorityBandRank(a.priorityBand) > priorityBandRank(PRIORITY_BAND.P2)) return;
+      selected.push(a);
+    });
+    return selected.map(function (action) {
+      return {
+        objectId: action.actionId,
+        objectType: action.actionType,
+        actionKind: action.actionType === NEXT_ACTION_KIND.collect_before_departure
+          ? "collect_payment"
+          : (action.actionType === NEXT_ACTION_KIND.prepare_vip
+            ? "prepare_vip"
+            : (action.actionType === NEXT_ACTION_KIND.guest_follow_up
+              ? "guest_follow_up"
+              : (action.actionType === NEXT_ACTION_KIND.follow_up_until_resolved
+                ? "follow_up_maintenance"
+                : (action.actionType === NEXT_ACTION_KIND.complete_timed_actions
+                  ? "complete_timed_actions"
+                  : "guest_follow_up")))),
+        reasonKind: "",
+        reasonCodes: action.priorityReasons || [],
+        factIds: action.sourceFactIds || [],
+        rooms: action.rooms || [],
+        entities: {
+          room: action.room || "",
+          guestName: action.canonicalName || "",
+          amenities: [],
+          requestItem: "",
+          amount: "",
+          sourceText: action.evidenceText || ""
+        },
+        evidenceText: action.evidenceText || "",
+        canonicalActionText: action.actionText,
+        impactScore: action.priorityScore,
+        canonicalPriority: action.priorityBand === PRIORITY_BAND.P0
+          ? CANONICAL_PRIORITY.critical
+          : (action.priorityBand === PRIORITY_BAND.P1
+            ? CANONICAL_PRIORITY.high
+            : CANONICAL_PRIORITY.normal),
+        confidence: action.confidence >= 0.75 ? "high" : (action.confidence >= 0.45 ? "medium" : "low"),
+        priorityBand: action.priorityBand,
+        operationalContext: {
+          priorityBand: action.priorityBand,
+          priorityScore: action.priorityScore,
+          priorityReasons: action.priorityReasons || [],
+          nextAction: action.actionType,
+          hazardClass: "none"
+        },
+        decisionTrace: {
+          sourceFactId: (action.sourceFactIds && action.sourceFactIds[0]) || "",
+          sourceFactIds: action.sourceFactIds || [],
+          objectType: action.actionType,
+          operationalContext: {
+            priorityBand: action.priorityBand,
+            priorityScore: action.priorityScore,
+            priorityReasons: action.priorityReasons || [],
+            nextAction: action.actionType,
+            hazardClass: "none"
+          },
+          score: action.priorityScore,
+          priority: action.priorityBand === PRIORITY_BAND.P0
+            ? "urgent"
+            : (action.priorityBand === PRIORITY_BAND.P1 ? "high" : "normal"),
+          recommendationKind: action.actionType,
+          nextAction: action.actionType,
+          reasonCodes: action.priorityReasons || [],
+          evidence: { room: action.room, guestName: action.canonicalName },
+          confidence: action.confidence
+        }
+      };
+    });
+  }
+
   /**
    * Resolve operational dependencies across analyzed notes.
    * Annotates actionability / blockedBy / operationalDependencies.
@@ -8660,6 +10007,18 @@
 
     function addCandidate(rec, factForGate) {
       if (!rec || !rec.text) return;
+      /* Sprint 5: never recommend invented channel-payment chases without evidence. */
+      if (/outstanding channel payment/i.test(rec.text) &&
+          !hasChannelPaymentEvidence(rec.text + " " + ((factForGate && factForGate.sourceText) || ""))) {
+        return;
+      }
+      /* Sprint 5: never upgrade foam pillows into extra pillows. */
+      if (/extra pillows/i.test(rec.text) && factForGate &&
+          /\bfoam\s+pillows?\b/i.test(String(factForGate.sourceText || ""))) {
+        rec = Object.assign({}, rec, {
+          text: String(rec.text).replace(/extra pillows/ig, "foam pillows")
+        });
+      }
       rec = validateDutyManagerRecommendation(rec, factForGate || null);
       if (!rec || !rec.text) return;
       var normalized = normalizeRecommendation(rec, fallbackDept);
@@ -8678,6 +10037,13 @@
       if (issueSig) seenIssue[issueSig] = true;
       if (familyKey) seenFamily[familyKey] = true;
       candidates.push(normalized);
+    }
+
+    /* Sprint 5: stamp shared canonical actions (briefing/recs share this list). */
+    var canonicalActions = buildCanonicalOperationalActions(analyzed);
+    analyzed._canonicalActions = canonicalActions;
+    if (classified && classified._analyzed) {
+      classified._analyzed._canonicalActions = canonicalActions;
     }
 
     /* Pre-link same room/guest evidence so VIP amenity cancel/DONE siblings are visible.
@@ -8710,13 +10076,62 @@
           global.AiWritingEngine.isPaymentNoCollectState(fact, note)) {
         return;
       }
-
       /* E4.2: context-driven path (DecisionTrace attached inside recommendationFromFact). */
       var fromFact = recommendationFromFact(fact, note, departments, fallbackDept, shiftType, brainContext);
       if (fromFact) {
         addCandidate(fromFact, fact);
       }
       /* Phase 2A / E4.2: do not invent from rewritten display when context forbids. */
+    });
+
+    /* Sprint 5: add OPEN canonical actions not already represented (fidelity fills). */
+    openCanonicalActions(canonicalActions).slice().sort(compareCanonicalActions).forEach(function (action) {
+      if (action.actionability === ACTIONABILITY.blocked) return;
+      var already = candidates.some(function (rec) {
+        var text = String(rec.text || "");
+        var sameRoom = action.room && new RegExp("\\b" + action.room + "\\b").test(text);
+        var sameGuest = action.canonicalName && text.toLowerCase().indexOf(String(action.canonicalName).toLowerCase()) !== -1;
+        var sameKind = rec.decisionTrace && rec.decisionTrace.nextAction === action.actionType;
+        return (sameRoom || sameGuest) && (sameKind || /arrange|prepare|collect|follow up|honour/i.test(text));
+      });
+      if (already) return;
+      var band = action.priorityBand || PRIORITY_BAND.P2;
+      var legacyPriority = band === PRIORITY_BAND.P0
+        ? "urgent"
+        : (band === PRIORITY_BAND.P1 ? "high" : (band === PRIORITY_BAND.P3 ? "low" : "normal"));
+      var dept = /pillow|iron|towel|twin|amenit|fruit|champagne|flower/i.test(action.actionText || "")
+        ? "Housekeeping"
+        : (/payment|collect|folio/i.test(action.actionText || "") ? "Finance" : (fallbackDept || "Reception"));
+      var text = String(action.actionText || "").replace(/\.+$/, "") + ".";
+      addCandidate({
+        id: action.actionId,
+        text: text,
+        priority: legacyPriority,
+        canonicalPriority: band === PRIORITY_BAND.P0
+          ? CANONICAL_PRIORITY.critical
+          : (band === PRIORITY_BAND.P1 ? CANONICAL_PRIORITY.high : CANONICAL_PRIORITY.normal),
+        department: dept,
+        status: "open",
+        sourceFactIds: action.sourceFactIds || [],
+        reasonCodes: action.priorityReasons || [],
+        decisionTrace: {
+          sourceFactId: (action.sourceFactIds && action.sourceFactIds[0]) || "",
+          sourceFactIds: action.sourceFactIds || [],
+          objectType: action.actionType,
+          score: action.priorityScore,
+          priority: legacyPriority,
+          recommendationKind: action.actionType,
+          nextAction: action.actionType,
+          reasonCodes: action.priorityReasons || [],
+          evidence: { room: action.room, guestName: action.canonicalName },
+          confidence: action.confidence,
+          operationalContext: {
+            priorityBand: action.priorityBand,
+            priorityScore: action.priorityScore,
+            nextAction: action.actionType
+          }
+        }
+      }, null);
     });
 
     /*
@@ -8828,6 +10243,9 @@
     if (memoryIndex && memoryIndex.byFactId) {
       enrichRecommendationsWithMemory(candidates, memoryIndex.byFactId);
     }
+
+    /* Sprint 5: canonical OPEN actions win over conflicting legacy reconstructions. */
+    candidates = reconcileRecommendationsWithCanonicalActions(candidates, canonicalActions);
 
     /* Sprint 3 — final quality gate (think / validate / merge / suppress). */
     candidates = applyFinalRecommendationQualityGate(candidates);
@@ -9619,6 +11037,12 @@
     DEPENDENCY_STATE: DEPENDENCY_STATE,
     ACTIONABILITY: ACTIONABILITY,
     noteIsDependencyBlocked: noteIsDependencyBlocked,
+    /* Reasoning Sprint 5 — canonical Night Manager actions */
+    ACTION_STATE: ACTION_STATE,
+    buildCanonicalOperationalActions: buildCanonicalOperationalActions,
+    openCanonicalActions: openCanonicalActions,
+    compareCanonicalActions: compareCanonicalActions,
+    reconcileRecommendationsWithCanonicalActions: reconcileRecommendationsWithCanonicalActions,
     /* Phase 16B foundation surface */
     NEUTRAL_FACT_FIELDS: NEUTRAL_FACT_FIELDS,
     createEmptyNeutralFact: createEmptyNeutralFact,
