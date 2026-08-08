@@ -2460,6 +2460,12 @@
     }
 
     if (fact.subject === "interconnect") {
+      /* Sprint 13 — do not render reserve wording for evidenced impossible configurations. */
+      if (global.ShiftIntelligenceEngine &&
+          typeof global.ShiftIntelligenceEngine.shouldSuppressInterconnectReserve === "function" &&
+          global.ShiftIntelligenceEngine.shouldSuppressInterconnectReserve(src, fact.rooms || [])) {
+        return "";
+      }
       var group = fact.guestName || "Group";
       var icLines = [group + " group arriving tomorrow"];
       if (fact.rooms && fact.rooms.length >= 2) {
@@ -7507,6 +7513,14 @@
       return "Timed departure actions for " + (room ? room + ": " : "") + joinNatural(bits);
     }
     if (kind === "reserve_interconnect") {
+      var icSrc = (spec && (spec.evidenceText || spec.sourceText)) ||
+        (e && e.sourceText) || "";
+      var icRooms = (spec && spec.rooms) || (e && e.rooms) || [];
+      if (global.ShiftIntelligenceEngine &&
+          typeof global.ShiftIntelligenceEngine.shouldSuppressInterconnectReserve === "function" &&
+          global.ShiftIntelligenceEngine.shouldSuppressInterconnectReserve(icSrc, icRooms)) {
+        return "";
+      }
       if (e.room && spec.rooms && spec.rooms.length >= 2) {
         return "Reserve interconnecting Rooms " + spec.rooms[0] + " & " + spec.rooms[1] +
           (e.guestName ? " for " + e.guestName : "");

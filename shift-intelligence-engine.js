@@ -2298,6 +2298,11 @@
       return NEXT_ACTION_KIND.complete_timed_actions;
     }
     if (objectInfo.type === OPERATIONAL_OBJECT_TYPE.interconnect || subject === "interconnect") {
+      /* Sprint 13 — never recommend reserving an evidenced impossible interconnect. */
+      var icRooms = ((fact && fact.rooms) || (note && note.rooms) || []).slice();
+      if (shouldSuppressInterconnectReserve(src, icRooms)) {
+        return NEXT_ACTION_KIND.none;
+      }
       return NEXT_ACTION_KIND.reserve_interconnect;
     }
     if (
@@ -6859,6 +6864,7 @@
     }
 
     if (subject === "interconnect") {
+      if (shouldSuppressInterconnectReserve(src, (fact && fact.rooms) || [])) return null;
       var icRooms = fact.rooms && fact.rooms.length >= 2
         ? "Rooms " + fact.rooms[0] + " & " + fact.rooms[1]
         : (roomRef || "rooms");
@@ -7055,8 +7061,10 @@
     }
     if (action === NEXT_ACTION_KIND.reserve_interconnect) {
       var icGuest = (fact && fact.guestName) || "";
-      var icRooms = fact && fact.rooms && fact.rooms.length >= 2
-        ? "Rooms " + fact.rooms[0] + " & " + fact.rooms[1]
+      var icRoomList = (fact && fact.rooms) || [];
+      if (shouldSuppressInterconnectReserve(src, icRoomList)) return null;
+      var icRooms = icRoomList.length >= 2
+        ? "Rooms " + icRoomList[0] + " & " + icRoomList[1]
         : "rooms";
       return {
         text: "Reserve interconnecting " + icRooms + " for tomorrow's " +
@@ -9637,6 +9645,357 @@
   }
 
   /**
+   * Sprint 13 — alphabetic room-prefix family (M124→M, CX07→CX, TR-2→TR, LG08→LG).
+   * Generic; not hotel-named. Bare numerics share family NUM.
+   */
+  function roomPrefixFamily(room) {
+    var r = normalizeRoomNumber(room) || String(room || "").toUpperCase().trim();
+    if (!r) return "";
+    var m = r.match(/^([A-Z]+)/);
+    if (m) return m[1];
+    if (/^\d/.test(r)) return "NUM";
+    return "";
+  }
+
+  function hasNonBedroomInventoryEvidence(blob) {
+    var b = normalizeStateResolutionText(blob || "");
+    if (!b) return false;
+    if (/\btreatment\s+room\b/.test(b)) return true;
+    if (/\bnot\s+a\s+bedroom\b/.test(b)) return true;
+    if (/\bcannot\s+be\s+a\s+hotel\s+room\b/.test(b)) return true;
+    if (/\baren'?t\s+guest\s+inventory\b/.test(b)) return true;
+    if (/\bspa\s+treatment\b/.test(b) && /\b(?:room|tr[- ]?\d)\b/.test(b)) return true;
+    if (/\bdo\s+not\s+check\s+(?:anyone|guests?)\s+into\s+a\s+treatment\b/.test(b)) return true;
+    if (/\bnot\s+(?:sellable\s+as\s+)?(?:a\s+)?guest\s+(?:bed)?room\b/.test(b)) return true;
+    return false;
+  }
+
+  function hasImpossibleInterconnectEvidence(blob) {
+    var b = normalizeStateResolutionText(blob || "");
+    if (!b) return false;
+    if (/\bphysically\s+impossible\b/.test(b)) return true;
+    if (/\b(?:these\s+two\s+rooms|rooms)\s+do\s+not\s+interconnect\b/.test(b)) return true;
+    if (/\bdo\s+not\s+interconnect\b/.test(b)) return true;
+    if (/\bmain\s*\+\s*annex\b/.test(b)) return true;
+    if (/\bacross\s+buildings?\b/.test(b) && /\binterconnect/.test(b)) return true;
+    if (/\binterconnects?\s+exist\b/.test(b) && /\bmain\s+only\b/.test(b)) return true;
+    if (/\binvalid\b/.test(b) && /\binterconnect/.test(b)) return true;
+    if (/\bnot\s+(?:a\s+)?(?:valid\s+|solved\s+)?interconnect(?:ing)?\s+(?:product|pair|configuration)\b/.test(b)) {
+      return true;
+    }
+    if (/\bconnects?\s+by\s+corridor\b/.test(b) && /\binterconnect/.test(b)) return true;
+    if (/\bdo\s+not\s+(?:treat|tell|honour).{0,60}\binterconnect/.test(b)) return true;
+    return false;
+  }
+
+  /**
+   * Different prefix families (M vs CX, etc.). Same-family pairs (M152+M153) are not
+   * cross-building by this heuristic alone.
+   */
+  function roomsCrossPrefixFamily(a, b) {
+    var fa = roomPrefixFamily(a);
+    var fb = roomPrefixFamily(b);
+    if (!fa || !fb) return false;
+    if (fa === fb) return false;
+    /* MA* and M* are both Main-house M-stem — not a cross-building pair by prefix alone. */
+    if ((fa === "M" && fb === "MA") || (fa === "MA" && fb === "M")) return false;
+    return true;
+  }
+
+  /* Last invalid-product index from canonical build — suppress soft interconnect reserve. */
+  var _lastInvalidProductIndex = null;
+
+  function shouldSuppressInterconnectReserve(src, rooms) {
+    if (_lastInvalidProductIndex &&
+        (_lastInvalidProductIndex.invalidInterconnects || []).length) {
+      return true;
+    }
+    var blob = normalizeStateResolutionText(src || "");
+    var list = (rooms || []).map(function (r) {
+      return normalizeRoomNumber(r) || String(r || "").toUpperCase();
+    }).filter(Boolean);
+    if (hasImpossibleInterconnectEvidence(blob)) return true;
+    if (/\bstayover\b/.test(blob) && /\binterconnect/.test(blob)) return true;
+    if (list.length >= 2 && roomsCrossPrefixFamily(list[0], list[1]) &&
+        (/\binterconnect/.test(blob) || hasImpossibleInterconnectEvidence(blob))) {
+      /* Cross-prefix interconnect claim with impossibility OR explicit Main+Annex. */
+      if (hasImpossibleInterconnectEvidence(blob) || /\bmain\s*\+\s*annex\b/.test(blob) ||
+          (/\bannex\b/.test(blob) && /\bmain\b/.test(blob) && /\binterconnect/.test(blob))) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Sprint 13 — invalid inventory / impossible product configuration.
+   * Fail closed: clarify/reallocate only; never invent a replacement room/pair.
+   */
+  function buildInvalidProductIndex(notes) {
+    var nonBedroomRooms = {};
+    var invalidBedroomAllocs = []; /* { room, name, evidence, factId, entityId } */
+    var invalidInterconnects = []; /* { rooms, name, evidence, factId, entityId } */
+    var roomCorpus = {};
+    var tokClass =
+      "lg\\d{1,4}[a-z]?|[a-z]{1,3}-\\d{1,2}[a-z]?|[a-z]{2,3}\\d{1,4}[a-z]?|[a-np-z]\\d{1,4}[a-z]?|\\d{1,4}[a-z]?";
+
+    function addCorpus(room, text) {
+      if (!room || !text) return;
+      if (!roomCorpus[room]) roomCorpus[room] = [];
+      if (roomCorpus[room].indexOf(text) === -1) roomCorpus[room].push(text);
+    }
+
+    function isBogusGuestToken(name) {
+      return /^(allocation|system|interconnect|main|annex|family|booking|problem|room|house|spa|hk|dm|reception|reservations?)$/i.test(
+        String(name || "").trim()
+      );
+    }
+
+    function extractGuestLoose(text) {
+      var norm = String(text || "");
+      var couple = norm.match(/\bMr\s*&\s*Mrs\s+([A-Z][A-Za-z.'\-]+)\b/i);
+      if (couple) return ("Mr & Mrs " + couple[1]).replace(/\s+/g, " ").trim();
+      var m =
+        norm.match(/\b((?:Mrs?|Ms|Miss|Dr)\.??\s+[A-Z][A-Za-z.'\-]+(?:\s+[A-Z][A-Za-z.'\-]+)?)\b/) ||
+        norm.match(/\b([A-Z][a-z]+)\b(?=[^.\n]{0,50}\b(?:due|tonight|arriv|into|need))/);
+      if (!m) return "";
+      var g = String(m[1]).replace(/\s+/g, " ").trim();
+      if (isBogusGuestToken(g)) return "";
+      return g;
+    }
+
+    (notes || []).forEach(function (note, index) {
+      if (!note) return;
+      var src = noteEvidenceText(note, note.fact);
+      if (!src) return;
+      var norm = normalizeStateResolutionText(src);
+      var factId = note._neutralFactId || (note.fact && note.fact.id) || ("note-" + index);
+      var entityId = note.entityId || (note.fact && note.fact.entityId) || null;
+      var rooms = ((note.fact && note.fact.rooms) || note.rooms || []).map(function (r) {
+        return normalizeAllocationRoomToken(r);
+      }).filter(Boolean);
+      rooms.forEach(function (r) { addCorpus(r, src); });
+
+      if (hasNonBedroomInventoryEvidence(norm)) {
+        rooms.forEach(function (r) {
+          if (/^TR-/i.test(r) || /\btreatment\b/.test(norm)) {
+            nonBedroomRooms[r] = true;
+            addCorpus(r, src);
+          }
+        });
+        var trHit = norm.match(/\b(TR-\d{1,2}[A-Z]?)\b/i);
+        if (trHit) {
+          var tr = normalizeAllocationRoomToken(trHit[1]);
+          if (tr) {
+            nonBedroomRooms[tr] = true;
+            addCorpus(tr, src);
+          }
+        }
+      }
+
+      /* put arrival X into ROOM / into "TR-2" on ... allocation */
+      var putRe = new RegExp(
+        "\\b(?:put|placed?)\\s+(?:arrival\\s+)?([^.\\n]{0,80}?)\\binto\\s+[\"'“”]?(" +
+          tokClass +
+          ")[\"'“”]?",
+        "gi"
+      );
+      var pm;
+      while ((pm = putRe.exec(norm)) !== null) {
+        var proom = normalizeAllocationRoomToken(pm[2]);
+        if (!proom) continue;
+        addCorpus(proom, src);
+        var pguest =
+          note.canonicalName ||
+          (note.fact && (note.fact.canonicalName || note.fact.guestName)) ||
+          extractGuestLoose(pm[1] + " " + src);
+        invalidBedroomAllocs.push({
+          room: proom,
+          name: pguest || "",
+          evidence: src,
+          factId: factId,
+          entityId: entityId
+        });
+      }
+
+      /* Allocation line shows A + B (interconnect mess) */
+      if (/\binterconnect/.test(norm) || /\ballocation\s+line\b/.test(norm) ||
+          /\bsystem\s+mess\b/.test(norm)) {
+        var pairRe = new RegExp(
+          "\\b(" + tokClass + ")\\s*[+\\/&]\\s*(" + tokClass + ")\\b",
+          "gi"
+        );
+        var pr;
+        while ((pr = pairRe.exec(norm)) !== null) {
+          var ra = normalizeAllocationRoomToken(pr[1]);
+          var rb = normalizeAllocationRoomToken(pr[2]);
+          if (!ra || !rb || ra === rb) continue;
+          addCorpus(ra, src);
+          addCorpus(rb, src);
+          if (roomsCrossPrefixFamily(ra, rb) &&
+              (hasImpossibleInterconnectEvidence(norm) ||
+                /\bmain\s*\+\s*annex\b/.test(norm) ||
+                (/\bannex\b/.test(norm) && /\bmain\b/.test(norm)))) {
+            var rawName =
+              note.canonicalName ||
+              (note.fact && (note.fact.canonicalName || note.fact.guestName)) ||
+              "";
+            var icGuest = rawName && !isBogusGuestToken(rawName) ? rawName : extractGuestLoose(src);
+            /* Prefer family needing interconnect over stayover names (Pike). */
+            if (/\bstayover\b/.test(norm) && /\bpike\b/i.test(icGuest || "")) {
+              icGuest = extractGuestLoose(src.replace(/\bMr\s+Pike\b/gi, " "));
+            }
+            if (!icGuest || /\bpike\b/i.test(icGuest) || isBogusGuestToken(icGuest)) {
+              icGuest = "";
+            }
+            invalidInterconnects.push({
+              rooms: [ra, rb],
+              name: icGuest || "",
+              evidence: src,
+              factId: factId,
+              entityId: entityId
+            });
+          }
+        }
+      }
+    });
+
+    /* Promote put-into rooms that have non-bedroom evidence in any corpus. */
+    invalidBedroomAllocs = invalidBedroomAllocs.filter(function (row) {
+      if (!row || !row.room) return false;
+      var corpus = (roomCorpus[row.room] || []).concat([row.evidence || ""]).join(" | ");
+      return !!nonBedroomRooms[row.room] || hasNonBedroomInventoryEvidence(corpus);
+    });
+
+    /* Also: guest due/tonight named with TR-* when TR is non-bedroom inventory. */
+    Object.keys(nonBedroomRooms).forEach(function (room) {
+      var already = invalidBedroomAllocs.some(function (r) { return r.room === room; });
+      if (already) return;
+      var corpus = (roomCorpus[room] || []).join(" | ");
+      var blob = normalizeStateResolutionText(corpus);
+      if (!/\b(?:arriv|due|tonight|evening|booking|allocation|into)\b/.test(blob)) return;
+      var guest = extractGuestLoose(corpus);
+      invalidBedroomAllocs.push({
+        room: room,
+        name: guest || "",
+        evidence: corpus,
+        factId: "",
+        entityId: null
+      });
+    });
+
+    /* Bind interconnect need guest from other notes when pair line lacks a name. */
+    var interconnectGuestHint = "";
+    (notes || []).forEach(function (note) {
+      if (!note || interconnectGuestHint) return;
+      var t = noteEvidenceText(note, note.fact);
+      if (!t || !/\binterconnect/.test(normalizeStateResolutionText(t))) return;
+      if (/\bstayover\b/.test(normalizeStateResolutionText(t))) return;
+      var g =
+        note.canonicalName ||
+        (note.fact && (note.fact.canonicalName || note.fact.guestName)) ||
+        "";
+      if (!g) {
+        var fam = t.match(/\bMr\s*&\s*Mrs\s+([A-Z][A-Za-z.'\-]+)\b/i) ||
+          t.match(/\b((?:Mrs?|Ms)\.??\s+[A-Z][A-Za-z.'\-]+)\b/);
+        if (fam) {
+          g = /Mr\s*&\s*Mrs/i.test(fam[0])
+            ? ("Mr & Mrs " + fam[1])
+            : String(fam[1] || fam[0]).replace(/\s+/g, " ").trim();
+        }
+      }
+      if (g && !/\bpike\b/i.test(g)) interconnectGuestHint = g;
+    });
+    invalidInterconnects.forEach(function (row) {
+      if (!row) return;
+      if (!row.name || /\bpike\b/i.test(row.name) || isBogusGuestToken(row.name)) {
+        row.name = interconnectGuestHint || "";
+      }
+    });
+
+    return {
+      nonBedroomRooms: nonBedroomRooms,
+      invalidBedroomAllocs: invalidBedroomAllocs,
+      invalidInterconnects: invalidInterconnects,
+      roomCorpus: roomCorpus
+    };
+  }
+
+  function pushInvalidProductActions(pushAction, index) {
+    if (!index) return;
+    var seen = {};
+
+    (index.invalidBedroomAllocs || []).forEach(function (row) {
+      if (!row || !row.room || seen["bed|" + row.room]) return;
+      seen["bed|" + row.room] = true;
+      var guest = row.name || "";
+      pushAction(createCanonicalAction({
+        entityId: row.entityId || null,
+        resolutionState: "unresolved",
+        canonicalName: guest,
+        room: row.room,
+        rooms: [row.room],
+        facetKey: "allocation:invalid_inventory",
+        actionType: NEXT_ACTION_KIND.operational_follow_up,
+        actionState: ACTION_STATE.open,
+        actionText: "Clarify / reallocate arrival" +
+          (guest ? " for " + guest : "") +
+          " — Room " + row.room +
+          " is not sellable as a guest bedroom (do not invent a replacement room)",
+        evidenceText: row.evidence || (index.roomCorpus[row.room] || []).join(" | "),
+        actionability: ACTIONABILITY.actionable,
+        priorityBand: PRIORITY_BAND.P1,
+        priorityScore: 19,
+        priorityReasons: [
+          "allocation_invalid_inventory",
+          "sprint13_invalid_product",
+          "sprint12_room_token_identity"
+        ],
+        currentStateEligible: true,
+        sourceFactIds: row.factId ? [row.factId] : [],
+        confidence: 0.76
+      }));
+    });
+
+    (index.invalidInterconnects || []).forEach(function (row) {
+      if (!row || !row.rooms || row.rooms.length < 2) return;
+      var key = "ic|" + row.rooms.slice().sort().join("+");
+      if (seen[key]) return;
+      seen[key] = true;
+      var guest = row.name || "";
+      /* Never present Pike / stayover guest as the interconnect solve identity. */
+      if (guest && /\bpike\b/i.test(guest)) guest = "";
+      var pair = "Rooms " + row.rooms[0] + " & " + row.rooms[1];
+      pushAction(createCanonicalAction({
+        entityId: row.entityId || null,
+        resolutionState: "unresolved",
+        canonicalName: guest,
+        room: row.rooms[0],
+        rooms: row.rooms.slice(),
+        facetKey: "allocation:invalid_configuration",
+        actionType: NEXT_ACTION_KIND.operational_follow_up,
+        actionState: ACTION_STATE.open,
+        actionText: "Clarify / reallocate" +
+          (guest ? " for " + guest : " arrival") +
+          " — " + pair +
+          " are not a valid interconnect configuration (do not invent a replacement pair)",
+        evidenceText: row.evidence || "",
+        actionability: ACTIONABILITY.actionable,
+        priorityBand: PRIORITY_BAND.P1,
+        priorityScore: 19,
+        priorityReasons: [
+          "allocation_invalid_configuration",
+          "sprint13_invalid_product",
+          "sprint12_room_token_identity"
+        ],
+        currentStateEligible: true,
+        sourceFactIds: row.factId ? [row.factId] : [],
+        confidence: 0.75
+      }));
+    });
+  }
+
+  /**
    * Build shared canonical Night Manager actions from post-Sprint-1–4 notes.
    * Sprint 6: options may include handoverDate / shift / createdAt for temporal eligibility.
    * Does not force every fact into an action.
@@ -9654,6 +10013,9 @@
     var anchor = buildOperationalDayAnchor(options || notes._temporalAnchor || {});
     notes._temporalAnchor = anchor;
     var blockedAllocIndex = buildBlockedAllocationIndex(notes);
+    var invalidProductIndex = buildInvalidProductIndex(notes);
+    _lastInvalidProductIndex = invalidProductIndex;
+    notes._invalidProductIndex = invalidProductIndex;
 
     /*
      * Sprint 10 — same-room maintenance corpus so MONITOR / tomorrow inspect /
@@ -9690,6 +10052,8 @@
       actions.push(action);
     }
 
+    /* Sprint 13 — invalid inventory / impossible product (before generic note noise). */
+    pushInvalidProductActions(pushAction, invalidProductIndex);
     /* Sprint 11 — emit blocked-assignment / contradiction OPEN before note noise. */
     pushBlockedAllocationActions(pushAction, blockedAllocIndex, notes);
 
@@ -13534,6 +13898,9 @@
     ensureNeutralFact: ensureNeutralFact,
     normalizePriority: normalizePriority,
     normalizeRoomNumber: normalizeRoomNumber,
+    shouldSuppressInterconnectReserve: shouldSuppressInterconnectReserve,
+    hasImpossibleInterconnectEvidence: hasImpossibleInterconnectEvidence,
+    hasNonBedroomInventoryEvidence: hasNonBedroomInventoryEvidence,
     toRecommendationPriority: toRecommendationPriority,
     priorityRankValue: priorityRankValue,
     isResolvedStatus: isResolvedStatus,
