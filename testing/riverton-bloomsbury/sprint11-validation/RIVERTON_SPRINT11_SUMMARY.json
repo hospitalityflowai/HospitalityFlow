@@ -1,0 +1,590 @@
+{
+  "label": "RIVERTON SPRINT 11 VALIDATION OUTPUT",
+  "gitCommit": "d68ff55c06f885ecccace354204d6d2fc7ab9662",
+  "engineVersion": 1,
+  "contractVersion": "E1",
+  "ranAt": "2026-08-08T13:12:23.512Z",
+  "hotel": "The Riverton Bloomsbury (fictional)",
+  "scenarios": [
+    {
+      "scenarioId": "001",
+      "title": "Quiet Monday Continuity",
+      "shift": "AM",
+      "load": "Quiet",
+      "difficulty": "Basic",
+      "capability": "Quiet-shift recognition; avoid fabricating work",
+      "sourceSha256": "05308dcadecadb829cfdf6cdb126918745708850a6cb71ce454bfca871093545",
+      "recommendationCount": 2,
+      "noteCount": 19,
+      "dependencyEdges": 0,
+      "canonicalActionCount": 5,
+      "actionStateCounts": {
+        "open": 0,
+        "monitor": 0,
+        "information": 2,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 3,
+        "other": 0
+      },
+      "openPaymentCollectCount": 0,
+      "briefingChars": 61,
+      "quietShift": null,
+      "files": [
+        "scenario-001-sprint11.json",
+        "scenario-001-sprint11.md"
+      ]
+    },
+    {
+      "scenarioId": "002",
+      "title": "Snapshot & Stayovers Only",
+      "shift": "AM",
+      "load": "Quiet",
+      "difficulty": "Basic",
+      "capability": "Snapshot vs actionable work; future arrival not tonight",
+      "sourceSha256": "d128aa0c67aa389687d56cf729ae47101f65f3c1c00827d1667eb6bde3e480d4",
+      "recommendationCount": 0,
+      "noteCount": 40,
+      "dependencyEdges": 0,
+      "canonicalActionCount": 3,
+      "actionStateCounts": {
+        "open": 0,
+        "monitor": 0,
+        "information": 0,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 3,
+        "other": 0
+      },
+      "openPaymentCollectCount": 0,
+      "briefingChars": 72,
+      "quietShift": null,
+      "files": [
+        "scenario-002-sprint11.json",
+        "scenario-002-sprint11.md"
+      ]
+    },
+    {
+      "scenarioId": "003",
+      "title": "Twin Setup — Right Room Only",
+      "shift": "PM",
+      "load": "Normal",
+      "difficulty": "Moderate",
+      "capability": "Room-scoped amenity / setup binding",
+      "sourceSha256": "9acb754d3a3c4dccfccdda7e969fad93a26abe64d5e404eec415faefcff2a6fe",
+      "recommendationCount": 1,
+      "noteCount": 15,
+      "dependencyEdges": 0,
+      "canonicalActionCount": 4,
+      "actionStateCounts": {
+        "open": 1,
+        "monitor": 0,
+        "information": 1,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 2,
+        "other": 0
+      },
+      "openPaymentCollectCount": 0,
+      "briefingChars": 38,
+      "quietShift": null,
+      "files": [
+        "scenario-003-sprint11.json",
+        "scenario-003-sprint11.md"
+      ]
+    },
+    {
+      "scenarioId": "004",
+      "title": "Accessible Inventory Is Finite",
+      "shift": "PM",
+      "load": "Normal",
+      "difficulty": "Moderate",
+      "capability": "Scarce inventory / allocation advice without inventing availability",
+      "sourceSha256": "b5d4d84e976ced1dc6a6cd5cbf412997d34a34456c7ab4cd57cb760accba3723",
+      "recommendationCount": 2,
+      "noteCount": 20,
+      "dependencyEdges": 0,
+      "canonicalActionCount": 3,
+      "actionStateCounts": {
+        "open": 1,
+        "monitor": 1,
+        "information": 1,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 0,
+        "other": 0
+      },
+      "openPaymentCollectCount": 0,
+      "briefingChars": 313,
+      "quietShift": null,
+      "files": [
+        "scenario-004-sprint11.json",
+        "scenario-004-sprint11.md"
+      ]
+    },
+    {
+      "scenarioId": "005",
+      "title": "Interconnecting Family Block",
+      "shift": "PM",
+      "load": "Busy",
+      "difficulty": "Moderate",
+      "capability": "Multi-room binding; interconnect + amenity coexistence",
+      "sourceSha256": "6496e07e487e796745a0ae2495df26694a442d2b82ab8e7f33e46b2ea937d9b3",
+      "recommendationCount": 1,
+      "noteCount": 22,
+      "dependencyEdges": 0,
+      "canonicalActionCount": 3,
+      "actionStateCounts": {
+        "open": 0,
+        "monitor": 0,
+        "information": 1,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 2,
+        "other": 0
+      },
+      "openPaymentCollectCount": 0,
+      "briefingChars": 94,
+      "quietShift": null,
+      "files": [
+        "scenario-005-sprint11.json",
+        "scenario-005-sprint11.md"
+      ]
+    },
+    {
+      "scenarioId": "006",
+      "title": "OOO Corridor — Guest Impact vs Housekeeping",
+      "shift": "AM",
+      "load": "Busy",
+      "difficulty": "Hard",
+      "capability": "Current room state; sequencing without false “ready now”",
+      "sourceSha256": "83dc0407a0b3783781615e00adc231a5bbea699308e7d29a07dafa3b3cbe0e46",
+      "recommendationCount": 2,
+      "noteCount": 18,
+      "dependencyEdges": 0,
+      "canonicalActionCount": 3,
+      "actionStateCounts": {
+        "open": 1,
+        "monitor": 1,
+        "information": 0,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 1,
+        "other": 0
+      },
+      "openPaymentCollectCount": 0,
+      "briefingChars": 224,
+      "quietShift": null,
+      "files": [
+        "scenario-006-sprint11.json",
+        "scenario-006-sprint11.md"
+      ]
+    },
+    {
+      "scenarioId": "007",
+      "title": "On-Call Night Engineering",
+      "shift": "Night",
+      "load": "Normal",
+      "difficulty": "Moderate",
+      "capability": "Temporal: tonight continuity vs tomorrow inspect (MONITOR vs OPEN chase)",
+      "sourceSha256": "d7902a0e11e5bf760f354debcbfca8044d1ba4c675c806973ea4a98cc253a9a8",
+      "recommendationCount": 1,
+      "noteCount": 13,
+      "dependencyEdges": 0,
+      "canonicalActionCount": 4,
+      "actionStateCounts": {
+        "open": 0,
+        "monitor": 1,
+        "information": 3,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 0,
+        "other": 0
+      },
+      "openPaymentCollectCount": 0,
+      "briefingChars": 259,
+      "quietShift": null,
+      "files": [
+        "scenario-007-sprint11.json",
+        "scenario-007-sprint11.md"
+      ]
+    },
+    {
+      "scenarioId": "008",
+      "title": "Meeting Room Turnaround + Arrivals Peak",
+      "shift": "PM",
+      "load": "Very busy",
+      "difficulty": "Hard",
+      "capability": "Cross-department priority; events vs rooms competition",
+      "sourceSha256": "a55c4849aaaf964958a8eab9537d0c7f5175ae7cc9f57ba6430ae537764c726e",
+      "recommendationCount": 2,
+      "noteCount": 18,
+      "dependencyEdges": 0,
+      "canonicalActionCount": 2,
+      "actionStateCounts": {
+        "open": 1,
+        "monitor": 0,
+        "information": 1,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 0,
+        "other": 0
+      },
+      "openPaymentCollectCount": 0,
+      "briefingChars": 98,
+      "quietShift": null,
+      "files": [
+        "scenario-008-sprint11.json",
+        "scenario-008-sprint11.md"
+      ]
+    },
+    {
+      "scenarioId": "009",
+      "title": "Parlour Afternoon Tea & Room Service Cutoff",
+      "shift": "PM",
+      "load": "Normal",
+      "difficulty": "Moderate",
+      "capability": "F&B operational commitments; cutoff fail-closed",
+      "sourceSha256": "88814a42bdd3be03b8e8b36411eef0de75c20024e51a80251e1bdf57253bd8cf",
+      "recommendationCount": 1,
+      "noteCount": 11,
+      "dependencyEdges": 0,
+      "canonicalActionCount": 2,
+      "actionStateCounts": {
+        "open": 1,
+        "monitor": 0,
+        "information": 1,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 0,
+        "other": 0
+      },
+      "openPaymentCollectCount": 0,
+      "briefingChars": 60,
+      "quietShift": null,
+      "files": [
+        "scenario-009-sprint11.json",
+        "scenario-009-sprint11.md"
+      ]
+    },
+    {
+      "scenarioId": "010",
+      "title": "Airport Transfer Cluster — Contacts Only",
+      "shift": "Night",
+      "load": "Busy",
+      "difficulty": "Hard",
+      "capability": "Timed transport clustering; contact binding without inventing room",
+      "sourceSha256": "3654c2f4e7a4616bd04ac6a06100c6f6b0f91d80509cf699bfb71d7e1cf16d90",
+      "recommendationCount": 2,
+      "noteCount": 18,
+      "dependencyEdges": 0,
+      "canonicalActionCount": 2,
+      "actionStateCounts": {
+        "open": 1,
+        "monitor": 0,
+        "information": 0,
+        "unresolved": 1,
+        "blocked": 0,
+        "resolved": 0,
+        "other": 0
+      },
+      "openPaymentCollectCount": 0,
+      "briefingChars": 220,
+      "quietShift": null,
+      "files": [
+        "scenario-010-sprint11.json",
+        "scenario-010-sprint11.md"
+      ]
+    },
+    {
+      "scenarioId": "011",
+      "title": "Corporate Block vs Leisure VIP Same Surname",
+      "shift": "PM",
+      "load": "Busy",
+      "difficulty": "Hard",
+      "capability": "Entity separation; amenity non-merge",
+      "sourceSha256": "59d9b88d60ddc8d83e19c4a394878eb595e65e39d3c47fa484824c5b0f421eb4",
+      "recommendationCount": 3,
+      "noteCount": 20,
+      "dependencyEdges": 0,
+      "canonicalActionCount": 8,
+      "actionStateCounts": {
+        "open": 2,
+        "monitor": 0,
+        "information": 3,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 3,
+        "other": 0
+      },
+      "openPaymentCollectCount": 0,
+      "briefingChars": 160,
+      "quietShift": null,
+      "files": [
+        "scenario-011-sprint11.json",
+        "scenario-011-sprint11.md"
+      ]
+    },
+    {
+      "scenarioId": "012",
+      "title": "Preferred Guest Card Language Trap",
+      "shift": "PM",
+      "load": "Normal",
+      "difficulty": "Moderate",
+      "capability": "Source fidelity; payment vs inventory language; amenity fail-closed",
+      "sourceSha256": "16b00f5657ca2e00dda4644b85f37f160fb911281f78ae0f1387e06f2a0c5b4f",
+      "recommendationCount": 0,
+      "noteCount": 11,
+      "dependencyEdges": 0,
+      "canonicalActionCount": 5,
+      "actionStateCounts": {
+        "open": 0,
+        "monitor": 0,
+        "information": 3,
+        "unresolved": 1,
+        "blocked": 0,
+        "resolved": 1,
+        "other": 0
+      },
+      "openPaymentCollectCount": 0,
+      "briefingChars": 72,
+      "quietShift": null,
+      "files": [
+        "scenario-012-sprint11.json",
+        "scenario-012-sprint11.md"
+      ]
+    },
+    {
+      "scenarioId": "013",
+      "title": "Anniversary Package Then Cancellation",
+      "shift": "AM",
+      "load": "Normal",
+      "difficulty": "Moderate",
+      "capability": "Supersession; remaining active amenities only",
+      "sourceSha256": "32cabb0bee3c745e97b00e59b449284e3a71d17983fcfb5836e659aa136f216c",
+      "recommendationCount": 3,
+      "noteCount": 14,
+      "dependencyEdges": 0,
+      "canonicalActionCount": 4,
+      "actionStateCounts": {
+        "open": 3,
+        "monitor": 0,
+        "information": 1,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 0,
+        "other": 0
+      },
+      "openPaymentCollectCount": 0,
+      "briefingChars": 101,
+      "quietShift": null,
+      "files": [
+        "scenario-013-sprint11.json",
+        "scenario-013-sprint11.md"
+      ]
+    },
+    {
+      "scenarioId": "014",
+      "title": "Tokenisation Near Departure vs Far Departure",
+      "shift": "Night",
+      "load": "Busy",
+      "difficulty": "Hard",
+      "capability": "Temporal payment eligibility; MONITOR vs OPEN; no false collect",
+      "sourceSha256": "988e4f92071bbc1e25b506d716ddd4e391178470b21b10ba85500de084a2e548",
+      "recommendationCount": 0,
+      "noteCount": 16,
+      "dependencyEdges": 0,
+      "canonicalActionCount": 5,
+      "actionStateCounts": {
+        "open": 0,
+        "monitor": 1,
+        "information": 2,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 2,
+        "other": 0
+      },
+      "openPaymentCollectCount": 0,
+      "briefingChars": 72,
+      "quietShift": null,
+      "files": [
+        "scenario-014-sprint11.json",
+        "scenario-014-sprint11.md"
+      ]
+    },
+    {
+      "scenarioId": "015",
+      "title": "POA Is Not Collect — Unless Evidence Says So",
+      "shift": "AM",
+      "load": "Normal",
+      "difficulty": "Moderate",
+      "capability": "Payment-state discrimination",
+      "sourceSha256": "f5367e9ec0c86dc68eeaf41320357acc6c71f0f14adb147a9a5bba4659ebde34",
+      "recommendationCount": 0,
+      "noteCount": 8,
+      "dependencyEdges": 0,
+      "canonicalActionCount": 5,
+      "actionStateCounts": {
+        "open": 1,
+        "monitor": 0,
+        "information": 2,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 2,
+        "other": 0
+      },
+      "openPaymentCollectCount": 1,
+      "briefingChars": 72,
+      "quietShift": null,
+      "files": [
+        "scenario-015-sprint11.json",
+        "scenario-015-sprint11.md"
+      ]
+    },
+    {
+      "scenarioId": "016",
+      "title": "Late Checkout After Midnight Crossing",
+      "shift": "Night",
+      "load": "Busy",
+      "difficulty": "Hard",
+      "capability": "Ambiguous operational day → UNRESOLVED / fail-closed",
+      "sourceSha256": "fc63e763a62f0e7f7e7a4acafa773a588a712c45aab0db466c7612889374c6d6",
+      "recommendationCount": 2,
+      "noteCount": 13,
+      "dependencyEdges": 0,
+      "canonicalActionCount": 2,
+      "actionStateCounts": {
+        "open": 1,
+        "monitor": 0,
+        "information": 0,
+        "unresolved": 1,
+        "blocked": 0,
+        "resolved": 0,
+        "other": 0
+      },
+      "openPaymentCollectCount": 0,
+      "briefingChars": 134,
+      "quietShift": null,
+      "files": [
+        "scenario-016-sprint11.json",
+        "scenario-016-sprint11.md"
+      ]
+    },
+    {
+      "scenarioId": "017",
+      "title": "Arrivals Section Labels Departing Guests",
+      "shift": "PM",
+      "load": "Busy",
+      "difficulty": "Hard",
+      "capability": "Section label vs in-line truth; near vs future luggage split",
+      "sourceSha256": "137be30e77d2a232d5086777a3bae79cdfc40af68061e8bab7db36d35912a587",
+      "recommendationCount": 4,
+      "noteCount": 15,
+      "dependencyEdges": 0,
+      "canonicalActionCount": 6,
+      "actionStateCounts": {
+        "open": 4,
+        "monitor": 0,
+        "information": 1,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 1,
+        "other": 0
+      },
+      "openPaymentCollectCount": 0,
+      "briefingChars": 312,
+      "quietShift": null,
+      "files": [
+        "scenario-017-sprint11.json",
+        "scenario-017-sprint11.md"
+      ]
+    },
+    {
+      "scenarioId": "018",
+      "title": "Checked-Out Room vs Listed Arrival Conflict",
+      "shift": "AM",
+      "load": "Very busy",
+      "difficulty": "Hard",
+      "capability": "Contradiction → clarify; do not invent resolution",
+      "sourceSha256": "413989d4df5d304de5dbe495a79f1cdf7933e4f62d4e20741a9345a128b93add",
+      "recommendationCount": 1,
+      "noteCount": 15,
+      "dependencyEdges": 0,
+      "canonicalActionCount": 3,
+      "actionStateCounts": {
+        "open": 1,
+        "monitor": 0,
+        "information": 1,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 1,
+        "other": 0
+      },
+      "openPaymentCollectCount": 0,
+      "briefingChars": 118,
+      "quietShift": null,
+      "files": [
+        "scenario-018-sprint11.json",
+        "scenario-018-sprint11.md"
+      ]
+    },
+    {
+      "scenarioId": "019",
+      "title": "Group Departure Cascade + Taxi Bundle",
+      "shift": "AM",
+      "load": "Very busy",
+      "difficulty": "Hard",
+      "capability": "Multi-room party; timed taxi vs long-horizon bags (INFORMATION)",
+      "sourceSha256": "5a76a5dae58666e0b64857f60e07107ede73b1acc4a79601b5fb6d2094a74b66",
+      "recommendationCount": 1,
+      "noteCount": 7,
+      "dependencyEdges": 0,
+      "canonicalActionCount": 1,
+      "actionStateCounts": {
+        "open": 1,
+        "monitor": 0,
+        "information": 0,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 0,
+        "other": 0
+      },
+      "openPaymentCollectCount": 0,
+      "briefingChars": 70,
+      "quietShift": null,
+      "files": [
+        "scenario-019-sprint11.json",
+        "scenario-019-sprint11.md"
+      ]
+    },
+    {
+      "scenarioId": "020",
+      "title": "Adversarial Paste — Everything Competing",
+      "shift": "Night",
+      "load": "Very busy",
+      "difficulty": "Adversarial",
+      "capability": "Priority ranking under noise; fail-closed; non-merge; non-invention",
+      "sourceSha256": "77acb575cc117a938d4f45ba33b8732c1d7e2ee0453aa76a32e60b84e232e04a",
+      "recommendationCount": 4,
+      "noteCount": 35,
+      "dependencyEdges": 0,
+      "canonicalActionCount": 11,
+      "actionStateCounts": {
+        "open": 3,
+        "monitor": 1,
+        "information": 3,
+        "unresolved": 1,
+        "blocked": 0,
+        "resolved": 3,
+        "other": 0
+      },
+      "openPaymentCollectCount": 0,
+      "briefingChars": 272,
+      "quietShift": null,
+      "files": [
+        "scenario-020-sprint11.json",
+        "scenario-020-sprint11.md"
+      ]
+    }
+  ]
+}

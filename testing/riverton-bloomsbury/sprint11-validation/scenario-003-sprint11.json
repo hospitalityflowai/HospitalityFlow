@@ -1,0 +1,520 @@
+{
+  "label": "RIVERTON SPRINT 11 VALIDATION OUTPUT",
+  "scenarioId": "003",
+  "title": "Twin Setup — Right Room Only",
+  "recordId": null,
+  "gitCommit": "d68ff55c06f885ecccace354204d6d2fc7ab9662",
+  "engineVersion": 1,
+  "contractVersion": "E1",
+  "ranAt": "2026-08-08T13:12:23.512Z",
+  "pipeline": [
+    "extractOperationalFact / sectionFromFact",
+    "consolidateNotesByFacts",
+    "resolveOperationalEntities (Sprint 3)",
+    "electCanonicalCurrentState (Sprint 1)",
+    "resolveOperationalDependencies (Sprint 4)",
+    "buildCanonicalOperationalActions (Sprint 5/6/8/10)",
+    "buildOrganisedSectionModel",
+    "buildTodaysBriefing (Sprint 8 decision seating)",
+    "ShiftIntelligenceEngine.analyze (Sprint 8 recommendation seating)"
+  ],
+  "scenarioMeta": {
+    "shift": "PM",
+    "operationalLoad": "Normal",
+    "difficulty": "Moderate",
+    "capability": "Room-scoped amenity / setup binding",
+    "ambiguity": "No",
+    "departments": "Reception, Housekeeping",
+    "sourceFile": "scenario-003.md"
+  },
+  "humanExpectedTruth": {
+    "currentOperationalFacts": [
+      "March party: **312** king/double must remain; **314** needs **twin** setup before ~19:30.",
+      "Cot not requested.",
+      "Crane 208 prepaid, no specials; Patel 421 standard — low/no special action.",
+      "Loft / kids-party chatter is unrelated next-month noise.",
+      "Lift slow ≠ out of order fault ticket unless framed as such (it is working)."
+    ],
+    "open": [
+      "Twin setup **314** only (March) before arrival.",
+      "Confirm **312** left as king/double (do not twin)."
+    ],
+    "monitor": [
+      "Arrival ETAs for March pair."
+    ],
+    "information": [
+      "Crane / Patel uneventful arrivals; house occupancy context."
+    ],
+    "unresolved": [
+      "None for twin scope (request is clear)."
+    ],
+    "mustNotInfer": [
+      "Twinned both 312 and 314.",
+      "Ignoring “only room 314”.",
+      "Invented loft bed, welcome card, champagne, or cot for March.",
+      "Binding twin request to Crane or Patel."
+    ],
+    "rawTruthMarkdown": "### Current operational facts\r\n- March party: **312** king/double must remain; **314** needs **twin** setup before ~19:30.\r\n- Cot not requested.\r\n- Crane 208 prepaid, no specials; Patel 421 standard — low/no special action.\r\n- Loft / kids-party chatter is unrelated next-month noise.\r\n- Lift slow ≠ out of order fault ticket unless framed as such (it is working).\r\n\r\n### Expected work states\r\n\r\n#### OPEN\r\n- Twin setup **314** only (March) before arrival.\r\n- Confirm **312** left as king/double (do not twin).\r\n\r\n#### MONITOR\r\n- Arrival ETAs for March pair.\r\n\r\n#### INFORMATION\r\n- Crane / Patel uneventful arrivals; house occupancy context.\r\n\r\n#### UNRESOLVED\r\n- None for twin scope (request is clear).\r\n\r\n### Must not infer / invent\r\n- Twinned both 312 and 314.\r\n- Ignoring “only room 314”.\r\n- Invented loft bed, welcome card, champagne, or cot for March.\r\n- Binding twin request to Crane or Patel."
+  },
+  "canonicalActions": [
+    {
+      "actionId": "act|noent|noroom|maintenance|follow_up_until_resolved|riverton_baseline_24",
+      "actionState": "open",
+      "actionType": "follow_up_until_resolved",
+      "facetKey": "maintenance",
+      "room": "",
+      "entityId": null,
+      "canonicalName": "",
+      "actionText": "Follow up open maintenance",
+      "priorityBand": "P1",
+      "priorityScore": 14,
+      "temporalScope": "information",
+      "serviceDate": "",
+      "deadlineHint": "inspect",
+      "relativeCue": "",
+      "temporalConfidence": "low",
+      "temporalReasons": [
+        "no_temporal_evidence"
+      ],
+      "evidenceText": "Lift 1 slow but working. Not broken."
+    },
+    {
+      "actionId": "act|noent|119|payment_insufficient_evidence|type|riverton_baseline_20",
+      "actionState": "information",
+      "actionType": "operational_follow_up",
+      "facetKey": "payment:insufficient_evidence",
+      "room": "119",
+      "entityId": null,
+      "canonicalName": "",
+      "actionText": "Payment-related note retained — insufficient evidence for collect chase",
+      "priorityBand": "P3",
+      "priorityScore": 85,
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "- 119 checked out this morning; minibar closed already."
+    },
+    {
+      "actionId": "act|ent_3|noroom|amenity_twin_superseded|type|note_2",
+      "actionState": "resolved",
+      "actionType": "operational_follow_up",
+      "facetKey": "amenity:twin_superseded",
+      "room": "",
+      "entityId": "ent_3",
+      "canonicalName": "Deluxe King",
+      "actionText": "Twin setup superseded — follow final room / double allocation",
+      "priorityBand": "exclude",
+      "priorityScore": 90,
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "- Room **312** Deluxe King (keep as **double/king** — do NOT twin) |    - Room **314** Deluxe Twin-capable — guest asked for **twin beds in 314 only** |    HK said 314 still made as king this morning when they walked past. Needs twin before"
+    },
+    {
+      "actionId": "act|ent_4|noroom|payment_no_collect|type|riverton_baseline_10",
+      "actionState": "resolved",
+      "actionType": "operational_follow_up",
+      "facetKey": "payment:no_collect",
+      "room": "",
+      "entityId": "ent_4",
+      "canonicalName": "Ms Naomi Crane",
+      "actionText": "Payment settled / no collect required",
+      "priorityBand": "exclude",
+      "priorityScore": 92,
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "2) Ms Naomi Crane — 208 — ETA 18:00 — Expedia prepaid — no specials."
+    }
+  ],
+  "actionStateCounts": {
+    "open": 1,
+    "monitor": 0,
+    "information": 1,
+    "unresolved": 0,
+    "blocked": 0,
+    "resolved": 2,
+    "other": 0
+  },
+  "temporalAnchor": {
+    "handoverDate": "2026-08-08",
+    "shift": "PM",
+    "createdAt": "2026-08-08T15:45:00.000Z"
+  },
+  "inputIntegrity": {
+    "inputAuthority": "scenario-XXX.md Original Input / Raw Source Notes",
+    "sourceSha256": "9acb754d3a3c4dccfccdda7e969fad93a26abe64d5e404eec415faefcff2a6fe",
+    "sourceLength": 1080,
+    "lineCount": 18,
+    "brainContext": null,
+    "hotelSnapshotKeys": [
+      "Arrivals",
+      "Departures",
+      "Stayovers",
+      "Guests In House",
+      "Occupancy",
+      "OOO"
+    ],
+    "humanExpectedTruthPreserved": true
+  },
+  "exactSourceInput": "From Jess — PM desk\n\nArrivals tonight worth flagging:\n\n1) Mr Theo March & Ms Isla March — two rooms, same booking ref RB-88421\n   - Room **312** Deluxe King (keep as **double/king** — do NOT twin)\n   - Room **314** Deluxe Twin-capable — guest asked for **twin beds in 314 only**\n   HK said 314 still made as king this morning when they walked past. Needs twin before they get in (~19:30 ETA both rooms).\n   They are a couple + adult sibling; sibling in 314.\n\n2) Ms Naomi Crane — 208 — ETA 18:00 — Expedia prepaid — no specials.\n\n3) Mr Patel — 421 — ETA unknown — just a standard deluxe.\n\nAlso floating around the desk chat (ignore unless relevant): someone asked yesterday about loft beds for a kids party next month — not these guests.\n\nHK WhatsApp excerpt pasted by supervisor:\n“314 twin pls — March party — ONLY 314. 312 stays king. Cot not requested.”\n\nDepartures leftover noise:\n- 119 checked out this morning; minibar closed already.\n- 503 early departure yesterday — nothing open.\n\nGeneral:\nLift 1 slow but working. Not broken.\nParlour busy with tea — not related to March.",
+  "hotelSnapshot": {
+    "Arrivals": "28",
+    "Departures": "22",
+    "Stayovers": "61",
+    "Guests In House": "~95",
+    "Occupancy": "~74%",
+    "OOO": "2"
+  },
+  "aiSummaryBriefing": "Priority 1\nFollow up open maintenance.",
+  "briefingParagraphs": [
+    "Priority 1\nFollow up open maintenance."
+  ],
+  "organisedHandover": {
+    "urgent": [],
+    "vip": [],
+    "guest": [],
+    "maintenance": [
+      "Lift 1 slow but working. Not broken."
+    ],
+    "payments": [
+      "- 119 checked out this morning; minibar closed already.",
+      "2) Ms Naomi Crane — 208 — ETA 18:00 — Expedia prepaid — no specials."
+    ],
+    "events": [],
+    "preparations": [
+      "   - Room **312** Deluxe King (keep as **double/king** — do NOT twin) |    - Room **314** Deluxe Twin-capable — guest asked for **twin beds in 314 only** |    HK said 314 still made as king this morning when they walked past. Needs twin before they get in (~19:30 ETA both rooms). | “314 twin pls — March party — ONLY 314. 312 stays king. Cot not requested.” |    - Room **314** Deluxe Twin-capable — guest asked for **twin beds in 314 only** |    HK said 314 still made as king this morning when they walked past. Needs twin before they get in (~19:30 ETA both rooms). | “314 twin pls — March party — ONLY 314. 312 stays king. Cot not requested.”"
+    ],
+    "openQuestions": [],
+    "tasks": [],
+    "inventory": [],
+    "deliveries": [],
+    "lostproperty": [],
+    "general": [
+      "From Jess — PM desk",
+      "Arrivals tonight worth flagging:",
+      "1) Mr Theo March & Ms Isla March — two rooms, same booking ref RB-88421",
+      "   They are a couple + adult sibling; sibling in 314.",
+      "3) Mr Patel — 421 — ETA unknown — just a standard deluxe.",
+      "Also floating around the desk chat (ignore unless relevant): someone asked yesterday about loft beds for a kids party next month — not these guests.",
+      "HK WhatsApp excerpt pasted by supervisor:",
+      "Departures leftover noise:",
+      "- 503 early departure yesterday — nothing open.",
+      "General:",
+      "Parlour busy with tea — not related to March."
+    ],
+    "completed": []
+  },
+  "recommendations": [
+    {
+      "id": "act|noent|noroom|maintenance|follow_up_until_resolved|riverton_baseline_24",
+      "text": "Follow up open maintenance.",
+      "priority": "high",
+      "department": "Reception",
+      "status": "open",
+      "reasonCodes": [
+        "guest_impact_tonight",
+        "guest_impacting_maintenance",
+        "temporal:no_temporal_evidence",
+        "canonical_decision_seat"
+      ]
+    }
+  ],
+  "reasoningMetadata": {
+    "noteCountAfterPipeline": 15,
+    "dependencyEdgeCount": 0,
+    "dependencyEdges": [],
+    "analyzeKeys": [
+      "engineVersion",
+      "signals",
+      "recommendations",
+      "checklist",
+      "facts",
+      "operationalMemories",
+      "guestObservations",
+      "guestObservationRejections",
+      "guestCandidates",
+      "guestCandidateRejections"
+    ],
+    "quietShift": null,
+    "decisionSeating": {
+      "briefingUsesCanonicalActions": true,
+      "recommendationsFromAnalyze": true,
+      "sharedCanonicalList": true
+    }
+  },
+  "noteEvidence": [
+    {
+      "original": "Lift 1 slow but working. Not broken.",
+      "section": "maintenance",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "maintenance",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "2) Ms Naomi Crane — 208 — ETA 18:00 — Expedia prepaid — no specials.",
+      "section": "payments",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_4",
+      "canonicalName": "Ms Naomi Crane",
+      "currentRoom": null,
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "payment",
+      "factStatus": "done"
+    },
+    {
+      "original": "   - Room **312** Deluxe King (keep as **double/king** — do NOT twin) |    - Room **314** Deluxe Twin-capable — guest asked for **twin beds in 314 only** |    HK said 314 still made as king this morning when they walked past. Needs twin before they get in (~19:30 ETA both rooms). | “314 twin pls — March party — ONLY 314. 312 stays king. Cot not requested.” |    - Room **314** Deluxe Twin-capable — guest asked for **twin beds in 314 only** |    HK said 314 still made as king this morning when they walked past. Needs twin before they get in (~19:30 ETA both rooms). | “314 twin pls — March party — ONLY 314. 312 stays king. Cot not requested.”",
+      "section": "tasks",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_3",
+      "canonicalName": "Deluxe King",
+      "currentRoom": null,
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "twin_setup",
+      "factStatus": "requested"
+    },
+    {
+      "original": "From Jess — PM desk",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_1",
+      "canonicalName": "From Jess",
+      "currentRoom": null,
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Arrivals tonight worth flagging:",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "1) Mr Theo March & Ms Isla March — two rooms, same booking ref RB-88421",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_2",
+      "canonicalName": "Mr Theo March",
+      "currentRoom": null,
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "   They are a couple + adult sibling; sibling in 314.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "3) Mr Patel — 421 — ETA unknown — just a standard deluxe.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Also floating around the desk chat (ignore unless relevant): someone asked yesterday about loft beds for a kids party next month — not these guests.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "requested"
+    },
+    {
+      "original": "HK WhatsApp excerpt pasted by supervisor:",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Departures leftover noise:",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- 119 checked out this morning; minibar closed already.",
+      "section": "general",
+      "rooms": [
+        "119"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "119",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- 503 early departure yesterday — nothing open.",
+      "section": "general",
+      "rooms": [
+        "503"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "503",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "General:",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Parlour busy with tea — not related to March.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    }
+  ],
+  "reviewPlaceholder": {
+    "status": "PENDING_HUMAN_REVIEW",
+    "note": "Blocked allocation / room-status contradiction is the Sprint 11 focus. Compare to frozen sprint10-validation/; do not overwrite S8-S10 or Human Expected Truth."
+  }
+}
