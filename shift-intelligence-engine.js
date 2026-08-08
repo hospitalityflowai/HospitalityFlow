@@ -9275,14 +9275,299 @@
     var out = {};
     (notes || []).forEach(function (note) {
       var src = noteEvidenceText(note, note && note.fact);
-      var m = src.match(/\brooms?\s+([\d\s,and&]+)\s+checked\s+out\b/i);
-      if (!m) return;
-      String(m[1]).split(/\s*(?:,|&|and)\s*/i).forEach(function (part) {
-        var n = normalizeRoomNumber(part) || String(part).replace(/\D/g, "");
-        if (n) out[n] = true;
-      });
+      var norm = normalizeStateResolutionText(src);
+      if (!norm) return;
+      var m = norm.match(/\brooms?\s+([\d\s,and&]+)\s+checked\s+out\b/i);
+      if (m) {
+        String(m[1]).split(/\s*(?:,|&|and)\s*/i).forEach(function (part) {
+          var n = normalizeRoomNumber(part) || String(part).replace(/\D/g, "");
+          if (n) out[n] = true;
+        });
+      }
+      /* Sprint 11: "315 CHECKED OUT" / "Room 315 checked out" rack lines. */
+      var reSolo = /\b(?:room\s+)?(\d{1,4}[a-z]?)\s+checked\s+out\b/gi;
+      var sm;
+      while ((sm = reSolo.exec(norm)) !== null) {
+        var rn = normalizeRoomNumber(sm[1]) || String(sm[1]).toUpperCase();
+        if (rn) out[rn] = true;
+      }
     });
     return out;
+  }
+
+  /**
+   * Sprint 11 — preserve LG08-style tokens; numeric rooms via normalizeRoomNumber.
+   */
+  function normalizeAllocationRoomToken(value) {
+    var s = String(value || "").replace(/[*_`~]+/g, " ").trim().toUpperCase();
+    if (!s) return "";
+    var lg = s.match(/\b(LG\d{1,4}[A-Z]?)\b/);
+    if (lg) return lg[1];
+    return normalizeRoomNumber(s) || "";
+  }
+
+  /**
+   * Sprint 11 — build blocked-assignment / room-status contradiction pressure.
+   * Fail closed: does not invent alternate rooms; only flags evidenced blockers.
+   */
+  function buildBlockedAllocationIndex(notes) {
+    var roomCorpus = {};
+    var oooRooms = {};
+    var unavailableRooms = {};
+    var arrivals = []; /* { room, name, evidence, factId, entityId } */
+    var contradictionRooms = {};
+
+    function addCorpus(room, text) {
+      if (!room || !text) return;
+      if (!roomCorpus[room]) roomCorpus[room] = [];
+      if (roomCorpus[room].indexOf(text) === -1) roomCorpus[room].push(text);
+    }
+
+    function extractGuestNearAllocation(text) {
+      var norm = String(text || "");
+      var m =
+        norm.match(/\b((?:Mrs?|Ms|Miss|Dr)\.??\s+[A-Z][A-Za-z.'\-]+(?:\s+[A-Z][A-Za-z.'\-]+)?)\b/) ||
+        norm.match(/\b([A-Z][a-z]+)\b(?=[^.\\n]{0,40}\ballocated\b)/) ||
+        norm.match(/\b([A-Z][a-z]+)\b(?=[^.\\n]{0,40}\bsystem\s+allocation\b)/);
+      return m ? String(m[1]).replace(/\s+/g, " ").trim() : "";
+    }
+
+    (notes || []).forEach(function (note, index) {
+      if (!note) return;
+      var src = noteEvidenceText(note, note.fact);
+      if (!src) return;
+      var norm = normalizeStateResolutionText(src);
+      var factId = note._neutralFactId || (note.fact && note.fact.id) || ("note-" + index);
+      var entityId = note.entityId || (note.fact && note.fact.entityId) || null;
+
+      var roomTokens = [];
+      var reAlloc =
+        /\b(?:originally\s+)?allocated(?:\s+to)?\s+(?:room\s+)?([a-z]{0,3}\d{1,4}[a-z]?)\b/gi;
+      var reSys = /\bsystem\s+allocation\s+(?:room\s+)?([a-z]{0,3}\d{1,4}[a-z]?)\b/gi;
+      var reRoom = /\broom\s+(\d{1,4}[a-z]?)\b/gi;
+      var reLg = /\b(lg\d{1,4}[a-z]?)\b/gi;
+      var rm;
+      while ((rm = reAlloc.exec(norm)) !== null) {
+        roomTokens.push(normalizeAllocationRoomToken(rm[1]));
+      }
+      while ((rm = reSys.exec(norm)) !== null) {
+        roomTokens.push(normalizeAllocationRoomToken(rm[1]));
+      }
+      while ((rm = reRoom.exec(norm)) !== null) {
+        roomTokens.push(normalizeAllocationRoomToken(rm[1]));
+      }
+      while ((rm = reLg.exec(norm)) !== null) {
+        roomTokens.push(normalizeAllocationRoomToken(rm[1]));
+      }
+      ((note.fact && note.fact.rooms) || note.rooms || []).forEach(function (r) {
+        roomTokens.push(normalizeAllocationRoomToken(r));
+      });
+      roomTokens = roomTokens.filter(Boolean);
+
+      roomTokens.forEach(function (r) { addCorpus(r, src); });
+
+      if (/\booo\b/.test(norm) || /\bout\s+of\s+order\b/.test(norm)) {
+        roomTokens.forEach(function (r) { oooRooms[r] = true; });
+        var oooLine = norm.match(/\b(?:room\s+)?(\d{1,4}[a-z]?|lg\d{1,4}[a-z]?)\s+[—\-:].{0,12}\booo\b/i) ||
+          norm.match(/\booo\b.{0,12}(?:room\s+)?(\d{1,4}[a-z]?|lg\d{1,4}[a-z]?)/i);
+        if (oooLine) {
+          var oroom = normalizeAllocationRoomToken(oooLine[1]);
+          if (oroom) {
+            oooRooms[oroom] = true;
+            addCorpus(oroom, src);
+          }
+        }
+      }
+
+      if (/\b(?:still\s+occupied|occupied\s+by|not\s+available|extended)\b/.test(norm) ||
+          /\bcannot\s+go\s+into\b/.test(norm) ||
+          /\bdo\s+not\s+(?:mark\s+)?(?:\w+\s+)?sellable\b/.test(norm) ||
+          /\bnot\s+a\s+release\b/.test(norm) ||
+          /\bnot\s+released\b/.test(norm)) {
+        roomTokens.forEach(function (r) { unavailableRooms[r] = true; });
+      }
+
+      var isArrivalAlloc =
+        (/\ballocated\b/.test(norm) || /\bsystem\s+allocation\b/.test(norm)) &&
+        (/\barriv|\bdue\b|\btonight\b|\bevening\b|\bfor\s+tonight\b/.test(norm) ||
+          /\bneeds\b/.test(norm) ||
+          /\bbooking\b/.test(norm));
+      if (isArrivalAlloc || /\bcannot\s+go\s+into\b/.test(norm)) {
+        var guest = note.canonicalName || (note.fact && (note.fact.canonicalName || note.fact.guestName)) ||
+          extractGuestNearAllocation(src);
+        var allocRooms = [];
+        var reA2 =
+          /\b(?:originally\s+)?allocated(?:\s+to)?\s+(?:room\s+)?([a-z]{0,3}\d{1,4}[a-z]?)\b/gi;
+        var reS2 = /\bsystem\s+allocation\s+(?:room\s+)?([a-z]{0,3}\d{1,4}[a-z]?)\b/gi;
+        var am;
+        while ((am = reA2.exec(norm)) !== null) {
+          allocRooms.push(normalizeAllocationRoomToken(am[1]));
+        }
+        while ((am = reS2.exec(norm)) !== null) {
+          allocRooms.push(normalizeAllocationRoomToken(am[1]));
+        }
+        if (!allocRooms.length && /\bcannot\s+go\s+into\b/.test(norm)) {
+          var into = norm.match(/\bgo\s+into\s+(\d{1,4}[a-z]?|lg\d{1,4}[a-z]?)\b/i);
+          if (into) allocRooms.push(normalizeAllocationRoomToken(into[1]));
+        }
+        allocRooms.filter(Boolean).forEach(function (room) {
+          arrivals.push({
+            room: room,
+            name: guest || "",
+            evidence: src,
+            factId: factId,
+            entityId: entityId
+          });
+          addCorpus(room, src);
+        });
+      }
+    });
+
+    Object.keys(roomCorpus).forEach(function (room) {
+      var blob = normalizeStateResolutionText(roomCorpus[room].join(" | "));
+      var co = /\bchecked\s+out\b/.test(blob);
+      var so = /\bstayover\b/.test(blob);
+      var vd = /\bvacant\s+dirty\b/.test(blob);
+      var conflictCue =
+        /\bconflict\b/.test(blob) ||
+        /\bcontradict/.test(blob) ||
+        /\bstale\b/.test(blob) ||
+        /\bdo\s+not\s+pretend\b/.test(blob) ||
+        /\bdo\s+not\s+invent\b/.test(blob) ||
+        /\bpromised\b/.test(blob);
+      if ((co && so) || (so && vd) || (co && vd && conflictCue) ||
+          (co && so === false && vd && conflictCue)) {
+        contradictionRooms[room] = true;
+      }
+      if ((co && so) || (so && vd)) contradictionRooms[room] = true;
+    });
+
+    return {
+      roomCorpus: roomCorpus,
+      oooRooms: oooRooms,
+      unavailableRooms: unavailableRooms,
+      arrivals: arrivals,
+      contradictionRooms: contradictionRooms
+    };
+  }
+
+  function pushBlockedAllocationActions(pushAction, index, notes) {
+    if (!index || !index.arrivals) return;
+    var seenRooms = {};
+    index.arrivals.forEach(function (arr) {
+      if (!arr || !arr.room || seenRooms[arr.room]) return;
+      var corpus = (index.roomCorpus[arr.room] || []).join(" | ");
+      var blob = normalizeStateResolutionText(corpus + " " + (arr.evidence || ""));
+      var blocked =
+        !!index.oooRooms[arr.room] ||
+        !!index.unavailableRooms[arr.room] ||
+        /\bcannot\s+go\s+into\b/.test(blob) ||
+        (/\ballocated\b/.test(blob) &&
+          /\b(?:still\s+occupied|occupied\s+by|not\s+available|extended)\b/.test(blob));
+      var contradicted = !!index.contradictionRooms[arr.room];
+      if (!blocked && !contradicted) return;
+      seenRooms[arr.room] = true;
+
+      var guest = arr.name || "";
+      /* Prefer arrival guest over prior occupant names in corpus. */
+      if (!guest) {
+        var gm = String(arr.evidence || "").match(
+          /\b((?:Mrs?|Ms|Miss|Dr)\.??\s+[A-Z][A-Za-z.'\-]+(?:\s+[A-Z][A-Za-z.'\-]+)?)\b/
+        );
+        if (gm) guest = gm[1];
+      }
+
+      if (contradicted && !blocked) {
+        pushAction(createCanonicalAction({
+          entityId: arr.entityId || null,
+          resolutionState: "unresolved",
+          canonicalName: guest,
+          room: /^\d/.test(arr.room) ? arr.room : "",
+          rooms: /^\d/.test(arr.room) ? [arr.room] : [],
+          facetKey: "occupancy_conflict:clarify",
+          actionType: NEXT_ACTION_KIND.operational_follow_up,
+          actionState: ACTION_STATE.open,
+          actionText: "Clarify Room " + arr.room + " status/readiness" +
+            (guest ? " for " + guest : " for arrival") +
+            " — conflicting occupancy evidence (do not invent a different room)",
+          evidenceText: corpus || arr.evidence,
+          actionability: ACTIONABILITY.actionable,
+          priorityBand: PRIORITY_BAND.P1,
+          priorityScore: 20,
+          priorityReasons: ["occupancy_conflict_clarify", "sprint11_blocked_allocation"],
+          currentStateEligible: true,
+          sourceFactIds: arr.factId ? [arr.factId] : [],
+          confidence: 0.72
+        }));
+        return;
+      }
+
+      pushAction(createCanonicalAction({
+        entityId: arr.entityId || null,
+        resolutionState: "unresolved",
+        canonicalName: guest,
+        room: /^\d/.test(arr.room) ? arr.room : "",
+        rooms: /^\d/.test(arr.room) ? [arr.room] : [],
+        facetKey: "allocation:blocked_assigned",
+        actionType: NEXT_ACTION_KIND.operational_follow_up,
+        actionState: ACTION_STATE.open,
+        actionText: "Clarify / reallocate arrival" +
+          (guest ? " for " + guest : "") +
+          " — assigned Room " + arr.room +
+          " is unavailable or blocked (do not invent a replacement room)",
+        evidenceText: corpus || arr.evidence,
+        actionability: ACTIONABILITY.actionable,
+        priorityBand: PRIORITY_BAND.P1,
+        priorityScore: 18,
+        priorityReasons: ["allocation_blocked_assigned", "sprint11_blocked_allocation"],
+        currentStateEligible: true,
+        sourceFactIds: arr.factId ? [arr.factId] : [],
+        confidence: 0.74
+      }));
+    });
+
+    /*
+     * Contradiction without a clean arrival-alloc line: still OPEN clarify when
+     * an arrival name + room appear with conflicting status corpus (018 Quill).
+     */
+    Object.keys(index.contradictionRooms || {}).forEach(function (room) {
+      if (seenRooms[room]) return;
+      var corpus = (index.roomCorpus[room] || []).join(" | ");
+      var blob = normalizeStateResolutionText(corpus);
+      if (!/\barriv|\ballocation\b|\bdue\b|\bpromised\b/.test(blob)) return;
+      var guest = "";
+      var gm = corpus.match(
+        /\b((?:Mrs?|Ms|Miss|Dr)\.??\s+[A-Z][A-Za-z.'\-]+(?:\s+[A-Z][A-Za-z.'\-]+)?)\b/
+      );
+      /* Prefer arrival guest (Quill) over checked-out prior guest (Kemp). */
+      var arrivalGuest = corpus.match(
+        /\b((?:Mrs?|Ms|Miss|Dr)\.??\s+[A-Z][A-Za-z.'\-]+)\b(?=[^.|]{0,80}\b(?:allocation|due|arriv))/i
+      );
+      if (arrivalGuest) guest = arrivalGuest[1];
+      else if (gm) guest = gm[1];
+      seenRooms[room] = true;
+      pushAction(createCanonicalAction({
+        entityId: null,
+        resolutionState: "unresolved",
+        canonicalName: guest,
+        room: room,
+        rooms: [room],
+        facetKey: "occupancy_conflict:clarify",
+        actionType: NEXT_ACTION_KIND.operational_follow_up,
+        actionState: ACTION_STATE.open,
+        actionText: "Clarify Room " + room + " status/readiness" +
+          (guest ? " for " + guest : " for arrival") +
+          " — conflicting occupancy evidence (do not invent a different room)",
+        evidenceText: corpus,
+        actionability: ACTIONABILITY.actionable,
+        priorityBand: PRIORITY_BAND.P1,
+        priorityScore: 20,
+        priorityReasons: ["occupancy_conflict_clarify", "sprint11_blocked_allocation"],
+        currentStateEligible: true,
+        sourceFactIds: [],
+        confidence: 0.7
+      }));
+    });
   }
 
   /**
@@ -9302,6 +9587,7 @@
     var checkedOut = detectCheckedOutRooms(notes);
     var anchor = buildOperationalDayAnchor(options || notes._temporalAnchor || {});
     notes._temporalAnchor = anchor;
+    var blockedAllocIndex = buildBlockedAllocationIndex(notes);
 
     /*
      * Sprint 10 — same-room maintenance corpus so MONITOR / tomorrow inspect /
@@ -9337,6 +9623,9 @@
       seenIds[action.actionId] = true;
       actions.push(action);
     }
+
+    /* Sprint 11 — emit blocked-assignment / contradiction OPEN before note noise. */
+    pushBlockedAllocationActions(pushAction, blockedAllocIndex, notes);
 
     notes.forEach(function (note, index) {
       if (!note) return;
@@ -10198,6 +10487,16 @@
 
       /* Sprint 6: split near-term EA/lunch luggage from explicit future post-checkout hold. */
       if (/\bluggage\b/i.test(src) || /\bEA\s*\d|\bearly\s+arrival\b/i.test(src)) {
+        /*
+         * Sprint 11: Option B “assistance for luggage” under allocation choice is not
+         * an OPEN luggage EA task — allocation clarify owns the work.
+         */
+        if (/\bassistance\s+for\s+luggage\b/i.test(src) &&
+            (/\boption\s+b\b/i.test(src) || /\bif\s+she\s+will\s+accept\b/i.test(src) ||
+              /\bnon-?accessible\b/i.test(src))) {
+          /* Allocation Option B prose — do not emit luggage OPEN. */
+          return;
+        }
         var lugBind = attachSafeActionBinding(src, {
           canonicalName: canonicalName,
           room: currentRoom,
@@ -10474,6 +10773,9 @@
             (/\booo\b/i.test(maintSrc) &&
               (/\bmaybe\s+dry\s+tomorrow\b/i.test(maintSrc) ||
                 /\bnot\s+released\b/i.test(maintSrc) ||
+                /\bnot\s+a\s+release\b/i.test(maintSrc) ||
+                /\bhopefully\b/i.test(maintSrc) ||
+                /\bdo\s+not\s+(?:mark\s+)?(?:\w+\s+)?sellable\b/i.test(maintSrc) ||
                 /\bdon'?t\s+chase\s+ooo\b/i.test(maintSrc)))) {
           maintState = ACTION_STATE.monitor;
           if (/\btomorrow\b/i.test(maintSrc) && /\binspect\b/i.test(maintSrc)) {
@@ -10487,14 +10789,25 @@
               temporalConfidence: TEMPORAL_CONFIDENCE.high,
               temporalReasons: (maintTemporal.temporalReasons || []).concat(["tomorrow_inspection_monitor"])
             });
+          } else if (/\booo\b/i.test(maintSrc)) {
+            /* Sprint 11: soft OOO / not-released is MONITOR, not sellable chase. */
+            maintText = currentRoom
+              ? "Monitor OOO Room " + currentRoom + " — not released / not sellable until engineering confirms"
+              : "Monitor OOO room — not released / not sellable until engineering confirms";
+            maintReasons = maintReasons.concat(["ooo_soft_release_monitor", "sprint11_blocked_allocation"]);
           } else {
             maintText = currentRoom
               ? "Monitor Room " + currentRoom + " overnight — mitigated; escalate only if worsens"
               : "Monitor mitigated maintenance overnight — escalate only if worsens";
+            maintReasons = maintReasons.concat(["mitigated_monitor_overnight", "sprint10_state_resolution"]);
           }
           maintPriBand = PRIORITY_BAND.P3;
           maintPriScore = 65;
-          maintReasons = maintReasons.concat(["mitigated_monitor_overnight", "sprint10_state_resolution"]);
+          if (maintReasons.indexOf("ooo_soft_release_monitor") === -1 &&
+              maintReasons.indexOf("mitigated_monitor_overnight") === -1 &&
+              maintReasons.indexOf("sprint10_state_resolution") === -1) {
+            maintReasons = maintReasons.concat(["mitigated_monitor_overnight", "sprint10_state_resolution"]);
+          }
         }
         pushAction(createCanonicalAction(applyTemporalToActionOpts({
           entityId: entityId,
