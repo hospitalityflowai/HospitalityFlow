@@ -1,0 +1,110 @@
+{
+  "label": "MERIDIAN_GATE_PHASE_B_FREEZE_MANIFEST",
+  "hotel": "The Meridian Gate Hotel & Spa (fictional)",
+  "freezeStatus": "FROZEN BEFORE FIRST HF RUN",
+  "frozenAt": "2026-08-08T13:25:13.092Z",
+  "note": "SHA-256 of each scenario-XXX.md file as authored in Phase B. Original Input + Human Expected Truth must remain unchanged through first HF run and scoring. Fictional data only.",
+  "scenarioCount": 20,
+  "scenarios": [
+    {
+      "file": "scenario-001.md",
+      "sha256": "d9b8bb7097fbf6f5e2f7d5366ff884ee753fa4b0e02561c06396581ce3b1b443",
+      "bytes": 3348
+    },
+    {
+      "file": "scenario-002.md",
+      "sha256": "4eba062458b99cd2df59df4af461d417ce8ccc56fc6724ea26f23bc2e2ebc14e",
+      "bytes": 3300
+    },
+    {
+      "file": "scenario-003.md",
+      "sha256": "1f092e98683c7e2d51a179a5483b230ee62e1acd9a2e470437aade4f2cc51575",
+      "bytes": 3517
+    },
+    {
+      "file": "scenario-004.md",
+      "sha256": "097b25b91193892f900476fc96cc7af6d43250a2cbb903e3de0e903d75bed279",
+      "bytes": 3495
+    },
+    {
+      "file": "scenario-005.md",
+      "sha256": "531e01cf172e4fb1fa17afffbaff2f6c834ad2285f099afe3d15e7ce5ce2b406",
+      "bytes": 3238
+    },
+    {
+      "file": "scenario-006.md",
+      "sha256": "4dba441c4645ec52bf76125e6a91b867e01ff1e30c1e859a70c77ff46c4c5674",
+      "bytes": 3219
+    },
+    {
+      "file": "scenario-007.md",
+      "sha256": "4e14eaef073010daeb95dfb9936db7488205b005839329120622c4e17f218eb8",
+      "bytes": 3124
+    },
+    {
+      "file": "scenario-008.md",
+      "sha256": "9777cf6d1644e083e29ee75070e6b767f3611c128ceac9a463946012cddd335c",
+      "bytes": 2287
+    },
+    {
+      "file": "scenario-009.md",
+      "sha256": "96a8a9b18cf24f2711f92f57cd52ec2547caf1e7af417e3317551788b1fa9a24",
+      "bytes": 3459
+    },
+    {
+      "file": "scenario-010.md",
+      "sha256": "8aec629a23f78e448ee5f87d372be9d329694f9e4eccd84db007850626c60f30",
+      "bytes": 3498
+    },
+    {
+      "file": "scenario-011.md",
+      "sha256": "5ffa74f6e47b1a3df206ab6dd1fa64e6dd1ebb23484b9d6b4c7f5c3885d16f7d",
+      "bytes": 2838
+    },
+    {
+      "file": "scenario-012.md",
+      "sha256": "60ac2af959debe7b35c09a97e76a8715a3bb73fdc46e81e3d2d2bdeb82c0f4b4",
+      "bytes": 2611
+    },
+    {
+      "file": "scenario-013.md",
+      "sha256": "cdee33fb6029279974c99906c4d93ac73930a3442d49c626331bdfd2bc130fce",
+      "bytes": 3356
+    },
+    {
+      "file": "scenario-014.md",
+      "sha256": "ab93232e930f16165e649694fa83536f787330ed47774756fb58535f05a94638",
+      "bytes": 2876
+    },
+    {
+      "file": "scenario-015.md",
+      "sha256": "6366dc52da82d5a60d9270acda42fe37112316ae8527aa8c6bc97c10a0593ac6",
+      "bytes": 3102
+    },
+    {
+      "file": "scenario-016.md",
+      "sha256": "336a3af5ecfee9b5d2afc3af71d26520cb43089c89559fe3c39a09ddaceff312",
+      "bytes": 2810
+    },
+    {
+      "file": "scenario-017.md",
+      "sha256": "2ae06d1fb3081e138fb3cf3ddf64bf42ba6027bef3f1381e5ebf0a20e659399d",
+      "bytes": 3314
+    },
+    {
+      "file": "scenario-018.md",
+      "sha256": "4fd33e04451b503a18800f4202ca8331a2506042bb61e6623ae20144007db699",
+      "bytes": 3022
+    },
+    {
+      "file": "scenario-019.md",
+      "sha256": "bc3fb9737abfafeddce7a722b42a2aca605fc6b95fb355a7d3838664de0e8c33",
+      "bytes": 2862
+    },
+    {
+      "file": "scenario-020.md",
+      "sha256": "ce93966beb7c7027381cbd67fc6ec23519de9faad1eb285b2dfc0355fbbe4949",
+      "bytes": 4178
+    }
+  ]
+}

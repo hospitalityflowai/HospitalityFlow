@@ -1,0 +1,628 @@
+{
+  "label": "MERIDIAN GATE FIRST-RUN BASELINE OUTPUT",
+  "scenarioId": "015",
+  "title": "Early-AM Airport Pressure Stack",
+  "recordId": null,
+  "gitCommit": "0b70a8e495fbbdcec8a0d2bca23f4fd2450265e7",
+  "engineVersion": 1,
+  "contractVersion": "E1",
+  "ranAt": "2026-08-08T13:29:06.237Z",
+  "pipeline": [
+    "extractOperationalFact / sectionFromFact",
+    "consolidateNotesByFacts",
+    "resolveOperationalEntities (Sprint 3)",
+    "electCanonicalCurrentState (Sprint 1)",
+    "resolveOperationalDependencies (Sprint 4)",
+    "buildCanonicalOperationalActions (Sprint 5/6/8/9/10/11 — current HEAD)",
+    "buildOrganisedSectionModel",
+    "buildTodaysBriefing (decision seating)",
+    "ShiftIntelligenceEngine.analyze (recommendation seating)"
+  ],
+  "scenarioMeta": {
+    "shift": "AM",
+    "operationalLoad": "Busy",
+    "ambiguity": "Low–partial",
+    "departments": "Shuttle/Transport, Reception, Housekeeping, Brasserie",
+    "preparedBy": "Priya Nair — Duty Manager (fictional)",
+    "sourceFile": "scenario-015.md",
+    "scenarioFileSha256": "6366dc52da82d5a60d9270acda42fe37112316ae8527aa8c6bc97c10a0593ac6"
+  },
+  "humanExpectedTruth": {
+    "currentOperationalFacts": [
+      "05:45 crew shuttle DONE.",
+      "07:20 loop wheelchair-seat conflict for Okonkwo CX03 — OPEN clarify 07:20 vs 08:10 vs accessible taxi.",
+      "09:15 full on paper.",
+      "EA M126 ~11:00 unconfirmed readiness.",
+      "Breakfast complaint F&B; folios settled."
+    ],
+    "open": [
+      "Resolve Okonkwo accessible transport plan (07:20 vs 08:10 vs taxi) with Concierge/Shuttle — do not silently drop.",
+      "Manage early departure luggage/HK turn pressure without inventing room ready times."
+    ],
+    "monitor": [
+      "M126 EA ~11:00 if-ready — unconfirmed.",
+      "09:15 shuttle full list."
+    ],
+    "information": [
+      "05:45 DONE; F&B pastry complaint; settled flyers."
+    ],
+    "unresolved": [
+      "Okonkwo’s final transport choice — intentional until confirmed."
+    ],
+    "completedMustNotReopen": [
+      "05:45 crew drop — DONE — must not reopen.",
+      "F&B pastry — not room maint OPEN."
+    ],
+    "bindings": [
+      "Okonkwo CX03 Acc; loops 07:20 / 08:10 / 09:15; M126 EA ~11:00."
+    ],
+    "mustNotInfer": [
+      "Silent removal of Okonkwo from transport need.",
+      "Promising M126 ready for EA.",
+      "Room defect OPEN from cold pastries.",
+      "Inventing private jet / non-evidenced transport."
+    ],
+    "rationale": [
+      "Busy early-AM airport clock: shuttle accessible constraint + unconfirmed EA."
+    ],
+    "rawTruthMarkdown": "### Current operational facts\r\n- 05:45 crew shuttle DONE.\r\n- 07:20 loop wheelchair-seat conflict for Okonkwo CX03 — OPEN clarify 07:20 vs 08:10 vs accessible taxi.\r\n- 09:15 full on paper.\r\n- EA M126 ~11:00 unconfirmed readiness.\r\n- Breakfast complaint F&B; folios settled.\r\n\r\n### Expected OPEN actions\r\n- Resolve Okonkwo accessible transport plan (07:20 vs 08:10 vs taxi) with Concierge/Shuttle — do not silently drop.\r\n- Manage early departure luggage/HK turn pressure without inventing room ready times.\r\n\r\n### Expected MONITOR items\r\n- M126 EA ~11:00 if-ready — unconfirmed.\r\n- 09:15 shuttle full list.\r\n\r\n### Expected INFORMATION\r\n- 05:45 DONE; F&B pastry complaint; settled flyers.\r\n\r\n### Expected UNRESOLVED / clarifications\r\n- Okonkwo’s final transport choice — intentional until confirmed.\r\n\r\n### Explicit completed / resolved / superseded (must not reopen)\r\n- 05:45 crew drop — DONE — must not reopen.\r\n- F&B pastry — not room maint OPEN.\r\n\r\n### Important entity / room / time bindings\r\n- Okonkwo CX03 Acc; loops 07:20 / 08:10 / 09:15; M126 EA ~11:00.\r\n\r\n### Must not invent\r\n- Silent removal of Okonkwo from transport need.\r\n- Promising M126 ready for EA.\r\n- Room defect OPEN from cold pastries.\r\n- Inventing private jet / non-evidenced transport.\r\n\r\n### Short human rationale\r\nBusy early-AM airport clock: shuttle accessible constraint + unconfirmed EA."
+  },
+  "canonicalActions": [
+    {
+      "actionId": "act|ent_1|noroom|guest_request_ea_luggage_near|guest_follow_up|meridian_baseline_14",
+      "actionState": "open",
+      "actionType": "guest_follow_up",
+      "facetKey": "guest_request:ea_luggage_near",
+      "room": "",
+      "rooms": [],
+      "entityId": "ent_1",
+      "canonicalName": "Acc Okonkwo",
+      "actionText": "Honour early arrival / lunch luggage arrangements for Acc Okonkwo",
+      "priorityBand": "P2",
+      "priorityScore": 36,
+      "priorityReasons": [
+        "luggage_ea_near_term",
+        "temporal:no_temporal_evidence",
+        "temporal:ea_or_lunch_luggage_near_term"
+      ],
+      "temporalScope": "today",
+      "serviceDate": "",
+      "deadlineHint": "11:00",
+      "relativeCue": "today",
+      "temporalConfidence": "medium",
+      "temporalReasons": [
+        "no_temporal_evidence",
+        "ea_or_lunch_luggage_near_term"
+      ],
+      "evidenceText": "CX03 Acc Okonkwo still in-house until shuttle decision. Main M126 early arrival request EA ~11:00 — “if ready” — **not promised**."
+    },
+    {
+      "actionId": "act|noent|noroom|guest_request_luggage_ea|guest_follow_up|meridian_baseline_8",
+      "actionState": "open",
+      "actionType": "guest_follow_up",
+      "facetKey": "guest_request:luggage_ea",
+      "room": "",
+      "rooms": [],
+      "entityId": null,
+      "canonicalName": "",
+      "actionText": "Honour luggage / early-arrival arrangements",
+      "priorityBand": "P2",
+      "priorityScore": 38,
+      "priorityReasons": [
+        "luggage_ea_follow_up",
+        "temporal:no_temporal_evidence"
+      ],
+      "temporalScope": "information",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "low",
+      "temporalReasons": [
+        "no_temporal_evidence"
+      ],
+      "evidenceText": "Express outs M101–M104 stacking for first loops — HK turning for day arrivals. Luggage room crowded — porter on it."
+    },
+    {
+      "actionId": "act|noent|noroom|payment_no_collect|type|meridian_baseline_17",
+      "actionState": "resolved",
+      "actionType": "operational_follow_up",
+      "facetKey": "payment:no_collect",
+      "room": "",
+      "rooms": [],
+      "entityId": null,
+      "canonicalName": "",
+      "actionText": "Payment settled / no collect required",
+      "priorityBand": "exclude",
+      "priorityScore": 92,
+      "priorityReasons": [
+        "payment_no_collect"
+      ],
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "All morning flyer folios settled except wait — none flagged. Good."
+    }
+  ],
+  "actionStateCounts": {
+    "open": 2,
+    "monitor": 0,
+    "information": 0,
+    "unresolved": 0,
+    "blocked": 0,
+    "resolved": 1,
+    "other": 0
+  },
+  "temporalAnchor": {
+    "handoverDate": "2026-09-20",
+    "shift": "AM",
+    "createdAt": "2026-09-20T07:15:00.000Z"
+  },
+  "decisionSeats": {
+    "seats": [
+      {
+        "action": {
+          "actionId": "act|ent_1|noroom|guest_request_ea_luggage_near|guest_follow_up|meridian_baseline_14",
+          "objectId": "",
+          "entityId": "ent_1",
+          "resolutionState": "resolved",
+          "canonicalName": "Acc Okonkwo",
+          "room": "",
+          "rooms": [],
+          "actionType": "guest_follow_up",
+          "actionState": "open",
+          "facetKey": "guest_request:ea_luggage_near",
+          "actionText": "Honour early arrival / lunch luggage arrangements for Acc Okonkwo",
+          "displayLabel": "Honour early arrival / lunch luggage arrangements for Acc Okonkwo",
+          "evidenceText": "CX03 Acc Okonkwo still in-house until shuttle decision. Main M126 early arrival request EA ~11:00 — “if ready” — **not promised**.",
+          "actionability": "actionable",
+          "blockedBy": [],
+          "blocks": [],
+          "priorityBand": "P2",
+          "priorityScore": 36,
+          "priorityReasons": [
+            "luggage_ea_near_term",
+            "temporal:no_temporal_evidence",
+            "temporal:ea_or_lunch_luggage_near_term"
+          ],
+          "currentStateEligible": true,
+          "sourceFactIds": [
+            "meridian-baseline-14"
+          ],
+          "confidence": 0.65,
+          "temporalScope": "today",
+          "serviceDate": "",
+          "deadlineHint": "11:00",
+          "relativeCue": "today",
+          "temporalConfidence": "medium",
+          "temporalReasons": [
+            "no_temporal_evidence",
+            "ea_or_lunch_luggage_near_term"
+          ]
+        },
+        "actionId": "act|ent_1|noroom|guest_request_ea_luggage_near|guest_follow_up|meridian_baseline_14",
+        "facetKey": "guest_request:ea_luggage_near",
+        "actionState": "open",
+        "priorityBand": "P2",
+        "priorityScore": 36,
+        "seatKind": "do_now",
+        "canonicalSeed": true,
+        "workKey": "guest_request:ea_luggage_near||acc okonkwo|guest_follow_up",
+        "text": "Honour early arrival / lunch luggage arrangements for Acc Okonkwo",
+        "legacy": null
+      },
+      {
+        "action": {
+          "actionId": "act|noent|noroom|guest_request_luggage_ea|guest_follow_up|meridian_baseline_8",
+          "objectId": "",
+          "entityId": null,
+          "resolutionState": "unresolved",
+          "canonicalName": "",
+          "room": "",
+          "rooms": [],
+          "actionType": "guest_follow_up",
+          "actionState": "open",
+          "facetKey": "guest_request:luggage_ea",
+          "actionText": "Honour luggage / early-arrival arrangements",
+          "displayLabel": "Honour luggage / early-arrival arrangements",
+          "evidenceText": "Express outs M101–M104 stacking for first loops — HK turning for day arrivals. Luggage room crowded — porter on it.",
+          "actionability": "actionable",
+          "blockedBy": [],
+          "blocks": [],
+          "priorityBand": "P2",
+          "priorityScore": 38,
+          "priorityReasons": [
+            "luggage_ea_follow_up",
+            "temporal:no_temporal_evidence"
+          ],
+          "currentStateEligible": true,
+          "sourceFactIds": [
+            "meridian-baseline-8"
+          ],
+          "confidence": 0.6,
+          "temporalScope": "information",
+          "serviceDate": "",
+          "deadlineHint": "",
+          "relativeCue": "",
+          "temporalConfidence": "low",
+          "temporalReasons": [
+            "no_temporal_evidence"
+          ]
+        },
+        "actionId": "act|noent|noroom|guest_request_luggage_ea|guest_follow_up|meridian_baseline_8",
+        "facetKey": "guest_request:luggage_ea",
+        "actionState": "open",
+        "priorityBand": "P2",
+        "priorityScore": 38,
+        "seatKind": "do_now",
+        "canonicalSeed": true,
+        "workKey": "guest_request:luggage_ea|||guest_follow_up",
+        "text": "Honour luggage / early-arrival arrangements",
+        "legacy": null
+      }
+    ],
+    "seatedCanonicalIds": [
+      "act|ent_1|noroom|guest_request_ea_luggage_near|guest_follow_up|meridian_baseline_14",
+      "act|noent|noroom|guest_request_luggage_ea|guest_follow_up|meridian_baseline_8"
+    ],
+    "source": "canonical_decision_seats",
+    "surface": "briefing",
+    "maxN": 5
+  },
+  "inputIntegrity": {
+    "inputAuthority": "scenario-XXX.md Original Input / Raw Source Notes",
+    "scenarioFileSha256": "6366dc52da82d5a60d9270acda42fe37112316ae8527aa8c6bc97c10a0593ac6",
+    "sourceSha256": "296dd471122951cfbdd8dabb48964fc6f546a0bcabaf440b36893240f0dd02c2",
+    "sourceLength": 830,
+    "lineCount": 13,
+    "brainContext": null,
+    "hotelSnapshotKeys": [],
+    "humanExpectedTruthPreserved": true,
+    "freezeStatus": "FROZEN BEFORE FIRST HF RUN"
+  },
+  "exactSourceInput": "Early AM airport crush — 05:00 notes left for day team, still live at 07:00.\n\nSHUTTLE\n- 05:45 crew drop completed — DONE.\n- **07:20** loop — 6 pax listed (whiteboard). Driver short one wheelchair-capable seat for **Mr Okonkwo** (CX03 Acc) — need Concierge to confirm if Okonkwo takes **08:10** loop instead or private accessible taxi — **not decided**. Do not remove him silently.\n- **09:15** loop already full on paper.\n\nDEPARTURES\nExpress outs M101–M104 stacking for first loops — HK turning for day arrivals. Luggage room crowded — porter on it.\n\nBRASSERIE\nComplaint table 4 cold pastries — F&B comps — not rooms.\n\nROOMS\nCX03 Acc Okonkwo still in-house until shuttle decision. Main M126 early arrival request EA ~11:00 — “if ready” — **not promised**.\n\nPAYMENT\nAll morning flyer folios settled except wait — none flagged. Good.",
+  "hotelSnapshot": {},
+  "aiSummaryBriefing": "Priority 1\nHonour early arrival / lunch luggage arrangements for Acc Okonkwo.\n\nPriority 2\nHonour luggage / early-arrival arrangements.",
+  "briefingParagraphs": [
+    "Priority 1\nHonour early arrival / lunch luggage arrangements for Acc Okonkwo.",
+    "Priority 2\nHonour luggage / early-arrival arrangements."
+  ],
+  "organisedHandover": {
+    "urgent": [],
+    "vip": [],
+    "guest": [
+      "- **07:20** loop — 6 pax listed (whiteboard). Driver short one wheelchair-capable seat for **Mr Okonkwo** (CX03 Acc) — need Concierge to confirm if Okonkwo takes **08:10** loop instead or private accessible taxi — **not decided**. Do not remove him silently."
+    ],
+    "maintenance": [],
+    "payments": [
+      "All morning flyer folios settled except wait — none flagged. Good."
+    ],
+    "events": [],
+    "preparations": [],
+    "openQuestions": [],
+    "tasks": [],
+    "inventory": [],
+    "deliveries": [],
+    "lostproperty": [],
+    "general": [
+      "Express outs M101–M104 stacking for first loops — HK turning for day arrivals. Luggage room crowded — porter on it.",
+      "PAYMENT",
+      "Early AM airport crush — 05:00 notes left for day team, still live at 07:00.",
+      "SHUTTLE",
+      "- **09:15** loop already full on paper.",
+      "DEPARTURES",
+      "BRASSERIE",
+      "Complaint table 4 cold pastries — F&B comps — not rooms.",
+      "ROOMS",
+      "CX03 Acc Okonkwo still in-house until shuttle decision. Main M126 early arrival request EA ~11:00 — “if ready” — **not promised**."
+    ],
+    "completed": [
+      "- 05:45 crew drop completed — DONE."
+    ]
+  },
+  "recommendations": [
+    {
+      "id": "act|ent_1|noroom|guest_request_ea_luggage_near|guest_follow_up|meridian_baseline_14",
+      "text": "Honour early arrival / lunch luggage arrangements for Acc Okonkwo.",
+      "priority": "normal",
+      "department": "Reception",
+      "status": "open",
+      "reasonCodes": [
+        "luggage_ea_near_term",
+        "temporal:no_temporal_evidence",
+        "temporal:ea_or_lunch_luggage_near_term",
+        "canonical_decision_seat",
+        "legacy_wording_enrich"
+      ]
+    },
+    {
+      "id": "act|noent|noroom|guest_request_luggage_ea|guest_follow_up|meridian_baseline_8",
+      "text": "Honour early arrival / lunch luggage arrangements for Acc Okonkwo.",
+      "priority": "normal",
+      "department": "Reception",
+      "status": "open",
+      "reasonCodes": [
+        "luggage_ea_follow_up",
+        "temporal:no_temporal_evidence",
+        "canonical_decision_seat",
+        "legacy_wording_enrich"
+      ]
+    },
+    {
+      "id": "msketutu-f7w04",
+      "text": "Complete the 07:20 wake-up call — follow-up still required this shift.",
+      "priority": "normal",
+      "department": "Reception",
+      "status": "open",
+      "reasonCodes": [
+        "timed_action_due"
+      ]
+    }
+  ],
+  "reasoningMetadata": {
+    "noteCountAfterPipeline": 13,
+    "dependencyEdgeCount": 0,
+    "dependencyEdges": [],
+    "analyzeKeys": [
+      "engineVersion",
+      "signals",
+      "recommendations",
+      "checklist",
+      "facts",
+      "operationalMemories",
+      "guestObservations",
+      "guestObservationRejections",
+      "guestCandidates",
+      "guestCandidateRejections"
+    ],
+    "quietShift": null,
+    "decisionSeating": {
+      "briefingUsesCanonicalActions": true,
+      "recommendationsFromAnalyze": true,
+      "sharedCanonicalList": true,
+      "selectDecisionSeatsCaptured": true
+    }
+  },
+  "noteEvidence": [
+    {
+      "original": "- **07:20** loop — 6 pax listed (whiteboard). Driver short one wheelchair-capable seat for **Mr Okonkwo** (CX03 Acc) — need Concierge to confirm if Okonkwo takes **08:10** loop instead or private accessible taxi — **not decided**. Do not remove him silently.",
+      "section": "guest",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "departure_followup",
+      "factStatus": "requested"
+    },
+    {
+      "original": "Early AM airport crush — 05:00 notes left for day team, still live at 07:00.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "SHUTTLE",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- **09:15** loop already full on paper.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "DEPARTURES",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Express outs M101–M104 stacking for first loops — HK turning for day arrivals. Luggage room crowded — porter on it.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "BRASSERIE",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Complaint table 4 cold pastries — F&B comps — not rooms.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "ROOMS",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "CX03 Acc Okonkwo still in-house until shuttle decision. Main M126 early arrival request EA ~11:00 — “if ready” — **not promised**.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_1",
+      "canonicalName": "Acc Okonkwo",
+      "currentRoom": null,
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "requested"
+    },
+    {
+      "original": "PAYMENT",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "All morning flyer folios settled except wait — none flagged. Good.",
+      "section": "payments",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "done"
+    },
+    {
+      "original": "- 05:45 crew drop completed — DONE.",
+      "section": "completed",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "done"
+    }
+  ],
+  "reviewPlaceholder": {
+    "status": "PENDING_HUMAN_REVIEW",
+    "note": "First-run baseline only. Compare to frozen Human Expected Truth. Do not modify engine or scenarios."
+  }
+}

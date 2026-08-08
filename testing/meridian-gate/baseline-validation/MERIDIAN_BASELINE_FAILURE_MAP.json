@@ -1,0 +1,980 @@
+{
+  "label": "MERIDIAN GATE FIRST-RUN BASELINE FAILURE MAP",
+  "hotel": "The Meridian Gate Hotel & Spa (fictional)",
+  "engineCommit": "0b70a8e495fbbdcec8a0d2bca23f4fd2450265e7",
+  "scoredAt": "2026-08-08T13:30:11.242Z",
+  "freezeStatus": "FROZEN BEFORE FIRST HF RUN — scenarios unchanged",
+  "totals": {
+    "clearPass": 3,
+    "partialPass": 4,
+    "materialFail": 13,
+    "scored": 20
+  },
+  "rivertonSprint8BaselineCompareNote": "Riverton Sprint 8 first human benchmark was approximately Clear/Partial/Material 1/5/14. Meridian first-run at Sprint 11 HEAD scores 3/4/13. Slightly more Clear on quiet controls, but Material still dominates — engine does not yet generalise confidently to Meridian-native ops.",
+  "sprint9to11ContractSignals": {
+    "paymentFalseOpen": [
+      "010"
+    ],
+    "paymentMissingGenuineOpen": [
+      "014"
+    ],
+    "paymentTruePositivePreserved": [
+      "020"
+    ],
+    "softMaintShouldMonitorButOpen": [
+      "003",
+      "020"
+    ],
+    "blockedAllocSilentOnMeridianIds": [
+      "006",
+      "009",
+      "013",
+      "018"
+    ],
+    "doneReopened": [
+      "005"
+    ]
+  },
+  "topSuspectedRootCauses": [
+    "Unfamiliar Meridian room tokens (M/CX/MS/MA/TR) not bound like numeric city rooms — allocation/conflict paths stay silent",
+    "Shuttle / valet / spa-day / crew-block / pavilion ops absent from canonical action vocabulary — missing OPEN on native work",
+    "Quiet-shift over-trigger when Meridian cues are not recognised as actionable",
+    "Payment fail-closed incomplete on event master-account / unposted minibar (010) and missed genuine £ amount (014)",
+    "Soft/mitigated maintenance still OPEN in some Night shapes (003) despite MONITOR language",
+    "DONE amenity reopen risk remains in at least one case (005 iron)"
+  ],
+  "generalisesBetterThanRivertonSprint8Baseline": "Marginally on quiet-control Clear count (3 vs ~1), not on operational generalisation — Material remains majority; Meridian-native failures are new, not Riverton retreads.",
+  "failureFamilyFrequency": [
+    {
+      "family": "missing_open",
+      "count": 12
+    },
+    {
+      "family": "wrong_quiet_shift",
+      "count": 4
+    },
+    {
+      "family": "silent_on_conflict",
+      "count": 4
+    },
+    {
+      "family": "false_recommendation",
+      "count": 3
+    },
+    {
+      "family": "meridian_shuttle_unrecognised",
+      "count": 3
+    },
+    {
+      "family": "wrong_state_open_vs_monitor",
+      "count": 3
+    },
+    {
+      "family": "meridian_room_id_gap",
+      "count": 3
+    },
+    {
+      "family": "quiet_control_ok",
+      "count": 3
+    },
+    {
+      "family": "meridian_annex_unrecognised",
+      "count": 2
+    },
+    {
+      "family": "meridian_crew_block_unrecognised",
+      "count": 2
+    },
+    {
+      "family": "meridian_valet_unrecognised",
+      "count": 2
+    },
+    {
+      "family": "sprint9_payment_concern",
+      "count": 2
+    },
+    {
+      "family": "temporal_misfire",
+      "count": 2
+    },
+    {
+      "family": "done_ok",
+      "count": 2
+    },
+    {
+      "family": "missing_monitor",
+      "count": 1
+    },
+    {
+      "family": "quiet_control_soft",
+      "count": 1
+    },
+    {
+      "family": "soft_maint_not_monitor",
+      "count": 1
+    },
+    {
+      "family": "sprint10_style_gap",
+      "count": 1
+    },
+    {
+      "family": "partial_shuttle",
+      "count": 1
+    },
+    {
+      "family": "reopened_done",
+      "count": 1
+    },
+    {
+      "family": "meridian_spa_day_guest_unrecognised",
+      "count": 1
+    },
+    {
+      "family": "sprint10_done_gap",
+      "count": 1
+    },
+    {
+      "family": "sprint11_blocked_alloc_gap",
+      "count": 1
+    },
+    {
+      "family": "false_open_payment",
+      "count": 1
+    },
+    {
+      "family": "invention",
+      "count": 1
+    },
+    {
+      "family": "meridian_pavilion_unrecognised",
+      "count": 1
+    },
+    {
+      "family": "meridian_accessible_unrecognised",
+      "count": 1
+    },
+    {
+      "family": "monitor_ok",
+      "count": 1
+    },
+    {
+      "family": "meridian_treatment_room_unrecognised",
+      "count": 1
+    },
+    {
+      "family": "invention_risk_absent_but_silent",
+      "count": 1
+    },
+    {
+      "family": "missing_open_payment",
+      "count": 1
+    },
+    {
+      "family": "false_open_maintenance",
+      "count": 1
+    },
+    {
+      "family": "wrong_open_framing",
+      "count": 1
+    },
+    {
+      "family": "entity_binding_error",
+      "count": 1
+    },
+    {
+      "family": "amenity_partial",
+      "count": 1
+    },
+    {
+      "family": "conditional_ok",
+      "count": 1
+    },
+    {
+      "family": "twin_ok",
+      "count": 1
+    },
+    {
+      "family": "invention_soft",
+      "count": 1
+    },
+    {
+      "family": "payment_fail_closed_ok",
+      "count": 1
+    },
+    {
+      "family": "payment_collect_ok",
+      "count": 1
+    },
+    {
+      "family": "priority_seating_error",
+      "count": 1
+    },
+    {
+      "family": "false_friend_noise_mostly_ok",
+      "count": 1
+    }
+  ],
+  "scenarios": [
+    {
+      "scenarioId": "001",
+      "title": "Quiet Tuesday After Crew Turn",
+      "shift": "AM",
+      "load": "Quiet / easy control",
+      "verdict": "PARTIAL PASS",
+      "notes": "Quiet briefing / no canonical OPEN is directionally correct. False recommendation on tagged LP sunglasses; M304 MONITOR not surfaced.",
+      "families": [
+        "false_recommendation",
+        "missing_monitor",
+        "quiet_control_soft"
+      ],
+      "gitCommit": "0b70a8e495fbbdcec8a0d2bca23f4fd2450265e7",
+      "scenarioFileSha256": "d9b8bb7097fbf6f5e2f7d5366ff884ee753fa4b0e02561c06396581ce3b1b443",
+      "sourceSha256": "3aed46770187a18edb8c96b1d6dbe3e6d276c1a8ce1f340028dbc5e7b7252b6c",
+      "actionStateCounts": {
+        "open": 0,
+        "monitor": 0,
+        "information": 1,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 0,
+        "other": 0
+      },
+      "openActionsObserved": [],
+      "hetOpen": [
+        "None material. This is an easy/quiet control: incoming AM should not invent urgent work."
+      ],
+      "hetMonitor": [
+        "M304 multi-day OOO carpet — awareness / not released (not a live chase unless eng updates).",
+        "Tomorrow’s SkyLink inbound ~05:10 — future crew, not this AM’s OPEN."
+      ],
+      "briefingLead": "Shift status | No urgent guest-impacting priorities for the incoming team.",
+      "recommendationCount": 1,
+      "openPaymentCollectCount": 0
+    },
+    {
+      "scenarioId": "002",
+      "title": "Midweek PM Shuttle and Prepaid Arrival",
+      "shift": "PM",
+      "load": "Normal",
+      "verdict": "MATERIAL FAIL",
+      "notes": "Missing OPEN timed shuttle meet/keys for Langs+Keita. Wrong quiet-shift briefing. Invented 18:30 wake-up. Prepaid non-collect OK.",
+      "families": [
+        "missing_open",
+        "meridian_shuttle_unrecognised",
+        "false_recommendation",
+        "wrong_quiet_shift"
+      ],
+      "gitCommit": "0b70a8e495fbbdcec8a0d2bca23f4fd2450265e7",
+      "scenarioFileSha256": "4eba062458b99cd2df59df4af461d417ce8ccc56fc6724ea26f23bc2e2ebc14e",
+      "sourceSha256": "9ef6579ca5fdfcc048de3a24acc6d8db90ebcbd99b46ff5973df278e277b8cde",
+      "actionStateCounts": {
+        "open": 0,
+        "monitor": 0,
+        "information": 2,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 2,
+        "other": 0
+      },
+      "openActionsObserved": [],
+      "hetOpen": [
+        "Honour / complete shuttle meet-and-keys readiness for Langs + Keita before ~17:55 return (Reception/Concierge ownership with Shuttle)."
+      ],
+      "hetMonitor": [
+        "Spa day members to 18:30 — non-resident; taxi only if requested (not overnight conversion unless booked)."
+      ],
+      "briefingLead": "Shift status | No urgent guest-impacting priorities for the incoming team.",
+      "recommendationCount": 1,
+      "openPaymentCollectCount": 0
+    },
+    {
+      "scenarioId": "003",
+      "title": "Lean Night, Soft Leak, Early Crew Window",
+      "shift": "Night",
+      "load": "Normal",
+      "verdict": "MATERIAL FAIL",
+      "notes": "CX12 soft mitigated drain + tomorrow look became OPEN maintenance chase (should MONITOR). Company bill non-collect OK. Crew wake surfaced in recs only.",
+      "families": [
+        "wrong_state_open_vs_monitor",
+        "soft_maint_not_monitor",
+        "sprint10_style_gap"
+      ],
+      "gitCommit": "0b70a8e495fbbdcec8a0d2bca23f4fd2450265e7",
+      "scenarioFileSha256": "1f092e98683c7e2d51a179a5483b230ee62e1acd9a2e470437aade4f2cc51575",
+      "sourceSha256": "d6a83e5e793a5c7702b6e687a51a082c1277bc4281f232cf216f93ce58e5effb",
+      "actionStateCounts": {
+        "open": 1,
+        "monitor": 0,
+        "information": 0,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 1,
+        "other": 0
+      },
+      "openActionsObserved": [
+        "[maintenance] Follow up open maintenance"
+      ],
+      "hetOpen": [
+        "None material beyond honouring the timed early-crew readiness already prepped — if any OPEN, it is only the 05:20 crew check-in readiness / wake ownership for Night (not inventing new rooms). Prefer treating prepped crew as timed honour work if still outstanding at handover; do not invent payment or eng OPEN."
+      ],
+      "hetMonitor": [
+        "CX12 drain overnight — escalate only if worsens.",
+        "M304 multi-day OOO background.",
+        "Morning valet ticket handback for two cars."
+      ],
+      "briefingLead": "Priority 1 | Follow up open maintenance.",
+      "recommendationCount": 2,
+      "openPaymentCollectCount": 0
+    },
+    {
+      "scenarioId": "004",
+      "title": "Busy AM: Annex Backlog Meets Main Arrivals",
+      "shift": "AM",
+      "load": "Busy",
+      "verdict": "PARTIAL PASS",
+      "notes": "Partial Trent luggage/shuttle staging. Missing material annex VD prioritisation + CX03 Acc Okonkwo hold path; dual-building pressure largely unrecognised.",
+      "families": [
+        "missing_open",
+        "meridian_annex_unrecognised",
+        "meridian_room_id_gap",
+        "partial_shuttle"
+      ],
+      "gitCommit": "0b70a8e495fbbdcec8a0d2bca23f4fd2450265e7",
+      "scenarioFileSha256": "097b25b91193892f900476fc96cc7af6d43250a2cbb903e3de0e903d75bed279",
+      "sourceSha256": "144dcf603db27f19690fd023344b651ae0b3ed474915576e52dfb4dd25cd6a18",
+      "actionStateCounts": {
+        "open": 1,
+        "monitor": 0,
+        "information": 0,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 1,
+        "other": 0
+      },
+      "openActionsObserved": [
+        "[guest_request:luggage_ea] Honour luggage / early-arrival arrangements for Ms Trent"
+      ],
+      "hetOpen": [
+        "Coordinate annex HK prioritisation / readiness communication for CX04/05/09/11 without declaring ready-now.",
+        "Protect CX03 Acc hold for Okonkwo; confirm accessible arrival path.",
+        "Stage keys/luggage readiness for Trent + Iyer on 11:30 shuttle return."
+      ],
+      "hetMonitor": [
+        "Soft annex ready-from-13:00 language — status unknown until HK confirms.",
+        "Afternoon Main arrival stack pressure."
+      ],
+      "briefingLead": "Priority 1 | Honour luggage / early-arrival arrangements for Ms Trent.",
+      "recommendationCount": 1,
+      "openPaymentCollectCount": 0
+    },
+    {
+      "scenarioId": "005",
+      "title": "Spa Day Member Asking to Stay Overnight",
+      "shift": "PM",
+      "load": "Normal",
+      "verdict": "MATERIAL FAIL",
+      "notes": "Reopened DONE iron as OPEN. Missing spa day→overnight conversion clarify for Linden. MS03 soft ready ignored.",
+      "families": [
+        "reopened_done",
+        "missing_open",
+        "meridian_spa_day_guest_unrecognised",
+        "sprint10_done_gap"
+      ],
+      "gitCommit": "0b70a8e495fbbdcec8a0d2bca23f4fd2450265e7",
+      "scenarioFileSha256": "531e01cf172e4fb1fa17afffbaff2f6c834ad2285f099afe3d15e7ce5ce2b406",
+      "sourceSha256": "2019476f6034ae84f0007e6686c0dfd8e29e3212b7267c19a1e558d34ea06311",
+      "actionStateCounts": {
+        "open": 1,
+        "monitor": 0,
+        "information": 0,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 0,
+        "other": 0
+      },
+      "openActionsObserved": [
+        "[guest_request:iron_and_ironing_board] Arrange iron and ironing board"
+      ],
+      "hetOpen": [
+        "Clarification / conversion follow-up for Linden overnight request after daughter callback — Reception/DM with Spa; do not invent completed booking."
+      ],
+      "hetMonitor": [
+        "MS03 readiness path if conversion happens — unconfirmed.",
+        "Callback after 17:00."
+      ],
+      "briefingLead": "Priority 1 | Arrange iron and ironing board.",
+      "recommendationCount": 1,
+      "openPaymentCollectCount": 0
+    },
+    {
+      "scenarioId": "006",
+      "title": "Crew Block vs Quiet-Wing Sell Pressure",
+      "shift": "AM",
+      "load": "Busy",
+      "verdict": "MATERIAL FAIL",
+      "notes": "Silent: no OPEN reallocate for Patel off crew-blocked M212; quiet briefing. Contractual crew hold not protected as work.",
+      "families": [
+        "missing_open",
+        "silent_on_conflict",
+        "meridian_crew_block_unrecognised",
+        "wrong_quiet_shift"
+      ],
+      "gitCommit": "0b70a8e495fbbdcec8a0d2bca23f4fd2450265e7",
+      "scenarioFileSha256": "4dba441c4645ec52bf76125e6a91b867e01ff1e30c1e859a70c77ff46c4c5674",
+      "sourceSha256": "7d926d812d2fa9771fb95e2e7e9942a0699569f32ae689cd384e7770effdefae",
+      "actionStateCounts": {
+        "open": 0,
+        "monitor": 0,
+        "information": 0,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 0,
+        "other": 0
+      },
+      "openActionsObserved": [],
+      "hetOpen": [
+        "Reallocate / clarify room for Patel away from crew-blocked M212 (Reception/DM).",
+        "Protect crew block from leisure sell until written SkyLink release."
+      ],
+      "hetMonitor": [
+        "SkyLink delayed inbound ~22:40 — readiness of quiet wing for crew (not leisure).",
+        "M218 VD as possible path only if confirmed — not promised."
+      ],
+      "briefingLead": "Shift status | No urgent guest-impacting priorities for the incoming team.",
+      "recommendationCount": 0,
+      "openPaymentCollectCount": 0
+    },
+    {
+      "scenarioId": "007",
+      "title": "Valet Full and Pavilion Prefunction",
+      "shift": "PM",
+      "load": "Normal",
+      "verdict": "MATERIAL FAIL",
+      "notes": "Silent on valet tickets / park-full OPEN for Shore. Pavilion tomorrow correctly not chased, but primary valet work absent.",
+      "families": [
+        "missing_open",
+        "meridian_valet_unrecognised",
+        "wrong_quiet_shift"
+      ],
+      "gitCommit": "0b70a8e495fbbdcec8a0d2bca23f4fd2450265e7",
+      "scenarioFileSha256": "4e14eaef073010daeb95dfb9936db7488205b005839329120622c4e17f218eb8",
+      "sourceSha256": "f005b46f2855dfc613f858a59b1c2c9e80d886b1f17439566e29d6587aae0d7a",
+      "actionStateCounts": {
+        "open": 0,
+        "monitor": 0,
+        "information": 0,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 0,
+        "other": 0
+      },
+      "openActionsObserved": [],
+      "hetOpen": [
+        "Issue valet tickets / implement overflow guidance for waiting cars including Shore M109."
+      ],
+      "hetMonitor": [
+        "Sunday 09:00 florist delivery / catering walkthrough — tomorrow, not tonight chase.",
+        "Park capacity through evening peak."
+      ],
+      "briefingLead": "Shift status | No urgent guest-impacting priorities for the incoming team.",
+      "recommendationCount": 0,
+      "openPaymentCollectCount": 0
+    },
+    {
+      "scenarioId": "008",
+      "title": "Truly Quiet Night Control",
+      "shift": "Night",
+      "load": "Quiet / easy control",
+      "verdict": "CLEAR PASS",
+      "notes": "Truly quiet: no OPEN, quiet briefing, Cho DONE as information. Acceptable absence of hard M304 MONITOR on empty night.",
+      "families": [
+        "quiet_control_ok"
+      ],
+      "gitCommit": "0b70a8e495fbbdcec8a0d2bca23f4fd2450265e7",
+      "scenarioFileSha256": "9777cf6d1644e083e29ee75070e6b767f3611c128ceac9a463946012cddd335c",
+      "sourceSha256": "2b0beb60b6ec3ddb1e45354d1f6f9d022fb9b85fcd969c1ed66f167f3b9becc5",
+      "actionStateCounts": {
+        "open": 0,
+        "monitor": 0,
+        "information": 2,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 0,
+        "other": 0
+      },
+      "openActionsObserved": [],
+      "hetOpen": [
+        "**None.** Correct answer may be essentially no urgent priorities."
+      ],
+      "hetMonitor": [
+        "M304 multi-day OOO — not a live night chase."
+      ],
+      "briefingLead": "Shift status | No urgent guest-impacting priorities for the incoming team.",
+      "recommendationCount": 0,
+      "openPaymentCollectCount": 0
+    },
+    {
+      "scenarioId": "009",
+      "title": "Stale Annex Board vs Main Allocation Conflict",
+      "shift": "AM",
+      "load": "Adversarial / ambiguous",
+      "verdict": "MATERIAL FAIL",
+      "notes": "Silent on CX07 stayover vs checkout/vacant-dirty contradiction (Sprint 11-style conflict). Company £95 correctly not collected. Adeyemi DONE OK.",
+      "families": [
+        "missing_open",
+        "silent_on_conflict",
+        "meridian_room_id_gap",
+        "sprint11_blocked_alloc_gap"
+      ],
+      "gitCommit": "0b70a8e495fbbdcec8a0d2bca23f4fd2450265e7",
+      "scenarioFileSha256": "96a8a9b18cf24f2711f92f57cd52ec2547caf1e7af417e3317551788b1fa9a24",
+      "sourceSha256": "4ce7f850f7b92cb0827a34839cdd5e85b4ddcb25fc5f74f475900af14363c6d2",
+      "actionStateCounts": {
+        "open": 0,
+        "monitor": 0,
+        "information": 1,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 1,
+        "other": 0
+      },
+      "openActionsObserved": [],
+      "hetOpen": [
+        "Clarify / confirm CX07 readiness path for Talbot with DM/HK (conflict acknowledgement + clean completion) — allocation contradiction handling.",
+        "Continue without inventing a Main House room change unless DM writes it."
+      ],
+      "hetMonitor": [
+        "Clean progress on CX07 toward 15:00 arrival."
+      ],
+      "briefingLead": "Shift status | No urgent guest-impacting priorities for the incoming team.",
+      "recommendationCount": 0,
+      "openPaymentCollectCount": 0
+    },
+    {
+      "scenarioId": "010",
+      "title": "Wedding Day Pavilion Pressure",
+      "shift": "PM",
+      "load": "Busy",
+      "verdict": "MATERIAL FAIL",
+      "notes": "False OPEN payment:collect on wedding master account + invented £40 minibar collect. Missing cake/valet/CX16 hold OPEN. Payment fail-closed regression-like.",
+      "families": [
+        "false_open_payment",
+        "invention",
+        "missing_open",
+        "sprint9_payment_concern",
+        "meridian_pavilion_unrecognised"
+      ],
+      "gitCommit": "0b70a8e495fbbdcec8a0d2bca23f4fd2450265e7",
+      "scenarioFileSha256": "8aec629a23f78e448ee5f87d372be9d329694f9e4eccd84db007850626c60f30",
+      "sourceSha256": "d6fed6f917bc6f23936e53f5245069b52b6dbd54d21899d3c123d36a90e5108e",
+      "actionStateCounts": {
+        "open": 1,
+        "monitor": 0,
+        "information": 0,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 0,
+        "other": 0
+      },
+      "openActionsObserved": [
+        "[payment:collect] Collect outstanding payment before departure"
+      ],
+      "hetOpen": [
+        "Accept / coordinate cake delivery ~14:20 at pavilion loading door (Events/F&B).",
+        "Clear unprinted valet tickets for vans before ceremony surge.",
+        "Hold CX16 check-in until HK release."
+      ],
+      "hetMonitor": [
+        "Rain plan for cocktails; valet capacity through 16:00.",
+        "CX16 cleaning progress."
+      ],
+      "briefingLead": "Priority 1 | Collect outstanding payment before departure. |  | Priority 2",
+      "recommendationCount": 2,
+      "openPaymentCollectCount": 1
+    },
+    {
+      "scenarioId": "011",
+      "title": "Accessible Arrival and Interconnect Family",
+      "shift": "AM",
+      "load": "Normal",
+      "verdict": "MATERIAL FAIL",
+      "notes": "No canonical OPEN for MA02 Acc Shah or M115 interconnect readiness / 12:50 shuttle. Weak low-priority interconnect rec framed as tomorrow.",
+      "families": [
+        "missing_open",
+        "meridian_room_id_gap",
+        "meridian_accessible_unrecognised",
+        "temporal_misfire"
+      ],
+      "gitCommit": "0b70a8e495fbbdcec8a0d2bca23f4fd2450265e7",
+      "scenarioFileSha256": "5ffa74f6e47b1a3df206ab6dd1fa64e6dd1ebb23484b9d6b4c7f5c3885d16f7d",
+      "sourceSha256": "b154f065efd029a80daf640107e43cb4478e060d16c8c0d0963566b880be6e60",
+      "actionStateCounts": {
+        "open": 0,
+        "monitor": 0,
+        "information": 0,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 0,
+        "other": 0
+      },
+      "openActionsObserved": [],
+      "hetOpen": [
+        "Protect MA02 hold / check-in path for Shah (accessible).",
+        "Chase / clarify M115 readiness for interconnect before ~15:00 Farah arrival (HK/Reception).",
+        "Honour Shah 12:50 shuttle listing."
+      ],
+      "hetMonitor": [
+        "Soft M115 ready-by-14:00 — not promised."
+      ],
+      "briefingLead": "Priority 1 | Reserve interconnecting rooms for Mrs Farah.",
+      "recommendationCount": 1,
+      "openPaymentCollectCount": 0
+    },
+    {
+      "scenarioId": "012",
+      "title": "Night Information Heavy, MONITOR Only",
+      "shift": "Night",
+      "load": "Quiet / easy control",
+      "verdict": "CLEAR PASS",
+      "notes": "MONITOR tomorrow inspect for mitigated comfort; towels DONE resolved; no false OPEN. Information-heavy quiet night succeeds.",
+      "families": [
+        "quiet_control_ok",
+        "monitor_ok",
+        "done_ok"
+      ],
+      "gitCommit": "0b70a8e495fbbdcec8a0d2bca23f4fd2450265e7",
+      "scenarioFileSha256": "60ac2af959debe7b35c09a97e76a8715a3bb73fdc46e81e3d2d2bdeb82c0f4b4",
+      "sourceSha256": "045cea0c031912cd3b6fad2346b5fd206d28028a06a242e1ea867f11a761ddad",
+      "actionStateCounts": {
+        "open": 0,
+        "monitor": 1,
+        "information": 0,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 1,
+        "other": 0
+      },
+      "openActionsObserved": [],
+      "hetOpen": [
+        "**None.**"
+      ],
+      "hetMonitor": [
+        "M305 comfort overnight / tomorrow eng inspect.",
+        "M304 multi-day OOO background."
+      ],
+      "briefingLead": "Priority 1 | Monitor maintenance — inspection due tomorrow (not an immediate chase).",
+      "recommendationCount": 0,
+      "openPaymentCollectCount": 0
+    },
+    {
+      "scenarioId": "013",
+      "title": "Treatment Room Sold as Bedroom (Adversarial)",
+      "shift": "PM",
+      "load": "Adversarial / ambiguous",
+      "verdict": "MATERIAL FAIL",
+      "notes": "Silent on TR-2 treatment-room-as-bedroom invalid allocation / Crowe reallocate. Cancelled flowers not falsely OPEN. Novel spa inventory failure.",
+      "families": [
+        "missing_open",
+        "silent_on_conflict",
+        "meridian_treatment_room_unrecognised",
+        "invention_risk_absent_but_silent"
+      ],
+      "gitCommit": "0b70a8e495fbbdcec8a0d2bca23f4fd2450265e7",
+      "scenarioFileSha256": "cdee33fb6029279974c99906c4d93ac73930a3442d49c626331bdfd2bc130fce",
+      "sourceSha256": "40e613b1a2ff99b4c3c3907656c76909a0c593a7935e6cdb8a6a6342ddf1c115",
+      "actionStateCounts": {
+        "open": 0,
+        "monitor": 0,
+        "information": 1,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 1,
+        "other": 0
+      },
+      "openActionsObserved": [],
+      "hetOpen": [
+        "Clarify / reallocate Crowe away from TR-2 to a real sellable guest room (DM/Reception with Spa) — do not invent final room number as solved."
+      ],
+      "hetMonitor": [
+        "M126 soft ready language; MS01 soft OOO not sellable."
+      ],
+      "briefingLead": "Shift status | No urgent guest-impacting priorities for the incoming team.",
+      "recommendationCount": 0,
+      "openPaymentCollectCount": 0
+    },
+    {
+      "scenarioId": "014",
+      "title": "Night Payment Contrast and Lean Cover",
+      "shift": "Night",
+      "load": "Normal",
+      "verdict": "MATERIAL FAIL",
+      "notes": "Genuine £64.80 Calder collect MISSING as OPEN; instead dual OPEN maintenance. Prepaid/company resolved. Sprint 9 true-positive gap + false maint OPEN.",
+      "families": [
+        "missing_open_payment",
+        "false_open_maintenance",
+        "sprint9_payment_concern",
+        "wrong_state_open_vs_monitor"
+      ],
+      "gitCommit": "0b70a8e495fbbdcec8a0d2bca23f4fd2450265e7",
+      "scenarioFileSha256": "ab93232e930f16165e649694fa83536f787330ed47774756fb58535f05a94638",
+      "sourceSha256": "3fcf325044851dc5a923afcba55bbfa77b16255df5aa9e7f8a8d891482d12a62",
+      "actionStateCounts": {
+        "open": 2,
+        "monitor": 0,
+        "information": 0,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 2,
+        "other": 0
+      },
+      "openActionsObserved": [
+        "[maintenance] Follow up open maintenance",
+        "[maintenance] Follow up open maintenance"
+      ],
+      "hetOpen": [
+        "Collect / settle £64.80 with Calder M124 (or first contact when appropriate overnight)."
+      ],
+      "hetMonitor": [
+        "M311 extractor overnight / eng tomorrow.",
+        "M133 balance due tomorrow — future payment, not tonight OPEN collect."
+      ],
+      "briefingLead": "Priority 1 | Follow up open maintenance. |  | Priority 2",
+      "recommendationCount": 2,
+      "openPaymentCollectCount": 0
+    },
+    {
+      "scenarioId": "015",
+      "title": "Early-AM Airport Pressure Stack",
+      "shift": "AM",
+      "load": "Busy",
+      "verdict": "MATERIAL FAIL",
+      "notes": "Misframed Okonkwo accessible shuttle conflict as EA/luggage OPEN; missing transport clarify. False 07:20 wake rec. 05:45 DONE not reopened as work (OK).",
+      "families": [
+        "wrong_open_framing",
+        "missing_open",
+        "meridian_shuttle_unrecognised",
+        "false_recommendation",
+        "entity_binding_error"
+      ],
+      "gitCommit": "0b70a8e495fbbdcec8a0d2bca23f4fd2450265e7",
+      "scenarioFileSha256": "6366dc52da82d5a60d9270acda42fe37112316ae8527aa8c6bc97c10a0593ac6",
+      "sourceSha256": "296dd471122951cfbdd8dabb48964fc6f546a0bcabaf440b36893240f0dd02c2",
+      "actionStateCounts": {
+        "open": 2,
+        "monitor": 0,
+        "information": 0,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 1,
+        "other": 0
+      },
+      "openActionsObserved": [
+        "[guest_request:ea_luggage_near] Honour early arrival / lunch luggage arrangements for Acc Okonkwo",
+        "[guest_request:luggage_ea] Honour luggage / early-arrival arrangements"
+      ],
+      "hetOpen": [
+        "Resolve Okonkwo accessible transport plan (07:20 vs 08:10 vs taxi) with Concierge/Shuttle — do not silently drop.",
+        "Manage early departure luggage/HK turn pressure without inventing room ready times."
+      ],
+      "hetMonitor": [
+        "M126 EA ~11:00 if-ready — unconfirmed.",
+        "09:15 shuttle full list."
+      ],
+      "briefingLead": "Priority 1 | Honour early arrival / lunch luggage arrangements for Acc Okonkwo. |  | Priority 2",
+      "recommendationCount": 3,
+      "openPaymentCollectCount": 0
+    },
+    {
+      "scenarioId": "016",
+      "title": "Conditional Champagne and Genuine Twin Prep",
+      "shift": "PM",
+      "load": "Normal",
+      "verdict": "PARTIAL PASS",
+      "notes": "Twin OPEN for Nwosu correct; champagne conditional→unresolved appropriate. Fruit+welcome card not clearly OPEN (bundled/soft). Balloons not reopened.",
+      "families": [
+        "amenity_partial",
+        "conditional_ok",
+        "twin_ok"
+      ],
+      "gitCommit": "0b70a8e495fbbdcec8a0d2bca23f4fd2450265e7",
+      "scenarioFileSha256": "336a3af5ecfee9b5d2afc3af71d26520cb43089c89559fe3c39a09ddaceff312",
+      "sourceSha256": "5198569f80d6059f185c27ff197e6558c080fbf4237fee042863b093dc602bf3",
+      "actionStateCounts": {
+        "open": 1,
+        "monitor": 0,
+        "information": 3,
+        "unresolved": 1,
+        "blocked": 0,
+        "resolved": 0,
+        "other": 0
+      },
+      "openActionsObserved": [
+        "[amenity:twin] Prepare twin beds for Mrs Nwosu"
+      ],
+      "hetOpen": [
+        "Prepare fruit + welcome card for Brennan MS03.",
+        "Prepare twin beds for Nwosu M206 before arrival."
+      ],
+      "hetMonitor": [
+        "Champagne only if stock confirmed — conditional; must not be hard unpaid promise."
+      ],
+      "briefingLead": "Priority 1 | Prepare twin beds for Mrs Nwosu.",
+      "recommendationCount": 1,
+      "openPaymentCollectCount": 0
+    },
+    {
+      "scenarioId": "017",
+      "title": "Busy PM: Crew Inbound, Spa Close, Valet Leftover",
+      "shift": "PM",
+      "load": "Busy",
+      "verdict": "MATERIAL FAIL",
+      "notes": "Silent on M213 priority turn, valet tickets before 23:00, and 21:15 shuttle. Wrong quiet briefing into lean Night handoff.",
+      "families": [
+        "missing_open",
+        "meridian_crew_block_unrecognised",
+        "meridian_valet_unrecognised",
+        "meridian_shuttle_unrecognised",
+        "wrong_quiet_shift"
+      ],
+      "gitCommit": "0b70a8e495fbbdcec8a0d2bca23f4fd2450265e7",
+      "scenarioFileSha256": "2ae06d1fb3081e138fb3cf3ddf64bf42ba6027bef3f1381e5ebf0a20e659399d",
+      "sourceSha256": "9472978a3c8229e3d1ce5c68c8c53c912ce7e600359ffc2baa6be7717b630d9c",
+      "actionStateCounts": {
+        "open": 0,
+        "monitor": 0,
+        "information": 0,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 2,
+        "other": 0
+      },
+      "openActionsObserved": [],
+      "hetOpen": [
+        "Priority turn / readiness for M213 within crew hold before 22:50.",
+        "Complete valet tickets for two outstanding cars before 23:00 Night handoff.",
+        "Honour last 21:15 shuttle pax list."
+      ],
+      "hetMonitor": [
+        "CX18 noise overnight unless worsens.",
+        "Crew inbound delay risk around 22:50."
+      ],
+      "briefingLead": "Shift status | No urgent guest-impacting priorities for the incoming team.",
+      "recommendationCount": 0,
+      "openPaymentCollectCount": 0
+    },
+    {
+      "scenarioId": "018",
+      "title": "Interconnect Broken Across Buildings",
+      "shift": "AM",
+      "load": "Adversarial / ambiguous",
+      "verdict": "MATERIAL FAIL",
+      "notes": "Does not OPEN-clarify invalid Main+Annex interconnect (M152+CX10). Seats generic 'reserve interconnect tomorrow' without naming impossibility.",
+      "families": [
+        "missing_open",
+        "silent_on_conflict",
+        "meridian_annex_unrecognised",
+        "temporal_misfire",
+        "invention_soft"
+      ],
+      "gitCommit": "0b70a8e495fbbdcec8a0d2bca23f4fd2450265e7",
+      "scenarioFileSha256": "4fd33e04451b503a18800f4202ca8331a2506042bb61e6623ae20144007db699",
+      "sourceSha256": "2c0e0ac3a8b1129a8c3bda04fb157452c18e07e2e320bef037f3699408bfd68a",
+      "actionStateCounts": {
+        "open": 0,
+        "monitor": 0,
+        "information": 1,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 0,
+        "other": 0
+      },
+      "openActionsObserved": [],
+      "hetOpen": [
+        "Clarify / reallocate Okada to a valid Main interconnect configuration — do not treat M152+CX10 as solved product."
+      ],
+      "hetMonitor": [
+        "M155 VD readiness as possible pair component — unconfirmed.",
+        "Pike M153 stayover until tomorrow — not early-out assumption."
+      ],
+      "briefingLead": "Priority 1 | Reserve interconnecting rooms for Mrs Okada.",
+      "recommendationCount": 1,
+      "openPaymentCollectCount": 0
+    },
+    {
+      "scenarioId": "019",
+      "title": "Settled Folio Afternoon, Almost Nothing To Do",
+      "shift": "PM",
+      "load": "Quiet / easy control",
+      "verdict": "CLEAR PASS",
+      "notes": "Quiet control: no urgent OPEN, settled folios non-collect, declined flowers not prepped, quiet briefing.",
+      "families": [
+        "quiet_control_ok",
+        "payment_fail_closed_ok",
+        "done_ok"
+      ],
+      "gitCommit": "0b70a8e495fbbdcec8a0d2bca23f4fd2450265e7",
+      "scenarioFileSha256": "bc3fb9737abfafeddce7a722b42a2aca605fc6b95fb355a7d3838664de0e8c33",
+      "sourceSha256": "ed700985ecaad7b500300ad2327b48a361db0df061dae415bef8c500911800cb",
+      "actionStateCounts": {
+        "open": 0,
+        "monitor": 0,
+        "information": 1,
+        "unresolved": 0,
+        "blocked": 0,
+        "resolved": 2,
+        "other": 0
+      },
+      "openActionsObserved": [],
+      "hetOpen": [
+        "**None material.** Checking in two ready prepaid arrivals when they land is routine continuity, not a priority crisis. Prefer no urgent OPEN list."
+      ],
+      "hetMonitor": [
+        "Late flyer ETAs only as awareness.",
+        "Cosmetic corridor light on tomorrow AM list — not live OPEN."
+      ],
+      "briefingLead": "Shift status | No urgent guest-impacting priorities for the incoming team.",
+      "recommendationCount": 0,
+      "openPaymentCollectCount": 0
+    },
+    {
+      "scenarioId": "020",
+      "title": "Adversarial Night Paste: Everything Competing",
+      "shift": "Night",
+      "load": "Adversarial / ambiguous",
+      "verdict": "PARTIAL PASS",
+      "notes": "Holt £42.50 collect OPEN preserved (Sprint 9 TP). Quill/Opera noise not collected. Briefing wrongly leads with leak chase (should MONITOR controlled stain); wake 04:30 present.",
+      "families": [
+        "payment_collect_ok",
+        "wrong_state_open_vs_monitor",
+        "priority_seating_error",
+        "false_friend_noise_mostly_ok"
+      ],
+      "gitCommit": "0b70a8e495fbbdcec8a0d2bca23f4fd2450265e7",
+      "scenarioFileSha256": "ce93966beb7c7027381cbd67fc6ec23519de9faad1eb285b2dfc0355fbbe4949",
+      "sourceSha256": "536ff32bd18c051b7ab455145ec421e983e87ed042af17178fbb60690adf4791",
+      "actionStateCounts": {
+        "open": 1,
+        "monitor": 0,
+        "information": 3,
+        "unresolved": 1,
+        "blocked": 0,
+        "resolved": 0,
+        "other": 0
+      },
+      "openActionsObserved": [
+        "[payment:collect] Collect outstanding payment before departure"
+      ],
+      "hetOpen": [
+        "Collect £42.50 Holt M128 when contact possible overnight.",
+        "Honour early crew readiness / wake for M210–M212 ~04:55 (timed Night ownership)."
+      ],
+      "hetMonitor": [
+        "CX11 controlled stain overnight; morning valet leftover car; champagne only if stock later.",
+        "CX03 Acc status clarify with HK in AM — not Night sell."
+      ],
+      "briefingLead": "Priority 1 | Follow up with Maintenance regarding shower/leak before further guest impact. |  | Priority 2",
+      "recommendationCount": 3,
+      "openPaymentCollectCount": 1
+    }
+  ]
+}

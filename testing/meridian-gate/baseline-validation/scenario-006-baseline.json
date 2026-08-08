@@ -1,0 +1,347 @@
+{
+  "label": "MERIDIAN GATE FIRST-RUN BASELINE OUTPUT",
+  "scenarioId": "006",
+  "title": "Crew Block vs Quiet-Wing Sell Pressure",
+  "recordId": null,
+  "gitCommit": "0b70a8e495fbbdcec8a0d2bca23f4fd2450265e7",
+  "engineVersion": 1,
+  "contractVersion": "E1",
+  "ranAt": "2026-08-08T13:29:06.237Z",
+  "pipeline": [
+    "extractOperationalFact / sectionFromFact",
+    "consolidateNotesByFacts",
+    "resolveOperationalEntities (Sprint 3)",
+    "electCanonicalCurrentState (Sprint 1)",
+    "resolveOperationalDependencies (Sprint 4)",
+    "buildCanonicalOperationalActions (Sprint 5/6/8/9/10/11 — current HEAD)",
+    "buildOrganisedSectionModel",
+    "buildTodaysBriefing (decision seating)",
+    "ShiftIntelligenceEngine.analyze (recommendation seating)"
+  ],
+  "scenarioMeta": {
+    "shift": "AM",
+    "operationalLoad": "Busy",
+    "ambiguity": "Partial",
+    "departments": "Reception, Housekeeping, Airline crew liaison",
+    "preparedBy": "Marcus Quinn — Duty Manager (fictional)",
+    "sourceFile": "scenario-006.md",
+    "scenarioFileSha256": "4dba441c4645ec52bf76125e6a91b867e01ff1e30c1e859a70c77ff46c4c5674"
+  },
+  "humanExpectedTruth": {
+    "currentOperationalFacts": [
+      "M210–M215 contractual SkyLink hold (delayed inbound ~22:40) — not sellable.",
+      "Patel wrongly showing M212 inside crew block — must reallocate/clarify; prepaid.",
+      "M216/M217 clean; M218 VD; annex near full — no invented CX dump.",
+      "Rack “sell M214” note is wrong against contract."
+    ],
+    "open": [
+      "Reallocate / clarify room for Patel away from crew-blocked M212 (Reception/DM).",
+      "Protect crew block from leisure sell until written SkyLink release."
+    ],
+    "monitor": [
+      "SkyLink delayed inbound ~22:40 — readiness of quiet wing for crew (not leisure).",
+      "M218 VD as possible path only if confirmed — not promised."
+    ],
+    "information": [
+      "Patel prepaid; annex near full; clean M216/M217 as house facts."
+    ],
+    "unresolved": [
+      "Which exact sellable Main room Patel takes — unresolved until allocated in writing; do not invent."
+    ],
+    "completedMustNotReopen": [
+      "“Release two for walk-ins” reservations chat — superseded by DM no — must not treat as released inventory.",
+      "False “sell M214” — must not become OPEN sell instruction."
+    ],
+    "bindings": [
+      "Patel ≠ M212; crew M210–M215; inbound ~22:40; Main vs Annex constraint."
+    ],
+    "mustNotInfer": [
+      "Keeping Patel on M212.",
+      "Selling crew rooms to walk-ins.",
+      "Inventing a specific CX room for Patel without evidence.",
+      "Collect on prepaid Patel."
+    ],
+    "rationale": [
+      "Busy AM: contractual crew inventory vs wrong system allocation — OPEN clarify without inventing annex."
+    ],
+    "rawTruthMarkdown": "### Current operational facts\r\n- M210–M215 contractual SkyLink hold (delayed inbound ~22:40) — not sellable.\r\n- Patel wrongly showing M212 inside crew block — must reallocate/clarify; prepaid.\r\n- M216/M217 clean; M218 VD; annex near full — no invented CX dump.\r\n- Rack “sell M214” note is wrong against contract.\r\n\r\n### Expected OPEN actions\r\n- Reallocate / clarify room for Patel away from crew-blocked M212 (Reception/DM).\r\n- Protect crew block from leisure sell until written SkyLink release.\r\n\r\n### Expected MONITOR items\r\n- SkyLink delayed inbound ~22:40 — readiness of quiet wing for crew (not leisure).\r\n- M218 VD as possible path only if confirmed — not promised.\r\n\r\n### Expected INFORMATION\r\n- Patel prepaid; annex near full; clean M216/M217 as house facts.\r\n\r\n### Expected UNRESOLVED / clarifications\r\n- Which exact sellable Main room Patel takes — unresolved until allocated in writing; do not invent.\r\n\r\n### Explicit completed / resolved / superseded (must not reopen)\r\n- “Release two for walk-ins” reservations chat — superseded by DM no — must not treat as released inventory.\r\n- False “sell M214” — must not become OPEN sell instruction.\r\n\r\n### Important entity / room / time bindings\r\n- Patel ≠ M212; crew M210–M215; inbound ~22:40; Main vs Annex constraint.\r\n\r\n### Must not invent\r\n- Keeping Patel on M212.\r\n- Selling crew rooms to walk-ins.\r\n- Inventing a specific CX room for Patel without evidence.\r\n- Collect on prepaid Patel.\r\n\r\n### Short human rationale\r\nBusy AM: contractual crew inventory vs wrong system allocation — OPEN clarify without inventing annex."
+  },
+  "canonicalActions": [],
+  "actionStateCounts": {
+    "open": 0,
+    "monitor": 0,
+    "information": 0,
+    "unresolved": 0,
+    "blocked": 0,
+    "resolved": 0,
+    "other": 0
+  },
+  "temporalAnchor": {
+    "handoverDate": "2026-09-12",
+    "shift": "AM",
+    "createdAt": "2026-09-12T07:15:00.000Z"
+  },
+  "decisionSeats": {
+    "seats": [],
+    "seatedCanonicalIds": [],
+    "source": "canonical_decision_seats",
+    "surface": "briefing",
+    "maxN": 5
+  },
+  "inputIntegrity": {
+    "inputAuthority": "scenario-XXX.md Original Input / Raw Source Notes",
+    "scenarioFileSha256": "4dba441c4645ec52bf76125e6a91b867e01ff1e30c1e859a70c77ff46c4c5674",
+    "sourceSha256": "7d926d812d2fa9771fb95e2e7e9942a0699569f32ae689cd384e7770effdefae",
+    "sourceLength": 712,
+    "lineCount": 10,
+    "brainContext": null,
+    "hotelSnapshotKeys": [],
+    "humanExpectedTruthPreserved": true,
+    "freezeStatus": "FROZEN BEFORE FIRST HF RUN"
+  },
+  "exactSourceInput": "AM chaos notes.\n\nCREW CONTRACT\nSkyLink holds **M210–M215** quiet wing tonight (inbound ~22:40 delayed from original 05:00 — ops delay). Contractual — **do not sell** these six to leisure walk-ins. Reservations chat suggested “release two for walk-ins” — **DM says no** until SkyLink written release.\n\nMeanwhile leisure arrival **Mr Patel** was showing system allocation **M212** — that is inside crew block. He **cannot** stay on M212. Need reallocate / clarify on Main sellable stock — do **not** invent CX without checking annex board (annex almost full).\n\nHK\nM216 / M217 clean. M218 vacant dirty.\n\nPAYMENT\nPatel prepaid — no collect.\n\nNOISE\nSomeone wrote “sell M214 — empty on rack” — ignore; still crew hold.",
+  "hotelSnapshot": {},
+  "aiSummaryBriefing": "Shift status\nNo urgent guest-impacting priorities for the incoming team.",
+  "briefingParagraphs": [
+    "Shift status\nNo urgent guest-impacting priorities for the incoming team."
+  ],
+  "organisedHandover": {
+    "urgent": [],
+    "vip": [],
+    "guest": [],
+    "maintenance": [],
+    "payments": [],
+    "events": [
+      "Meanwhile leisure arrival **Mr Patel** was showing system allocation **M212** — that is inside crew block. He **cannot** stay on M212. Need reallocate / clarify on Main sellable stock — do **not** invent CX without checking annex board (annex almost full)."
+    ],
+    "preparations": [],
+    "openQuestions": [],
+    "tasks": [],
+    "inventory": [],
+    "deliveries": [],
+    "lostproperty": [],
+    "general": [
+      "PAYMENT",
+      "AM chaos notes.",
+      "CREW CONTRACT",
+      "SkyLink holds **M210–M215** quiet wing tonight (inbound ~22:40 delayed from original 05:00 — ops delay). Contractual — **do not sell** these six to leisure walk-ins. Reservations chat suggested “release two for walk-ins” — **DM says no** until SkyLink written release.",
+      "HK",
+      "M216 / M217 clean. M218 vacant dirty.",
+      "Patel prepaid — no collect.",
+      "NOISE",
+      "Someone wrote “sell M214 — empty on rack” — ignore; still crew hold."
+    ],
+    "completed": []
+  },
+  "recommendations": [],
+  "reasoningMetadata": {
+    "noteCountAfterPipeline": 10,
+    "dependencyEdgeCount": 0,
+    "dependencyEdges": [],
+    "analyzeKeys": [
+      "engineVersion",
+      "signals",
+      "recommendations",
+      "checklist",
+      "facts",
+      "operationalMemories",
+      "guestObservations",
+      "guestObservationRejections",
+      "guestCandidates",
+      "guestCandidateRejections"
+    ],
+    "quietShift": null,
+    "decisionSeating": {
+      "briefingUsesCanonicalActions": true,
+      "recommendationsFromAnalyze": true,
+      "sharedCanonicalList": true,
+      "selectDecisionSeatsCaptured": true
+    }
+  },
+  "noteEvidence": [
+    {
+      "original": "AM chaos notes.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "CREW CONTRACT",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "SkyLink holds **M210–M215** quiet wing tonight (inbound ~22:40 delayed from original 05:00 — ops delay). Contractual — **do not sell** these six to leisure walk-ins. Reservations chat suggested “release two for walk-ins” — **DM says no** until SkyLink written release.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_1",
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Meanwhile leisure arrival **Mr Patel** was showing system allocation **M212** — that is inside crew block. He **cannot** stay on M212. Need reallocate / clarify on Main sellable stock — do **not** invent CX without checking annex board (annex almost full).",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "requested"
+    },
+    {
+      "original": "HK",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "M216 / M217 clean. M218 vacant dirty.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "PAYMENT",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Patel prepaid — no collect.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "NOISE",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Someone wrote “sell M214 — empty on rack” — ignore; still crew hold.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    }
+  ],
+  "reviewPlaceholder": {
+    "status": "PENDING_HUMAN_REVIEW",
+    "note": "First-run baseline only. Compare to frozen Human Expected Truth. Do not modify engine or scenarios."
+  }
+}

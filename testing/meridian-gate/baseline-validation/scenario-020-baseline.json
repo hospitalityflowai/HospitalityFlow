@@ -1,0 +1,660 @@
+{
+  "label": "MERIDIAN GATE FIRST-RUN BASELINE OUTPUT",
+  "scenarioId": "020",
+  "title": "Adversarial Night Paste: Everything Competing",
+  "recordId": null,
+  "gitCommit": "0b70a8e495fbbdcec8a0d2bca23f4fd2450265e7",
+  "engineVersion": 1,
+  "contractVersion": "E1",
+  "ranAt": "2026-08-08T13:29:06.237Z",
+  "pipeline": [
+    "extractOperationalFact / sectionFromFact",
+    "consolidateNotesByFacts",
+    "resolveOperationalEntities (Sprint 3)",
+    "electCanonicalCurrentState (Sprint 1)",
+    "resolveOperationalDependencies (Sprint 4)",
+    "buildCanonicalOperationalActions (Sprint 5/6/8/9/10/11 — current HEAD)",
+    "buildOrganisedSectionModel",
+    "buildTodaysBriefing (decision seating)",
+    "ShiftIntelligenceEngine.analyze (recommendation seating)"
+  ],
+  "scenarioMeta": {
+    "shift": "Night",
+    "operationalLoad": "Adversarial / ambiguous",
+    "ambiguity": "Yes (primary)",
+    "departments": "Night Team, Duty Manager on-call, Engineering, Reception",
+    "preparedBy": "Jonas Berg — Night Manager (fictional)",
+    "sourceFile": "scenario-020.md",
+    "scenarioFileSha256": "ce93966beb7c7027381cbd67fc6ec23519de9faad1eb285b2dfc0355fbbe4949"
+  },
+  "humanExpectedTruth": {
+    "currentOperationalFacts": [
+      "CX11 stain controlled/isolated; guest declined move; MONITOR overnight / tomorrow inspect; not release.",
+      "Crew M210–M212 for 04:55; keys/wake ready.",
+      "Holt M128 £42.50 genuine collect.",
+      "False collect Quill / Opera 32 / TR-3 bedroom / unapproved M126 move — ignore or non-action.",
+      "Fruit MS04 DONE; champagne conditional; CX03 not free."
+    ],
+    "open": [
+      "Collect £42.50 Holt M128 when contact possible overnight.",
+      "Honour early crew readiness / wake for M210–M212 ~04:55 (timed Night ownership)."
+    ],
+    "monitor": [
+      "CX11 controlled stain overnight; morning valet leftover car; champagne only if stock later.",
+      "CX03 Acc status clarify with HK in AM — not Night sell."
+    ],
+    "information": [
+      "Spa/valet closed; fruit DONE; wrong-hotel paste noise; TR-3 not bedroom; declined room move."
+    ],
+    "unresolved": [
+      "Whether CX03 sticky vs stayover needs AM HK align — not solvable by inventing free Acc tonight.",
+      "Champagne availability."
+    ],
+    "completedMustNotReopen": [
+      "Fruit MS04 — DONE.",
+      "Room move to M126 — not approved + declined — must not OPEN relocate.",
+      "Uncontrolled flood narrative — superseded by isolation + declined move + monitor instruction.",
+      "Quill £120 / Opera 32 — invalid noise — must not OPEN."
+    ],
+    "bindings": [
+      "CX11/CX17 stain; Holt M128 £42.50; crew M210–M212 @04:55; wake 04:30; MS04 DONE."
+    ],
+    "mustNotInfer": [
+      "Uncontrolled leak OPEN chase tonight.",
+      "Forced room move.",
+      "Quill collect or Opera room 32 allocation.",
+      "Selling TR-3 or CX03 Acc.",
+      "Hard OPEN champagne.",
+      "Cross-building “fix” without DM."
+    ],
+    "rationale": [
+      "Adversarial lean Night: real debt + crew timing + controlled maint MONITOR; heavy false-friend noise must not win."
+    ],
+    "rawTruthMarkdown": "### Current operational facts\r\n- CX11 stain controlled/isolated; guest declined move; MONITOR overnight / tomorrow inspect; not release.\r\n- Crew M210–M212 for 04:55; keys/wake ready.\r\n- Holt M128 £42.50 genuine collect.\r\n- False collect Quill / Opera 32 / TR-3 bedroom / unapproved M126 move — ignore or non-action.\r\n- Fruit MS04 DONE; champagne conditional; CX03 not free.\r\n\r\n### Expected OPEN actions\r\n- Collect £42.50 Holt M128 when contact possible overnight.\r\n- Honour early crew readiness / wake for M210–M212 ~04:55 (timed Night ownership).\r\n\r\n### Expected MONITOR items\r\n- CX11 controlled stain overnight; morning valet leftover car; champagne only if stock later.\r\n- CX03 Acc status clarify with HK in AM — not Night sell.\r\n\r\n### Expected INFORMATION\r\n- Spa/valet closed; fruit DONE; wrong-hotel paste noise; TR-3 not bedroom; declined room move.\r\n\r\n### Expected UNRESOLVED / clarifications\r\n- Whether CX03 sticky vs stayover needs AM HK align — not solvable by inventing free Acc tonight.\r\n- Champagne availability.\r\n\r\n### Explicit completed / resolved / superseded (must not reopen)\r\n- Fruit MS04 — DONE.\r\n- Room move to M126 — not approved + declined — must not OPEN relocate.\r\n- Uncontrolled flood narrative — superseded by isolation + declined move + monitor instruction.\r\n- Quill £120 / Opera 32 — invalid noise — must not OPEN.\r\n\r\n### Important entity / room / time bindings\r\n- CX11/CX17 stain; Holt M128 £42.50; crew M210–M212 @04:55; wake 04:30; MS04 DONE.\r\n\r\n### Must not invent\r\n- Uncontrolled leak OPEN chase tonight.\r\n- Forced room move.\r\n- Quill collect or Opera room 32 allocation.\r\n- Selling TR-3 or CX03 Acc.\r\n- Hard OPEN champagne.\r\n- Cross-building “fix” without DM.\r\n\r\n### Short human rationale\r\nAdversarial lean Night: real debt + crew timing + controlled maint MONITOR; heavy false-friend noise must not win."
+  },
+  "canonicalActions": [
+    {
+      "actionId": "act|noent|noroom|payment_collect|collect_before_departure|meridian_baseline_5",
+      "actionState": "open",
+      "actionType": "collect_before_departure",
+      "facetKey": "payment:collect",
+      "room": "",
+      "rooms": [],
+      "entityId": null,
+      "canonicalName": "Mr Holt",
+      "actionText": "Collect outstanding payment before departure",
+      "priorityBand": "P2",
+      "priorityScore": 35,
+      "priorityReasons": [
+        "payment_actionable",
+        "money_not_safety",
+        "payment_collect_evidenced",
+        "sprint9_fail_closed",
+        "temporal:am_window_night_handover"
+      ],
+      "temporalScope": "today",
+      "serviceDate": "2026-09-25",
+      "deadlineHint": "collect",
+      "relativeCue": "morning",
+      "temporalConfidence": "medium",
+      "temporalReasons": [
+        "am_window_night_handover"
+      ],
+      "evidenceText": "3) **M128 Mr Holt** — genuine open balance **£42.50** bar — collect when he returns from late flight (~23:30 expected) or bag to morning if missed — real debt."
+    },
+    {
+      "actionId": "act|noent|noroom|amenity_conditional|type|meridian_baseline_11",
+      "actionState": "unresolved",
+      "actionType": "operational_follow_up",
+      "facetKey": "amenity:conditional",
+      "room": "",
+      "rooms": [],
+      "entityId": null,
+      "canonicalName": "",
+      "actionText": "Confirm availability before preparing champagne",
+      "priorityBand": "P3",
+      "priorityScore": 70,
+      "priorityReasons": [
+        "amenity_conditional_fail_closed",
+        "sprint10_state_resolution"
+      ],
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "- Champagne for M140 **if available** — stock unknown — **not** hard OPEN."
+    },
+    {
+      "actionId": "act|noent|noroom|vip_prep_complete|type|meridian_baseline_10",
+      "actionState": "information",
+      "actionType": "operational_follow_up",
+      "facetKey": "vip:prep_complete",
+      "room": "",
+      "rooms": [],
+      "entityId": null,
+      "canonicalName": "",
+      "actionText": "VIP prep complete / awareness only",
+      "priorityBand": "P3",
+      "priorityScore": 78,
+      "priorityReasons": [
+        "vip_prep_complete"
+      ],
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "- Fruit MS04 — already placed — DONE."
+    },
+    {
+      "actionId": "act|ent_2|noroom|payment_insufficient_evidence|type|meridian_baseline_12",
+      "actionState": "information",
+      "actionType": "operational_follow_up",
+      "facetKey": "payment:insufficient_evidence",
+      "room": "",
+      "rooms": [],
+      "entityId": "ent_2",
+      "canonicalName": "",
+      "actionText": "Payment-related note retained — insufficient evidence for collect chase",
+      "priorityBand": "P3",
+      "priorityScore": 85,
+      "priorityReasons": [
+        "fail_closed_payment"
+      ],
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "- Reservations note: move CX11 guest to Main M126 tonight — **DM not approved**; guest declined move anyway."
+    },
+    {
+      "actionId": "act|noent|noroom|payment_insufficient_evidence|type|meridian_baseline_3",
+      "actionState": "information",
+      "actionType": "operational_follow_up",
+      "facetKey": "payment:insufficient_evidence",
+      "room": "",
+      "rooms": [],
+      "entityId": null,
+      "canonicalName": "",
+      "actionText": "Payment-related note retained — insufficient evidence for collect chase",
+      "priorityBand": "P3",
+      "priorityScore": 85,
+      "priorityReasons": [
+        "fail_closed_payment"
+      ],
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "1) **CX11** — water stain on ceiling after annex shower above (CX17). Water **isolated**. Guest in CX11 comfortable with room move offer — **declined for tonight**. Eng: “monitor overnight, inspect tomorrow — **not a release**”. Do **not** treat as uncontrolled flood OPEN chase t"
+    }
+  ],
+  "actionStateCounts": {
+    "open": 1,
+    "monitor": 0,
+    "information": 3,
+    "unresolved": 1,
+    "blocked": 0,
+    "resolved": 0,
+    "other": 0
+  },
+  "temporalAnchor": {
+    "handoverDate": "2026-09-25",
+    "shift": "Night",
+    "createdAt": "2026-09-25T23:20:00.000Z"
+  },
+  "decisionSeats": {
+    "seats": [
+      {
+        "action": {
+          "actionId": "act|noent|noroom|payment_collect|collect_before_departure|meridian_baseline_5",
+          "objectId": "",
+          "entityId": null,
+          "resolutionState": "unresolved",
+          "canonicalName": "Mr Holt",
+          "room": "",
+          "rooms": [],
+          "actionType": "collect_before_departure",
+          "actionState": "open",
+          "facetKey": "payment:collect",
+          "actionText": "Collect outstanding payment before departure",
+          "displayLabel": "Collect outstanding payment before departure",
+          "evidenceText": "3) **M128 Mr Holt** — genuine open balance **£42.50** bar — collect when he returns from late flight (~23:30 expected) or bag to morning if missed — real debt.",
+          "actionability": "actionable",
+          "blockedBy": [],
+          "blocks": [],
+          "priorityBand": "P2",
+          "priorityScore": 35,
+          "priorityReasons": [
+            "payment_actionable",
+            "money_not_safety",
+            "payment_collect_evidenced",
+            "sprint9_fail_closed",
+            "temporal:am_window_night_handover"
+          ],
+          "currentStateEligible": true,
+          "sourceFactIds": [
+            "meridian-baseline-5"
+          ],
+          "confidence": 0.85,
+          "temporalScope": "today",
+          "serviceDate": "2026-09-25",
+          "deadlineHint": "collect",
+          "relativeCue": "morning",
+          "temporalConfidence": "medium",
+          "temporalReasons": [
+            "am_window_night_handover"
+          ]
+        },
+        "actionId": "act|noent|noroom|payment_collect|collect_before_departure|meridian_baseline_5",
+        "facetKey": "payment:collect",
+        "actionState": "open",
+        "priorityBand": "P2",
+        "priorityScore": 35,
+        "seatKind": "do_now",
+        "canonicalSeed": true,
+        "workKey": "payment:collect||mr holt|collect_before_departure",
+        "text": "Collect outstanding payment before departure",
+        "legacy": null
+      }
+    ],
+    "seatedCanonicalIds": [
+      "act|noent|noroom|payment_collect|collect_before_departure|meridian_baseline_5"
+    ],
+    "source": "canonical_decision_seats",
+    "surface": "briefing",
+    "maxN": 5
+  },
+  "inputIntegrity": {
+    "inputAuthority": "scenario-XXX.md Original Input / Raw Source Notes",
+    "scenarioFileSha256": "ce93966beb7c7027381cbd67fc6ec23519de9faad1eb285b2dfc0355fbbe4949",
+    "sourceSha256": "536ff32bd18c051b7ab455145ec421e983e87ed042af17178fbb60690adf4791",
+    "sourceLength": 1330,
+    "lineCount": 14,
+    "brainContext": null,
+    "hotelSnapshotKeys": [],
+    "humanExpectedTruthPreserved": true,
+    "freezeStatus": "FROZEN BEFORE FIRST HF RUN"
+  },
+  "exactSourceInput": "Everything pasted at once — triage honestly. Lean Night (me + porter). Spa closed. Valet closed 23:00 — one car left with ticket on dash for morning — MONITOR morning valet, not eng.\n\nREAL WORK\n1) **CX11** — water stain on ceiling after annex shower above (CX17). Water **isolated**. Guest in CX11 comfortable with room move offer — **declined for tonight**. Eng: “monitor overnight, inspect tomorrow — **not a release**”. Do **not** treat as uncontrolled flood OPEN chase tonight.\n2) Early SkyLink crew **04:55** — rooms **M210–M212** held. Keys ready. Wake 04:30.\n3) **M128 Mr Holt** — genuine open balance **£42.50** bar — collect when he returns from late flight (~23:30 expected) or bag to morning if missed — real debt.\n\nNOISE / FALSE FRIENDS\n- “Collect £120 Quill” — **no Quill in-house**; ignore stray Riverton-looking stamp (wrong hotel paste?).\n- “Allocate Opera room 32” — ignore; not our PMS naming; we use M/CX/MS/MA.\n- Fruit MS04 — already placed — DONE.\n- Champagne for M140 **if available** — stock unknown — **not** hard OPEN.\n- Reservations note: move CX11 guest to Main M126 tonight — **DM not approved**; guest declined move anyway.\n- TR-3 “vacant” on spa sheet — **not a bedroom**.\n\nUNCLEAR\nBoard sticky: “CX03 Acc free?” — rack shows stayover. Do not sell. Clarify in AM with HK if needed — not Night invent.",
+  "hotelSnapshot": {},
+  "aiSummaryBriefing": "Priority 1\nFollow up with Maintenance regarding shower/leak before further guest impact.\n\nPriority 2\nTimed departure actions for wake-up at 04:30.\n\nPriority 3\nCollect outstanding payment before departure.\n\nPriority 4\nRevenue follow-up required for outstanding £42.50 before departures.",
+  "briefingParagraphs": [
+    "Priority 1\nFollow up with Maintenance regarding shower/leak before further guest impact.",
+    "Priority 2\nTimed departure actions for wake-up at 04:30.",
+    "Priority 3\nCollect outstanding payment before departure.",
+    "Priority 4\nRevenue follow-up required for outstanding £42.50 before departures."
+  ],
+  "organisedHandover": {
+    "urgent": [
+      "1) **CX11** — water stain on ceiling after annex shower above (CX17). Water **isolated**. Guest in CX11 comfortable with room move offer — **declined for tonight**. Eng: “monitor overnight, inspect tomorrow — **not a release**”. Do **not** treat as uncontrolled flood OPEN chase tonight."
+    ],
+    "vip": [
+      "- Champagne for M140 **if available** — stock unknown — **not** hard OPEN."
+    ],
+    "guest": [
+      "2) Early SkyLink crew **04:55** — rooms **M210–M212** held. Keys ready. Wake 04:30."
+    ],
+    "maintenance": [],
+    "payments": [
+      "- Reservations note: move CX11 guest to Main M126 tonight — **DM not approved**; guest declined move anyway.",
+      "3) **M128 Mr Holt** — genuine open balance **£42.50** bar — collect when he returns from late flight (~23:30 expected) or bag to morning if missed — real debt."
+    ],
+    "events": [],
+    "preparations": [],
+    "openQuestions": [],
+    "tasks": [],
+    "inventory": [],
+    "deliveries": [],
+    "lostproperty": [],
+    "general": [
+      "- “Allocate Opera room 32” — ignore; not our PMS naming; we use M/CX/MS/MA.",
+      "Everything pasted at once — triage honestly. Lean Night (me + porter). Spa closed. Valet closed 23:00 — one car left with ticket on dash for morning — MONITOR morning valet, not eng.",
+      "REAL WORK",
+      "NOISE / FALSE FRIENDS",
+      "- “Collect £120 Quill” — **no Quill in-house**; ignore stray Riverton-looking stamp (wrong hotel paste?).",
+      "- TR-3 “vacant” on spa sheet — **not a bedroom**.",
+      "UNCLEAR",
+      "Board sticky: “CX03 Acc free?” — rack shows stayover. Do not sell. Clarify in AM with HK if needed — not Night invent."
+    ],
+    "completed": [
+      "- Fruit MS04 — already placed — DONE."
+    ]
+  },
+  "recommendations": [
+    {
+      "id": "act|noent|noroom|payment_collect|collect_before_departure|meridian_baseline_5",
+      "text": "Collect outstanding payment before departure.",
+      "priority": "normal",
+      "department": "Reception",
+      "status": "open",
+      "reasonCodes": [
+        "payment_actionable",
+        "money_not_safety",
+        "payment_collect_evidenced",
+        "sprint9_fail_closed",
+        "temporal:am_window_night_handover",
+        "canonical_decision_seat"
+      ]
+    },
+    {
+      "id": "msketuwm-8zzu8",
+      "text": "Collect outstanding balance before departure.",
+      "priority": "high",
+      "department": "Maintenance",
+      "status": "open",
+      "reasonCodes": [
+        "critical_impact",
+        "payment_before_departure",
+        "maintenance_unresolved",
+        "timed_action",
+        "controlled_hazard_obligation",
+        "timed_action_due",
+        "guest_safety_affected",
+        "cross_department_dependency"
+      ]
+    },
+    {
+      "id": "msketuwl-m98lz",
+      "text": "Complete the 04:30 wake-up call — wake-up call not yet confirmed as loaded this shift.",
+      "priority": "high",
+      "department": "Reception",
+      "status": "open",
+      "reasonCodes": [
+        "imminent_timed_action",
+        "timed_action_due"
+      ]
+    }
+  ],
+  "reasoningMetadata": {
+    "noteCountAfterPipeline": 14,
+    "dependencyEdgeCount": 0,
+    "dependencyEdges": [],
+    "analyzeKeys": [
+      "engineVersion",
+      "signals",
+      "recommendations",
+      "checklist",
+      "facts",
+      "operationalMemories",
+      "guestObservations",
+      "guestObservationRejections",
+      "guestCandidates",
+      "guestCandidateRejections"
+    ],
+    "quietShift": null,
+    "decisionSeating": {
+      "briefingUsesCanonicalActions": true,
+      "recommendationsFromAnalyze": true,
+      "sharedCanonicalList": true,
+      "selectDecisionSeatsCaptured": true
+    }
+  },
+  "noteEvidence": [
+    {
+      "original": "2) Early SkyLink crew **04:55** — rooms **M210–M212** held. Keys ready. Wake 04:30.",
+      "section": "guest",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "wake_up",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- Champagne for M140 **if available** — stock unknown — **not** hard OPEN.",
+      "section": "guest",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "guest_request",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- Reservations note: move CX11 guest to Main M126 tonight — **DM not approved**; guest declined move anyway.",
+      "section": "guest",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_2",
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "room_move",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "1) **CX11** — water stain on ceiling after annex shower above (CX17). Water **isolated**. Guest in CX11 comfortable with room move offer — **declined for tonight**. Eng: “monitor overnight, inspect tomorrow — **not a release**”. Do **not** treat as uncontrolled flood OPEN chase tonight.",
+      "section": "maintenance",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "maintenance",
+      "factStatus": "open"
+    },
+    {
+      "original": "3) **M128 Mr Holt** — genuine open balance **£42.50** bar — collect when he returns from late flight (~23:30 expected) or bag to morning if missed — real debt.",
+      "section": "payments",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "outstanding_balance",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Everything pasted at once — triage honestly. Lean Night (me + porter). Spa closed. Valet closed 23:00 — one car left with ticket on dash for morning — MONITOR morning valet, not eng.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "REAL WORK",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "NOISE / FALSE FRIENDS",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- “Collect £120 Quill” — **no Quill in-house**; ignore stray Riverton-looking stamp (wrong hotel paste?).",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- “Allocate Opera room 32” — ignore; not our PMS naming; we use M/CX/MS/MA.",
+      "section": "general",
+      "rooms": [
+        "32"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_1",
+      "canonicalName": "Allocate Opera",
+      "currentRoom": "32",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- TR-3 “vacant” on spa sheet — **not a bedroom**.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "UNCLEAR",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Board sticky: “CX03 Acc free?” — rack shows stayover. Do not sell. Clarify in AM with HK if needed — not Night invent.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- Fruit MS04 — already placed — DONE.",
+      "section": "completed",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "done"
+    }
+  ],
+  "reviewPlaceholder": {
+    "status": "PENDING_HUMAN_REVIEW",
+    "note": "First-run baseline only. Compare to frozen Human Expected Truth. Do not modify engine or scenarios."
+  }
+}
