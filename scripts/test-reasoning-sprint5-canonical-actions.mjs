@@ -283,10 +283,16 @@ console.log("\n=== Sprint 5 — Canonical Actions ===\n");
     "rooms 2 and 23 checked out."
   ]);
   var conflict = p9.actions.find(function (a) {
-    return a.actionState === "unresolved" && /occupancy|conflict|checked-out/i.test(a.facetKey + a.actionText);
+    return /occupancy|conflict|checked-out/i.test(a.facetKey + a.actionText);
   });
-  assert(!!conflict, "Occupancy conflict surfaced as UNRESOLVED");
+  assert(!!conflict, "Occupancy conflict surfaced");
+  assert(
+    conflict.actionState === "open" || conflict.actionState === "unresolved",
+    "Occupancy conflict is OPEN clarification or UNRESOLVED (never silent)"
+  );
   assert(/Room 2/i.test(conflict.actionText), "Conflict references Room 2");
+  assert(!/moved to Room|correct room is|assign to Room (?!2)/i.test(conflict.actionText),
+    "Conflict does not invent a resolved room assignment");
 }
 
 /* 10. Split airport/time/contact fragments */

@@ -3911,6 +3911,32 @@
     ) && keep("champagne")) {
       amenities.push("champagne");
     }
+    /* Sprint 8: preserve evidenced fruit / fruit plate (never invent). */
+    if (segmentActive(
+      "fruit",
+      /fruits?(?:\s+plate)?/,
+      /fruits?(?:\s+plate)?\s+cancell|do not (?:place|show).{0,40}fruits?/,
+      /fruits?(?:\s+plate)?.{0,40}(?:done|delivered|placed|complete)/
+    ) && keep("fruit")) {
+      amenities.push(/\bfruit\s+plate\b/i.test(text) ? "fruit plate" : "fruit");
+    }
+    /* Sprint 8: preserve evidenced truffles. */
+    if (segmentActive(
+      "truffles",
+      /truffles?/,
+      /truffles?\s+cancell|do not (?:place|show).{0,40}truffles?/,
+      /truffles?.{0,40}(?:done|delivered|placed|complete)/
+    ) && keep("truffles")) {
+      amenities.push("truffles");
+    }
+    if (segmentActive(
+      "flowers",
+      /flowers?/,
+      /flowers?\s+cancell|do not (?:place|show).{0,40}flowers?|accidentally|not place/,
+      /flowers?.{0,40}(?:done|delivered|placed|complete)/
+    ) && keep("flowers")) {
+      amenities.push("flowers");
+    }
     if (segmentActive(
       "chocolates",
       /chocolates?/,
@@ -3921,24 +3947,17 @@
     }
     /*
      * Card done must use word-boundary "written" — "handwritten card" must NOT
-     * count as card-written/complete.
+     * count as card-written/complete. Never treat "card on file" as welcome card.
      */
     if (segmentActive(
       "card",
-      /welcome\s+card|handwritten\s+card|\bcard\b/,
+      /welcome\s+card|handwritten\s+card|(?:^|[^e])\bcard\b(?!\s+on\s+file)/,
       /card\s+cancell|no\s+card/,
       /\bcard\s+(?:written|done|complete|placed)\b|\b(?:written|done|complete)\b.{0,20}\bcard\b/
     ) && /(?:welcome|handwritten|card\s+still|card\s+required|card\s+written|card\s+done)/.test(lower) &&
+        !/\bcard\s+on\s+file\b/.test(lower) &&
         keep("welcome card")) {
       amenities.push("welcome card");
-    }
-    if (segmentActive(
-      "flowers",
-      /flowers?/,
-      /flowers?\s+cancell|do not (?:place|show).{0,40}flowers?|accidentally|not place/,
-      /flowers?.{0,40}(?:done|delivered|placed|complete)/
-    ) && keep("flowers")) {
-      amenities.push("flowers");
     }
     if (segmentActive(
       "balloons",
@@ -3960,7 +3979,7 @@
     var active = activeVipAmenitiesFromSource(src, note);
     if (active.length) return false;
     /* Mentions of prep that are all done/cancelled count as complete when VIP cues exist. */
-    if (/(champagne|welcome\s+card|handwritten\s+card|chocolates?|flowers?|balloons?)/.test(lower)) {
+    if (/(champagne|welcome\s+card|handwritten\s+card|chocolates?|flowers?|balloons?|truffles?|fruits?(?:\s+plate)?)/.test(lower)) {
       return true;
     }
     return false;
@@ -8754,10 +8773,12 @@
     else if (/\bfruits?\b/i.test(text)) bits.push("fruit");
     if (/\bcomp(?:limentary)?\s+drinks?\b/i.test(text)) bits.push("comp drinks");
     if (/\bchampagne\b/i.test(text)) bits.push("champagne");
+    if (/\btruffles?\b/i.test(text)) bits.push("truffles");
     if (/\bflowers?\b/i.test(text)) bits.push("flowers");
     if (/\bchocolates?\b/i.test(text)) bits.push("chocolate");
     if (/\b(?:welcome|handwritten)\s+card\b/i.test(text) ||
-        (/\bcard\b/i.test(text) && /\bunder\b.{0,48}\bname\b/i.test(text))) {
+        (/\bcard\b/i.test(text) && /\bunder\b.{0,48}\bname\b/i.test(text) &&
+          !/\bcard\s+on\s+file\b/i.test(text))) {
       bits.push("welcome card");
     }
     return bits;
@@ -8768,7 +8789,123 @@
   }
 
   function hasAmenityPrepCue(src) {
-    return /\b(?:champagne|truffles?|flowers?|welcome\s+card|anniversary|birthday|balloons?|fruit\s+plate|comp\s+drinks?)\b/i.test(src || "");
+    return /\b(?:champagne|truffles?|flowers?|chocolates?|welcome\s+card|anniversary|birthday|balloons?|fruits?(?:\s+plate)?|fruit\s+plate|comp\s+drinks?)\b/i.test(src || "");
+  }
+
+  /**
+   * Sprint 8 — evidence-backed Opera / room allocation problem (not weak upgrade wording).
+   * Fail closed: "balance availability" / generic upgrade advice alone is NOT an allocation OPEN.
+   */
+  function hasEvidenceBackedAllocationProblem(src) {
+    var text = String(src || "");
+    if (!text) return false;
+    if (/\bbalance\s+availability\b/i.test(text) &&
+        !/\bunable\s+to\s+allocate|cannot\s+allocate|not\s+allocated|still\s+(?:s?vailable|available)\b/i.test(text)) {
+      return false;
+    }
+    if (/\bunable\s+to\s+allocate\b/i.test(text)) return true;
+    if (/\bcannot\s+allocate\b|\bcan'?t\s+allocate\b/i.test(text)) return true;
+    if (/\bopera\b/i.test(text) &&
+        /\b(?:unable\s+to\s+allocate|cannot\s+allocate|not\s+allocated|still\s+(?:s?vailable|available)|shows?\s+still\s+(?:s?vailable|available))\b/i.test(text)) {
+      return true;
+    }
+    if (/\b(?:allocation\s+(?:issue|failed|blocker|problem)|room\s+assignment\s+(?:unresolved|failed|issue))\b/i.test(text)) {
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Sprint 8 — attach guest/room/contact evidence from the SAME note/fragment cluster only.
+   * Does not invent rooms from nearby guests. Bare tab-room headers are allowed when
+   * a dep/arrival date column follows (arrivals paste pattern).
+   */
+  function extractSameNoteGuestName(src) {
+    var text = String(src || "").trim();
+    if (!text) return "";
+    var header = text.match(
+      /^((?:M(?:me|rs?|iss|s)\.?\s+)?[A-Z][A-Za-z.'\-]+(?:\s+[A-Z][A-Za-z.'\-]+){0,4})(?=\s*\t|\s+rm\b|\s+vip\b|\s+-\s)/
+    );
+    if (header) {
+      var name = String(header[1] || "").replace(/^VIP\s*-\s*/i, "").trim();
+      if (name && !/^(?:ROOM|ROOMS|TODAY|ARR|DEP|POA|EA)\b/i.test(name)) return name;
+    }
+    var allCaps = text.match(/^([A-Z]{2,}(?:\s+[A-Z]{2,}){0,3})(?=\s*\t)/);
+    if (allCaps) return String(allCaps[1]).trim();
+    return "";
+  }
+
+  function extractSameNoteRoomBinding(src) {
+    var text = String(src || "");
+    if (!text) return "";
+    var rm = text.match(/\brm\.?\s*(\d{1,4}[a-z]?)\b/i) ||
+      text.match(/\broom\s+(\d{1,4}[a-z]?)\b/i);
+    if (rm) return normalizeRoomNumber(rm[1]) || String(rm[1]);
+    /* Tab arrivals: NAME <tabs> ROOM <tabs> DD/MM/YYYY */
+    var tabRoom = text.match(
+      /^[^\t\n]{2,80}\t+(\d{1,4}[a-z]?)\t+(?:\d{1,2}[\/.-]\d{1,2}(?:[\/.-]\d{2,4})?)/
+    );
+    if (tabRoom) return normalizeRoomNumber(tabRoom[1]) || String(tabRoom[1]);
+    return "";
+  }
+
+  function extractPickupContactsFromText(src) {
+    var text = String(src || "");
+    var names = [];
+    var seen = {};
+    text.split(/\r?\n/).forEach(function (line) {
+      var raw = String(line || "").trim();
+      if (!raw) return;
+      var m = raw.match(/\b(\d{3}[- ]?\d{3}[- ]?\d{4})\s+([A-Z][a-z]{1,20})\b/) ||
+        raw.match(/^([A-Z][a-z]{1,20})\s+(\d{3}[- ]?\d{3}[- ]?\d{4})\b/);
+      if (!m) return;
+      var name = m[2] && /[A-Za-z]/.test(m[2]) && !/\d/.test(m[2]) ? m[2] : m[1];
+      if (!name || /\d/.test(name)) return;
+      if (/^(?:Arr|London|Heathrow|Gatwick|August|today)\b/i.test(name)) return;
+      var key = name.toLowerCase();
+      if (seen[key]) return;
+      seen[key] = true;
+      names.push(name);
+    });
+    return {
+      names: names,
+      label: names.join(" / ")
+    };
+  }
+
+  function attachSafeActionBinding(src, binding) {
+    binding = binding || {};
+    var canonicalName = binding.canonicalName || "";
+    var room = binding.room || "";
+    var rooms = Array.isArray(binding.rooms) ? binding.rooms.slice() : [];
+    var contacts = binding.contacts || "";
+    if (!room) {
+      var boundRoom = extractSameNoteRoomBinding(src);
+      if (boundRoom) {
+        room = boundRoom;
+        if (!rooms.length) rooms = [boundRoom];
+      }
+    }
+    if (!canonicalName) {
+      var guest = extractSameNoteGuestName(src);
+      if (guest) canonicalName = guest;
+    }
+    if (!canonicalName) {
+      var pickup = extractPickupContactsFromText(src);
+      if (pickup.label) {
+        canonicalName = pickup.label;
+        contacts = contacts || pickup.label;
+      }
+    } else if (!contacts) {
+      var pickup2 = extractPickupContactsFromText(src);
+      if (pickup2.label) contacts = pickup2.label;
+    }
+    return {
+      canonicalName: canonicalName,
+      room: room,
+      rooms: rooms,
+      contacts: contacts
+    };
   }
 
   function amenityScopedRoomFromText(src, rooms, currentRoom) {
@@ -9011,7 +9148,10 @@
         return;
       }
 
-      /* Occupancy conflict: arrival still on a room marked checked out. */
+      /*
+       * Sprint 8: occupancy contradiction → OPEN clarification (do not invent the
+       * correct room; do not leave the conflict invisible to decision seating).
+       */
       if (currentRoom && checkedOut[currentRoom] && canonicalName &&
           !/\bchecked\s+out\b/i.test(src)) {
         pushAction(createCanonicalAction({
@@ -9020,20 +9160,64 @@
           canonicalName: canonicalName,
           room: currentRoom,
           rooms: rooms,
-          facetKey: "occupancy_conflict",
+          facetKey: "occupancy_conflict:clarify",
           actionType: NEXT_ACTION_KIND.operational_follow_up,
-          actionState: ACTION_STATE.unresolved,
-          actionText: "Clarify occupancy for Room " + currentRoom +
-            " — arrival assignment conflicts with checked-out rooms note",
+          actionState: ACTION_STATE.open,
+          actionText: "Confirm room assignment/status for " + canonicalName +
+            " — Room " + currentRoom +
+            " has conflicting arrival/checkout information",
           evidenceText: src,
-          actionability: ACTIONABILITY.unresolved,
-          priorityBand: PRIORITY_BAND.P2,
-          priorityScore: 35,
-          priorityReasons: ["occupancy_conflict"],
+          actionability: ACTIONABILITY.actionable,
+          priorityBand: PRIORITY_BAND.P1,
+          priorityScore: 21,
+          priorityReasons: ["occupancy_conflict_clarify"],
           currentStateEligible: true,
           sourceFactIds: [factId],
-          confidence: 0.55
+          confidence: 0.6
         }));
+      }
+
+      /* Sprint 8: evidence-backed Opera / room allocation problem → OPEN. */
+      if (hasEvidenceBackedAllocationProblem(src)) {
+        var allocBind = attachSafeActionBinding(src, {
+          canonicalName: canonicalName,
+          room: currentRoom,
+          rooms: rooms
+        });
+        var allocRoom = allocBind.room || currentRoom;
+        var allocName = allocBind.canonicalName || canonicalName;
+        var allocState = actionability === ACTIONABILITY.blocked
+          ? ACTION_STATE.blocked
+          : ACTION_STATE.open;
+        pushAction(createCanonicalAction({
+          entityId: entityId,
+          resolutionState: resolutionState,
+          canonicalName: allocName,
+          room: allocRoom,
+          rooms: allocBind.rooms.length ? allocBind.rooms : rooms,
+          facetKey: "allocation:opera_assign",
+          actionType: NEXT_ACTION_KIND.operational_follow_up,
+          actionState: allocState,
+          actionText: "Resolve Opera / room allocation" +
+            (allocName ? " for " + allocName : "") +
+            (allocRoom ? " — Room " + allocRoom : "") +
+            " (assignment unresolved / still shows available)",
+          evidenceText: src,
+          actionability: actionability,
+          blockedBy: blockedBy,
+          priorityBand: PRIORITY_BAND.P1,
+          priorityScore: 19,
+          priorityReasons: pri.priorityReasons.concat(["allocation_opera_open"]),
+          currentStateEligible: true,
+          sourceFactIds: [factId],
+          confidence: 0.7
+        }));
+        if (!hasAmenityPrepCue(src) && !hasOpenGuestRequestCue(src) &&
+            !hasHighTouchArrivalPrep(src) && !hasTokenisationCue(src) &&
+            !/\bluggage\b|\bEA\s*\d|\bearly\s+arrival\b/i.test(src) &&
+            !/\b(?:heathrow|gatwick|stansted|luton)\b/i.test(src)) {
+          return;
+        }
       }
 
       /* Sprint 6: CC/card not tokenised — checkout-today or near dep window → OPEN. */
@@ -9367,7 +9551,13 @@
        * do not invent loft/card package fillers over them (Gill VVIP pattern).
        * Friends-of / loft / fruit-plate packages still use high-touch below.
        */
-      var explicitVipAmenityList = /\b(?:champagne|truffles?|flowers?|chocolates?|balloons?)\b/i.test(src);
+      /*
+       * Explicit champagne/flowers/chocolate/truffle lists take amenity:prep.
+       * Do NOT treat fruit-plate-only Friends-of / loft packages as this list —
+       * those stay on high-touch arrival_prep (Benjamin pattern).
+       */
+      var explicitVipAmenityList =
+        /\b(?:champagne|truffles?|flowers?|chocolates?|balloons?)\b/i.test(src);
 
       /* High-touch arrival prep (Friends-of / loft / fruit / drinks / card) — evidence only. */
       if (hasHighTouchArrivalPrep(src) && !explicitVipAmenityList) {
@@ -9566,6 +9756,14 @@
 
       /* Sprint 6: split near-term EA/lunch luggage from explicit future post-checkout hold. */
       if (/\bluggage\b/i.test(src) || /\bEA\s*\d|\bearly\s+arrival\b/i.test(src)) {
+        var lugBind = attachSafeActionBinding(src, {
+          canonicalName: canonicalName,
+          room: currentRoom,
+          rooms: rooms
+        });
+        var lugName = lugBind.canonicalName || canonicalName;
+        var lugRoom = lugBind.room || currentRoom;
+        var lugRooms = lugBind.rooms.length ? lugBind.rooms : rooms;
         var hasFutureHold = /\b(?:after\s+check(?:ing)?\s+out|9th\s+August|09\/08|9\/08)\b/i.test(src) &&
           /\bluggage\b/i.test(src);
         var hasNearTerm = /\bEA\s*\d|\bearly\s+arrival\b|\baround\s+lunch\b|\blunch\b/i.test(src);
@@ -9579,17 +9777,17 @@
           pushAction(createCanonicalAction(applyTemporalToActionOpts({
             entityId: entityId,
             resolutionState: resolutionState,
-            canonicalName: canonicalName,
-            room: currentRoom,
-            rooms: rooms,
+            canonicalName: lugName,
+            room: lugRoom,
+            rooms: lugRooms,
             facetKey: "guest_request:ea_luggage_near",
             actionType: NEXT_ACTION_KIND.guest_follow_up,
             actionState: actionability === ACTIONABILITY.blocked
               ? ACTION_STATE.blocked
               : ACTION_STATE.open,
             actionText: "Honour early arrival / lunch luggage arrangements" +
-              (canonicalName ? " for " + canonicalName : "") +
-              (currentRoom ? " (Room " + currentRoom + ")" : ""),
+              (lugName ? " for " + lugName : "") +
+              (lugRoom ? " (Room " + lugRoom + ")" : ""),
             evidenceText: src,
             actionability: actionability,
             blockedBy: blockedBy,
@@ -9617,15 +9815,15 @@
           pushAction(createCanonicalAction(applyTemporalToActionOpts({
             entityId: entityId,
             resolutionState: resolutionState,
-            canonicalName: canonicalName,
-            room: currentRoom,
-            rooms: rooms,
+            canonicalName: lugName,
+            room: lugRoom,
+            rooms: lugRooms,
             facetKey: "guest_request:luggage_future_hold",
             actionType: NEXT_ACTION_KIND.none,
             actionState: ACTION_STATE.monitor,
             actionText: "Future post-checkout luggage hold" +
               (holdYmd ? " on " + holdYmd : "") +
-              (canonicalName ? " for " + canonicalName : "") +
+              (lugName ? " for " + lugName : "") +
               " — not tonight's EA task",
             evidenceText: src,
             actionability: ACTIONABILITY.actionable,
@@ -9641,17 +9839,17 @@
           pushAction(createCanonicalAction(applyTemporalToActionOpts({
             entityId: entityId,
             resolutionState: resolutionState,
-            canonicalName: canonicalName,
-            room: currentRoom,
-            rooms: rooms,
+            canonicalName: lugName,
+            room: lugRoom,
+            rooms: lugRooms,
             facetKey: "guest_request:luggage_ea",
             actionType: NEXT_ACTION_KIND.guest_follow_up,
             actionState: actionability === ACTIONABILITY.blocked
               ? ACTION_STATE.blocked
               : ACTION_STATE.open,
             actionText: "Honour luggage / early-arrival arrangements" +
-              (canonicalName ? " for " + canonicalName : "") +
-              (currentRoom ? " (Room " + currentRoom + ")" : ""),
+              (lugName ? " for " + lugName : "") +
+              (lugRoom ? " (Room " + lugRoom + ")" : ""),
             evidenceText: src,
             actionability: actionability,
             blockedBy: blockedBy,
@@ -9804,8 +10002,16 @@
       if (/\b(?:heathrow|gatwick|stansted|luton)\b/i.test(src) ||
           (objectInfo.type === OPERATIONAL_OBJECT_TYPE.transport || subject === "transfer")) {
         var airTemporal = resolveTemporalEligibility(src, fact, note, anchor, {});
+        var airBind = attachSafeActionBinding(src, {
+          canonicalName: canonicalName,
+          room: currentRoom,
+          rooms: rooms
+        });
+        var airName = airBind.canonicalName || canonicalName;
+        var airRoom = airBind.room || currentRoom;
+        var airRooms = airBind.rooms.length ? airBind.rooms : rooms;
         var hasTime = /\b\d{1,2}:\d{2}\b/.test(src) || /\b\d{1,2}\s*(?:am|pm)\b/i.test(src);
-        var hasGuest = !!canonicalName || /\b[A-Z][a-z]+\s+[A-Z][a-z]+\b/.test(src);
+        var hasGuest = !!airName || /\b[A-Z][a-z]+\s+[A-Z][a-z]+\b/.test(src);
         /* OPEN when timed+bound unless explicit future/past/ambiguous day evidence blocks it. */
         var dayBlocked = temporalIsFutureOrMonitor(airTemporal) || temporalIsPast(airTemporal) ||
           temporalIsAmbiguous(airTemporal);
@@ -9816,21 +10022,23 @@
           /\btoday\b/i.test(src) ||
           !airTemporal.serviceDate
         );
-        if (hasTime && dayOk && (hasGuest || currentRoom || /\b\d{3}[- ]?\d{3}[- ]?\d{4}\b/.test(src))) {
+        if (hasTime && dayOk && (hasGuest || airRoom || /\b\d{3}[- ]?\d{3}[- ]?\d{4}\b/.test(src))) {
+          var airHint = airTemporal.deadlineHint && /\d/.test(airTemporal.deadlineHint)
+            ? airTemporal.deadlineHint
+            : "noted time";
           pushAction(createCanonicalAction(applyTemporalToActionOpts({
             entityId: entityId,
             resolutionState: resolutionState,
-            canonicalName: canonicalName,
-            room: currentRoom,
-            rooms: rooms,
+            canonicalName: airName,
+            room: airRoom,
+            rooms: airRooms,
             facetKey: "timed:airport",
             actionType: NEXT_ACTION_KIND.complete_timed_actions,
             actionState: ACTION_STATE.open,
-            actionText: "Complete airport / transfer pickup" +
-              (airTemporal.deadlineHint && /\d/.test(airTemporal.deadlineHint)
-                ? " at " + airTemporal.deadlineHint
-                : " at noted time") +
-              (currentRoom ? " (Room " + currentRoom + ")" : ""),
+            actionText: "Complete airport / transfer pickup at " + airHint +
+              (airName ? " — " + airName : "") +
+              (airRoom ? " (Room " + airRoom + ")" : "") +
+              (!airRoom && airBind.contacts ? " (contacts on handover)" : ""),
             evidenceText: src,
             actionability: actionability,
             blockedBy: blockedBy,
@@ -9845,9 +10053,9 @@
           pushAction(createCanonicalAction(applyTemporalToActionOpts({
             entityId: entityId,
             resolutionState: resolutionState || "unresolved",
-            canonicalName: canonicalName,
-            room: currentRoom,
-            rooms: rooms,
+            canonicalName: airName,
+            room: airRoom,
+            rooms: airRooms,
             facetKey: "timed:airport_fragment",
             actionType: NEXT_ACTION_KIND.operational_follow_up,
             actionState: ACTION_STATE.unresolved,
@@ -9952,18 +10160,27 @@
         }
       }
       var hint = extractDeadlineHint(combined) || "noted time";
+      /* Sprint 8: bind contacts/names from the clustered fragments only — never invent a room. */
+      var clusterBind = attachSafeActionBinding(combined, {
+        canonicalName: "",
+        room: "",
+        rooms: []
+      });
+      var clusterRoom = clusterBind.room || "";
+      var clusterName = clusterBind.canonicalName || "";
       if (dayOk) {
         pushAction(createCanonicalAction(applyTemporalToActionOpts({
           entityId: null,
           resolutionState: "",
-          canonicalName: "",
-          room: "",
-          rooms: [],
+          canonicalName: clusterName,
+          room: clusterRoom,
+          rooms: clusterRoom ? [clusterRoom] : [],
           facetKey: "timed:airport",
           actionType: NEXT_ACTION_KIND.complete_timed_actions,
           actionState: ACTION_STATE.open,
           actionText: "Complete airport / transfer pickup at " + hint +
-            " — confirm guest contacts from handover notes",
+            (clusterName ? " — " + clusterName : " — confirm guest contacts from handover notes") +
+            (clusterRoom ? " (Room " + clusterRoom + ")" : ""),
           evidenceText: combined.slice(0, 400),
           actionability: ACTIONABILITY.actionable,
           priorityBand: PRIORITY_BAND.P1,
@@ -9977,9 +10194,9 @@
         pushAction(createCanonicalAction(applyTemporalToActionOpts({
           entityId: null,
           resolutionState: "unresolved",
-          canonicalName: "",
-          room: "",
-          rooms: [],
+          canonicalName: clusterName,
+          room: clusterRoom,
+          rooms: clusterRoom ? [clusterRoom] : [],
           facetKey: "timed:airport_fragment",
           actionType: NEXT_ACTION_KIND.operational_follow_up,
           actionState: ACTION_STATE.unresolved,
