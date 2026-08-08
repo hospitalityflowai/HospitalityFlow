@@ -1572,7 +1572,11 @@
     ) {
       return false;
     }
-    return /\b(?:medical\s+(?:assistance|request|attention)|ambulance|first\s+aid(?:er)?|paramedic|collapse(?:d)?|unconscious|dizzy|faint(?:ed|ing)?|feels?\s+dizzy|guest\s+(?:unwell|ill|fell|fallen)|partner\s+feels|welfare\s+(?:check|concern|incident|follow[\s-]?up)|assist(?:ance)?\s+(?:for\s+)?(?:unwell|ill|medical))\b/.test(src);
+    /*
+     * Sprint 10: bare "faint" matches adjective noise ("faint buzzing") — require
+     * medical faint forms only.
+     */
+    return /\b(?:medical\s+(?:assistance|request|attention)|ambulance|first\s+aid(?:er)?|paramedic|collapse(?:d)?|unconscious|dizzy|fainted|fainting|feels?\s+faint|feels?\s+dizzy|guest\s+(?:unwell|ill|fell|fallen)|partner\s+feels|welfare\s+(?:check|concern|incident|follow[\s-]?up)|assist(?:ance)?\s+(?:for\s+)?(?:unwell|ill|medical))\b/.test(src);
   }
 
   function textHasActiveSecurityRisk(src) {
@@ -1603,8 +1607,39 @@
       /\broom\s+\d{1,3}\s+ooo\b/.test(src);
   }
 
+  /**
+   * Sprint 10 — strip markdown emphasis so "fruit **cancelled**" / "**DONE**" match.
+   */
+  function normalizeStateResolutionText(text) {
+    return String(text || "")
+      .replace(/[*_`~]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+  }
+
   function textHasComfortMitigation(src) {
     return /\b(?:fan\s+(?:provided|supplied|given|left|in\s+room)|heater\s+(?:provided|supplied|given)|guest\s+(?:is\s+)?comfortable|happy\s+with\s+(?:the\s+)?(?:fan|heater|workaround)|accept(?:s|ed)?\s+(?:the\s+)?(?:fan|heater)|temporary\s+(?:fan|heater))\b/.test(src);
+  }
+
+  /**
+   * Sprint 10 — explicit overnight mitigation / MONITOR continuity (facet-local comfort).
+   * Broader than fan/heater comfort alone; does not invent resolution.
+   */
+  function textHasExplicitOvernightMitigation(src) {
+    var text = normalizeStateResolutionText(src);
+    if (!text) return false;
+    if (textHasComfortMitigation(text)) return true;
+    return /\b(?:ok|okay)\s+to\s+stay\b/.test(text) ||
+      /\bmitigated\b/.test(text) ||
+      /\bplease\s+monitor\b/.test(text) ||
+      /\bmonitor\s+\d{1,4}\b/.test(text) ||
+      /\bmonitor\b.{0,24}\bovernight\b/.test(text) ||
+      /\bnot\s+a\s+live\s+chase\b/.test(text) ||
+      /\bnot\s+coming\s+tonight\s+unless\s+worsens\b/.test(text) ||
+      /\boffered\s+room\s+move\b/.test(text) && /\bdeclined\b/.test(text) ||
+      /\bdeclined\s+(?:for\s+tonight|a\s+(?:room\s+)?move|room\s+move)\b/.test(text) ||
+      (/\bextractor\s+switched\s+off\b/.test(text) && /\bwindow\s+opened\b/.test(text));
   }
 
   function textHasTomorrowEngineerOrWork(src) {
@@ -1613,7 +1648,7 @@
   }
 
   function textHasCosmeticOrNoAction(src) {
-    return /\b(?:cosmetic(?:\s+only)?|small\s+scratch|no\s+guest\s+impact|no\s+action\s+tonight|informational\s+only|awareness\s+only)\b/.test(src);
+    return /\b(?:cosmetic(?:\s+only)?|small\s+scratch|no\s+guest\s+impact|no\s+action\s+tonight|informational\s+only|awareness\s+only|logged\s+for\s+am\b)\b/.test(src);
   }
 
   function textHasVipAllocationBlocker(src) {
@@ -1874,15 +1909,20 @@
     ) {
       guestMaint = false;
     }
-    var comfortMitigated = textHasComfortMitigation(src);
+    var comfortMitigated = textHasComfortMitigation(src) || textHasExplicitOvernightMitigation(src);
     var tomorrowWork = textHasTomorrowEngineerOrWork(src) || context.timeSensitivity === TIME_SENSITIVITY.later;
     var cosmetic = textHasCosmeticOrNoAction(src);
+    /* Sprint 10: MONITOR overnight / mitigated tonight without forcing P0/P1 chase. */
+    var monitorOvernight = /\bplease\s+monitor\b/.test(normalizeStateResolutionText(src)) ||
+      /\bmonitor\b.{0,32}\bovernight\b/.test(normalizeStateResolutionText(src)) ||
+      /\bnot\s+a\s+live\s+chase\b/.test(normalizeStateResolutionText(src));
 
-    if (guestMaint && (cosmetic || (comfortMitigated && tomorrowWork))) {
+    if (guestMaint && (cosmetic || (comfortMitigated && tomorrowWork) || (comfortMitigated && monitorOvernight))) {
       hazardClass = HAZARD_CLASS.maint_comfort;
       band = PRIORITY_BAND.P3;
-      score = comfortMitigated && tomorrowWork ? 65 : 72;
-      pushUnique(reasons, cosmetic ? "cosmetic_or_monitor_only" : "mitigated_comfort_tomorrow");
+      score = comfortMitigated && (tomorrowWork || monitorOvernight) ? 65 : 72;
+      pushUnique(reasons, cosmetic ? "cosmetic_or_monitor_only"
+        : (monitorOvernight ? "mitigated_monitor_overnight" : "mitigated_comfort_tomorrow"));
       return finish();
     }
     if (guestMaint && context.currentStatus !== CONTEXT_STATUS.completed) {
@@ -3874,12 +3914,96 @@
   }
 
   /**
-   * Sprint 1 — outstanding VIP prep amenities only.
-   * Cancelled / replaced / DONE amenities must not drive prepare_vip wording.
+   * Sprint 10 — facet-local amenity state from a normalised segment.
+   * Returns: absent | done | cancelled | declined_or_not_requested | conditional | open
+   */
+  function resolveAmenityFacetState(kind, segment) {
+    var seg = normalizeStateResolutionText(segment);
+    if (!seg || !kind) return "absent";
+    var kindToken =
+      kind === "fruit" ? "fruits?(?:\\s+plate)?" :
+      kind === "flowers" ? "flowers?" :
+      kind === "chocolates" ? "chocolates?" :
+      kind === "truffles" ? "truffles?" :
+      kind === "balloons" ? "balloons?" :
+      kind === "card" ? "(?:welcome\\s+card|handwritten\\s+card|card)" :
+      String(kind).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    var kindRe = new RegExp("\\b" + kindToken + "\\b");
+    if (kind === "card") {
+      kindRe = /\b(?:welcome\s+card|handwritten\s+card)\b|\bcard\b(?!\s+on\s+file)/;
+    }
+    if (!kindRe.test(seg)) return "absent";
+
+    /* Clause-local keep/cancel: evaluate cancel side separately from keep side. */
+    var cancelSide = seg;
+    var keepSide = "";
+    var keepSplit = seg.split(/\bkeep\b/);
+    if (keepSplit.length > 1) {
+      cancelSide = keepSplit[0];
+      keepSide = keepSplit.slice(1).join(" keep ");
+    }
+
+    if (kind === "card" && /\bkeep\s+(?:the\s+)?card\b/.test(seg)) {
+      if (/\bcard\s+(?:not\s+)?(?:written|done|complete)\b/.test(seg) ||
+          /\bnot\s+written\b/.test(seg) ||
+          /\bcard\s+still\b/.test(seg)) {
+        return "open";
+      }
+    }
+
+    var declined =
+      (kind === "flowers" && /\bno\s+flowers?\b/.test(seg)) ||
+      (kind === "fruit" && /\bno\s+fruits?\b/.test(seg)) ||
+      (kind === "champagne" && /(?:no|not|don't|do not)\s+champagne\b/.test(seg)) ||
+      (kind === "card" && /\bno\s+(?:handwritten\s+)?(?:welcome\s+)?card\b/.test(seg) &&
+        !/\bkeep\s+(?:the\s+)?card\b/.test(seg)) ||
+      (kind === "balloons" && /\bno\s+balloons?\b/.test(seg)) ||
+      (/\bnot\s+requested\b/.test(seg) && kindRe.test(seg)) ||
+      (/\bno\s+(?:amenities|amenity)(?:\s+ordered)?\b/.test(seg) && kind !== "card");
+    if (declined) return "declined_or_not_requested";
+
+    if (new RegExp("\\b" + kindToken + "\\s+cancell").test(cancelSide) ||
+        (/\bcancell?ed\b/.test(cancelSide) && kindRe.test(cancelSide)) ||
+        (/\bdo\s+not\s+(?:place|show|prepare|order)\b/.test(cancelSide) && kindRe.test(cancelSide))) {
+      return "cancelled";
+    }
+    if (kind === "card" && /\bcard\s+cancell/.test(seg)) return "cancelled";
+
+    var done =
+      new RegExp("\\b" + kindToken + ".{0,100}(?:done|delivered|placed|complete|already\\s+in(?:\\s+the)?\\s+room)").test(seg) ||
+      new RegExp("(?:done|delivered|placed|complete|already\\s+in(?:\\s+the)?\\s+room).{0,100}\\b" + kindToken + "\\b").test(seg) ||
+      (kind === "card" && /\bcard\s+(?:written|done|complete|placed)\b/.test(seg)) ||
+      (kind === "fruit" && /\bfruits?\b/.test(seg) && /\balready\s+in(?:\s+the)?\s+room\b/.test(seg));
+    if (done) return "done";
+
+    /*
+     * Hard conditional (never OPEN): optional / if available / not confirmed ordered.
+     * Soft parenthetical in a firm Place package ("chocolate (if we have)") stays open.
+     */
+    var softPackage =
+      /\bplace\b/.test(seg) &&
+      /\([^)]*\bif\s+we\s+have\b[^)]*\)/.test(seg) &&
+      (kind === "chocolates" || kind === "champagne" || kind === "fruit" || kind === "flowers");
+    if (!softPackage) {
+      if (/\bnot\s+confirmed\s+ordered\b/.test(seg) && kindRe.test(seg)) return "conditional";
+      if (/\boptional\b/.test(seg) && /\bif\s+available\b/.test(seg) && kindRe.test(seg)) {
+        return "conditional";
+      }
+      if (/\bif\s+available\b/.test(seg) && kindRe.test(seg) && !/\bplace\b/.test(seg)) {
+        return "conditional";
+      }
+    }
+    if (keepSide && kindRe.test(keepSide) && !/\bcancell?ed\b/.test(keepSide)) return "open";
+    return "open";
+  }
+
+  /**
+   * Sprint 1 / 10 — outstanding VIP prep amenities only (firm OPEN).
+   * Cancelled / declined / DONE / hard-conditional amenities excluded.
    */
   function activeVipAmenitiesFromSource(src, note) {
     var text = String(src || "");
-    var lower = text.toLowerCase();
+    var lower = normalizeStateResolutionText(text);
     var amenities = [];
     var stripped = {};
     if (note && note._supersededAmenities && note._supersededAmenities.length) {
@@ -3890,93 +4014,70 @@
     if (note && note.fact && note.fact.vipPrepComplete) {
       return [];
     }
-    function cancelled(nameRe, cancelRe) {
-      return nameRe.test(lower) && cancelRe.test(lower);
-    }
     function keep(name) {
       var key = String(name || "").toLowerCase();
       if (stripped[key]) return false;
       if (key === "welcome card" && stripped.card) return false;
       return true;
     }
-    /* Per-segment done/cancel so sibling "DONE" lines do not close other amenities. */
-    function segmentActive(kind, mentionRe, cancelRe, doneRe) {
-      var segments = lower.split(/\s*\|\s*/);
+    /* Per-segment so sibling DONE/cancel lines do not close other amenities. */
+    function facetStillOpen(kind) {
+      var segments = String(text || "").split(/\s*\|\s*/);
       var mentioned = false;
+      var openHit = false;
       var closed = false;
       segments.forEach(function (seg) {
-        if (!mentionRe.test(seg)) return;
+        var st = resolveAmenityFacetState(kind, seg);
+        if (st === "absent") return;
         mentioned = true;
-        if (cancelRe.test(seg) || doneRe.test(seg)) closed = true;
+        if (st === "done" || st === "cancelled" || st === "declined_or_not_requested") {
+          closed = true;
+        } else if (st === "conditional") {
+          closed = true; /* hard-conditional never firm OPEN */
+        } else if (st === "open") {
+          openHit = true;
+        }
       });
-      return mentioned && !closed;
+      /* Also evaluate whole blob once for long-line DONE distance. */
+      if (!mentioned) {
+        var whole = resolveAmenityFacetState(kind, text);
+        if (whole === "open") return true;
+        return false;
+      }
+      if (closed && !openHit) return false;
+      if (openHit) return true;
+      var wholeState = resolveAmenityFacetState(kind, text);
+      return wholeState === "open";
     }
 
-    if (segmentActive(
-      "champagne",
-      /champagne/,
-      /(?:no|not|don't|do not)\s+champagne|champagne\s+cancell|replace(?:d)?\s+with|doesn't drink|do not (?:place|show|prepare).{0,60}champagne|champagne unavailable/,
-      /champagne.{0,50}(?:done|delivered|placed|complete)|(?:done|delivered|placed|complete).{0,50}champagne/
-    ) && keep("champagne")) {
-      amenities.push("champagne");
-    }
-    /* Sprint 8: preserve evidenced fruit / fruit plate (never invent). */
-    if (segmentActive(
-      "fruit",
-      /fruits?(?:\s+plate)?/,
-      /fruits?(?:\s+plate)?\s+cancell|do not (?:place|show).{0,40}fruits?/,
-      /fruits?(?:\s+plate)?.{0,40}(?:done|delivered|placed|complete)/
-    ) && keep("fruit")) {
+    if (facetStillOpen("champagne") && keep("champagne")) amenities.push("champagne");
+    if (facetStillOpen("fruit") && keep("fruit")) {
       amenities.push(/\bfruit\s+plate\b/i.test(text) ? "fruit plate" : "fruit");
     }
-    /* Sprint 8: preserve evidenced truffles. */
-    if (segmentActive(
-      "truffles",
-      /truffles?/,
-      /truffles?\s+cancell|do not (?:place|show).{0,40}truffles?/,
-      /truffles?.{0,40}(?:done|delivered|placed|complete)/
-    ) && keep("truffles")) {
-      amenities.push("truffles");
-    }
-    if (segmentActive(
-      "flowers",
-      /flowers?/,
-      /flowers?\s+cancell|do not (?:place|show).{0,40}flowers?|accidentally|not place/,
-      /flowers?.{0,40}(?:done|delivered|placed|complete)/
-    ) && keep("flowers")) {
-      amenities.push("flowers");
-    }
-    if (segmentActive(
-      "chocolates",
-      /chocolates?/,
-      /chocolates?\s+cancell|do not (?:place|show).{0,40}chocolates?/,
-      /chocolates?.{0,40}(?:done|delivered|placed|complete)/
-    ) && keep("chocolates")) {
-      amenities.push("chocolates");
-    }
-    /*
-     * Card done must use word-boundary "written" — "handwritten card" must NOT
-     * count as card-written/complete. Never treat "card on file" as welcome card.
-     */
-    if (segmentActive(
-      "card",
-      /welcome\s+card|handwritten\s+card|(?:^|[^e])\bcard\b(?!\s+on\s+file)/,
-      /card\s+cancell|no\s+card/,
-      /\bcard\s+(?:written|done|complete|placed)\b|\b(?:written|done|complete)\b.{0,20}\bcard\b/
-    ) && /(?:welcome|handwritten|card\s+still|card\s+required|card\s+written|card\s+done)/.test(lower) &&
+    if (facetStillOpen("truffles") && keep("truffles")) amenities.push("truffles");
+    if (facetStillOpen("flowers") && keep("flowers")) amenities.push("flowers");
+    if (facetStillOpen("chocolates") && keep("chocolates")) amenities.push("chocolates");
+    if (facetStillOpen("card") &&
+        /(?:welcome|handwritten|card\s+still|card\s+required|card\s+written|card\s+done|keep\s+card)/.test(lower) &&
         !/\bcard\s+on\s+file\b/.test(lower) &&
         keep("welcome card")) {
       amenities.push("welcome card");
     }
-    if (segmentActive(
-      "balloons",
-      /balloons?/,
-      /balloons?\s+cancell|do not (?:place|show).{0,40}balloons?/,
-      /balloons?.{0,40}(?:done|delivered|placed|complete)/
-    ) && keep("balloons")) {
-      amenities.push("balloons");
-    }
+    if (facetStillOpen("balloons") && keep("balloons")) amenities.push("balloons");
     return amenities;
+  }
+
+  /** Sprint 10 — hard-conditional amenity facets (never hard OPEN). */
+  function conditionalVipAmenitiesFromSource(src, note) {
+    var text = String(src || "");
+    var out = [];
+    ["champagne", "fruit", "flowers", "chocolates", "card", "truffles", "balloons"].forEach(function (kind) {
+      var st = resolveAmenityFacetState(kind, text);
+      if (st === "conditional") {
+        out.push(kind === "card" ? "welcome card" : kind);
+      }
+    });
+    return out;
   }
 
   function vipPreparationFullyComplete(src, note) {
@@ -9202,6 +9303,33 @@
     var anchor = buildOperationalDayAnchor(options || notes._temporalAnchor || {});
     notes._temporalAnchor = anchor;
 
+    /*
+     * Sprint 10 — same-room maintenance corpus so MONITOR / tomorrow inspect /
+     * mitigation lines join the initiating fault evidence (line-split pastes).
+     */
+    var roomMaintCorpus = {};
+    notes.forEach(function (n) {
+      if (!n) return;
+      var t = noteEvidenceText(n, n.fact);
+      if (!t) return;
+      if (!/\b(?:smell|maint|engineer|inspect|monitor|ooo|buzz|leak|cosmetic|airing|extractor|mitigat|shower|fault|attend)\b/i.test(t)) {
+        return;
+      }
+      var rs = ((n.fact && n.fact.rooms) || n.rooms || []).map(function (r) {
+        return normalizeRoomNumber(r) || String(r);
+      }).filter(Boolean);
+      var rmMatch = t.match(/\b(?:rm\.?|room)\s*(\d{1,4}[a-z]?)\b/i) ||
+        t.match(/\bmonitor\s+(\d{1,4}[a-z]?)\b/i);
+      if (rmMatch) {
+        var extra = normalizeRoomNumber(rmMatch[1]) || String(rmMatch[1]);
+        if (rs.indexOf(extra) === -1) rs.push(extra);
+      }
+      rs.forEach(function (r) {
+        if (!roomMaintCorpus[r]) roomMaintCorpus[r] = [];
+        if (roomMaintCorpus[r].indexOf(t) === -1) roomMaintCorpus[r].push(t);
+      });
+    });
+
     function pushAction(action) {
       if (!action || !action.actionId) return;
       if (seenIds[action.actionId]) return;
@@ -9440,7 +9568,35 @@
 
       /* Sprint 6: late checkout today @12 — OPEN / past / unresolved by operational day. */
       if (/\blate\s*(?:check[\s-]?outs?|c\/?o)\b/i.test(src) &&
-          (/\btoday\b|\btodat\b/i.test(src) || temporal.relativeCue === "today")) {
+          (/\btoday\b|\btodat\b/i.test(src) || temporal.relativeCue === "today" ||
+            /\bnot\s+requested\b/i.test(src) || /\bstandard\s+12:00\b/i.test(src))) {
+        /* Sprint 10: polarity — "late c/o NOT requested" is not an OPEN honour. */
+        if (/\bnot\s+requested\b/i.test(normalizeStateResolutionText(src)) ||
+            (/\blate\s*(?:check[\s-]?outs?|c\/?o)\b/i.test(src) &&
+              /\bstandard\s+12:00\b/i.test(src) && /\bnot\s+requested\b/i.test(src))) {
+          pushAction(createCanonicalAction({
+            entityId: entityId,
+            resolutionState: resolutionState,
+            canonicalName: canonicalName,
+            room: currentRoom,
+            rooms: rooms,
+            facetKey: "timed:late_checkout_not_requested",
+            actionType: NEXT_ACTION_KIND.none,
+            actionState: ACTION_STATE.information,
+            actionText: currentRoom
+              ? "Late check-out not requested for Room " + currentRoom + " — standard departure"
+              : "Late check-out not requested — standard departure",
+            evidenceText: src,
+            actionability: ACTIONABILITY.satisfied,
+            priorityBand: PRIORITY_BAND.P3,
+            priorityScore: 85,
+            priorityReasons: ["late_checkout_not_requested", "sprint10_state_resolution"],
+            currentStateEligible: true,
+            sourceFactIds: [factId],
+            confidence: 0.85
+          }));
+          return;
+        }
         var lcoTemporal = resolveTemporalEligibility(src, fact, note, anchor, { deadlineHint: "12:00" });
         var lcoState = ACTION_STATE.unresolved;
         var lcoText = "Clarify late check-out timing (today @12)";
@@ -9626,7 +9782,7 @@
         return;
       }
 
-      /* Twin / amenity room scoping — respect final double / cancelled twin. */
+      /* Twin / amenity room scoping — respect final double / cancelled / DONE twin. */
       if (subject === "twin_setup" || /\btwin(?:\s+beds?)?\b/i.test(src)) {
         if (/\b(?:do\s+not\s+request\s+twin|twin\s+request\s+is\s+superseded|old\s+twin\s+request|not\s+twin)\b/i.test(src) ||
             (/\bfinal\s+room\b/i.test(src) && /\btwin\b/i.test(src) && /\bsuperseded\b/i.test(src))) {
@@ -9648,6 +9804,35 @@
             currentStateEligible: true,
             sourceFactIds: [factId],
             confidence: 0.8
+          }));
+          return;
+        }
+        /* Sprint 10: completed twin must not reopen as OPEN. */
+        var twinNorm = normalizeStateResolutionText(src);
+        if (/\btwin\b/.test(twinNorm) &&
+            !/\bnot\s+(?:yet\s+)?(?:done|set|complete)\b/.test(twinNorm) &&
+            (/\btwin\b.{0,40}\b(?:done|complete|completed|already\s+set)\b/.test(twinNorm) ||
+              /\b(?:done|complete|completed|already\s+set)\b.{0,40}\btwin\b/.test(twinNorm) ||
+              /\balready\s+set\s+twin\b/.test(twinNorm))) {
+          pushAction(createCanonicalAction({
+            entityId: entityId,
+            resolutionState: resolutionState,
+            canonicalName: canonicalName,
+            room: amenityScopedRoomFromText(src, rooms, currentRoom) || currentRoom,
+            rooms: rooms,
+            facetKey: "amenity:twin_done",
+            actionType: NEXT_ACTION_KIND.none,
+            actionState: ACTION_STATE.resolved,
+            actionText: "Twin setup already complete" +
+              (currentRoom ? " for Room " + (amenityScopedRoomFromText(src, rooms, currentRoom) || currentRoom) : ""),
+            evidenceText: src,
+            actionability: ACTIONABILITY.satisfied,
+            priorityBand: PRIORITY_BAND.exclude,
+            priorityScore: 90,
+            priorityReasons: ["twin_setup_done", "sprint10_state_resolution"],
+            currentStateEligible: true,
+            sourceFactIds: [factId],
+            confidence: 0.85
           }));
           return;
         }
@@ -9754,9 +9939,36 @@
         return;
       }
 
-      /* Amenity prep — only ACTIVE amenities (respect Sprint 1 DONE/cancel election). */
+      /* Amenity prep — only ACTIVE amenities (respect Sprint 1 DONE/cancel + Sprint 10 polarity). */
       if ((hasAmenityPrepCue(src) || objectInfo.type === OPERATIONAL_OBJECT_TYPE.vip || subject === "vip_arrival") &&
           !/\bminibar\b/i.test(src)) {
+        var activeAmenities = activeVipAmenitiesFromSource(src, note);
+        var conditionalAmenities = conditionalVipAmenitiesFromSource(src, note);
+        /* Sprint 10: hard-conditional before prep_complete so "if available" is not swallowed. */
+        if (!activeAmenities.length && conditionalAmenities.length && !/\btwin\b/i.test(src)) {
+          pushAction(createCanonicalAction({
+            entityId: entityId,
+            resolutionState: "unresolved",
+            canonicalName: canonicalName,
+            room: currentRoom,
+            rooms: rooms,
+            facetKey: "amenity:conditional",
+            actionType: NEXT_ACTION_KIND.none,
+            actionState: ACTION_STATE.unresolved,
+            actionText: "Confirm availability before preparing " + conditionalAmenities.join(" + ") +
+              (canonicalName ? " for " + canonicalName : "") +
+              (currentRoom ? " in Room " + currentRoom : ""),
+            evidenceText: src,
+            actionability: ACTIONABILITY.actionable,
+            priorityBand: PRIORITY_BAND.P3,
+            priorityScore: 70,
+            priorityReasons: ["amenity_conditional_fail_closed", "sprint10_state_resolution"],
+            currentStateEligible: true,
+            sourceFactIds: [factId],
+            confidence: 0.7
+          }));
+          return;
+        }
         if (vipPreparationFullyComplete(src, note)) {
           pushAction(createCanonicalAction({
             entityId: entityId,
@@ -9779,9 +9991,8 @@
           }));
           return;
         }
-        var activeAmenities = activeVipAmenitiesFromSource(src, note);
         if (!activeAmenities.length && !/\btwin\b/i.test(src)) {
-          /* Mentions only cancelled/DONE amenities — do not invent OPEN prep. */
+          /* Mentions only cancelled/DONE/declined amenities — do not invent OPEN prep. */
           pushAction(createCanonicalAction({
             entityId: entityId,
             resolutionState: resolutionState,
@@ -9796,7 +10007,7 @@
             actionability: ACTIONABILITY.satisfied,
             priorityBand: PRIORITY_BAND.P3,
             priorityScore: 82,
-            priorityReasons: ["no_active_vip_amenity"],
+            priorityReasons: ["no_active_vip_amenity", "sprint10_state_resolution"],
             currentStateEligible: true,
             sourceFactIds: [factId],
             confidence: 0.65
@@ -9887,6 +10098,75 @@
       if (subject === "guest_request" || hasOpenGuestRequestCue(src)) {
         var reqLabel = faithfulRequestLabel(src, fact);
         if (reqLabel) {
+          var reqNorm = normalizeStateResolutionText(src);
+          /* Sprint 10: explicit amenity decline / not requested — do not OPEN prep. */
+          if (/\bno\s+(?:amenities|amenity)(?:\s+ordered)?\b/.test(reqNorm) ||
+              (/\bnot\s+requested\b/.test(reqNorm) &&
+                /amenity|welcome|fruit|flower|champagne|card/i.test(reqLabel))) {
+            pushAction(createCanonicalAction({
+              entityId: entityId,
+              resolutionState: resolutionState,
+              canonicalName: canonicalName,
+              room: currentRoom,
+              rooms: rooms,
+              facetKey: "guest_request:" + stableActionToken(reqLabel) + ":declined",
+              actionType: NEXT_ACTION_KIND.none,
+              actionState: ACTION_STATE.information,
+              actionText: currentRoom
+                ? ("No " + reqLabel + " requested for Room " + currentRoom)
+                : ("No " + reqLabel + " requested"),
+              evidenceText: src,
+              actionability: ACTIONABILITY.satisfied,
+              priorityBand: PRIORITY_BAND.P3,
+              priorityScore: 84,
+              priorityReasons: ["guest_request_declined", "sprint10_state_resolution"],
+              currentStateEligible: true,
+              sourceFactIds: [factId],
+              confidence: 0.8
+            }));
+            return;
+          }
+          var reqToken = String(reqLabel || "").toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          var reqNearDone = new RegExp(
+            "\\b" + reqToken + ".{0,80}\\b(?:delivered|done|completed|resolved|placed)\\b"
+          ).test(reqNorm) ||
+            new RegExp(
+              "\\b(?:delivered|done|completed|resolved|placed)\\b.{0,80}\\b" + reqToken + "\\b"
+            ).test(reqNorm);
+          /* Common short labels: "extra pillows" / pillows */
+          if (!reqNearDone && /\bpillows?\b/.test(reqNorm)) {
+            reqNearDone =
+              /\bpillows?\b.{0,80}\b(?:delivered|done|completed)\b/.test(reqNorm) ||
+              /\b(?:delivered|done|completed)\b.{0,80}\bpillows?\b/.test(reqNorm);
+          }
+          var reqTerminalDone =
+            reqNearDone &&
+            !/\bnot\s+(?:yet\s+)?(?:done|delivered|completed|resolved)\b/.test(reqNorm) &&
+            !/\bstill\s+(?:need|needed|outstanding|open)\b/.test(reqNorm);
+          if (reqTerminalDone) {
+            pushAction(createCanonicalAction({
+              entityId: entityId,
+              resolutionState: resolutionState,
+              canonicalName: canonicalName,
+              room: currentRoom,
+              rooms: rooms,
+              facetKey: "guest_request:" + stableActionToken(reqLabel) + ":done",
+              actionType: NEXT_ACTION_KIND.none,
+              actionState: ACTION_STATE.resolved,
+              actionText: currentRoom
+                ? (reqLabel + " already completed for Room " + currentRoom)
+                : (reqLabel + " already completed"),
+              evidenceText: src,
+              actionability: ACTIONABILITY.satisfied,
+              priorityBand: PRIORITY_BAND.exclude,
+              priorityScore: 90,
+              priorityReasons: ["guest_request_done", "sprint10_state_resolution"],
+              currentStateEligible: true,
+              sourceFactIds: [factId],
+              confidence: 0.85
+            }));
+            return;
+          }
           var reqState = actionability === ACTIONABILITY.blocked
             ? ACTION_STATE.blocked
             : ACTION_STATE.open;
@@ -10162,28 +10442,59 @@
         return;
       }
 
-      /* Maintenance open follow-up — Sprint 6: tomorrow inspect = MONITOR, not danger chase. */
+      /* Maintenance open follow-up — Sprint 6/10: tomorrow inspect / mitigated MONITOR. */
       if (objectInfo.type === OPERATIONAL_OBJECT_TYPE.maintenance || subject === "maintenance") {
-        var maintTemporal = resolveTemporalEligibility(src, fact, note, anchor, { deadlineHint: "inspect" });
+        var maintSrc = src;
+        if (currentRoom && roomMaintCorpus[currentRoom] && roomMaintCorpus[currentRoom].length) {
+          maintSrc = roomMaintCorpus[currentRoom].join(" | ");
+        }
+        var maintTemporal = resolveTemporalEligibility(maintSrc, fact, note, anchor, { deadlineHint: "inspect" });
         var maintState = actionability === ACTIONABILITY.blocked
           ? ACTION_STATE.blocked
           : ACTION_STATE.open;
         var maintText = currentRoom
           ? "Follow up maintenance for Room " + currentRoom
           : "Follow up open maintenance";
-        if ((/\btomorrow\b/i.test(src) && /\binspect\b/i.test(src)) ||
-            (temporalIsFutureOrMonitor(maintTemporal) && /\binspect\b/i.test(src))) {
-          maintState = ACTION_STATE.monitor;
+        var maintPriBand = pri.priorityBand === PRIORITY_BAND.exclude ? PRIORITY_BAND.P2 : pri.priorityBand;
+        var maintPriScore = Math.min(pri.priorityScore, 28);
+        var maintReasons = pri.priorityReasons.slice();
+        if (textHasCosmeticOrNoAction(maintSrc) || textHasCosmeticOrNoAction(src)) {
+          maintState = ACTION_STATE.information;
           maintText = currentRoom
-            ? "Monitor Room " + currentRoom + " — maintenance inspection due tomorrow (DM already attended)"
-            : "Monitor maintenance — inspection due tomorrow (not an immediate chase)";
-          maintTemporal = Object.assign({}, maintTemporal, {
-            temporalScope: TEMPORAL_SCOPE.tomorrow,
-            relativeCue: "tomorrow",
-            deadlineHint: "inspect",
-            temporalConfidence: TEMPORAL_CONFIDENCE.high,
-            temporalReasons: (maintTemporal.temporalReasons || []).concat(["tomorrow_inspection_monitor"])
-          });
+            ? "Cosmetic maintenance logged for Room " + currentRoom + " (AM list / information)"
+            : "Cosmetic maintenance logged for AM list (information)";
+          maintPriBand = PRIORITY_BAND.P3;
+          maintPriScore = 78;
+          maintReasons = maintReasons.concat(["cosmetic_or_monitor_only", "sprint10_state_resolution"]);
+        } else if (textHasExplicitOvernightMitigation(maintSrc) ||
+            (/\btomorrow\b/i.test(maintSrc) && /\binspect\b/i.test(maintSrc)) ||
+            (temporalIsFutureOrMonitor(maintTemporal) && /\binspect\b/i.test(maintSrc)) ||
+            /\bplease\s+monitor\b/i.test(maintSrc) ||
+            /\bmonitor\b.{0,32}\bovernight\b/i.test(maintSrc) ||
+            (/\booo\b/i.test(maintSrc) &&
+              (/\bmaybe\s+dry\s+tomorrow\b/i.test(maintSrc) ||
+                /\bnot\s+released\b/i.test(maintSrc) ||
+                /\bdon'?t\s+chase\s+ooo\b/i.test(maintSrc)))) {
+          maintState = ACTION_STATE.monitor;
+          if (/\btomorrow\b/i.test(maintSrc) && /\binspect\b/i.test(maintSrc)) {
+            maintText = currentRoom
+              ? "Monitor Room " + currentRoom + " overnight — engineering inspect tomorrow (not a live chase)"
+              : "Monitor maintenance — inspection due tomorrow (not an immediate chase)";
+            maintTemporal = Object.assign({}, maintTemporal, {
+              temporalScope: TEMPORAL_SCOPE.tomorrow,
+              relativeCue: "tomorrow",
+              deadlineHint: "inspect",
+              temporalConfidence: TEMPORAL_CONFIDENCE.high,
+              temporalReasons: (maintTemporal.temporalReasons || []).concat(["tomorrow_inspection_monitor"])
+            });
+          } else {
+            maintText = currentRoom
+              ? "Monitor Room " + currentRoom + " overnight — mitigated; escalate only if worsens"
+              : "Monitor mitigated maintenance overnight — escalate only if worsens";
+          }
+          maintPriBand = PRIORITY_BAND.P3;
+          maintPriScore = 65;
+          maintReasons = maintReasons.concat(["mitigated_monitor_overnight", "sprint10_state_resolution"]);
         }
         pushAction(createCanonicalAction(applyTemporalToActionOpts({
           entityId: entityId,
@@ -10191,18 +10502,17 @@
           canonicalName: canonicalName,
           room: currentRoom,
           rooms: rooms,
-          facetKey: maintState === ACTION_STATE.monitor ? "maintenance:tomorrow_inspect" : "maintenance",
+          facetKey: maintState === ACTION_STATE.monitor ? "maintenance:tomorrow_inspect"
+            : (maintState === ACTION_STATE.information ? "maintenance:cosmetic" : "maintenance"),
           actionType: NEXT_ACTION_KIND.follow_up_until_resolved,
           actionState: maintState,
           actionText: maintText,
-          evidenceText: src,
-          actionability: actionability,
+          evidenceText: maintSrc,
+          actionability: maintState === ACTION_STATE.information ? ACTIONABILITY.satisfied : actionability,
           blockedBy: blockedBy,
-          priorityBand: maintState === ACTION_STATE.monitor ? PRIORITY_BAND.P2 : pri.priorityBand,
-          priorityScore: maintState === ACTION_STATE.monitor
-            ? Math.max(pri.priorityScore, 55)
-            : pri.priorityScore,
-          priorityReasons: pri.priorityReasons,
+          priorityBand: maintPriBand,
+          priorityScore: maintPriScore,
+          priorityReasons: maintReasons.length ? maintReasons : pri.priorityReasons,
           currentStateEligible: true,
           sourceFactIds: [factId],
           confidence: pri.confidence

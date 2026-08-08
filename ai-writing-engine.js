@@ -1723,6 +1723,12 @@
       return FACT_STATUS.confirmed;
     }
 
+    /* Sprint 10: polarity — "NOT requested" must not classify as requested. */
+    if (/\bnot\s+requested\b/.test(lower) || /\bno\s+longer\s+requested\b/.test(lower)) {
+      if (/\b(?:delivered|done|completed|resolved)\b/.test(lower)) return FACT_STATUS.done;
+      return FACT_STATUS.unknown;
+    }
+
     if (
       /\b(?:request(?:ed)?|asking|asked|would like|wants?|needs?|maybe|possibly)\b/.test(lower)
     ) {
@@ -4391,25 +4397,40 @@
     /*
      * Evaluate per segment so "Champagne … DONE" does not mark a sibling
      * "Card still …" as complete via proximity across joined archives.
+     * Sprint 10: markdown-normalise; longer DONE window; bare "no flowers/fruit".
      */
     var segments = String(archive || "").split(/\s*\|\s*/);
     return segments.some(function (seg) {
-      var lower = String(seg || "").toLowerCase();
+      var lower = String(seg || "")
+        .replace(/[*_`~]+/g, " ")
+        .replace(/\s+/g, " ")
+        .toLowerCase()
+        .trim();
       if (!lower) return false;
       if (kind === "card") {
-        if (!/\bcard\b/.test(lower)) return false;
-        return /\bcard\s+cancell|no\s+card\b/.test(lower) ||
+        if (!/\bcard\b/.test(lower) || /\bcard\s+on\s+file\b/.test(lower)) return false;
+        if (/\bkeep\s+(?:the\s+)?card\b/.test(lower) && /\bnot\s+written\b/.test(lower)) return false;
+        return /\bcard\s+cancell|no\s+(?:handwritten\s+)?(?:welcome\s+)?card\b/.test(lower) ||
           /\bcard\s+(?:written|done|complete|placed)\b/.test(lower) ||
           /\b(?:written|done|complete)\b.{0,20}\bcard\b/.test(lower);
       }
       if (kind === "champagne") {
         if (!/\bchampagne\b/.test(lower)) return false;
         return /(?:no|not|don't|do not)\s+champagne|champagne\s+cancell|replace(?:d)?\s+with|doesn't drink|do not (?:place|show|prepare).{0,60}champagne|champagne unavailable/.test(lower) ||
-          /champagne.{0,50}(?:done|delivered|placed|complete)|(?:done|delivered|placed|complete).{0,50}champagne/.test(lower);
+          /champagne.{0,100}(?:done|delivered|placed|complete|already\s+in(?:\s+the)?\s+room)|(?:done|delivered|placed|complete|already\s+in(?:\s+the)?\s+room).{0,100}champagne/.test(lower);
+      }
+      if (kind === "flowers" || kind === "fruit") {
+        var noun = kind === "flowers" ? "flowers?" : "fruits?(?:\\s+plate)?";
+        if (!new RegExp("\\b" + noun + "\\b").test(lower)) return false;
+        if (new RegExp("\\bno\\s+" + noun + "\\b").test(lower)) return true;
+        if (new RegExp("\\b" + noun + "\\s+cancell").test(lower)) return true;
+        if (/do not (?:place|show)/.test(lower)) return true;
+        return new RegExp("\\b" + noun + ".{0,100}(?:done|delivered|placed|complete|already\\s+in(?:\\s+the)?\\s+room)").test(lower) ||
+          new RegExp("(?:done|delivered|placed|complete|already\\s+in(?:\\s+the)?\\s+room).{0,100}\\b" + noun + "\\b").test(lower);
       }
       if (lower.indexOf(kind) === -1 && !(kind === "chocolates" && /chocolate/.test(lower))) return false;
       var reCancel = new RegExp(kind + "\\s+cancell|do not (?:place|show).{0,40}" + kind, "i");
-      var reDone = new RegExp(kind + ".{0,40}(?:done|delivered|placed|complete)", "i");
+      var reDone = new RegExp(kind + ".{0,100}(?:done|delivered|placed|complete|already\\s+in(?:\\s+the)?\\s+room)", "i");
       return reCancel.test(lower) || reDone.test(lower);
     });
   }
