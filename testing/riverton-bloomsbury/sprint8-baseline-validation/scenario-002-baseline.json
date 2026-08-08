@@ -1,0 +1,990 @@
+{
+  "label": "RIVERTON SPRINT 8 BASELINE OUTPUT",
+  "scenarioId": "002",
+  "title": "Snapshot & Stayovers Only",
+  "recordId": null,
+  "gitCommit": "73e7572a09e851d322a7a16a3f0542da93062f43",
+  "engineVersion": 1,
+  "contractVersion": "E1",
+  "ranAt": "2026-08-08T12:15:37.701Z",
+  "pipeline": [
+    "extractOperationalFact / sectionFromFact",
+    "consolidateNotesByFacts",
+    "resolveOperationalEntities (Sprint 3)",
+    "electCanonicalCurrentState (Sprint 1)",
+    "resolveOperationalDependencies (Sprint 4)",
+    "buildCanonicalOperationalActions (Sprint 5/6/8)",
+    "buildOrganisedSectionModel",
+    "buildTodaysBriefing (Sprint 8 decision seating)",
+    "ShiftIntelligenceEngine.analyze (Sprint 8 recommendation seating)"
+  ],
+  "scenarioMeta": {
+    "shift": "AM",
+    "operationalLoad": "Quiet",
+    "difficulty": "Basic",
+    "capability": "Snapshot vs actionable work; future arrival not tonight",
+    "ambiguity": "Partial (future arrival timing clear enough)",
+    "departments": "Reception",
+    "sourceFile": "scenario-002.md"
+  },
+  "humanExpectedTruth": {
+    "currentOperationalFacts": [
+      "No arrivals and no departures for **today**.",
+      "Long stayover list is in-house continuity context, not a task list.",
+      "**Pendleton** prepaid arrival is **Wednesday** — not today; room intentionally unallocated yet.",
+      "Snapshot KPIs describe a soft house; they are not payment chases.",
+      "Printer jam resolved; staff meal rota irrelevant to guest handover actions."
+    ],
+    "open": [
+      "Essentially none from this paste. No invented check-ins, collects, or VIP setups."
+    ],
+    "monitor": [
+      "Soft house / walk-in opportunity is commercial context only if retained as INFORMATION/MONITOR — not fabricated guest work."
+    ],
+    "information": [
+      "Stayovers list; Pendleton Wednesday prepaid future arrival; snapshot occupancy soft."
+    ],
+    "unresolved": [
+      "None."
+    ],
+    "mustNotInfer": [
+      "Treating Pendleton (or any Wednesday arrival) as today’s check-in.",
+      "Inventing payment chases from ADR/RevPAR/occupancy figures.",
+      "Converting the stayover list into OPEN room visits or amenity prep.",
+      "Inventing allocation for Pendleton as if due now."
+    ],
+    "rawTruthMarkdown": "### Current operational facts\r\n- No arrivals and no departures for **today**.\r\n- Long stayover list is in-house continuity context, not a task list.\r\n- **Pendleton** prepaid arrival is **Wednesday** — not today; room intentionally unallocated yet.\r\n- Snapshot KPIs describe a soft house; they are not payment chases.\r\n- Printer jam resolved; staff meal rota irrelevant to guest handover actions.\r\n\r\n### Expected work states\r\n\r\n#### OPEN\r\n- Essentially none from this paste. No invented check-ins, collects, or VIP setups.\r\n\r\n#### MONITOR\r\n- Soft house / walk-in opportunity is commercial context only if retained as INFORMATION/MONITOR — not fabricated guest work.\r\n\r\n#### INFORMATION\r\n- Stayovers list; Pendleton Wednesday prepaid future arrival; snapshot occupancy soft.\r\n\r\n#### UNRESOLVED\r\n- None.\r\n\r\n### Must not infer / invent\r\n- Treating Pendleton (or any Wednesday arrival) as today’s check-in.\r\n- Inventing payment chases from ADR/RevPAR/occupancy figures.\r\n- Converting the stayover list into OPEN room visits or amenity prep.\r\n- Inventing allocation for Pendleton as if due now."
+  },
+  "canonicalActions": [
+    {
+      "actionId": "act|noent|noroom|payment_collect|collect_before_departure|riverton_baseline_40",
+      "actionState": "open",
+      "actionType": "collect_before_departure",
+      "facetKey": "payment:collect",
+      "room": "",
+      "entityId": null,
+      "canonicalName": "Mrs Pendleton",
+      "actionText": "Collect outstanding channel payment before departure",
+      "priorityBand": "P2",
+      "priorityScore": 35,
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "- Mr & Mrs Pendleton — Deluxe King — prepaid Booking.com — **arriving WEDNESDAY** (two nights from today). Confirmation email in inbox. Do not treat as today’s arrival. Room not allocated yet on purpose."
+    }
+  ],
+  "actionStateCounts": {
+    "open": 1,
+    "monitor": 0,
+    "information": 0,
+    "unresolved": 0,
+    "blocked": 0,
+    "resolved": 0,
+    "other": 0
+  },
+  "temporalAnchor": {
+    "handoverDate": "2026-08-08",
+    "shift": "AM",
+    "createdAt": "2026-08-08T07:15:00.000Z"
+  },
+  "inputIntegrity": {
+    "inputAuthority": "scenario-XXX.md Original Input / Raw Source Notes",
+    "sourceSha256": "d128aa0c67aa389687d56cf729ae47101f65f3c1c00827d1667eb6bde3e480d4",
+    "sourceLength": 1097,
+    "lineCount": 40,
+    "brainContext": null,
+    "hotelSnapshotKeys": [
+      "Arrivals",
+      "Departures",
+      "Stayovers",
+      "Guests In House",
+      "Rooms Sold",
+      "Rooms Available",
+      "Sellable Rooms",
+      "OOO Rooms",
+      "Occupancy",
+      "ADR",
+      "RevPAR",
+      "Notes pasted under snapshot by night"
+    ],
+    "humanExpectedTruthPreserved": true
+  },
+  "exactSourceInput": "### Today's Arrivals\n(none listed for today)\n\n### Today's Departures\n(none — soft departure day; all departures already processed yesterday evening / early this morning before handover save)\n\n### General Hotel / Shift Notes\nCopied from night audit sheet + my stayover list. Not much else.\n\nSTAYOVERS (in-house, no action unless they call):\n101 Whitaker\n103 Ng\n108 Brennan\n112 Vasquez\n115 Cho\n201 Hale\n204 Ibarra\n209 Merton\n213 Frost\n217 Duarte\n220 Peck\n223 Lang\n301 Rivas\n306 Abbott\n310 Shore\n314 Quinn\n319 Beckett\n323 Yoon\n401 MacLeod\n404 Trent\n408 Ambrose\n411 Soto\n415 Redpath\n419 Crowley\n501 Junior Suite — Mr Harland (corp, company billed, quiet)\n505 Junior Suite — Ms Feldman (leisure, prepaid)\n508 — empty sellable\n512 — empty sellable\n\nFUTURE / NOT TODAY:\n- Mr & Mrs Pendleton — Deluxe King — prepaid Booking.com — **arriving WEDNESDAY** (two nights from today). Confirmation email in inbox. Do not treat as today’s arrival. Room not allocated yet on purpose.\n\nMisc:\nPrinter on reception desk jammed once at 05:10; cleared. Fine now.\nStaff meal rota pinned in office — ignore for guest ops.",
+  "hotelSnapshot": {
+    "Arrivals": "0",
+    "Departures": "0",
+    "Stayovers": "26",
+    "Guests In House": "41",
+    "Rooms Sold": "26",
+    "Rooms Available": "92",
+    "Sellable Rooms": "118",
+    "OOO Rooms": "2",
+    "Occupancy": "21.7%",
+    "ADR": "£186.40",
+    "RevPAR": "£40.40",
+    "Notes pasted under snapshot by night": "“Occupancy soft — push walk-ins if any. No forced upsells overnight.”"
+  },
+  "aiSummaryBriefing": "Priority 1\nCollect outstanding channel payment before departure.\n\nPriority 2\nRevenue follow-up required for outstanding channel payment before departures.",
+  "briefingParagraphs": [
+    "Priority 1\nCollect outstanding channel payment before departure.",
+    "Priority 2\nRevenue follow-up required for outstanding channel payment before departures."
+  ],
+  "organisedHandover": {
+    "urgent": [],
+    "vip": [],
+    "guest": [],
+    "maintenance": [],
+    "payments": [
+      "- Mr & Mrs Pendleton — Deluxe King — prepaid Booking.com — **arriving WEDNESDAY** (two nights from today). Confirmation email in inbox. Do not treat as today’s arrival. Room not allocated yet on purpose."
+    ],
+    "events": [],
+    "preparations": [],
+    "openQuestions": [],
+    "tasks": [],
+    "inventory": [],
+    "deliveries": [],
+    "lostproperty": [],
+    "general": [
+      "### Today's Arrivals",
+      "(none listed for today)",
+      "### Today's Departures",
+      "(none — soft departure day; all departures already processed yesterday evening / early this morning before handover save)",
+      "### General Hotel / Shift Notes",
+      "Copied from night audit sheet + my stayover list. Not much else.",
+      "STAYOVERS (in-house, no action unless they call):",
+      "101 Whitaker",
+      "103 Ng",
+      "108 Brennan",
+      "112 Vasquez",
+      "115 Cho",
+      "201 Hale",
+      "204 Ibarra",
+      "209 Merton",
+      "213 Frost",
+      "217 Duarte",
+      "220 Peck",
+      "223 Lang",
+      "301 Rivas",
+      "306 Abbott",
+      "310 Shore",
+      "314 Quinn",
+      "319 Beckett",
+      "323 Yoon",
+      "401 MacLeod",
+      "404 Trent",
+      "408 Ambrose",
+      "411 Soto",
+      "415 Redpath",
+      "419 Crowley",
+      "501 Junior Suite — Mr Harland (corp, company billed, quiet)",
+      "505 Junior Suite — Ms Feldman (leisure, prepaid)",
+      "508 — empty sellable",
+      "512 — empty sellable",
+      "FUTURE / NOT TODAY:",
+      "Misc:",
+      "Staff meal rota pinned in office — ignore for guest ops."
+    ],
+    "completed": [
+      "Printer on reception desk jammed once at 05:10; cleared. Fine now."
+    ]
+  },
+  "recommendations": [
+    {
+      "id": "act|noent|noroom|payment_collect|collect_before_departure|riverton_baseline_40",
+      "text": "Collect outstanding channel payment before departure.",
+      "priority": "normal",
+      "department": "Reception",
+      "status": "open",
+      "reasonCodes": [
+        "payment_actionable",
+        "money_not_safety",
+        "payment_collect_evidenced",
+        "canonical_decision_seat"
+      ]
+    },
+    {
+      "id": "mskc7d1p-agjy5",
+      "text": "Collect outstanding Booking.com payment before departure.",
+      "priority": "high",
+      "department": "Reception",
+      "status": "open",
+      "reasonCodes": [
+        "arrival_at_risk",
+        "payment_before_departure",
+        "unresolved_item",
+        "arrival_today",
+        "payment_actionable",
+        "money_not_safety",
+        "cross_department_dependency"
+      ]
+    }
+  ],
+  "reasoningMetadata": {
+    "noteCountAfterPipeline": 40,
+    "dependencyEdgeCount": 0,
+    "dependencyEdges": [],
+    "analyzeKeys": [
+      "engineVersion",
+      "signals",
+      "recommendations",
+      "checklist",
+      "facts",
+      "operationalMemories",
+      "guestObservations",
+      "guestObservationRejections",
+      "guestCandidates",
+      "guestCandidateRejections"
+    ],
+    "quietShift": null,
+    "decisionSeating": {
+      "briefingUsesCanonicalActions": true,
+      "recommendationsFromAnalyze": true,
+      "sharedCanonicalList": true
+    }
+  },
+  "noteEvidence": [
+    {
+      "original": "- Mr & Mrs Pendleton — Deluxe King — prepaid Booking.com — **arriving WEDNESDAY** (two nights from today). Confirmation email in inbox. Do not treat as today’s arrival. Room not allocated yet on purpose.",
+      "section": "payments",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "payment",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "### Today's Arrivals",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_1",
+      "canonicalName": "Today's Arrivals",
+      "currentRoom": null,
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "(none listed for today)",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "### Today's Departures",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_2",
+      "canonicalName": "Today's Departures",
+      "currentRoom": null,
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "(none — soft departure day; all departures already processed yesterday evening / early this morning before handover save)",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "### General Hotel / Shift Notes",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_3",
+      "canonicalName": "General Hotel",
+      "currentRoom": null,
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Copied from night audit sheet + my stayover list. Not much else.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "STAYOVERS (in-house, no action unless they call):",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "101 Whitaker",
+      "section": "general",
+      "rooms": [
+        "101"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "101",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "103 Ng",
+      "section": "general",
+      "rooms": [
+        "103"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "103",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "108 Brennan",
+      "section": "general",
+      "rooms": [
+        "108"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "108",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "112 Vasquez",
+      "section": "general",
+      "rooms": [
+        "112"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "112",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "115 Cho",
+      "section": "general",
+      "rooms": [
+        "115"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "115",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "201 Hale",
+      "section": "general",
+      "rooms": [
+        "201"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "201",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "204 Ibarra",
+      "section": "general",
+      "rooms": [
+        "204"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "204",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "209 Merton",
+      "section": "general",
+      "rooms": [
+        "209"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "209",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "213 Frost",
+      "section": "general",
+      "rooms": [
+        "213"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "213",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "217 Duarte",
+      "section": "general",
+      "rooms": [
+        "217"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "217",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "220 Peck",
+      "section": "general",
+      "rooms": [
+        "220"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "220",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "223 Lang",
+      "section": "general",
+      "rooms": [
+        "223"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "223",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "301 Rivas",
+      "section": "general",
+      "rooms": [
+        "301"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "301",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "306 Abbott",
+      "section": "general",
+      "rooms": [
+        "306"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "306",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "310 Shore",
+      "section": "general",
+      "rooms": [
+        "310"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "310",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "314 Quinn",
+      "section": "general",
+      "rooms": [
+        "314"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "314",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "319 Beckett",
+      "section": "general",
+      "rooms": [
+        "319"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "319",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "323 Yoon",
+      "section": "general",
+      "rooms": [
+        "323"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "323",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "401 MacLeod",
+      "section": "general",
+      "rooms": [
+        "401"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "401",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "404 Trent",
+      "section": "general",
+      "rooms": [
+        "404"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "404",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "408 Ambrose",
+      "section": "general",
+      "rooms": [
+        "408"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "408",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "411 Soto",
+      "section": "general",
+      "rooms": [
+        "411"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "411",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "415 Redpath",
+      "section": "general",
+      "rooms": [
+        "415"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "415",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "419 Crowley",
+      "section": "general",
+      "rooms": [
+        "419"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "419",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "501 Junior Suite — Mr Harland (corp, company billed, quiet)",
+      "section": "general",
+      "rooms": [
+        "501"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_4",
+      "canonicalName": "Junior Suite",
+      "currentRoom": "501",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "505 Junior Suite — Ms Feldman (leisure, prepaid)",
+      "section": "general",
+      "rooms": [
+        "505"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_5",
+      "canonicalName": "Junior Suite",
+      "currentRoom": "505",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "508 — empty sellable",
+      "section": "general",
+      "rooms": [
+        "508"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "508",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "512 — empty sellable",
+      "section": "general",
+      "rooms": [
+        "512"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "512",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "FUTURE / NOT TODAY:",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Misc:",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Staff meal rota pinned in office — ignore for guest ops.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Printer on reception desk jammed once at 05:10; cleared. Fine now.",
+      "section": "completed",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "done"
+    }
+  ],
+  "reviewPlaceholder": {
+    "status": "PENDING_HUMAN_REVIEW",
+    "note": "Verdicts live in RIVERTON_BASELINE_FAILURE_MAP.md after assessment against Human Expected Truth."
+  }
+}

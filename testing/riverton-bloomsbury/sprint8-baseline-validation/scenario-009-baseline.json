@@ -1,0 +1,396 @@
+{
+  "label": "RIVERTON SPRINT 8 BASELINE OUTPUT",
+  "scenarioId": "009",
+  "title": "Parlour Afternoon Tea & Room Service Cutoff",
+  "recordId": null,
+  "gitCommit": "73e7572a09e851d322a7a16a3f0542da93062f43",
+  "engineVersion": 1,
+  "contractVersion": "E1",
+  "ranAt": "2026-08-08T12:15:37.701Z",
+  "pipeline": [
+    "extractOperationalFact / sectionFromFact",
+    "consolidateNotesByFacts",
+    "resolveOperationalEntities (Sprint 3)",
+    "electCanonicalCurrentState (Sprint 1)",
+    "resolveOperationalDependencies (Sprint 4)",
+    "buildCanonicalOperationalActions (Sprint 5/6/8)",
+    "buildOrganisedSectionModel",
+    "buildTodaysBriefing (Sprint 8 decision seating)",
+    "ShiftIntelligenceEngine.analyze (Sprint 8 recommendation seating)"
+  ],
+  "scenarioMeta": {
+    "shift": "PM",
+    "operationalLoad": "Normal",
+    "difficulty": "Moderate",
+    "capability": "F&B operational commitments; cutoff fail-closed",
+    "ambiguity": "Yes (whether exception was granted)",
+    "departments": "F&B, Reception",
+    "sourceFile": "scenario-009.md"
+  },
+  "humanExpectedTruth": {
+    "currentOperationalFacts": [
+      "Shaw parlour afternoon tea 15:30 / party of 3 / in-house 404 — F&B cover, not room VIP package.",
+      "Hofstadter 227 requested hot IRD after **22:30** cutoff; exception **not clearly granted**.",
+      "Sticky “champagne for Shaw” is likely confusion — **no evidenced champagne request**.",
+      "Turndown 512 and newspaper 301 are completed noise."
+    ],
+    "open": [
+      "Honour / host Shaw tea as F&B operational commitment at 15:30 (if this handover is used pre-tea) or confirm completed if past — scenario focus remains correct classification.",
+      "For 227: clarify exception with Night Manager **or** decline per cutoff — do not silently proceed as approved."
+    ],
+    "monitor": [
+      "Possible callback from 227 regarding food after cutoff."
+    ],
+    "information": [
+      "Published cutoff 22:30; completed turndown/newspaper."
+    ],
+    "unresolved": [
+      "Whether manager exception for 227 was granted (intentional ambiguity)."
+    ],
+    "mustNotInfer": [
+      "Inventing exception approval for late room service.",
+      "Converting Shaw tea into VIP amenity package / champagne for wrong framing.",
+      "Assigning champagne to Shaw from sticky note alone.",
+      "Treating tea as housekeeping room setup."
+    ],
+    "rawTruthMarkdown": "### Current operational facts\r\n- Shaw parlour afternoon tea 15:30 / party of 3 / in-house 404 — F&B cover, not room VIP package.\r\n- Hofstadter 227 requested hot IRD after **22:30** cutoff; exception **not clearly granted**.\r\n- Sticky “champagne for Shaw” is likely confusion — **no evidenced champagne request**.\r\n- Turndown 512 and newspaper 301 are completed noise.\r\n\r\n### Expected work states\r\n\r\n#### OPEN\r\n- Honour / host Shaw tea as F&B operational commitment at 15:30 (if this handover is used pre-tea) or confirm completed if past — scenario focus remains correct classification.\r\n- For 227: clarify exception with Night Manager **or** decline per cutoff — do not silently proceed as approved.\r\n\r\n#### MONITOR\r\n- Possible callback from 227 regarding food after cutoff.\r\n\r\n#### INFORMATION\r\n- Published cutoff 22:30; completed turndown/newspaper.\r\n\r\n#### UNRESOLVED\r\n- Whether manager exception for 227 was granted (intentional ambiguity).\r\n\r\n### Must not infer / invent\r\n- Inventing exception approval for late room service.\r\n- Converting Shaw tea into VIP amenity package / champagne for wrong framing.\r\n- Assigning champagne to Shaw from sticky note alone.\r\n- Treating tea as housekeeping room setup."
+  },
+  "canonicalActions": [
+    {
+      "actionId": "act|ent_1|404|amenity_prep|prepare_vip|riverton_baseline_3",
+      "actionState": "open",
+      "actionType": "prepare_vip",
+      "facetKey": "amenity:prep",
+      "room": "404",
+      "entityId": "ent_1",
+      "canonicalName": "Mrs Genevieve Shaw",
+      "actionText": "Prepare fruit for Mrs Genevieve Shaw in Room 404",
+      "priorityBand": "P2",
+      "priorityScore": 32,
+      "temporalScope": "today",
+      "serviceDate": "",
+      "deadlineHint": "15:30",
+      "relativeCue": "morning",
+      "temporalConfidence": "low",
+      "temporalReasons": [
+        "am_or_morning_cue"
+      ],
+      "evidenceText": "Afternoon tea booking **15:30** — name **Mrs Genevieve Shaw** — party of 3 — table confirmed by F&B this morning. Guest is in-house **rm 404**. Not a room amenity — it’s a restaurant/parlour cover. Please don’t put “VIP fruit” language on t"
+    },
+    {
+      "actionId": "act|noent|noroom|vip_prep_complete|type|riverton_baseline_15",
+      "actionState": "information",
+      "actionType": "operational_follow_up",
+      "facetKey": "vip:prep_complete",
+      "room": "",
+      "entityId": null,
+      "canonicalName": "",
+      "actionText": "VIP prep complete / awareness only",
+      "priorityBand": "P3",
+      "priorityScore": 78,
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "Someone wrote “champagne for Shaw” on a sticky — I think they confused parlour tea with amenities — **no champagne request on booking**"
+    }
+  ],
+  "actionStateCounts": {
+    "open": 1,
+    "monitor": 0,
+    "information": 1,
+    "unresolved": 0,
+    "blocked": 0,
+    "resolved": 0,
+    "other": 0
+  },
+  "temporalAnchor": {
+    "handoverDate": "2026-08-08",
+    "shift": "PM",
+    "createdAt": "2026-08-08T15:45:00.000Z"
+  },
+  "inputIntegrity": {
+    "inputAuthority": "scenario-XXX.md Original Input / Raw Source Notes",
+    "sourceSha256": "88814a42bdd3be03b8e8b36411eef0de75c20024e51a80251e1bdf57253bd8cf",
+    "sourceLength": 1044,
+    "lineCount": 11,
+    "brainContext": null,
+    "hotelSnapshotKeys": [],
+    "humanExpectedTruthPreserved": true
+  },
+  "exactSourceInput": "hi team — messy but important\n\nPARLOUR\nAfternoon tea booking **15:30** — name **Mrs Genevieve Shaw** — party of 3 — table confirmed by F&B this morning. Guest is in-house **rm 404**. Not a room amenity — it’s a restaurant/parlour cover. Please don’t put “VIP fruit” language on this.\n\nROOM SERVICE\nPublished IRD cutoff for full menu is **22:30**. After that, night menu only if kitchen agrees.\n\nAt 22:48 guest **rm 227** (Mr Hofstadter) called wanting a club sandwich + chips. Night receptionist told him cutoff passed. Guest asked for “manager exception”. Night manager was on a walkie with a noise room and said “I’ll come back to it” — **no clear yes/no recorded**. Guest said he might call again. Kitchen already closing down hot line.\n\nPlease fail closed: do **not** assume exception approved unless someone writes APPROVED with name/time.\n\nOther bits:\nrm 512 turndown done\nNewspaper for 301 — delivered\nSomeone wrote “champagne for Shaw” on a sticky — I think they confused parlour tea with amenities — **no champagne request on booking**",
+  "hotelSnapshot": {},
+  "aiSummaryBriefing": "Priority 1\nPrepare fruit for Mrs Genevieve Shaw in Room 404.",
+  "briefingParagraphs": [
+    "Priority 1\nPrepare fruit for Mrs Genevieve Shaw in Room 404."
+  ],
+  "organisedHandover": {
+    "urgent": [],
+    "vip": [
+      "Afternoon tea booking **15:30** — name **Mrs Genevieve Shaw** — party of 3 — table confirmed by F&B this morning. Guest is in-house **rm 404**. Not a room amenity — it’s a restaurant/parlour cover. Please don’t put “VIP fruit” language on this. // Someone wrote “champagne for Shaw” on a sticky — I think they confused parlour tea with amenities — **no champagne request on booking**"
+    ],
+    "guest": [],
+    "maintenance": [],
+    "payments": [],
+    "events": [],
+    "preparations": [],
+    "openQuestions": [],
+    "tasks": [],
+    "inventory": [],
+    "deliveries": [],
+    "lostproperty": [],
+    "general": [
+      "At 22:48 guest **rm 227** (Mr Hofstadter) called wanting a club sandwich + chips. Night receptionist told him cutoff passed. Guest asked for “manager exception”. Night manager was on a walkie with a noise room and said “I’ll come back to it” — **no clear yes/no recorded**. Guest said he might call again. Kitchen already closing down hot line.",
+      "ROOM SERVICE",
+      "hi team — messy but important",
+      "PARLOUR",
+      "Published IRD cutoff for full menu is **22:30**. After that, night menu only if kitchen agrees.",
+      "Please fail closed: do **not** assume exception approved unless someone writes APPROVED with name/time.",
+      "Other bits:"
+    ],
+    "completed": [
+      "rm 512 turndown done",
+      "Newspaper for 301 — delivered"
+    ]
+  },
+  "recommendations": [
+    {
+      "id": "act|ent_1|404|amenity_prep|prepare_vip|riverton_baseline_3",
+      "text": "Prepare fruit for Mrs Genevieve Shaw in Room 404.",
+      "priority": "normal",
+      "department": "Housekeeping",
+      "status": "open",
+      "reasonCodes": [
+        "resolved_no_action",
+        "amenity_prep_open",
+        "temporal:am_or_morning_cue",
+        "canonical_decision_seat",
+        "legacy_wording_enrich"
+      ]
+    }
+  ],
+  "reasoningMetadata": {
+    "noteCountAfterPipeline": 11,
+    "dependencyEdgeCount": 0,
+    "dependencyEdges": [],
+    "analyzeKeys": [
+      "engineVersion",
+      "signals",
+      "recommendations",
+      "checklist",
+      "facts",
+      "operationalMemories",
+      "guestObservations",
+      "guestObservationRejections",
+      "guestCandidates",
+      "guestCandidateRejections"
+    ],
+    "quietShift": null,
+    "decisionSeating": {
+      "briefingUsesCanonicalActions": true,
+      "recommendationsFromAnalyze": true,
+      "sharedCanonicalList": true
+    }
+  },
+  "noteEvidence": [
+    {
+      "original": "Afternoon tea booking **15:30** — name **Mrs Genevieve Shaw** — party of 3 — table confirmed by F&B this morning. Guest is in-house **rm 404**. Not a room amenity — it’s a restaurant/parlour cover. Please don’t put “VIP fruit” language on this.",
+      "section": "vip",
+      "rooms": [
+        "404"
+      ],
+      "isVip": true,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_1",
+      "canonicalName": "Mrs Genevieve Shaw",
+      "currentRoom": "404",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "vip_arrival",
+      "factStatus": "confirmed"
+    },
+    {
+      "original": "Someone wrote “champagne for Shaw” on a sticky — I think they confused parlour tea with amenities — **no champagne request on booking**",
+      "section": "guest",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "guest_request",
+      "factStatus": "done"
+    },
+    {
+      "original": "hi team — messy but important",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "PARLOUR",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "ROOM SERVICE",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Published IRD cutoff for full menu is **22:30**. After that, night menu only if kitchen agrees.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "At 22:48 guest **rm 227** (Mr Hofstadter) called wanting a club sandwich + chips. Night receptionist told him cutoff passed. Guest asked for “manager exception”. Night manager was on a walkie with a noise room and said “I’ll come back to it” — **no clear yes/no recorded**. Guest said he might call again. Kitchen already closing down hot line.",
+      "section": "general",
+      "rooms": [
+        "227"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_2",
+      "canonicalName": "Mr Hofstadter",
+      "currentRoom": "227",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "requested"
+    },
+    {
+      "original": "Please fail closed: do **not** assume exception approved unless someone writes APPROVED with name/time.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "confirmed"
+    },
+    {
+      "original": "Other bits:",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "rm 512 turndown done",
+      "section": "completed",
+      "rooms": [
+        "512"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "512",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "done"
+    },
+    {
+      "original": "Newspaper for 301 — delivered",
+      "section": "completed",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "done"
+    }
+  ],
+  "reviewPlaceholder": {
+    "status": "PENDING_HUMAN_REVIEW",
+    "note": "Verdicts live in RIVERTON_BASELINE_FAILURE_MAP.md after assessment against Human Expected Truth."
+  }
+}

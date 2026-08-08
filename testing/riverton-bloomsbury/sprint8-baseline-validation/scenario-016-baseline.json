@@ -1,0 +1,450 @@
+{
+  "label": "RIVERTON SPRINT 8 BASELINE OUTPUT",
+  "scenarioId": "016",
+  "title": "Late Checkout After Midnight Crossing",
+  "recordId": null,
+  "gitCommit": "73e7572a09e851d322a7a16a3f0542da93062f43",
+  "engineVersion": 1,
+  "contractVersion": "E1",
+  "ranAt": "2026-08-08T12:15:37.701Z",
+  "pipeline": [
+    "extractOperationalFact / sectionFromFact",
+    "consolidateNotesByFacts",
+    "resolveOperationalEntities (Sprint 3)",
+    "electCanonicalCurrentState (Sprint 1)",
+    "resolveOperationalDependencies (Sprint 4)",
+    "buildCanonicalOperationalActions (Sprint 5/6/8)",
+    "buildOrganisedSectionModel",
+    "buildTodaysBriefing (Sprint 8 decision seating)",
+    "ShiftIntelligenceEngine.analyze (Sprint 8 recommendation seating)"
+  ],
+  "scenarioMeta": {
+    "shift": "Night",
+    "operationalLoad": "Busy",
+    "difficulty": "Hard",
+    "capability": "Ambiguous operational day → UNRESOLVED / fail-closed",
+    "ambiguity": "Yes (primary)",
+    "departments": "Reception, Night Manager, Housekeeping",
+    "sourceFile": "scenario-016.md"
+  },
+  "humanExpectedTruth": {
+    "currentOperationalFacts": [
+      "Late checkout note for **217 / 219 / 402** exists with “today @12” language saved **after midnight**.",
+      "Operational calendar day for that “today” is **not safely determinable** from the paste alone amid audit roll uncertainty.",
+      "Wake-up 508 and taxi/luggage 114 are clear timed night/AM items."
+    ],
+    "open": [
+      "**508** wake-up 05:45.",
+      "**114** luggage + 06:20 taxi (confirmed).",
+      "Late checkouts: **not** forced OPEN honour solely from ambiguous “today”."
+    ],
+    "monitor": [
+      "Night audit / date roll completion; DM confirmation path for Merton/Hof/Singh."
+    ],
+    "information": [
+      "£20 late c/o charges mentioned as posted “where required” — still does not resolve which noon without date clarity."
+    ],
+    "unresolved": [
+      "Which calendar noon applies to late c/o for 217/219/402 (primary intentional ambiguity) → fail closed."
+    ],
+    "mustNotInfer": [
+      "Forcing OPEN late-checkout honour by guessing the day.",
+      "Inventing which calendar day “today” meant.",
+      "Marking late checkouts completed without evidence.",
+      "Dropping the clear wake-up/taxi items while over-focusing on a guessed c/o day."
+    ],
+    "rawTruthMarkdown": "### Current operational facts\r\n- Late checkout note for **217 / 219 / 402** exists with “today @12” language saved **after midnight**.\r\n- Operational calendar day for that “today” is **not safely determinable** from the paste alone amid audit roll uncertainty.\r\n- Wake-up 508 and taxi/luggage 114 are clear timed night/AM items.\r\n\r\n### Expected work states\r\n\r\n#### OPEN\r\n- **508** wake-up 05:45.\r\n- **114** luggage + 06:20 taxi (confirmed).\r\n- Late checkouts: **not** forced OPEN honour solely from ambiguous “today”.\r\n\r\n#### MONITOR\r\n- Night audit / date roll completion; DM confirmation path for Merton/Hof/Singh.\r\n\r\n#### INFORMATION\r\n- £20 late c/o charges mentioned as posted “where required” — still does not resolve which noon without date clarity.\r\n\r\n#### UNRESOLVED\r\n- Which calendar noon applies to late c/o for 217/219/402 (primary intentional ambiguity) → fail closed.\r\n\r\n### Must not infer / invent\r\n- Forcing OPEN late-checkout honour by guessing the day.\r\n- Inventing which calendar day “today” meant.\r\n- Marking late checkouts completed without evidence.\r\n- Dropping the clear wake-up/taxi items while over-focusing on a guessed c/o day."
+  },
+  "canonicalActions": [
+    {
+      "actionId": "act|noent|114|guest_request_luggage_ea|guest_follow_up|riverton_baseline_19",
+      "actionState": "open",
+      "actionType": "guest_follow_up",
+      "facetKey": "guest_request:luggage_ea",
+      "room": "114",
+      "entityId": null,
+      "canonicalName": "",
+      "actionText": "Honour luggage / early-arrival arrangements (Room 114)",
+      "priorityBand": "P2",
+      "priorityScore": 38,
+      "temporalScope": "information",
+      "serviceDate": "",
+      "deadlineHint": "06:20",
+      "relativeCue": "",
+      "temporalConfidence": "low",
+      "temporalReasons": [
+        "no_temporal_evidence"
+      ],
+      "evidenceText": "- Early luggage pull rm 114 for 06:20 taxi (taxi confirmed)"
+    },
+    {
+      "actionId": "act|noent|noroom|timed_late_checkout|complete_timed_actions|note_0",
+      "actionState": "unresolved",
+      "actionType": "complete_timed_actions",
+      "facetKey": "timed:late_checkout",
+      "room": "",
+      "entityId": null,
+      "canonicalName": "",
+      "actionText": "Unresolved late check-out today @12 — confirm operational day before actioning",
+      "priorityBand": "P2",
+      "priorityScore": 48,
+      "temporalScope": "ambiguous",
+      "serviceDate": "",
+      "deadlineHint": "12:00",
+      "relativeCue": "today",
+      "temporalConfidence": "low",
+      "temporalReasons": [
+        "late_co_today_night_crossing_ambiguous"
+      ],
+      "evidenceText": "“Late c/o today @12 for: | Night manager instruction: **do not honour as OPEN late checkout** until day/date is confirmed with DM notes or folio checkout date clarity. Fail closed / UNRESOLVED rather than invent which noon."
+    }
+  ],
+  "actionStateCounts": {
+    "open": 1,
+    "monitor": 0,
+    "information": 0,
+    "unresolved": 1,
+    "blocked": 0,
+    "resolved": 0,
+    "other": 0
+  },
+  "temporalAnchor": {
+    "handoverDate": "2026-08-08",
+    "shift": "Night",
+    "createdAt": "2026-08-09T00:20:00.000Z"
+  },
+  "inputIntegrity": {
+    "inputAuthority": "scenario-XXX.md Original Input / Raw Source Notes",
+    "sourceSha256": "fc63e763a62f0e7f7e7a4acafa773a588a712c45aab0db466c7612889374c6d6",
+    "sourceLength": 1039,
+    "lineCount": 14,
+    "brainContext": null,
+    "hotelSnapshotKeys": [],
+    "humanExpectedTruthPreserved": true
+  },
+  "exactSourceInput": "Saved on night desk tablet at **00:37**.\n\nPaste from earlier shift chat (timestamp on message shows **23:55** previous calendar evening):\n\n“Late c/o today @12 for:\nrm 217 Merton\nrm 219 Hof\nrm 402 Singh\nDM approved — £20 each posted where required\nHK please hold cleans”\n\nProblem: after midnight, “today @12” is ambiguous — is that **noon coming up in ~11 hours**, or did the message mean **the noon that already passed yesterday**, or **noon of the guest’s checkout date still showing on the folios**?\n\nOpera still shows Merton/Hof/Singh as in-house with checkout date fields that look like **this morning’s business date** depending which date roll we finished — night audit **not fully rolled** when this was saved.\n\nNight manager instruction: **do not honour as OPEN late checkout** until day/date is confirmed with DM notes or folio checkout date clarity. Fail closed / UNRESOLVED rather than invent which noon.\n\nOther clear night work (not ambiguous):\n- Wake-up 05:45 rm 508\n- Early luggage pull rm 114 for 06:20 taxi (taxi confirmed)",
+  "hotelSnapshot": {},
+  "aiSummaryBriefing": "Priority 1\nTimed departure actions for Room 508: wake-up at 05:45.\n\nPriority 2\nHonour luggage / early-arrival arrangements (Room 114).",
+  "briefingParagraphs": [
+    "Priority 1\nTimed departure actions for Room 508: wake-up at 05:45.",
+    "Priority 2\nHonour luggage / early-arrival arrangements (Room 114)."
+  ],
+  "organisedHandover": {
+    "urgent": [],
+    "vip": [],
+    "guest": [
+      "- Early luggage pull rm 114 for 06:20 taxi (taxi confirmed)",
+      "- Wake-up 05:45 rm 508"
+    ],
+    "maintenance": [],
+    "payments": [
+      "“Late c/o today @12 for: | Night manager instruction: **do not honour as OPEN late checkout** until day/date is confirmed with DM notes or folio checkout date clarity. Fail closed / UNRESOLVED rather than invent which noon."
+    ],
+    "events": [],
+    "preparations": [],
+    "openQuestions": [],
+    "tasks": [],
+    "inventory": [],
+    "deliveries": [],
+    "lostproperty": [],
+    "general": [
+      "rm 217 Merton",
+      "rm 219 Hof",
+      "rm 402 Singh",
+      "Saved on night desk tablet at **00:37**.",
+      "Paste from earlier shift chat (timestamp on message shows **23:55** previous calendar evening):",
+      "DM approved — £20 each posted where required",
+      "HK please hold cleans”",
+      "Problem: after midnight, “today @12” is ambiguous — is that **noon coming up in ~11 hours**, or did the message mean **the noon that already passed yesterday**, or **noon of the guest’s checkout date still showing on the folios**?",
+      "Opera still shows Merton/Hof/Singh as in-house with checkout date fields that look like **this morning’s business date** depending which date roll we finished — night audit **not fully rolled** when this was saved.",
+      "Other clear night work (not ambiguous):"
+    ],
+    "completed": []
+  },
+  "recommendations": [
+    {
+      "id": "act|noent|114|guest_request_luggage_ea|guest_follow_up|riverton_baseline_19",
+      "text": "Honour luggage / early-arrival arrangements (Room 114).",
+      "priority": "normal",
+      "department": "Reception",
+      "status": "open",
+      "reasonCodes": [
+        "luggage_ea_follow_up",
+        "temporal:no_temporal_evidence",
+        "canonical_decision_seat",
+        "legacy_wording_enrich"
+      ]
+    },
+    {
+      "id": "mskc7ddu-kyn4r",
+      "text": "Complete the 05:45 wake-up call for Room 508 — wake-up call not yet confirmed as loaded this shift.",
+      "priority": "high",
+      "department": "Reception",
+      "status": "open",
+      "reasonCodes": [
+        "imminent_timed_action",
+        "timed_action_due"
+      ]
+    }
+  ],
+  "reasoningMetadata": {
+    "noteCountAfterPipeline": 13,
+    "dependencyEdgeCount": 0,
+    "dependencyEdges": [],
+    "analyzeKeys": [
+      "engineVersion",
+      "signals",
+      "recommendations",
+      "checklist",
+      "facts",
+      "operationalMemories",
+      "guestObservations",
+      "guestObservationRejections",
+      "guestCandidates",
+      "guestCandidateRejections"
+    ],
+    "quietShift": null,
+    "decisionSeating": {
+      "briefingUsesCanonicalActions": true,
+      "recommendationsFromAnalyze": true,
+      "sharedCanonicalList": true
+    }
+  },
+  "noteEvidence": [
+    {
+      "original": "“Late c/o today @12 for: | Night manager instruction: **do not honour as OPEN late checkout** until day/date is confirmed with DM notes or folio checkout date clarity. Fail closed / UNRESOLVED rather than invent which noon.",
+      "section": "guest",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "late_checkout",
+      "factStatus": "open"
+    },
+    {
+      "original": "- Wake-up 05:45 rm 508",
+      "section": "guest",
+      "rooms": [
+        "508"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "508",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "wake_up",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- Early luggage pull rm 114 for 06:20 taxi (taxi confirmed)",
+      "section": "guest",
+      "rooms": [
+        "114"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "114",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "departure_followup",
+      "factStatus": "confirmed"
+    },
+    {
+      "original": "Saved on night desk tablet at **00:37**.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Paste from earlier shift chat (timestamp on message shows **23:55** previous calendar evening):",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "rm 217 Merton",
+      "section": "general",
+      "rooms": [
+        "217"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "217",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "rm 219 Hof",
+      "section": "general",
+      "rooms": [
+        "219"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "219",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "rm 402 Singh",
+      "section": "general",
+      "rooms": [
+        "402"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "402",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "DM approved — £20 each posted where required",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "confirmed"
+    },
+    {
+      "original": "HK please hold cleans”",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Problem: after midnight, “today @12” is ambiguous — is that **noon coming up in ~11 hours**, or did the message mean **the noon that already passed yesterday**, or **noon of the guest’s checkout date still showing on the folios**?",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Opera still shows Merton/Hof/Singh as in-house with checkout date fields that look like **this morning’s business date** depending which date roll we finished — night audit **not fully rolled** when this was saved.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Other clear night work (not ambiguous):",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    }
+  ],
+  "reviewPlaceholder": {
+    "status": "PENDING_HUMAN_REVIEW",
+    "note": "Verdicts live in RIVERTON_BASELINE_FAILURE_MAP.md after assessment against Human Expected Truth."
+  }
+}

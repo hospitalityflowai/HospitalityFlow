@@ -1,0 +1,509 @@
+{
+  "label": "RIVERTON SPRINT 8 BASELINE OUTPUT",
+  "scenarioId": "013",
+  "title": "Anniversary Package Then Cancellation",
+  "recordId": null,
+  "gitCommit": "73e7572a09e851d322a7a16a3f0542da93062f43",
+  "engineVersion": 1,
+  "contractVersion": "E1",
+  "ranAt": "2026-08-08T12:15:37.701Z",
+  "pipeline": [
+    "extractOperationalFact / sectionFromFact",
+    "consolidateNotesByFacts",
+    "resolveOperationalEntities (Sprint 3)",
+    "electCanonicalCurrentState (Sprint 1)",
+    "resolveOperationalDependencies (Sprint 4)",
+    "buildCanonicalOperationalActions (Sprint 5/6/8)",
+    "buildOrganisedSectionModel",
+    "buildTodaysBriefing (Sprint 8 decision seating)",
+    "ShiftIntelligenceEngine.analyze (Sprint 8 recommendation seating)"
+  ],
+  "scenarioMeta": {
+    "shift": "AM",
+    "operationalLoad": "Normal",
+    "difficulty": "Moderate",
+    "capability": "Supersession; remaining active amenities only",
+    "ambiguity": "No",
+    "departments": "Housekeeping, Reception",
+    "sourceFile": "scenario-013.md"
+  },
+  "humanExpectedTruth": {
+    "currentOperationalFacts": [
+      "Langford **502** ETA ~15:00.",
+      "**Roses cancelled** — must not be prepared.",
+      "**Truffles** still active (on order ~13:30).",
+      "**Prosecco** still active (in fridge labelled).",
+      "**Handwritten card** still desired / not written yet.",
+      "Stale “full package incl roses” printout superseded."
+    ],
+    "open": [
+      "Write card; place **truffles + prosecco** for 502; ensure **no roses**."
+    ],
+    "monitor": [
+      "Supplier delivery of truffles ~13:30 before arrival."
+    ],
+    "information": [
+      "216 late c/o; OOO 318 unchanged."
+    ],
+    "unresolved": [
+      "None for amenity set (supersession clear)."
+    ],
+    "mustNotInfer": [
+      "Preparing / ordering roses after cancellation.",
+      "Dropping truffles or prosecco because roses cancelled.",
+      "Inventing a replacement “allergy-safe flower” package not requested.",
+      "Preferring the stale printout over later email/HK update."
+    ],
+    "rawTruthMarkdown": "### Current operational facts\r\n- Langford **502** ETA ~15:00.\r\n- **Roses cancelled** — must not be prepared.\r\n- **Truffles** still active (on order ~13:30).\r\n- **Prosecco** still active (in fridge labelled).\r\n- **Handwritten card** still desired / not written yet.\r\n- Stale “full package incl roses” printout superseded.\r\n\r\n### Expected work states\r\n\r\n#### OPEN\r\n- Write card; place **truffles + prosecco** for 502; ensure **no roses**.\r\n\r\n#### MONITOR\r\n- Supplier delivery of truffles ~13:30 before arrival.\r\n\r\n#### INFORMATION\r\n- 216 late c/o; OOO 318 unchanged.\r\n\r\n#### UNRESOLVED\r\n- None for amenity set (supersession clear).\r\n\r\n### Must not infer / invent\r\n- Preparing / ordering roses after cancellation.\r\n- Dropping truffles or prosecco because roses cancelled.\r\n- Inventing a replacement “allergy-safe flower” package not requested.\r\n- Preferring the stale printout over later email/HK update."
+  },
+  "canonicalActions": [
+    {
+      "actionId": "act|noent|noroom|amenity_prep|prepare_vip|note_3",
+      "actionState": "open",
+      "actionType": "prepare_vip",
+      "facetKey": "amenity:prep",
+      "room": "",
+      "entityId": null,
+      "canonicalName": "",
+      "actionText": "Prepare truffles + chocolates + welcome card",
+      "priorityBand": "P2",
+      "priorityScore": 32,
+      "temporalScope": "today",
+      "serviceDate": "",
+      "deadlineHint": "11:20",
+      "relativeCue": "am",
+      "temporalConfidence": "low",
+      "temporalReasons": [
+        "am_or_morning_cue"
+      ],
+      "evidenceText": "Package request: red roses, chocolate truffles, bottle prosecco, handwritten card | 11:20 Someone on AM desk re-wrote an old note “Langford full anniversary package incl roses” on the arrivals printout — **that printout is stale**. Trust th"
+    },
+    {
+      "actionId": "act|noent|noroom|amenity_prep|prepare_vip|riverton_baseline_7",
+      "actionState": "open",
+      "actionType": "prepare_vip",
+      "facetKey": "amenity:prep",
+      "room": "",
+      "entityId": null,
+      "canonicalName": "",
+      "actionText": "Prepare truffles + welcome card",
+      "priorityBand": "P2",
+      "priorityScore": 32,
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "“Please cancel the roses — allergies in the family. Keep truffles and prosecco. Card still nice if possible.”"
+    },
+    {
+      "actionId": "act|noent|noroom|amenity_prep|prepare_vip|riverton_baseline_11",
+      "actionState": "open",
+      "actionType": "prepare_vip",
+      "facetKey": "amenity:prep",
+      "room": "",
+      "entityId": null,
+      "canonicalName": "",
+      "actionText": "Prepare truffles",
+      "priorityBand": "P3",
+      "priorityScore": 32,
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "Truffles: ordered from supplier, ETA to hotel ~13:30"
+    },
+    {
+      "actionId": "act|noent|noroom|vip_no_active_amenity|type|riverton_baseline_3",
+      "actionState": "information",
+      "actionType": "operational_follow_up",
+      "facetKey": "vip:no_active_amenity",
+      "room": "",
+      "entityId": null,
+      "canonicalName": "Mrs Langford",
+      "actionText": "Mrs Langford — No active VIP amenity outstanding",
+      "priorityBand": "P3",
+      "priorityScore": 82,
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "Anniversary arrival today **Mr & Mrs Langford** rm **502** Junior Suite ETA 15:00"
+    }
+  ],
+  "actionStateCounts": {
+    "open": 3,
+    "monitor": 0,
+    "information": 1,
+    "unresolved": 0,
+    "blocked": 0,
+    "resolved": 0,
+    "other": 0
+  },
+  "temporalAnchor": {
+    "handoverDate": "2026-08-08",
+    "shift": "AM",
+    "createdAt": "2026-08-08T07:15:00.000Z"
+  },
+  "inputIntegrity": {
+    "inputAuthority": "scenario-XXX.md Original Input / Raw Source Notes",
+    "sourceSha256": "32cabb0bee3c745e97b00e59b449284e3a71d17983fcfb5836e659aa136f216c",
+    "sourceLength": 822,
+    "lineCount": 15,
+    "brainContext": null,
+    "hotelSnapshotKeys": [],
+    "humanExpectedTruthPreserved": true
+  },
+  "exactSourceInput": "Chronological — please use FINAL state.\n\n09:10 Reservations → HK:\nAnniversary arrival today **Mr & Mrs Langford** rm **502** Junior Suite ETA 15:00\nPackage request: red roses, chocolate truffles, bottle prosecco, handwritten card\n\n10:40 Guest emailed:\n“Please cancel the roses — allergies in the family. Keep truffles and prosecco. Card still nice if possible.”\n\n11:05 HK supervisor update:\nRoses **CANCELLED — do not order / do not place**.\nTruffles: ordered from supplier, ETA to hotel ~13:30\nProsecco: in fridge labelled LANGFORD 502\nCard: not written yet\n\n11:20 Someone on AM desk re-wrote an old note “Langford full anniversary package incl roses” on the arrivals printout — **that printout is stale**. Trust the 10:40/11:05 updates.\n\nAlso AM:\nDeparture 216 late c/o to 13:00 approved\nOOO 318 still carpet — unchanged",
+  "hotelSnapshot": {},
+  "aiSummaryBriefing": "Priority 1\nPrepare truffles + chocolates + welcome card.\n\nPriority 2\nPrepare truffles + welcome card.",
+  "briefingParagraphs": [
+    "Priority 1\nPrepare truffles + chocolates + welcome card.",
+    "Priority 2\nPrepare truffles + welcome card."
+  ],
+  "organisedHandover": {
+    "urgent": [],
+    "vip": [],
+    "guest": [
+      "Departure 216 late c/o to 13:00 approved"
+    ],
+    "maintenance": [],
+    "payments": [],
+    "events": [],
+    "preparations": [
+      "Package request: red roses, chocolate truffles, bottle prosecco, handwritten card | 11:20 Someone on AM desk re-wrote an old note “Langford full anniversary package incl roses” on the arrivals printout — **that printout is stale**. Trust the 10:40/11:05 updates.",
+      "“Please cancel the roses — allergies in the family. Keep truffles and prosecco. Card still nice if possible.”",
+      "Anniversary arrival today **Mr & Mrs Langford** rm **502** Junior Suite ETA 15:00",
+      "Prosecco: in fridge labelled LANGFORD 502"
+    ],
+    "openQuestions": [],
+    "tasks": [],
+    "inventory": [],
+    "deliveries": [],
+    "lostproperty": [],
+    "general": [
+      "Chronological — please use FINAL state.",
+      "09:10 Reservations → HK:",
+      "10:40 Guest emailed:",
+      "11:05 HK supervisor update:",
+      "Truffles: ordered from supplier, ETA to hotel ~13:30",
+      "Card: not written yet",
+      "Also AM:",
+      "OOO 318 still carpet — unchanged"
+    ],
+    "completed": [
+      "Roses **CANCELLED — do not order / do not place**."
+    ]
+  },
+  "recommendations": [
+    {
+      "id": "act|noent|noroom|amenity_prep|prepare_vip|note_3",
+      "text": "Prepare truffles + chocolates + welcome card.",
+      "priority": "normal",
+      "department": "Reception",
+      "status": "open",
+      "reasonCodes": [
+        "complaint_or_guest_follow_up",
+        "amenity_prep_open",
+        "temporal:am_or_morning_cue",
+        "canonical_decision_seat"
+      ]
+    },
+    {
+      "id": "act|noent|noroom|amenity_prep|prepare_vip|riverton_baseline_7",
+      "text": "Prepare truffles + welcome card.",
+      "priority": "normal",
+      "department": "Reception",
+      "status": "open",
+      "reasonCodes": [
+        "complaint_or_guest_follow_up",
+        "amenity_prep_open",
+        "canonical_decision_seat"
+      ]
+    },
+    {
+      "id": "act|noent|noroom|amenity_prep|prepare_vip|riverton_baseline_11",
+      "text": "Prepare truffles.",
+      "priority": "low",
+      "department": "Reception",
+      "status": "open",
+      "reasonCodes": [
+        "routine_or_monitor",
+        "amenity_prep_open",
+        "canonical_decision_seat"
+      ]
+    }
+  ],
+  "reasoningMetadata": {
+    "noteCountAfterPipeline": 14,
+    "dependencyEdgeCount": 0,
+    "dependencyEdges": [],
+    "analyzeKeys": [
+      "engineVersion",
+      "signals",
+      "recommendations",
+      "checklist",
+      "facts",
+      "operationalMemories",
+      "guestObservations",
+      "guestObservationRejections",
+      "guestCandidates",
+      "guestCandidateRejections"
+    ],
+    "quietShift": null,
+    "decisionSeating": {
+      "briefingUsesCanonicalActions": true,
+      "recommendationsFromAnalyze": true,
+      "sharedCanonicalList": true
+    }
+  },
+  "noteEvidence": [
+    {
+      "original": "Anniversary arrival today **Mr & Mrs Langford** rm **502** Junior Suite ETA 15:00",
+      "section": "guest",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "celebration",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Departure 216 late c/o to 13:00 approved",
+      "section": "guest",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "late_checkout",
+      "factStatus": "confirmed"
+    },
+    {
+      "original": "“Please cancel the roses — allergies in the family. Keep truffles and prosecco. Card still nice if possible.”",
+      "section": "tasks",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "guest_request",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Package request: red roses, chocolate truffles, bottle prosecco, handwritten card | 11:20 Someone on AM desk re-wrote an old note “Langford full anniversary package incl roses” on the arrivals printout — **that printout is stale**. Trust the 10:40/11:05 updates.",
+      "section": "deliveries",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "delivery",
+      "factStatus": "requested"
+    },
+    {
+      "original": "Chronological — please use FINAL state.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "09:10 Reservations → HK:",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_1",
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "10:40 Guest emailed:",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "11:05 HK supervisor update:",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Roses **CANCELLED — do not order / do not place**.",
+      "section": "completed",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "done"
+    },
+    {
+      "original": "Truffles: ordered from supplier, ETA to hotel ~13:30",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Prosecco: in fridge labelled LANGFORD 502",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Card: not written yet",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Also AM:",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "OOO 318 still carpet — unchanged",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    }
+  ],
+  "reviewPlaceholder": {
+    "status": "PENDING_HUMAN_REVIEW",
+    "note": "Verdicts live in RIVERTON_BASELINE_FAILURE_MAP.md after assessment against Human Expected Truth."
+  }
+}

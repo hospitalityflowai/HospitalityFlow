@@ -1,0 +1,452 @@
+{
+  "label": "RIVERTON SPRINT 8 BASELINE OUTPUT",
+  "scenarioId": "018",
+  "title": "Checked-Out Room vs Listed Arrival Conflict",
+  "recordId": null,
+  "gitCommit": "73e7572a09e851d322a7a16a3f0542da93062f43",
+  "engineVersion": 1,
+  "contractVersion": "E1",
+  "ranAt": "2026-08-08T12:15:37.701Z",
+  "pipeline": [
+    "extractOperationalFact / sectionFromFact",
+    "consolidateNotesByFacts",
+    "resolveOperationalEntities (Sprint 3)",
+    "electCanonicalCurrentState (Sprint 1)",
+    "resolveOperationalDependencies (Sprint 4)",
+    "buildCanonicalOperationalActions (Sprint 5/6/8)",
+    "buildOrganisedSectionModel",
+    "buildTodaysBriefing (Sprint 8 decision seating)",
+    "ShiftIntelligenceEngine.analyze (Sprint 8 recommendation seating)"
+  ],
+  "scenarioMeta": {
+    "shift": "AM",
+    "operationalLoad": "Very busy",
+    "difficulty": "Hard",
+    "capability": "Contradiction → clarify; do not invent resolution",
+    "ambiguity": "Yes (primary)",
+    "departments": "Reception, Duty Manager, Housekeeping",
+    "sourceFile": "scenario-018.md"
+  },
+  "humanExpectedTruth": {
+    "currentOperationalFacts": [
+      "Quill arrival ~14:00 allocated **315**; Kemp appears checked out of 315 early; HK treating as vacant dirty / cleaning.",
+      "Stale stayover flag conflicts with vacant dirty / checked-out evidence → **clarification**, not silent pick-a-winner beyond evidenced checkout+clean path — still must not invent a new room assignment.",
+      "Quill is prepaid — **no £120 collect**.",
+      "Adebola 510 amenity done.",
+      "House very busy; OOO 220 continues."
+    ],
+    "open": [
+      "Clarify/confirm **315** readiness path for Quill with DM/HK (conflict acknowledgement + clean completion) — allocation contradiction handling.",
+      "Continue departure/HK rush ops without inventing Quill’s room change."
+    ],
+    "monitor": [
+      "Clean progress on 315 toward 14:00 arrival."
+    ],
+    "information": [
+      "Adebola amenity done; prepaid Quill; OOO 220."
+    ],
+    "unresolved": [
+      "Any residual contradiction between stale stayover status vs checked-out/vacant dirty until statuses aligned — intentional; do not invent “correct” alternate room."
+    ],
+    "mustNotInfer": [
+      "Inventing the “correct” different room for Quill without written reallocation.",
+      "Silently dropping the conflict.",
+      "False collect £120 on Quill.",
+      "VIP prep invention from conflict noise; reopening Adebola sparkling."
+    ],
+    "rawTruthMarkdown": "### Current operational facts\r\n- Quill arrival ~14:00 allocated **315**; Kemp appears checked out of 315 early; HK treating as vacant dirty / cleaning.\r\n- Stale stayover flag conflicts with vacant dirty / checked-out evidence → **clarification**, not silent pick-a-winner beyond evidenced checkout+clean path — still must not invent a new room assignment.\r\n- Quill is prepaid — **no £120 collect**.\r\n- Adebola 510 amenity done.\r\n- House very busy; OOO 220 continues.\r\n\r\n### Expected work states\r\n\r\n#### OPEN\r\n- Clarify/confirm **315** readiness path for Quill with DM/HK (conflict acknowledgement + clean completion) — allocation contradiction handling.\r\n- Continue departure/HK rush ops without inventing Quill’s room change.\r\n\r\n#### MONITOR\r\n- Clean progress on 315 toward 14:00 arrival.\r\n\r\n#### INFORMATION\r\n- Adebola amenity done; prepaid Quill; OOO 220.\r\n\r\n#### UNRESOLVED\r\n- Any residual contradiction between stale stayover status vs checked-out/vacant dirty until statuses aligned — intentional; do not invent “correct” alternate room.\r\n\r\n### Must not infer / invent\r\n- Inventing the “correct” different room for Quill without written reallocation.\r\n- Silently dropping the conflict.\r\n- False collect £120 on Quill.\r\n- VIP prep invention from conflict noise; reopening Adebola sparkling."
+  },
+  "canonicalActions": [
+    {
+      "actionId": "act|ent_4|510|vip_no_active_amenity|type|riverton_baseline_16",
+      "actionState": "information",
+      "actionType": "operational_follow_up",
+      "facetKey": "vip:no_active_amenity",
+      "room": "510",
+      "entityId": "ent_4",
+      "canonicalName": "Ms Adebola",
+      "actionText": "Ms Adebola — No active VIP amenity outstanding",
+      "priorityBand": "P3",
+      "priorityScore": 82,
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "- VIP sparkling for **rm 510** (Ms Adebola) — already placed — DONE"
+    },
+    {
+      "actionId": "act|noent|noroom|payment_no_collect|type|riverton_baseline_15",
+      "actionState": "resolved",
+      "actionType": "operational_follow_up",
+      "facetKey": "payment:no_collect",
+      "room": "",
+      "entityId": null,
+      "canonicalName": "",
+      "actionText": "Payment settled / no collect required",
+      "priorityBand": "exclude",
+      "priorityScore": 92,
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "- “Collect £120 Quill” — **no** — prepaid direct — zero balance due on arrival"
+    }
+  ],
+  "actionStateCounts": {
+    "open": 0,
+    "monitor": 0,
+    "information": 1,
+    "unresolved": 0,
+    "blocked": 0,
+    "resolved": 1,
+    "other": 0
+  },
+  "temporalAnchor": {
+    "handoverDate": "2026-08-08",
+    "shift": "AM",
+    "createdAt": "2026-08-08T07:15:00.000Z"
+  },
+  "inputIntegrity": {
+    "inputAuthority": "scenario-XXX.md Original Input / Raw Source Notes",
+    "sourceSha256": "413989d4df5d304de5dbe495a79f1cdf7933e4f62d4e20741a9345a128b93add",
+    "sourceLength": 1254,
+    "lineCount": 15,
+    "brainContext": null,
+    "hotelSnapshotKeys": [],
+    "humanExpectedTruthPreserved": true
+  },
+  "exactSourceInput": "Very busy AM — contradiction on the board — escalate, don’t guess.\n\nARRIVAL\n**Ms Renata Quill** — booking RB-66104 — due ~14:00 — system allocation **Room 315**\n\nDEPARTURES / ROOM STATUS CONFLICT\n- Room rack print (07:55): **315 CHECKED OUT** — guest name on rack **Mr Paul Kemp** — checked out 07:20 — express\n- HK board (08:05): **315** still showing **stayover dirty** from night report (night may not have updated after Kemp left)\n- Housekeeping WhatsApp 08:25: “315 empty when we opened door — taking as vacant dirty — starting clean”\n- Meanwhile reservations chat: “Quill must stay in 315 — view room promised” \n- DM not in yet (due 09:30). Night left note: “Kemp early out — 315 should be free for turn”\n\nSo: arrival assigned to 315; evidence says Kemp out and HK starting clean; one stale line still said stayover. **Do not invent a different room** for Quill unless DM/reservations reallocate in writing. **Do not pretend there is no conflict** between stale stayover flag vs vacant dirty.\n\nUnrelated noise trying to steal attention:\n- “Collect £120 Quill” — **no** — prepaid direct — zero balance due on arrival\n- VIP sparkling for **rm 510** (Ms Adebola) — already placed — DONE\n\nAlso real work:\nDeparture rush floors 1–2; OOO 220 carpet still",
+  "hotelSnapshot": {},
+  "aiSummaryBriefing": "Shift status\nNo urgent guest-impacting priorities for the incoming team.",
+  "briefingParagraphs": [
+    "Shift status\nNo urgent guest-impacting priorities for the incoming team."
+  ],
+  "organisedHandover": {
+    "urgent": [],
+    "vip": [
+      "- VIP sparkling for **rm 510** (Ms Adebola) — already placed — DONE"
+    ],
+    "guest": [],
+    "maintenance": [],
+    "payments": [
+      "- “Collect £120 Quill” — **no** — prepaid direct — zero balance due on arrival"
+    ],
+    "events": [
+      "**Ms Renata Quill** — booking RB-66104 — due ~14:00 — system allocation **Room 315**"
+    ],
+    "preparations": [],
+    "openQuestions": [],
+    "tasks": [],
+    "inventory": [],
+    "deliveries": [],
+    "lostproperty": [],
+    "general": [
+      "- Room rack print (07:55): **315 CHECKED OUT** — guest name on rack **Mr Paul Kemp** — checked out 07:20 — express",
+      "So: arrival assigned to 315; evidence says Kemp out and HK starting clean; one stale line still said stayover. **Do not invent a different room** for Quill unless DM/reservations reallocate in writing. **Do not pretend there is no conflict** between stale stayover flag vs vacant dirty.",
+      "- Meanwhile reservations chat: “Quill must stay in 315 — view room promised” ",
+      "DEPARTURES / ROOM STATUS CONFLICT",
+      "Very busy AM — contradiction on the board — escalate, don’t guess.",
+      "ARRIVAL",
+      "- HK board (08:05): **315** still showing **stayover dirty** from night report (night may not have updated after Kemp left)",
+      "- Housekeeping WhatsApp 08:25: “315 empty when we opened door — taking as vacant dirty — starting clean”",
+      "- DM not in yet (due 09:30). Night left note: “Kemp early out — 315 should be free for turn”",
+      "Unrelated noise trying to steal attention:",
+      "Also real work:",
+      "Departure rush floors 1–2; OOO 220 carpet still"
+    ],
+    "completed": []
+  },
+  "recommendations": [],
+  "reasoningMetadata": {
+    "noteCountAfterPipeline": 15,
+    "dependencyEdgeCount": 0,
+    "dependencyEdges": [],
+    "analyzeKeys": [
+      "engineVersion",
+      "signals",
+      "recommendations",
+      "checklist",
+      "facts",
+      "operationalMemories",
+      "guestObservations",
+      "guestObservationRejections",
+      "guestCandidates",
+      "guestCandidateRejections"
+    ],
+    "quietShift": null,
+    "decisionSeating": {
+      "briefingUsesCanonicalActions": true,
+      "recommendationsFromAnalyze": true,
+      "sharedCanonicalList": true
+    }
+  },
+  "noteEvidence": [
+    {
+      "original": "- “Collect £120 Quill” — **no** — prepaid direct — zero balance due on arrival",
+      "section": "payments",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "outstanding_balance",
+      "factStatus": "done"
+    },
+    {
+      "original": "- VIP sparkling for **rm 510** (Ms Adebola) — already placed — DONE",
+      "section": "completed",
+      "rooms": [
+        "510"
+      ],
+      "isVip": true,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_4",
+      "canonicalName": "Ms Adebola",
+      "currentRoom": "510",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "vip_arrival",
+      "factStatus": "done"
+    },
+    {
+      "original": "Very busy AM — contradiction on the board — escalate, don’t guess.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "ARRIVAL",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "**Ms Renata Quill** — booking RB-66104 — due ~14:00 — system allocation **Room 315**",
+      "section": "general",
+      "rooms": [
+        "315"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_1",
+      "canonicalName": "Ms Renata Quill",
+      "currentRoom": "315",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "DEPARTURES / ROOM STATUS CONFLICT",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- Room rack print (07:55): **315 CHECKED OUT** — guest name on rack **Mr Paul Kemp** — checked out 07:20 — express",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_2",
+      "canonicalName": "Mr Paul Kemp",
+      "currentRoom": null,
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- HK board (08:05): **315** still showing **stayover dirty** from night report (night may not have updated after Kemp left)",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- Housekeeping WhatsApp 08:25: “315 empty when we opened door — taking as vacant dirty — starting clean”",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- Meanwhile reservations chat: “Quill must stay in 315 — view room promised” ",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_3",
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- DM not in yet (due 09:30). Night left note: “Kemp early out — 315 should be free for turn”",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "So: arrival assigned to 315; evidence says Kemp out and HK starting clean; one stale line still said stayover. **Do not invent a different room** for Quill unless DM/reservations reallocate in writing. **Do not pretend there is no conflict** between stale stayover flag vs vacant dirty.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_3",
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Unrelated noise trying to steal attention:",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Also real work:",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Departure rush floors 1–2; OOO 220 carpet still",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    }
+  ],
+  "reviewPlaceholder": {
+    "status": "PENDING_HUMAN_REVIEW",
+    "note": "Verdicts live in RIVERTON_BASELINE_FAILURE_MAP.md after assessment against Human Expected Truth."
+  }
+}
