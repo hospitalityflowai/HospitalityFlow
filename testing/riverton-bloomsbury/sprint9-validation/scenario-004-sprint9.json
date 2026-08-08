@@ -1,0 +1,614 @@
+{
+  "label": "RIVERTON SPRINT 9 VALIDATION OUTPUT",
+  "scenarioId": "004",
+  "title": "Accessible Inventory Is Finite",
+  "recordId": null,
+  "gitCommit": "73e7572a09e851d322a7a16a3f0542da93062f43",
+  "engineVersion": 1,
+  "contractVersion": "E1",
+  "ranAt": "2026-08-08T12:27:43.345Z",
+  "pipeline": [
+    "extractOperationalFact / sectionFromFact",
+    "consolidateNotesByFacts",
+    "resolveOperationalEntities (Sprint 3)",
+    "electCanonicalCurrentState (Sprint 1)",
+    "resolveOperationalDependencies (Sprint 4)",
+    "buildCanonicalOperationalActions (Sprint 5/6/8)",
+    "buildOrganisedSectionModel",
+    "buildTodaysBriefing (Sprint 8 decision seating)",
+    "ShiftIntelligenceEngine.analyze (Sprint 8 recommendation seating)"
+  ],
+  "scenarioMeta": {
+    "shift": "PM",
+    "operationalLoad": "Normal",
+    "difficulty": "Moderate",
+    "capability": "Scarce inventory / allocation advice without inventing availability",
+    "ambiguity": "Yes (whether alternative is confirmed)",
+    "departments": "Reception, Concierge",
+    "sourceFile": "scenario-004.md"
+  },
+  "humanExpectedTruth": {
+    "currentOperationalFacts": [
+      "Whitby needs Accessible King; system still shows **LG08** but LG08 is **not available** (Crowley extension).",
+      "Accessible inventory is largely occupied/OOO; **516** vacant dirty with **unconfirmed** ready time.",
+      "Alternative non-accessible near-lift option discussed; daughter will call back — **choice not confirmed**.",
+      "Adler fruit DONE; 204 taxi already gone; Nguyen restaurant booking is F&B continuity."
+    ],
+    "open": [
+      "Allocation / guest-contact follow-up for Whitby: resolve room plan after daughter callback; do not check into LG08 while Crowley remains.",
+      "HK prioritisation of **516** only as a possible path — not as “ready now”."
+    ],
+    "monitor": [
+      "Crowley’s extension / LG08 release tomorrow midday (not tonight’s free accessible).",
+      "316 Acc OOO remains out until engineering releases."
+    ],
+    "information": [
+      "Accessible stock scarcity; Adler amenity completed; unrelated F&B booking."
+    ],
+    "unresolved": [
+      "Whether Whitby accepts 516 (when ready) vs non-accessible alternative — intentional ambiguity until callback."
+    ],
+    "mustNotInfer": [
+      "Inventing a free clean accessible room.",
+      "Auto-resolving allocation as confirmed to 516 or any other Acc room.",
+      "False “room ready” for 516.",
+      "Checking Whitby into LG08 despite Crowley extension.",
+      "Turning Nguyen dinner or Adler fruit into Whitby VIP package."
+    ],
+    "rawTruthMarkdown": "### Current operational facts\r\n- Whitby needs Accessible King; system still shows **LG08** but LG08 is **not available** (Crowley extension).\r\n- Accessible inventory is largely occupied/OOO; **516** vacant dirty with **unconfirmed** ready time.\r\n- Alternative non-accessible near-lift option discussed; daughter will call back — **choice not confirmed**.\r\n- Adler fruit DONE; 204 taxi already gone; Nguyen restaurant booking is F&B continuity.\r\n\r\n### Expected work states\r\n\r\n#### OPEN\r\n- Allocation / guest-contact follow-up for Whitby: resolve room plan after daughter callback; do not check into LG08 while Crowley remains.\r\n- HK prioritisation of **516** only as a possible path — not as “ready now”.\r\n\r\n#### MONITOR\r\n- Crowley’s extension / LG08 release tomorrow midday (not tonight’s free accessible).\r\n- 316 Acc OOO remains out until engineering releases.\r\n\r\n#### INFORMATION\r\n- Accessible stock scarcity; Adler amenity completed; unrelated F&B booking.\r\n\r\n#### UNRESOLVED\r\n- Whether Whitby accepts 516 (when ready) vs non-accessible alternative — intentional ambiguity until callback.\r\n\r\n### Must not infer / invent\r\n- Inventing a free clean accessible room.\r\n- Auto-resolving allocation as confirmed to 516 or any other Acc room.\r\n- False “room ready” for 516.\r\n- Checking Whitby into LG08 despite Crowley extension.\r\n- Turning Nguyen dinner or Adler fruit into Whitby VIP package."
+  },
+  "canonicalActions": [
+    {
+      "actionId": "act|noent|316|maintenance|follow_up_until_resolved|riverton_baseline_10",
+      "actionState": "open",
+      "actionType": "follow_up_until_resolved",
+      "facetKey": "maintenance",
+      "room": "316",
+      "entityId": null,
+      "canonicalName": "",
+      "actionText": "Follow up maintenance for Room 316",
+      "priorityBand": "P1",
+      "priorityScore": 16,
+      "temporalScope": "information",
+      "serviceDate": "",
+      "deadlineHint": "inspect",
+      "relativeCue": "",
+      "temporalConfidence": "low",
+      "temporalReasons": [
+        "no_temporal_evidence"
+      ],
+      "evidenceText": "- 316 Acc — OOO (shower tray — engineering, not released)"
+    },
+    {
+      "actionId": "act|ent_2|noroom|guest_request_luggage_ea|guest_follow_up|riverton_baseline_16",
+      "actionState": "open",
+      "actionType": "guest_follow_up",
+      "facetKey": "guest_request:luggage_ea",
+      "room": "",
+      "entityId": "ent_2",
+      "canonicalName": "Deluxe King",
+      "actionText": "Honour luggage / early-arrival arrangements for Deluxe King",
+      "priorityBand": "P2",
+      "priorityScore": 38,
+      "temporalScope": "information",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "low",
+      "temporalReasons": [
+        "no_temporal_evidence"
+      ],
+      "evidenceText": "Option B — Deluxe King near lift on floor 2 if she will accept non-accessible with staff assistance for luggage"
+    },
+    {
+      "actionId": "act|ent_4|509|vip_prep_complete|type|riverton_baseline_22",
+      "actionState": "information",
+      "actionType": "operational_follow_up",
+      "facetKey": "vip:prep_complete",
+      "room": "509",
+      "entityId": "ent_4",
+      "canonicalName": "Ms Adler",
+      "actionText": "Ms Adler — VIP prep complete / awareness only",
+      "priorityBand": "P3",
+      "priorityScore": 78,
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "VIP fruit basket for rm 509 (Ms Adler) — already placed — DONE"
+    }
+  ],
+  "actionStateCounts": {
+    "open": 2,
+    "monitor": 0,
+    "information": 1,
+    "unresolved": 0,
+    "blocked": 0,
+    "resolved": 0,
+    "other": 0
+  },
+  "temporalAnchor": {
+    "handoverDate": "2026-08-08",
+    "shift": "PM",
+    "createdAt": "2026-08-08T15:45:00.000Z"
+  },
+  "inputIntegrity": {
+    "inputAuthority": "scenario-XXX.md Original Input / Raw Source Notes",
+    "sourceSha256": "b5d4d84e976ced1dc6a6cd5cbf412997d34a34456c7ab4cd57cb760accba3723",
+    "sourceLength": 1398,
+    "lineCount": 20,
+    "brainContext": null,
+    "hotelSnapshotKeys": [],
+    "humanExpectedTruthPreserved": true
+  },
+  "exactSourceInput": "Duty Manager afternoon note — please keep tidy for night:\n\nACCESSIBLE / MOBILITY\nMrs Lorna Whitby arriving this evening (booking RB-91002). Needs **Accessible King**. Currently showing allocated to **LG08** on the system.\nProblem: LG08 is still occupied by a stayover who extended last night (Mr Crowley — medical, DM approved extension). Crowley not leaving until tomorrow midday at earliest.\n\nAccessible stock reminder (house truth, not a promise):\n- LG08 Acc — occupied / extended (Crowley)\n- 116 Acc — occupied stayover\n- 216 Acc — occupied stayover\n- 316 Acc — OOO (shower tray — engineering, not released)\n- 416 Acc — occupied stayover\n- 516 Acc — **vacant dirty** after this morning’s departure — HK says “maybe ready late afternoon if we prioritise” — not promised\n\nConcierge spoke with Mrs Whitby’s daughter (contact: Elise Whitby 07xxx 441 228). Offered:\nOption A — wait for 516 once clean (no confirmed ready time)\nOption B — Deluxe King near lift on floor 2 if she will accept non-accessible with staff assistance for luggage\nDaughter said she will “call back after 17:00” — **no confirmed choice yet**.\n\nDo not tell the guest we have a free accessible room unless it is actually vacant and clean.\n\nOther PM noise:\nVIP fruit basket for rm 509 (Ms Adler) — already placed — DONE\nTaxi for departure rm 204 at 15:30 — already left\nRestaurant 20:00 booking for 4 under “Nguyen” — F&B has it",
+  "hotelSnapshot": {},
+  "aiSummaryBriefing": "Priority 1\nFollow up maintenance for Room 316.\n\nPriority 2\nHonour luggage / early-arrival arrangements for Deluxe King.\n\nPriority 3\nComplete wake-up / transfer actions for Room 204 before departure.",
+  "briefingParagraphs": [
+    "Priority 1\nFollow up maintenance for Room 316.",
+    "Priority 2\nHonour luggage / early-arrival arrangements for Deluxe King.",
+    "Priority 3\nComplete wake-up / transfer actions for Room 204 before departure."
+  ],
+  "organisedHandover": {
+    "urgent": [],
+    "vip": [
+      "VIP fruit basket for rm 509 (Ms Adler) — already placed — DONE"
+    ],
+    "guest": [
+      "Taxi for departure rm 204 at 15:30 — already left"
+    ],
+    "maintenance": [
+      "- 316 Acc — OOO (shower tray — engineering, not released)"
+    ],
+    "payments": [],
+    "events": [],
+    "preparations": [],
+    "openQuestions": [],
+    "tasks": [],
+    "inventory": [],
+    "deliveries": [],
+    "lostproperty": [],
+    "general": [
+      "Do not tell the guest we have a free accessible room unless it is actually vacant and clean.",
+      "Duty Manager afternoon note — please keep tidy for night:",
+      "ACCESSIBLE / MOBILITY",
+      "Mrs Lorna Whitby arriving this evening (booking RB-91002). Needs **Accessible King**. Currently showing allocated to **LG08** on the system.",
+      "Problem: LG08 is still occupied by a stayover who extended last night (Mr Crowley — medical, DM approved extension). Crowley not leaving until tomorrow midday at earliest.",
+      "Accessible stock reminder (house truth, not a promise):",
+      "- LG08 Acc — occupied / extended (Crowley)",
+      "- 116 Acc — occupied stayover",
+      "- 216 Acc — occupied stayover",
+      "- 416 Acc — occupied stayover",
+      "- 516 Acc — **vacant dirty** after this morning’s departure — HK says “maybe ready late afternoon if we prioritise” — not promised",
+      "Concierge spoke with Mrs Whitby’s daughter (contact: Elise Whitby 07xxx 441 228). Offered:",
+      "Option A — wait for 516 once clean (no confirmed ready time)",
+      "Option B — Deluxe King near lift on floor 2 if she will accept non-accessible with staff assistance for luggage",
+      "Daughter said she will “call back after 17:00” — **no confirmed choice yet**.",
+      "Other PM noise:",
+      "Restaurant 20:00 booking for 4 under “Nguyen” — F&B has it"
+    ],
+    "completed": []
+  },
+  "recommendations": [
+    {
+      "id": "act|noent|316|maintenance|follow_up_until_resolved|riverton_baseline_10",
+      "text": "Follow up with Maintenance regarding Room 316 shower/leak. The fault remains open and needs resolution this shift.",
+      "priority": "high",
+      "department": "Maintenance",
+      "status": "open",
+      "reasonCodes": [
+        "ooo_allocation_impact",
+        "temporal:no_temporal_evidence",
+        "canonical_decision_seat",
+        "legacy_wording_enrich"
+      ]
+    },
+    {
+      "id": "act|ent_2|noroom|guest_request_luggage_ea|guest_follow_up|riverton_baseline_16",
+      "text": "Honour luggage / early-arrival arrangements for Deluxe King.",
+      "priority": "normal",
+      "department": "Reception",
+      "status": "open",
+      "reasonCodes": [
+        "luggage_ea_follow_up",
+        "temporal:no_temporal_evidence",
+        "canonical_decision_seat"
+      ]
+    },
+    {
+      "id": "mskcmx08-mkiz6",
+      "text": "Complete the 15:30 wake-up call for Room 204 — follow-up still required this shift.",
+      "priority": "normal",
+      "department": "Reception",
+      "status": "open",
+      "reasonCodes": [
+        "timed_action_due"
+      ]
+    }
+  ],
+  "reasoningMetadata": {
+    "noteCountAfterPipeline": 20,
+    "dependencyEdgeCount": 0,
+    "dependencyEdges": [],
+    "analyzeKeys": [
+      "engineVersion",
+      "signals",
+      "recommendations",
+      "checklist",
+      "facts",
+      "operationalMemories",
+      "guestObservations",
+      "guestObservationRejections",
+      "guestCandidates",
+      "guestCandidateRejections"
+    ],
+    "quietShift": null,
+    "decisionSeating": {
+      "briefingUsesCanonicalActions": true,
+      "recommendationsFromAnalyze": true,
+      "sharedCanonicalList": true
+    }
+  },
+  "noteEvidence": [
+    {
+      "original": "Taxi for departure rm 204 at 15:30 — already left",
+      "section": "guest",
+      "rooms": [
+        "204"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "204",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "departure_followup",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- 316 Acc — OOO (shower tray — engineering, not released)",
+      "section": "maintenance",
+      "rooms": [
+        "316"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "316",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "maintenance",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "VIP fruit basket for rm 509 (Ms Adler) — already placed — DONE",
+      "section": "completed",
+      "rooms": [
+        "509"
+      ],
+      "isVip": true,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_4",
+      "canonicalName": "Ms Adler",
+      "currentRoom": "509",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "vip_arrival",
+      "factStatus": "done"
+    },
+    {
+      "original": "Duty Manager afternoon note — please keep tidy for night:",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "ACCESSIBLE / MOBILITY",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Mrs Lorna Whitby arriving this evening (booking RB-91002). Needs **Accessible King**. Currently showing allocated to **LG08** on the system.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_1",
+      "canonicalName": "Mrs Lorna Whitby",
+      "currentRoom": null,
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "requested"
+    },
+    {
+      "original": "Problem: LG08 is still occupied by a stayover who extended last night (Mr Crowley — medical, DM approved extension). Crowley not leaving until tomorrow midday at earliest.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "confirmed"
+    },
+    {
+      "original": "Accessible stock reminder (house truth, not a promise):",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- LG08 Acc — occupied / extended (Crowley)",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- 116 Acc — occupied stayover",
+      "section": "general",
+      "rooms": [
+        "116"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "116",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- 216 Acc — occupied stayover",
+      "section": "general",
+      "rooms": [
+        "216"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "216",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- 416 Acc — occupied stayover",
+      "section": "general",
+      "rooms": [
+        "416"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "416",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- 516 Acc — **vacant dirty** after this morning’s departure — HK says “maybe ready late afternoon if we prioritise” — not promised",
+      "section": "general",
+      "rooms": [
+        "516"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "516",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "requested"
+    },
+    {
+      "original": "Concierge spoke with Mrs Whitby’s daughter (contact: Elise Whitby 07xxx 441 228). Offered:",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Option A — wait for 516 once clean (no confirmed ready time)",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "confirmed"
+    },
+    {
+      "original": "Option B — Deluxe King near lift on floor 2 if she will accept non-accessible with staff assistance for luggage",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_2",
+      "canonicalName": "Deluxe King",
+      "currentRoom": null,
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Daughter said she will “call back after 17:00” — **no confirmed choice yet**.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "confirmed"
+    },
+    {
+      "original": "Do not tell the guest we have a free accessible room unless it is actually vacant and clean.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Other PM noise:",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Restaurant 20:00 booking for 4 under “Nguyen” — F&B has it",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_3",
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    }
+  ],
+  "reviewPlaceholder": {
+    "status": "PENDING_HUMAN_REVIEW",
+    "note": "Compare to sprint8-baseline-validation/; payment fail-closed is the Sprint 9 focus."
+  }
+}

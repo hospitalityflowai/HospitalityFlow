@@ -1,0 +1,527 @@
+{
+  "label": "RIVERTON SPRINT 9 VALIDATION OUTPUT",
+  "scenarioId": "006",
+  "title": "OOO Corridor — Guest Impact vs Housekeeping",
+  "recordId": null,
+  "gitCommit": "73e7572a09e851d322a7a16a3f0542da93062f43",
+  "engineVersion": 1,
+  "contractVersion": "E1",
+  "ranAt": "2026-08-08T12:27:43.345Z",
+  "pipeline": [
+    "extractOperationalFact / sectionFromFact",
+    "consolidateNotesByFacts",
+    "resolveOperationalEntities (Sprint 3)",
+    "electCanonicalCurrentState (Sprint 1)",
+    "resolveOperationalDependencies (Sprint 4)",
+    "buildCanonicalOperationalActions (Sprint 5/6/8)",
+    "buildOrganisedSectionModel",
+    "buildTodaysBriefing (Sprint 8 decision seating)",
+    "ShiftIntelligenceEngine.analyze (Sprint 8 recommendation seating)"
+  ],
+  "scenarioMeta": {
+    "shift": "AM",
+    "operationalLoad": "Busy",
+    "difficulty": "Hard",
+    "capability": "Current room state; sequencing without false “ready now”",
+    "ambiguity": "Partial (release time soft)",
+    "departments": "Engineering, Housekeeping, Reception, Duty Manager",
+    "sourceFile": "scenario-006.md"
+  },
+  "humanExpectedTruth": {
+    "currentOperationalFacts": [
+      "**218** and **220** are **OOO**; not sellable; 218 leak work ongoing; 220 multi-day carpet.",
+      "Soft “hopefully later today” is **not** an engineering release.",
+      "**Yuen** cannot stay allocated to 218; alternatives (**222** or turn of **219**) are **unconfirmed**.",
+      "**219** Salgado standard departure still expected ~12:00.",
+      "Late c/o **405** approved with charge posted — separate.",
+      "Breakfast complaint is F&B, not room OOO."
+    ],
+    "open": [
+      "Re-allocate / clarify room for **Yuen** away from OOO 218 (DM/reception ownership).",
+      "Sequence: wait for real eng release before HK cleans 218; do not promise ready-now."
+    ],
+    "monitor": [
+      "Engineering progress on 218; soft later-today language without treating as released.",
+      "222 vacant dirty / 219 turn as possible paths — status unknown until confirmed."
+    ],
+    "information": [
+      "220 multi-day OOO; breakfast complaint; LP sunglasses; 405 late c/o charged."
+    ],
+    "unresolved": [
+      "Exact release time for 218 (intentional soft ambiguity)."
+    ],
+    "mustNotInfer": [
+      "Declaring 218 or 220 sellable / ready while OOO.",
+      "Inventing a firm engineer ETA from “hopefully”.",
+      "Closing OOO from weak wording.",
+      "Silently keeping Yuen on 218 as if fine."
+    ],
+    "rawTruthMarkdown": "### Current operational facts\r\n- **218** and **220** are **OOO**; not sellable; 218 leak work ongoing; 220 multi-day carpet.\r\n- Soft “hopefully later today” is **not** an engineering release.\r\n- **Yuen** cannot stay allocated to 218; alternatives (**222** or turn of **219**) are **unconfirmed**.\r\n- **219** Salgado standard departure still expected ~12:00.\r\n- Late c/o **405** approved with charge posted — separate.\r\n- Breakfast complaint is F&B, not room OOO.\r\n\r\n### Expected work states\r\n\r\n#### OPEN\r\n- Re-allocate / clarify room for **Yuen** away from OOO 218 (DM/reception ownership).\r\n- Sequence: wait for real eng release before HK cleans 218; do not promise ready-now.\r\n\r\n#### MONITOR\r\n- Engineering progress on 218; soft later-today language without treating as released.\r\n- 222 vacant dirty / 219 turn as possible paths — status unknown until confirmed.\r\n\r\n#### INFORMATION\r\n- 220 multi-day OOO; breakfast complaint; LP sunglasses; 405 late c/o charged.\r\n\r\n#### UNRESOLVED\r\n- Exact release time for 218 (intentional soft ambiguity).\r\n\r\n### Must not infer / invent\r\n- Declaring 218 or 220 sellable / ready while OOO.\r\n- Inventing a firm engineer ETA from “hopefully”.\r\n- Closing OOO from weak wording.\r\n- Silently keeping Yuen on 218 as if fine."
+  },
+  "canonicalActions": [
+    {
+      "actionId": "act|noent|218|maintenance|follow_up_until_resolved|riverton_baseline_3",
+      "actionState": "open",
+      "actionType": "follow_up_until_resolved",
+      "facetKey": "maintenance",
+      "room": "218",
+      "entityId": null,
+      "canonicalName": "",
+      "actionText": "Follow up maintenance for Room 218",
+      "priorityBand": "exclude",
+      "priorityScore": 90,
+      "temporalScope": "today",
+      "serviceDate": "2026-08-08",
+      "deadlineHint": "inspect",
+      "relativeCue": "today",
+      "temporalConfidence": "medium",
+      "temporalReasons": [
+        "today_cue"
+      ],
+      "evidenceText": "1) **Room 218 — OOO** — water leak under vanity. Ceiling stain in corridor outside 218. Wet vac done overnight. Still OOO. Engineering on site from 09:30. Soft comment from eng lead: “hopefully back later today if drying ok” — **NOT a relea"
+    },
+    {
+      "actionId": "act|noent|220|maintenance|type|riverton_baseline_4",
+      "actionState": "resolved",
+      "actionType": "operational_follow_up",
+      "facetKey": "maintenance",
+      "room": "220",
+      "entityId": null,
+      "canonicalName": "",
+      "actionText": "Superseded current-state fact",
+      "priorityBand": "exclude",
+      "priorityScore": 95,
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "2) **Room 220 — OOO** — carpet replacement (planned). Dust sheets up. Not related to leak. Expected multi-day. Do not sell."
+    }
+  ],
+  "actionStateCounts": {
+    "open": 1,
+    "monitor": 0,
+    "information": 0,
+    "unresolved": 0,
+    "blocked": 0,
+    "resolved": 1,
+    "other": 0
+  },
+  "temporalAnchor": {
+    "handoverDate": "2026-08-08",
+    "shift": "AM",
+    "createdAt": "2026-08-08T07:15:00.000Z"
+  },
+  "inputIntegrity": {
+    "inputAuthority": "scenario-XXX.md Original Input / Raw Source Notes",
+    "sourceSha256": "83dc0407a0b3783781615e00adc231a5bbea699308e7d29a07dafa3b3cbe0e46",
+    "sourceLength": 1426,
+    "lineCount": 18,
+    "brainContext": null,
+    "hotelSnapshotKeys": [],
+    "humanExpectedTruthPreserved": true
+  },
+  "exactSourceInput": "AM chaos notes — please read carefully before allocating.\n\nENGINEERING / OOO\n1) **Room 218 — OOO** — water leak under vanity. Ceiling stain in corridor outside 218. Wet vac done overnight. Still OOO. Engineering on site from 09:30. Soft comment from eng lead: “hopefully back later today if drying ok” — **NOT a release**.\n2) **Room 220 — OOO** — carpet replacement (planned). Dust sheets up. Not related to leak. Expected multi-day. Do not sell.\n\nARRIVAL / DEPARTURE COLLISION\n- Departure **219** Mr Salgado — due out 12:00 — room is fine — not OOO\n- Arrival **Ms Yuen** originally allocated **218** for tonight — **cannot** go into 218 while OOO\n- Temporary idea on board: move Yuen to **222** if clean — HK has not confirmed 222 status (showed vacant dirty at 08:15)\n- Due-in flip pressure: if 219 goes out on time, HK wanted 219 for a same-day turn to cover Yuen — again **not confirmed ready**\n\nHK MESSAGE (copied):\n“Waiting on eng to say 218 is actually releasable before we even think about cleaning it. 220 ignore until carpet guys finish. Please stop promising 218 to guests.”\n\nDM:\nDo not mark 218 or 220 sellable in any guest-facing conversation.\nIf eng gives a time, write the time — until then treat release as unknown.\n\nOther AM clutter:\nBreakfast complaint table 12 — cold eggs — F&B sorting comps — not rooms\nLost property sunglasses — tagged\nrm 405 asked for late c/o to 14:00 — DM approved £25 — charge posted",
+  "hotelSnapshot": {},
+  "aiSummaryBriefing": "Shift status\nNo urgent guest-impacting priorities for the incoming team.",
+  "briefingParagraphs": [
+    "Shift status\nNo urgent guest-impacting priorities for the incoming team."
+  ],
+  "organisedHandover": {
+    "urgent": [],
+    "vip": [],
+    "guest": [
+      "- Temporary idea on board: move Yuen to **222** if clean — HK has not confirmed 222 status (showed vacant dirty at 08:15)",
+      "rm 405 asked for late c/o to 14:00 — DM approved £25 — charge posted"
+    ],
+    "maintenance": [
+      "1) **Room 218 — OOO** — water leak under vanity. Ceiling stain in corridor outside 218. Wet vac done overnight. Still OOO. Engineering on site from 09:30. Soft comment from eng lead: “hopefully back later today if drying ok” — **NOT a release**.",
+      "2) **Room 220 — OOO** — carpet replacement (planned). Dust sheets up. Not related to leak. Expected multi-day. Do not sell."
+    ],
+    "payments": [],
+    "events": [],
+    "preparations": [],
+    "openQuestions": [],
+    "tasks": [],
+    "inventory": [],
+    "deliveries": [],
+    "lostproperty": [
+      "Lost property sunglasses — tagged"
+    ],
+    "general": [
+      "- Departure **219** Mr Salgado — due out 12:00 — room is fine — not OOO",
+      "AM chaos notes — please read carefully before allocating.",
+      "ENGINEERING / OOO",
+      "ARRIVAL / DEPARTURE COLLISION",
+      "- Arrival **Ms Yuen** originally allocated **218** for tonight — **cannot** go into 218 while OOO",
+      "- Due-in flip pressure: if 219 goes out on time, HK wanted 219 for a same-day turn to cover Yuen — again **not confirmed ready**",
+      "HK MESSAGE (copied):",
+      "“Waiting on eng to say 218 is actually releasable before we even think about cleaning it. 220 ignore until carpet guys finish. Please stop promising 218 to guests.”",
+      "DM:",
+      "Do not mark 218 or 220 sellable in any guest-facing conversation.",
+      "If eng gives a time, write the time — until then treat release as unknown.",
+      "Other AM clutter:",
+      "Breakfast complaint table 12 — cold eggs — F&B sorting comps — not rooms"
+    ],
+    "completed": []
+  },
+  "recommendations": [
+    {
+      "id": "mskcmx2c-2s8zx",
+      "text": "Log and follow up lost item with Reception this shift.",
+      "priority": "normal",
+      "department": "Reception",
+      "status": "open",
+      "reasonCodes": [
+        "guest_follow_up",
+        "no_deadline_evidence",
+        "complaint_or_guest_follow_up"
+      ]
+    }
+  ],
+  "reasoningMetadata": {
+    "noteCountAfterPipeline": 18,
+    "dependencyEdgeCount": 0,
+    "dependencyEdges": [],
+    "analyzeKeys": [
+      "engineVersion",
+      "signals",
+      "recommendations",
+      "checklist",
+      "facts",
+      "operationalMemories",
+      "guestObservations",
+      "guestObservationRejections",
+      "guestCandidates",
+      "guestCandidateRejections"
+    ],
+    "quietShift": null,
+    "decisionSeating": {
+      "briefingUsesCanonicalActions": true,
+      "recommendationsFromAnalyze": true,
+      "sharedCanonicalList": true
+    }
+  },
+  "noteEvidence": [
+    {
+      "original": "- Temporary idea on board: move Yuen to **222** if clean — HK has not confirmed 222 status (showed vacant dirty at 08:15)",
+      "section": "guest",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "room_move",
+      "factStatus": "requested"
+    },
+    {
+      "original": "rm 405 asked for late c/o to 14:00 — DM approved £25 — charge posted",
+      "section": "guest",
+      "rooms": [
+        "405"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "405",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "late_checkout",
+      "factStatus": "confirmed"
+    },
+    {
+      "original": "2) **Room 220 — OOO** — carpet replacement (planned). Dust sheets up. Not related to leak. Expected multi-day. Do not sell.",
+      "section": "maintenance",
+      "rooms": [
+        "220"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "220",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "maintenance",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Lost property sunglasses — tagged",
+      "section": "lostproperty",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "lost_property",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "AM chaos notes — please read carefully before allocating.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "ENGINEERING / OOO",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "ARRIVAL / DEPARTURE COLLISION",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- Departure **219** Mr Salgado — due out 12:00 — room is fine — not OOO",
+      "section": "general",
+      "rooms": [
+        "220"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "done"
+    },
+    {
+      "original": "- Arrival **Ms Yuen** originally allocated **218** for tonight — **cannot** go into 218 while OOO",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- Due-in flip pressure: if 219 goes out on time, HK wanted 219 for a same-day turn to cover Yuen — again **not confirmed ready**",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "open"
+    },
+    {
+      "original": "HK MESSAGE (copied):",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "“Waiting on eng to say 218 is actually releasable before we even think about cleaning it. 220 ignore until carpet guys finish. Please stop promising 218 to guests.”",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "DM:",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Do not mark 218 or 220 sellable in any guest-facing conversation.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "If eng gives a time, write the time — until then treat release as unknown.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Other AM clutter:",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Breakfast complaint table 12 — cold eggs — F&B sorting comps — not rooms",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "1) **Room 218 — OOO** — water leak under vanity. Ceiling stain in corridor outside 218. Wet vac done overnight. Still OOO. Engineering on site from 09:30. Soft comment from eng lead: “hopefully back later today if drying ok” — **NOT a release**.",
+      "section": "completed",
+      "rooms": [
+        "218"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "218",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "maintenance",
+      "factStatus": "done"
+    }
+  ],
+  "reviewPlaceholder": {
+    "status": "PENDING_HUMAN_REVIEW",
+    "note": "Compare to sprint8-baseline-validation/; payment fail-closed is the Sprint 9 focus."
+  }
+}

@@ -1,0 +1,640 @@
+{
+  "label": "RIVERTON SPRINT 9 VALIDATION OUTPUT",
+  "scenarioId": "001",
+  "title": "Quiet Monday Continuity",
+  "recordId": null,
+  "gitCommit": "73e7572a09e851d322a7a16a3f0542da93062f43",
+  "engineVersion": 1,
+  "contractVersion": "E1",
+  "ranAt": "2026-08-08T12:27:43.345Z",
+  "pipeline": [
+    "extractOperationalFact / sectionFromFact",
+    "consolidateNotesByFacts",
+    "resolveOperationalEntities (Sprint 3)",
+    "electCanonicalCurrentState (Sprint 1)",
+    "resolveOperationalDependencies (Sprint 4)",
+    "buildCanonicalOperationalActions (Sprint 5/6/8)",
+    "buildOrganisedSectionModel",
+    "buildTodaysBriefing (Sprint 8 decision seating)",
+    "ShiftIntelligenceEngine.analyze (Sprint 8 recommendation seating)"
+  ],
+  "scenarioMeta": {
+    "shift": "AM",
+    "operationalLoad": "Quiet",
+    "difficulty": "Basic",
+    "capability": "Quiet-shift recognition; avoid fabricating work",
+    "ambiguity": "No",
+    "departments": "Reception, Housekeeping",
+    "sourceFile": "scenario-001.md"
+  },
+  "humanExpectedTruth": {
+    "currentOperationalFacts": [
+      "Quiet AM shift; low occupancy (~36%); no arrivals today.",
+      "Departure **214 Ellison** already out and settled — no open folio work.",
+      "Departure **308 Kaur** still in-house until standard 12:00; no late checkout approved; guest not yet packing when last checked.",
+      "Overnight completed items (pillows 119, LP umbrella, lobby flowers) are **done** — not outstanding.",
+      "Delgado anniversary amenities already delivered previously — nothing open.",
+      "Okonkwo preferred guest — no open requests.",
+      "Two OOO rooms (318, 422) are pre-existing long-term context, not new AM actions invented from quiet notes.",
+      "Breakfast light — F&B awareness only."
+    ],
+    "open": [
+      "Minimal / none for invented VIP, payment, or maintenance work.",
+      "Only routine awareness for **308** standard departure by 12:00 if guest still present (normal ops, not a crisis)."
+    ],
+    "monitor": [
+      "House remains soft; no escalating issues noted."
+    ],
+    "information": [
+      "Overnight completions; preferred/anniversary stayovers with nothing outstanding; existing long-term OOO context if displayed as house status."
+    ],
+    "unresolved": [
+      "None required by this scenario."
+    ],
+    "mustNotInfer": [
+      "Invented VIP prep, welcome amenities, or “busy house” urgency.",
+      "False payment collects or tokenisation chases.",
+      "Fake maintenance / engineering tickets from the fitness-room light or flower notes.",
+      "Treating completed overnight deliveries as still OPEN.",
+      "Inventing arrivals for today."
+    ],
+    "rawTruthMarkdown": "### Current operational facts\r\n- Quiet AM shift; low occupancy (~36%); no arrivals today.\r\n- Departure **214 Ellison** already out and settled — no open folio work.\r\n- Departure **308 Kaur** still in-house until standard 12:00; no late checkout approved; guest not yet packing when last checked.\r\n- Overnight completed items (pillows 119, LP umbrella, lobby flowers) are **done** — not outstanding.\r\n- Delgado anniversary amenities already delivered previously — nothing open.\r\n- Okonkwo preferred guest — no open requests.\r\n- Two OOO rooms (318, 422) are pre-existing long-term context, not new AM actions invented from quiet notes.\r\n- Breakfast light — F&B awareness only.\r\n\r\n### Expected work states\r\n\r\n#### OPEN\r\n- Minimal / none for invented VIP, payment, or maintenance work.\r\n- Only routine awareness for **308** standard departure by 12:00 if guest still present (normal ops, not a crisis).\r\n\r\n#### MONITOR\r\n- House remains soft; no escalating issues noted.\r\n\r\n#### INFORMATION\r\n- Overnight completions; preferred/anniversary stayovers with nothing outstanding; existing long-term OOO context if displayed as house status.\r\n\r\n#### UNRESOLVED\r\n- None required by this scenario.\r\n\r\n### Must not infer / invent\r\n- Invented VIP prep, welcome amenities, or “busy house” urgency.\r\n- False payment collects or tokenisation chases.\r\n- Fake maintenance / engineering tickets from the fitness-room light or flower notes.\r\n- Treating completed overnight deliveries as still OPEN.\r\n- Inventing arrivals for today."
+  },
+  "canonicalActions": [
+    {
+      "actionId": "act|noent|119|guest_request_extra_pillows|guest_follow_up|riverton_baseline_17",
+      "actionState": "open",
+      "actionType": "guest_follow_up",
+      "facetKey": "guest_request:extra_pillows",
+      "room": "119",
+      "entityId": null,
+      "canonicalName": "- Guest",
+      "actionText": "Arrange extra pillows for Room 119",
+      "priorityBand": "P2",
+      "priorityScore": 45,
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "- Guest rm 119 asked for extra pillows at 22:10 — delivered — DONE"
+    },
+    {
+      "actionId": "act|ent_8|405|vip_prep_complete|type|riverton_baseline_20",
+      "actionState": "information",
+      "actionType": "operational_follow_up",
+      "facetKey": "vip:prep_complete",
+      "room": "405",
+      "entityId": "ent_8",
+      "canonicalName": "Mrs Delgado",
+      "actionText": "Mrs Delgado — VIP prep complete / awareness only",
+      "priorityBand": "P3",
+      "priorityScore": 78,
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "- rm 405 Mr & Mrs Delgado — anniversary last night; champagne was delivered yesterday PM — nothing outstanding"
+    },
+    {
+      "actionId": "act|noent|405|vip_prep_complete|type|riverton_baseline_15",
+      "actionState": "information",
+      "actionType": "operational_follow_up",
+      "facetKey": "vip:prep_complete",
+      "room": "405",
+      "entityId": null,
+      "canonicalName": "Mrs Delgado",
+      "actionText": "Mrs Delgado — VIP prep complete / awareness only",
+      "priorityBand": "P3",
+      "priorityScore": 78,
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "- Lobby flower water changed (done)"
+    },
+    {
+      "actionId": "act|ent_6|214|payment_no_collect|type|riverton_baseline_4",
+      "actionState": "resolved",
+      "actionType": "operational_follow_up",
+      "facetKey": "payment:no_collect",
+      "room": "214",
+      "entityId": "ent_6",
+      "canonicalName": "Mr Ellison",
+      "actionText": "Payment settled / no collect required for Room 214",
+      "priorityBand": "exclude",
+      "priorityScore": 92,
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "rm 214 Mr Ellison — already checked out 07:40, express. Folio settled. Keys returned."
+    }
+  ],
+  "actionStateCounts": {
+    "open": 1,
+    "monitor": 0,
+    "information": 2,
+    "unresolved": 0,
+    "blocked": 0,
+    "resolved": 1,
+    "other": 0
+  },
+  "temporalAnchor": {
+    "handoverDate": "2026-08-08",
+    "shift": "AM",
+    "createdAt": "2026-08-08T07:15:00.000Z"
+  },
+  "inputIntegrity": {
+    "inputAuthority": "scenario-XXX.md Original Input / Raw Source Notes",
+    "sourceSha256": "05308dcadecadb829cfdf6cdb126918745708850a6cb71ce454bfca871093545",
+    "sourceLength": 1369,
+    "lineCount": 19,
+    "brainContext": null,
+    "hotelSnapshotKeys": [
+      "Arrivals",
+      "Departures",
+      "Stayovers",
+      "Guests In House",
+      "Rooms Sold",
+      "Rooms Available",
+      "Sellable Rooms",
+      "OOO Rooms",
+      "Occupancy",
+      "ADR",
+      "RevPAR"
+    ],
+    "humanExpectedTruthPreserved": true
+  },
+  "exactSourceInput": "### Today's Arrivals\nNone today. Two arrivals tomorrow — see stayovers note if needed but nothing for this shift.\n\n### Today's Departures\nrm 214 Mr Ellison — already checked out 07:40, express. Folio settled. Keys returned.\nrm 308 Ms Kaur — departing midday, late c/o NOT requested, standard 12:00. Bags not ready yet (guest still asleep when I knocked at 08:00 for courtesy — left note under door).\n\n### General Hotel / Shift Notes\nMorning from Priya (night → AM).\n\nHouse is soft. Night was uneventful. No noise complaints. No engineering callouts.\n\nHK: only 11 stays + 2 departures on the board. Floors 4–5 barely touched. Floors 1–2 routine.\n\nCompleted overnight:\n- Lobby flower water changed (done)\n- Lost property umbrella tagged and logged (tag LP-482) — already in office cupboard\n- Guest rm 119 asked for extra pillows at 22:10 — delivered — DONE\n\nStayovers of note (information only):\n- rm 405 Mr & Mrs Delgado — anniversary last night; champagne was delivered yesterday PM — nothing outstanding\n- rm 512 Junior Suite Ms Okonkwo — preferred guest, quiet stay, no requests left open\n\nFitness room light was left on; I switched off at 06:55. Not a fault.\n\nRestaurant covers for breakfast looking light (~18 covers booked). Kitchen aware.\n\nPlease do not invent work — genuinely quiet Monday. If something comes in, log it; otherwise enjoy the calm before midweek.",
+  "hotelSnapshot": {
+    "Arrivals": "0",
+    "Departures": "2",
+    "Stayovers": "41",
+    "Guests In House": "67",
+    "Rooms Sold": "43",
+    "Rooms Available": "77",
+    "Sellable Rooms": "118",
+    "OOO Rooms": "2 (long-term — 318 carpet / 422 bathroom — not new today)",
+    "Occupancy": "~36%",
+    "ADR": "left blank",
+    "RevPAR": "left blank"
+  },
+  "aiSummaryBriefing": "Priority 1\nArrange extra pillows for Room 119.\n\nPriority 2\nComplete outstanding guest follow-up for Room 308.",
+  "briefingParagraphs": [
+    "Priority 1\nArrange extra pillows for Room 119.",
+    "Priority 2\nComplete outstanding guest follow-up for Room 308."
+  ],
+  "organisedHandover": {
+    "urgent": [],
+    "vip": [
+      "- rm 405 Mr & Mrs Delgado — anniversary last night; champagne was delivered yesterday PM — nothing outstanding // - Lobby flower water changed (done)"
+    ],
+    "guest": [
+      "rm 308 Ms Kaur — departing midday, late c/o NOT requested, standard 12:00. Bags not ready yet (guest still asleep when I knocked at 08:00 for courtesy — left note under door)."
+    ],
+    "maintenance": [],
+    "payments": [
+      "rm 214 Mr Ellison — already checked out 07:40, express. Folio settled. Keys returned."
+    ],
+    "events": [],
+    "preparations": [],
+    "openQuestions": [],
+    "tasks": [
+      "- Guest rm 119 asked for extra pillows at 22:10 — delivered — DONE"
+    ],
+    "inventory": [],
+    "deliveries": [],
+    "lostproperty": [
+      "- Lost property umbrella tagged and logged (tag LP-482) — already in office cupboard"
+    ],
+    "general": [
+      "- rm 512 Junior Suite Ms Okonkwo — preferred guest, quiet stay, no requests left open",
+      "Fitness room light was left on; I switched off at 06:55. Not a fault.",
+      "### Today's Arrivals",
+      "None today. Two arrivals tomorrow — see stayovers note if needed but nothing for this shift.",
+      "### Today's Departures",
+      "### General Hotel / Shift Notes",
+      "Morning from Priya (night → AM).",
+      "House is soft. Night was uneventful. No noise complaints. No engineering callouts.",
+      "HK: only 11 stays + 2 departures on the board. Floors 4–5 barely touched. Floors 1–2 routine.",
+      "Stayovers of note (information only):",
+      "Restaurant covers for breakfast looking light (~18 covers booked). Kitchen aware.",
+      "Please do not invent work — genuinely quiet Monday. If something comes in, log it; otherwise enjoy the calm before midweek."
+    ],
+    "completed": [
+      "Completed overnight:"
+    ]
+  },
+  "recommendations": [
+    {
+      "id": "act|noent|119|guest_request_extra_pillows|guest_follow_up|riverton_baseline_17",
+      "text": "Arrange extra pillows for Room 119.",
+      "priority": "normal",
+      "department": "Housekeeping",
+      "status": "open",
+      "reasonCodes": [
+        "resolved_no_action",
+        "guest_request_open",
+        "canonical_decision_seat",
+        "legacy_wording_enrich"
+      ]
+    },
+    {
+      "id": "mskcmwvk-r77j4",
+      "text": "Confirm the late check-out for Room 308 and advise Housekeeping of the release time — late check-out still needs confirmation before Housekeeping release.",
+      "priority": "normal",
+      "department": "Housekeeping",
+      "status": "open",
+      "reasonCodes": [
+        "late_checkout_arrangement",
+        "complaint_or_guest_follow_up",
+        "cross_department_dependency"
+      ]
+    },
+    {
+      "id": "mskcmwvm-9t12v",
+      "text": "Log and follow up lost item with Reception this shift.",
+      "priority": "normal",
+      "department": "Reception",
+      "status": "open",
+      "reasonCodes": [
+        "guest_follow_up",
+        "timed_action",
+        "complaint_or_guest_follow_up",
+        "timed_action_due"
+      ]
+    }
+  ],
+  "reasoningMetadata": {
+    "noteCountAfterPipeline": 19,
+    "dependencyEdgeCount": 0,
+    "dependencyEdges": [],
+    "analyzeKeys": [
+      "engineVersion",
+      "signals",
+      "recommendations",
+      "checklist",
+      "facts",
+      "operationalMemories",
+      "guestObservations",
+      "guestObservationRejections",
+      "guestCandidates",
+      "guestCandidateRejections"
+    ],
+    "quietShift": null,
+    "decisionSeating": {
+      "briefingUsesCanonicalActions": true,
+      "recommendationsFromAnalyze": true,
+      "sharedCanonicalList": true
+    }
+  },
+  "noteEvidence": [
+    {
+      "original": "rm 308 Ms Kaur — departing midday, late c/o NOT requested, standard 12:00. Bags not ready yet (guest still asleep when I knocked at 08:00 for courtesy — left note under door).",
+      "section": "guest",
+      "rooms": [
+        "308"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_7",
+      "canonicalName": "Ms Kaur",
+      "currentRoom": "308",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "late_checkout",
+      "factStatus": "requested"
+    },
+    {
+      "original": "- Lost property umbrella tagged and logged (tag LP-482) — already in office cupboard",
+      "section": "lostproperty",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "lost_property",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "### Today's Arrivals",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_1",
+      "canonicalName": "Today's Arrivals",
+      "currentRoom": null,
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "None today. Two arrivals tomorrow — see stayovers note if needed but nothing for this shift.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "### Today's Departures",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_2",
+      "canonicalName": "Today's Departures",
+      "currentRoom": null,
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "### General Hotel / Shift Notes",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_3",
+      "canonicalName": "General Hotel",
+      "currentRoom": null,
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Morning from Priya (night → AM).",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "House is soft. Night was uneventful. No noise complaints. No engineering callouts.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "HK: only 11 stays + 2 departures on the board. Floors 4–5 barely touched. Floors 1–2 routine.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Stayovers of note (information only):",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- rm 405 Mr & Mrs Delgado — anniversary last night; champagne was delivered yesterday PM — nothing outstanding",
+      "section": "completed",
+      "rooms": [
+        "405"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_8",
+      "canonicalName": "Mrs Delgado",
+      "currentRoom": "405",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "guest_request",
+      "factStatus": "done"
+    },
+    {
+      "original": "- rm 512 Junior Suite Ms Okonkwo — preferred guest, quiet stay, no requests left open",
+      "section": "general",
+      "rooms": [
+        "512"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_4",
+      "canonicalName": "Junior Suite",
+      "currentRoom": "512",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Fitness room light was left on; I switched off at 06:55. Not a fault.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Restaurant covers for breakfast looking light (~18 covers booked). Kitchen aware.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_5",
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "confirmed"
+    },
+    {
+      "original": "Please do not invent work — genuinely quiet Monday. If something comes in, log it; otherwise enjoy the calm before midweek.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- Guest rm 119 asked for extra pillows at 22:10 — delivered — DONE",
+      "section": "completed",
+      "rooms": [
+        "119"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "119",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "guest_request",
+      "factStatus": "done"
+    },
+    {
+      "original": "rm 214 Mr Ellison — already checked out 07:40, express. Folio settled. Keys returned.",
+      "section": "payments",
+      "rooms": [
+        "214"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_6",
+      "canonicalName": "Mr Ellison",
+      "currentRoom": "214",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "done"
+    },
+    {
+      "original": "Completed overnight:",
+      "section": "completed",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "done"
+    },
+    {
+      "original": "- Lobby flower water changed (done)",
+      "section": "completed",
+      "rooms": [
+        "405"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "done"
+    }
+  ],
+  "reviewPlaceholder": {
+    "status": "PENDING_HUMAN_REVIEW",
+    "note": "Compare to sprint8-baseline-validation/; payment fail-closed is the Sprint 9 focus."
+  }
+}

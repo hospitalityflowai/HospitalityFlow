@@ -1,0 +1,383 @@
+{
+  "label": "RIVERTON SPRINT 9 VALIDATION OUTPUT",
+  "scenarioId": "015",
+  "title": "POA Is Not Collect — Unless Evidence Says So",
+  "recordId": null,
+  "gitCommit": "73e7572a09e851d322a7a16a3f0542da93062f43",
+  "engineVersion": 1,
+  "contractVersion": "E1",
+  "ranAt": "2026-08-08T12:27:43.345Z",
+  "pipeline": [
+    "extractOperationalFact / sectionFromFact",
+    "consolidateNotesByFacts",
+    "resolveOperationalEntities (Sprint 3)",
+    "electCanonicalCurrentState (Sprint 1)",
+    "resolveOperationalDependencies (Sprint 4)",
+    "buildCanonicalOperationalActions (Sprint 5/6/8)",
+    "buildOrganisedSectionModel",
+    "buildTodaysBriefing (Sprint 8 decision seating)",
+    "ShiftIntelligenceEngine.analyze (Sprint 8 recommendation seating)"
+  ],
+  "scenarioMeta": {
+    "shift": "AM",
+    "operationalLoad": "Normal",
+    "difficulty": "Moderate",
+    "capability": "Payment-state discrimination",
+    "ambiguity": "No",
+    "departments": "Reception",
+    "sourceFile": "scenario-015.md"
+  },
+  "humanExpectedTruth": {
+    "currentOperationalFacts": [
+      "Adeyemi POA / Blum prepaid / HelioSpan company / Pike deposit-for-tomorrow are **not** same-day collect-all.",
+      "**Calder 228**: **£64.80** outstanding; departure today ~11:00 — real collect/settle before departure."
+    ],
+    "open": [
+      "Settle **£64.80** on **228 Calder** before ~11:00 departure."
+    ],
+    "monitor": [
+      "Pike balance due tomorrow (not today)."
+    ],
+    "information": [
+      "POA / prepaid / company-billed statuses for other listed rooms."
+    ],
+    "unresolved": [
+      "Anonymous “OTA pending” scrap without room."
+    ],
+    "mustNotInfer": [
+      "Collect actions on POA / prepaid / company-billed rooms without evidence of debt.",
+      "Inventing channel/OTA payment wording or amounts for rooms that are settled.",
+      "Expanding yellow highlight into a mass collection list."
+    ],
+    "rawTruthMarkdown": "### Current operational facts\r\n- Adeyemi POA / Blum prepaid / HelioSpan company / Pike deposit-for-tomorrow are **not** same-day collect-all.\r\n- **Calder 228**: **£64.80** outstanding; departure today ~11:00 — real collect/settle before departure.\r\n\r\n### Expected work states\r\n\r\n#### OPEN\r\n- Settle **£64.80** on **228 Calder** before ~11:00 departure.\r\n\r\n#### MONITOR\r\n- Pike balance due tomorrow (not today).\r\n\r\n#### INFORMATION\r\n- POA / prepaid / company-billed statuses for other listed rooms.\r\n\r\n#### UNRESOLVED\r\n- Anonymous “OTA pending” scrap without room.\r\n\r\n### Must not infer / invent\r\n- Collect actions on POA / prepaid / company-billed rooms without evidence of debt.\r\n- Inventing channel/OTA payment wording or amounts for rooms that are settled.\r\n- Expanding yellow highlight into a mass collection list."
+  },
+  "canonicalActions": [
+    {
+      "actionId": "act|ent_3|112|reservation_info|type|riverton_baseline_3",
+      "actionState": "information",
+      "actionType": "operational_follow_up",
+      "facetKey": "reservation_info",
+      "room": "112",
+      "entityId": "ent_3",
+      "canonicalName": "Mr Adeyemi",
+      "actionText": "Mr Adeyemi — Reservation / POA information (not VIP prep)",
+      "priorityBand": "P3",
+      "priorityScore": 80,
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "- 112 Mr Adeyemi — **POA room only** — extras on own card — no room rate chase"
+    },
+    {
+      "actionId": "act|ent_5|415|payment_insufficient_evidence|type|riverton_baseline_6",
+      "actionState": "information",
+      "actionType": "operational_follow_up",
+      "facetKey": "payment:insufficient_evidence",
+      "room": "415",
+      "entityId": "ent_5",
+      "canonicalName": "Mrs Pike",
+      "actionText": "Payment-related note retained — insufficient evidence for collect chase",
+      "priorityBand": "P3",
+      "priorityScore": 85,
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "- 415 Mr & Mrs Pike — **deposit held** — balance due at checkout tomorrow — not today’s collect panic"
+    },
+    {
+      "actionId": "act|ent_1|noroom|payment_collect|collect_before_departure|note_7",
+      "actionState": "open",
+      "actionType": "collect_before_departure",
+      "facetKey": "payment:collect",
+      "room": "",
+      "entityId": "ent_1",
+      "canonicalName": "Mr Seth Calder",
+      "actionText": "Collect outstanding channel payment before departure",
+      "priorityBand": "exclude",
+      "priorityScore": 90,
+      "temporalScope": "today",
+      "serviceDate": "2026-08-08",
+      "deadlineHint": "collect",
+      "relativeCue": "today",
+      "temporalConfidence": "medium",
+      "temporalReasons": [
+        "today_cue",
+        "departing_not_arrival"
+      ],
+      "evidenceText": "- **228 Mr Seth Calder** — **GENUINE OUTSTANDING** — mini-bar + paid-out taxi **£64.80** still open on folio — guest departing **today 11:00** — please settle before keys go back | Also: “OTA pending” scribbled with no room — ignore."
+    },
+    {
+      "actionId": "act|ent_4|204|payment_no_collect|type|riverton_baseline_4",
+      "actionState": "resolved",
+      "actionType": "operational_follow_up",
+      "facetKey": "payment:no_collect",
+      "room": "204",
+      "entityId": "ent_4",
+      "canonicalName": "Ms Blum",
+      "actionText": "Payment settled / no collect required for Room 204",
+      "priorityBand": "exclude",
+      "priorityScore": 92,
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "- 204 Ms Blum — **Booking.com prepaid** — VCC settled night audit — OK"
+    },
+    {
+      "actionId": "act|noent|309|payment_no_collect|type|riverton_baseline_5",
+      "actionState": "resolved",
+      "actionType": "operational_follow_up",
+      "facetKey": "payment:no_collect",
+      "room": "309",
+      "entityId": null,
+      "canonicalName": "Mr Adeyemi",
+      "actionText": "Payment settled / no collect required for Room 309",
+      "priorityBand": "exclude",
+      "priorityScore": 92,
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "- 309 HelioSpan — **company billed** — master account — OK"
+    }
+  ],
+  "actionStateCounts": {
+    "open": 1,
+    "monitor": 0,
+    "information": 2,
+    "unresolved": 0,
+    "blocked": 0,
+    "resolved": 2,
+    "other": 0
+  },
+  "temporalAnchor": {
+    "handoverDate": "2026-08-08",
+    "shift": "AM",
+    "createdAt": "2026-08-08T07:15:00.000Z"
+  },
+  "inputIntegrity": {
+    "inputAuthority": "scenario-XXX.md Original Input / Raw Source Notes",
+    "sourceSha256": "f5367e9ec0c86dc68eeaf41320357acc6c71f0f14adb147a9a5bba4659ebde34",
+    "sourceLength": 705,
+    "lineCount": 9,
+    "brainContext": null,
+    "hotelSnapshotKeys": [],
+    "humanExpectedTruthPreserved": true
+  },
+  "exactSourceInput": "Cashier clear-down list — AM\n\nPAYMENT STATES (do not “collect” the green ones):\n- 112 Mr Adeyemi — **POA room only** — extras on own card — no room rate chase\n- 204 Ms Blum — **Booking.com prepaid** — VCC settled night audit — OK\n- 309 HelioSpan — **company billed** — master account — OK\n- 415 Mr & Mrs Pike — **deposit held** — balance due at checkout tomorrow — not today’s collect panic\n- **228 Mr Seth Calder** — **GENUINE OUTSTANDING** — mini-bar + paid-out taxi **£64.80** still open on folio — guest departing **today 11:00** — please settle before keys go back\n\nSomeone highlighted every line in yellow. Only Calder is actually a collect-now.\n\nAlso: “OTA pending” scribbled with no room — ignore.",
+  "hotelSnapshot": {},
+  "aiSummaryBriefing": "Shift status\nNo urgent guest-impacting priorities for the incoming team.",
+  "briefingParagraphs": [
+    "Shift status\nNo urgent guest-impacting priorities for the incoming team."
+  ],
+  "organisedHandover": {
+    "urgent": [],
+    "vip": [],
+    "guest": [],
+    "maintenance": [],
+    "payments": [
+      "- 415 Mr & Mrs Pike — **deposit held** — balance due at checkout tomorrow — not today’s collect panic",
+      "- **228 Mr Seth Calder** — **GENUINE OUTSTANDING** — mini-bar + paid-out taxi **£64.80** still open on folio — guest departing **today 11:00** — please settle before keys go back | Also: “OTA pending” scribbled with no room — ignore.",
+      "- 309 HelioSpan — **company billed** — master account — OK",
+      "- 204 Ms Blum — **Booking.com prepaid** — VCC settled night audit — OK"
+    ],
+    "events": [],
+    "preparations": [],
+    "openQuestions": [],
+    "tasks": [],
+    "inventory": [],
+    "deliveries": [],
+    "lostproperty": [],
+    "general": [
+      "- 112 Mr Adeyemi — **POA room only** — extras on own card — no room rate chase",
+      "PAYMENT STATES (do not “collect” the green ones):",
+      "Cashier clear-down list — AM",
+      "Someone highlighted every line in yellow. Only Calder is actually a collect-now."
+    ],
+    "completed": []
+  },
+  "recommendations": [],
+  "reasoningMetadata": {
+    "noteCountAfterPipeline": 8,
+    "dependencyEdgeCount": 0,
+    "dependencyEdges": [],
+    "analyzeKeys": [
+      "engineVersion",
+      "signals",
+      "recommendations",
+      "checklist",
+      "facts",
+      "operationalMemories",
+      "guestObservations",
+      "guestObservationRejections",
+      "guestCandidates",
+      "guestCandidateRejections"
+    ],
+    "quietShift": null,
+    "decisionSeating": {
+      "briefingUsesCanonicalActions": true,
+      "recommendationsFromAnalyze": true,
+      "sharedCanonicalList": true
+    }
+  },
+  "noteEvidence": [
+    {
+      "original": "- 204 Ms Blum — **Booking.com prepaid** — VCC settled night audit — OK",
+      "section": "payments",
+      "rooms": [
+        "204"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_4",
+      "canonicalName": "Ms Blum",
+      "currentRoom": "204",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "payment",
+      "factStatus": "done"
+    },
+    {
+      "original": "- 415 Mr & Mrs Pike — **deposit held** — balance due at checkout tomorrow — not today’s collect panic",
+      "section": "payments",
+      "rooms": [
+        "415"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_5",
+      "canonicalName": "Mrs Pike",
+      "currentRoom": "415",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "outstanding_balance",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Cashier clear-down list — AM",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "PAYMENT STATES (do not “collect” the green ones):",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- 112 Mr Adeyemi — **POA room only** — extras on own card — no room rate chase",
+      "section": "general",
+      "rooms": [
+        "112"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_3",
+      "canonicalName": "Mr Adeyemi",
+      "currentRoom": "112",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- 309 HelioSpan — **company billed** — master account — OK",
+      "section": "payments",
+      "rooms": [
+        "309"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "309",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "done"
+    },
+    {
+      "original": "Someone highlighted every line in yellow. Only Calder is actually a collect-now.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_2",
+      "canonicalName": "Only Calder",
+      "currentRoom": null,
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- **228 Mr Seth Calder** — **GENUINE OUTSTANDING** — mini-bar + paid-out taxi **£64.80** still open on folio — guest departing **today 11:00** — please settle before keys go back | Also: “OTA pending” scribbled with no room — ignore.",
+      "section": "completed",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_1",
+      "canonicalName": "Mr Seth Calder",
+      "currentRoom": null,
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "folio",
+      "factStatus": "done"
+    }
+  ],
+  "reviewPlaceholder": {
+    "status": "PENDING_HUMAN_REVIEW",
+    "note": "Compare to sprint8-baseline-validation/; payment fail-closed is the Sprint 9 focus."
+  }
+}
