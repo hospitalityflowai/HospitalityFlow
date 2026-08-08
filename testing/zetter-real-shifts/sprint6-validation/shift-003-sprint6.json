@@ -1,0 +1,566 @@
+{
+  "label": "Sprint 6 VALIDATION OUTPUT",
+  "shift": "003",
+  "recordId": "b2217d2d-2fe7-4a67-aec4-c4bda98fb1d9",
+  "gitCommit": "4821df56d202965b71edd57f014c5c16a0911a7c",
+  "engineVersion": 1,
+  "contractVersion": "E1",
+  "ranAt": "2026-08-08T10:09:10.912Z",
+  "pipeline": [
+    "extractOperationalFact / sectionFromFact",
+    "consolidateNotesByFacts",
+    "resolveOperationalEntities (Sprint 3)",
+    "electCanonicalCurrentState (Sprint 1)",
+    "resolveOperationalDependencies (Sprint 4)",
+    "buildCanonicalOperationalActions (Sprint 6)",
+    "buildOrganisedSectionModel",
+    "buildTodaysBriefing",
+    "ShiftIntelligenceEngine.analyze (priority + recommendations)"
+  ],
+  "canonicalActions": [
+    {
+      "actionId": "act|noent|12|timed_arrival_today|guest_follow_up|zetter_rerun_18",
+      "actionState": "open",
+      "actionType": "guest_follow_up",
+      "facetKey": "timed:arrival_today",
+      "room": "12",
+      "entityId": null,
+      "canonicalName": "",
+      "actionText": "Expect / handle arrival today for Room 12 (pre-reg still to arrive)",
+      "priorityBand": "P1",
+      "priorityScore": 24,
+      "temporalScope": "today",
+      "serviceDate": "2026-08-05",
+      "deadlineHint": "arrival",
+      "relativeCue": "today",
+      "temporalConfidence": "high",
+      "temporalReasons": [
+        "still_to_arrive_today"
+      ],
+      "evidenceText": "room 12 pre reg still to arrive today"
+    },
+    {
+      "actionId": "act|ent_2|43|amenity_twin|prepare_vip|zetter_rerun_3",
+      "actionState": "open",
+      "actionType": "prepare_vip",
+      "facetKey": "amenity:twin",
+      "room": "43",
+      "entityId": "ent_2",
+      "canonicalName": "Hayden Landry",
+      "actionText": "Prepare twin beds for Room 43 (Hayden Landry)",
+      "priorityBand": "P2",
+      "priorityScore": 28,
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "Hayden Landry\t\t2x rooms \t43 / 42\tdep -\t09/08/2026\t\tVIP / 1 of 2 rooms// Twin beds only for room 43  / breakfast added/"
+    },
+    {
+      "actionId": "act|ent_1|51|amenity_prep|prepare_vip|zetter_rerun_1",
+      "actionState": "open",
+      "actionType": "prepare_vip",
+      "facetKey": "amenity:prep",
+      "room": "51",
+      "entityId": "ent_1",
+      "canonicalName": "Josh Piercey-Fisher",
+      "actionText": "Prepare champagne for Josh Piercey-Fisher in Room 51",
+      "priorityBand": "P2",
+      "priorityScore": 32,
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "Josh Piercey-Fisher\trm 51\tdep\t07/08/2026\t\tChampagne & truffles to be set up in the room - comp // 10th anniversary / The guest arranged flower delivery on 06.08.2026 morning. When the room's ready, please place the flower in the room.-An"
+    },
+    {
+      "actionId": "act|ent_5|5|timed_late_checkout|complete_timed_actions|zetter_rerun_16",
+      "actionState": "unresolved",
+      "actionType": "complete_timed_actions",
+      "facetKey": "timed:late_checkout",
+      "room": "5",
+      "entityId": "ent_5",
+      "canonicalName": "Steinmann Daneel",
+      "actionText": "Unresolved late check-out today @12 — confirm operational day before actioning (Room 5)",
+      "priorityBand": "P2",
+      "priorityScore": 48,
+      "temporalScope": "ambiguous",
+      "serviceDate": "",
+      "deadlineHint": "12:00",
+      "relativeCue": "today",
+      "temporalConfidence": "low",
+      "temporalReasons": [
+        "late_co_today_night_crossing_ambiguous"
+      ],
+      "evidenceText": "rm 5 and 14 late check-outs todat @ 12"
+    },
+    {
+      "actionId": "act|ent_1|51|amenity_flowers_future|prepare_vip|zetter_rerun_1",
+      "actionState": "monitor",
+      "actionType": "prepare_vip",
+      "facetKey": "amenity:flowers_future",
+      "room": "51",
+      "entityId": "ent_1",
+      "canonicalName": "Josh Piercey-Fisher",
+      "actionText": "Monitor flower delivery / placement on 2026-08-06 for Josh Piercey-Fisher Room 51",
+      "priorityBand": "P2",
+      "priorityScore": 50,
+      "temporalScope": "tomorrow",
+      "serviceDate": "2026-08-06",
+      "deadlineHint": "",
+      "relativeCue": "morning",
+      "temporalConfidence": "high",
+      "temporalReasons": [
+        "explicit_date_tomorrow",
+        "departing_not_arrival"
+      ],
+      "evidenceText": "Josh Piercey-Fisher\trm 51\tdep\t07/08/2026\t\tChampagne & truffles to be set up in the room - comp // 10th anniversary / The guest arranged flower delivery on 06.08.2026 morning. When the room's ready, please place the flower in the room.-An"
+    },
+    {
+      "actionId": "act|ent_3|32|vip_no_active_amenity|type|zetter_rerun_5",
+      "actionState": "information",
+      "actionType": "operational_follow_up",
+      "facetKey": "vip:no_active_amenity",
+      "room": "32",
+      "entityId": "ent_3",
+      "canonicalName": "Helene Egebol",
+      "actionText": "Helene Egebol — No active VIP amenity outstanding",
+      "priorityBand": "P3",
+      "priorityScore": 82,
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "Helene Egebol\t\t\t32\t\t07/08/2026\t\tVIP - Regular Guest\t- in gouse"
+    },
+    {
+      "actionId": "act|ent_9|25|vip_no_active_amenity|type|zetter_rerun_14",
+      "actionState": "information",
+      "actionType": "operational_follow_up",
+      "facetKey": "vip:no_active_amenity",
+      "room": "25",
+      "entityId": "ent_9",
+      "canonicalName": "Alan Tarrant",
+      "actionText": "Alan Tarrant — No active VIP amenity outstanding",
+      "priorityBand": "P3",
+      "priorityScore": 82,
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "Alan Tarrant\t\trm\t25\tdep \t07/08/2026\t\tSPECIAL OCCASSION // Guests Birthday"
+    },
+    {
+      "actionId": "act|noent|noroom|vip_no_active_amenity|type|zetter_rerun_0",
+      "actionState": "information",
+      "actionType": "operational_follow_up",
+      "facetKey": "vip:no_active_amenity",
+      "room": "",
+      "entityId": null,
+      "canonicalName": "",
+      "actionText": "No active VIP amenity outstanding",
+      "priorityBand": "P3",
+      "priorityScore": 82,
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "Vip's in house"
+    }
+  ],
+  "temporalAnchor": {
+    "handoverDate": "2026-08-05",
+    "shift": "Night",
+    "createdAt": "2026-08-06 05:37:12.25793+00"
+  },
+  "inputIntegrity": {
+    "inputAuthority": "CSV source_notes (Supabase export)",
+    "markdownBodyMatchesCsvIgnoringTrailingWhitespace": true,
+    "markdownExactByteMatchCsv": false,
+    "trailingWhitespaceOnlyDiffVsMarkdown": true,
+    "sourceSha256": "e8ade3cfb7637ab958634b98f9bd3370635deb08bc4f6f926279a930a35c652d",
+    "sourceLength": 1181,
+    "lineCount": 13,
+    "brainContext": null,
+    "hotelSnapshotKeys": [
+      "adr",
+      "adults",
+      "revpar",
+      "inHouse",
+      "arrivals",
+      "children",
+      "occupancy",
+      "roomsSold",
+      "stayovers",
+      "departures",
+      "roomsAvailable"
+    ]
+  },
+  "exactSourceInput": "Vip's in house \nJosh Piercey-Fisher\trm 51\tdep\t07/08/2026\t\tChampagne & truffles to be set up in the room - comp // 10th anniversary / The guest arranged flower delivery on 06.08.2026 morning. When the room's ready, please place the flower in the room.-An\t\t\t\t\t\t\t\t\t\n\nHayden Landry\t\t2x rooms \t43 / 42\tdep -\t09/08/2026\t\tVIP / 1 of 2 rooms// Twin beds only for room 43  / breakfast added/\t\n\nHelene Egebol\t\t\t32\t\t07/08/2026\t\tVIP - Regular Guest\t- in gouse\n\ntoday other arrivals \nRoya Baldridge\t\trms\t15 / 14\tdep\t08/08/2026\t\t2 bookings under same // plz update at arrival / Promotion: 20% off food and beverage\t\n\nSteinmann Daneel\t\t\trm5\t\tdep 08/08/2026\t\tLate check in// late check out sub to avail\t\t\nChristine Dupuy\t\trm\t3\tdep\t10/08/2026\t\t20% off food and beverage (once per stay)\t\n\tMme Mette Jardal\t\trm\t24\t\tdep 10/08/2026\t\t20% discount on food and drinks (one-time use per stay).\t\t\nYoshiko Sakamoto\t\trm\t11\tdep\t08/08/2026\t\tSofa bed set up //x2 dental kit\t\nAlan Tarrant\t\trm\t25\tdep \t07/08/2026\t\tSPECIAL OCCASSION // Guests Birthday\t\n\nrm 5 and 14 late check-outs todat @ 12\n\nroom 12 pre reg still to arrive today\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\n\n\n\n\t\t\t\n",
+  "hotelSnapshot": {
+    "adr": "£266.24",
+    "adults": "40",
+    "revpar": "£52.27",
+    "inHouse": "40",
+    "arrivals": "12",
+    "children": "2",
+    "occupancy": "96%",
+    "roomsSold": "23",
+    "stayovers": "11",
+    "departures": "13",
+    "roomsAvailable": "1"
+  },
+  "aiSummaryBriefing": "Priority 1\nPrepare champagne + flowers for Josh Piercey-Fisher in Room 51.\n\nPriority 2\nPrepare twin beds for Room 43 (Hayden Landry).\n\nPriority 3\nComplete outstanding guest follow-up for Room 5.",
+  "briefingParagraphs": [
+    "Priority 1\nPrepare champagne + flowers for Josh Piercey-Fisher in Room 51.",
+    "Priority 2\nPrepare twin beds for Room 43 (Hayden Landry).",
+    "Priority 3\nComplete outstanding guest follow-up for Room 5."
+  ],
+  "organisedHandover": {
+    "urgent": [],
+    "vip": [
+      "Josh Piercey-Fisher\trm 51\tdep\t07/08/2026\t\tChampagne & truffles to be set up in the room - comp // 10th anniversary / The guest arranged flower delivery on 06.08.2026 morning. When the room's ready, please place the flower in the room.-An\t\t\t\t\t\t\t\t\t",
+      "Hayden Landry\t\t2x rooms \t43 / 42\tdep -\t09/08/2026\t\tVIP / 1 of 2 rooms// Twin beds only for room 43  / breakfast added/\t",
+      "Vip's in house ",
+      "Helene Egebol\t\t\t32\t\t07/08/2026\t\tVIP - Regular Guest\t- in gouse"
+    ],
+    "guest": [
+      "Steinmann Daneel\t\t\trm5\t\tdep 08/08/2026\t\tLate check in// late check out sub to avail\t\t"
+    ],
+    "maintenance": [],
+    "payments": [],
+    "events": [],
+    "preparations": [
+      "Alan Tarrant\t\trm\t25\tdep \t07/08/2026\t\tSPECIAL OCCASSION // Guests Birthday\t",
+      "Yoshiko Sakamoto\t\trm\t11\tdep\t08/08/2026\t\tSofa bed set up //x2 dental kit\t"
+    ],
+    "openQuestions": [],
+    "tasks": [],
+    "inventory": [],
+    "deliveries": [],
+    "lostproperty": [],
+    "general": [
+      "room 12 pre reg still to arrive today\t\t\t\t\t\t\t\t",
+      "rm 5 and 14 late check-outs todat @ 12",
+      "Christine Dupuy\t\trm\t3\tdep\t10/08/2026\t\t20% off food and beverage (once per stay)\t",
+      "\tMme Mette Jardal\t\trm\t24\t\tdep 10/08/2026\t\t20% discount on food and drinks (one-time use per stay).\t\t",
+      "today other arrivals ",
+      "Roya Baldridge\t\trms\t15 / 14\tdep\t08/08/2026\t\t2 bookings under same // plz update at arrival / Promotion: 20% off food and beverage\t"
+    ],
+    "completed": []
+  },
+  "recommendations": [
+    {
+      "id": "act|ent_2|43|amenity_twin|prepare_vip|handover_note_4_hayden_landry_2x_rooms_43_42_dep",
+      "text": "Prepare twin beds for Room 43 (Hayden Landry) this shift.",
+      "priority": "normal",
+      "department": "Reception",
+      "status": "open",
+      "reasonCodes": [
+        "vip_prep_actionable",
+        "vip_not_safety",
+        "amenity_room_scoped",
+        "canonical_action_authority"
+      ]
+    },
+    {
+      "id": "act|ent_1|51|amenity_prep|prepare_vip|handover_note_1_josh_piercey_fisher_rm_51_dep_07",
+      "text": "Prepare champagne for Josh Piercey-Fisher in Room 51 this shift.",
+      "priority": "normal",
+      "department": "Housekeeping",
+      "status": "open",
+      "reasonCodes": [
+        "vip_prep_actionable",
+        "vip_not_safety",
+        "amenity_prep_open",
+        "canonical_action_authority"
+      ]
+    },
+    {
+      "id": "msk7or1d-oj1gq",
+      "text": "Complete VIP Room 51 anniversary setup before arrival.",
+      "priority": "normal",
+      "department": "Reception",
+      "status": "open",
+      "reasonCodes": [
+        "guest_follow_up",
+        "arrival_today",
+        "vip_prep_actionable",
+        "vip_not_safety",
+        "cross_department_dependency"
+      ]
+    }
+  ],
+  "reasoningMetadata": {
+    "noteCountAfterPipeline": 13,
+    "dependencyEdgeCount": 0,
+    "dependencyEdges": [],
+    "analyzeKeys": [
+      "engineVersion",
+      "signals",
+      "recommendations",
+      "checklist",
+      "facts",
+      "operationalMemories",
+      "guestObservations",
+      "guestObservationRejections",
+      "guestCandidates",
+      "guestCandidateRejections"
+    ],
+    "quietShift": null
+  },
+  "noteEvidence": [
+    {
+      "original": "Helene Egebol\t\t\t32\t\t07/08/2026\t\tVIP - Regular Guest\t- in gouse",
+      "section": "vip",
+      "rooms": [
+        "32"
+      ],
+      "isVip": true,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_3",
+      "canonicalName": "Helene Egebol",
+      "currentRoom": "32",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "vip_arrival",
+      "factStatus": "confirmed"
+    },
+    {
+      "original": "Josh Piercey-Fisher\trm 51\tdep\t07/08/2026\t\tChampagne & truffles to be set up in the room - comp // 10th anniversary / The guest arranged flower delivery on 06.08.2026 morning. When the room's ready, please place the flower in the room.-An\t\t\t\t\t\t\t\t\t",
+      "section": "guest",
+      "rooms": [
+        "51"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_1",
+      "canonicalName": "Josh Piercey-Fisher",
+      "currentRoom": "51",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "guest_request",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Steinmann Daneel\t\t\trm5\t\tdep 08/08/2026\t\tLate check in// late check out sub to avail\t\t",
+      "section": "guest",
+      "rooms": [
+        "5"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_5",
+      "canonicalName": "Steinmann Daneel",
+      "currentRoom": "5",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "late_checkout",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Alan Tarrant\t\trm\t25\tdep \t07/08/2026\t\tSPECIAL OCCASSION // Guests Birthday\t",
+      "section": "guest",
+      "rooms": [
+        "25"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_9",
+      "canonicalName": "Alan Tarrant",
+      "currentRoom": "25",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "celebration",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Hayden Landry\t\t2x rooms \t43 / 42\tdep -\t09/08/2026\t\tVIP / 1 of 2 rooms// Twin beds only for room 43  / breakfast added/\t",
+      "section": "tasks",
+      "rooms": [
+        "43",
+        "42"
+      ],
+      "isVip": true,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_2",
+      "canonicalName": "Hayden Landry",
+      "currentRoom": "42",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "twin_setup",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Vip's in house ",
+      "section": "general",
+      "rooms": [],
+      "isVip": true,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "today other arrivals ",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Roya Baldridge\t\trms\t15 / 14\tdep\t08/08/2026\t\t2 bookings under same // plz update at arrival / Promotion: 20% off food and beverage\t",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_4",
+      "canonicalName": "Roya Baldridge",
+      "currentRoom": null,
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Christine Dupuy\t\trm\t3\tdep\t10/08/2026\t\t20% off food and beverage (once per stay)\t",
+      "section": "general",
+      "rooms": [
+        "3"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_6",
+      "canonicalName": "Christine Dupuy",
+      "currentRoom": "3",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "\tMme Mette Jardal\t\trm\t24\t\tdep 10/08/2026\t\t20% discount on food and drinks (one-time use per stay).\t\t",
+      "section": "general",
+      "rooms": [
+        "24"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_7",
+      "canonicalName": "Mme Mette Jardal",
+      "currentRoom": "24",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Yoshiko Sakamoto\t\trm\t11\tdep\t08/08/2026\t\tSofa bed set up //x2 dental kit\t",
+      "section": "general",
+      "rooms": [
+        "11"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_8",
+      "canonicalName": "Yoshiko Sakamoto",
+      "currentRoom": "11",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "rm 5 and 14 late check-outs todat @ 12",
+      "section": "general",
+      "rooms": [
+        "5"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_5",
+      "canonicalName": "Steinmann Daneel",
+      "currentRoom": "5",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "room 12 pre reg still to arrive today\t\t\t\t\t\t\t\t",
+      "section": "general",
+      "rooms": [
+        "12"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "12",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    }
+  ]
+}

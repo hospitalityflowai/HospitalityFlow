@@ -1,0 +1,93 @@
+{
+  "label": "Sprint 6 VALIDATION OUTPUT",
+  "gitCommit": "4821df56d202965b71edd57f014c5c16a0911a7c",
+  "engineVersion": 1,
+  "ranAt": "2026-08-08T10:09:10.912Z",
+  "shifts": [
+    {
+      "shift": "001",
+      "recordId": "50c5f88f-56a8-4c04-9080-cccdc5340be6",
+      "sourceSha256": "4b96bae5e22b0e754301b835817998760357c907f63d1680418c143de210e585",
+      "markdownBodyMatchesCsvIgnoringTrailingWhitespace": true,
+      "trailingWhitespaceOnlyDiffVsMarkdown": true,
+      "recommendationCount": 3,
+      "noteCount": 18,
+      "dependencyEdges": 0,
+      "canonicalActionCount": 5,
+      "openCanonicalActionCount": 3,
+      "briefingChars": 106,
+      "files": [
+        "shift-001-sprint6.json",
+        "shift-001-sprint6.md"
+      ]
+    },
+    {
+      "shift": "002",
+      "recordId": "89a40e9f-594b-4287-8fa5-8bae551c841c",
+      "sourceSha256": "9cc24e24a455655231c0ec09bc6bec3b1533c58631ac1be9407f45ab6d672623",
+      "markdownBodyMatchesCsvIgnoringTrailingWhitespace": true,
+      "trailingWhitespaceOnlyDiffVsMarkdown": true,
+      "recommendationCount": 5,
+      "noteCount": 16,
+      "dependencyEdges": 0,
+      "canonicalActionCount": 13,
+      "openCanonicalActionCount": 3,
+      "briefingChars": 261,
+      "files": [
+        "shift-002-sprint6.json",
+        "shift-002-sprint6.md"
+      ]
+    },
+    {
+      "shift": "003",
+      "recordId": "b2217d2d-2fe7-4a67-aec4-c4bda98fb1d9",
+      "sourceSha256": "e8ade3cfb7637ab958634b98f9bd3370635deb08bc4f6f926279a930a35c652d",
+      "markdownBodyMatchesCsvIgnoringTrailingWhitespace": true,
+      "trailingWhitespaceOnlyDiffVsMarkdown": true,
+      "recommendationCount": 3,
+      "noteCount": 13,
+      "dependencyEdges": 0,
+      "canonicalActionCount": 8,
+      "openCanonicalActionCount": 3,
+      "briefingChars": 194,
+      "files": [
+        "shift-003-sprint6.json",
+        "shift-003-sprint6.md"
+      ]
+    },
+    {
+      "shift": "004",
+      "recordId": "7a6c925c-7beb-439f-b579-ff9839a66f83",
+      "sourceSha256": "7bcb322bcf804fd3104f071cc0e25393ae926b9351ecdc95b55f427168b832b4",
+      "markdownBodyMatchesCsvIgnoringTrailingWhitespace": true,
+      "trailingWhitespaceOnlyDiffVsMarkdown": true,
+      "recommendationCount": 1,
+      "noteCount": 10,
+      "dependencyEdges": 0,
+      "canonicalActionCount": 6,
+      "openCanonicalActionCount": 2,
+      "briefingChars": 116,
+      "files": [
+        "shift-004-sprint6.json",
+        "shift-004-sprint6.md"
+      ]
+    },
+    {
+      "shift": "005",
+      "recordId": "ffff255d-75a9-4842-8272-75116dfeff56",
+      "sourceSha256": "ed06b255060db5e9c89ca97b36e2a09df951251f05405d95b81c44a9f5d9794b",
+      "markdownBodyMatchesCsvIgnoringTrailingWhitespace": true,
+      "trailingWhitespaceOnlyDiffVsMarkdown": true,
+      "recommendationCount": 2,
+      "noteCount": 9,
+      "dependencyEdges": 0,
+      "canonicalActionCount": 6,
+      "openCanonicalActionCount": 3,
+      "briefingChars": 54,
+      "files": [
+        "shift-005-sprint6.json",
+        "shift-005-sprint6.md"
+      ]
+    }
+  ]
+}
