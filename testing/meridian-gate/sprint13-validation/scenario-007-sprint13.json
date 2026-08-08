@@ -1,0 +1,331 @@
+{
+  "label": "MERIDIAN GATE Sprint 13 invalid-inventory validation OUTPUT",
+  "scenarioId": "007",
+  "title": "Valet Full and Pavilion Prefunction",
+  "recordId": null,
+  "gitCommit": "a5a826fb8d04393858ebd1e210ceb024e0cbc4fd",
+  "engineVersion": 1,
+  "contractVersion": "E1",
+  "ranAt": "2026-08-08T14:08:35.385Z",
+  "pipeline": [
+    "extractOperationalFact / sectionFromFact",
+    "consolidateNotesByFacts",
+    "resolveOperationalEntities (Sprint 3)",
+    "electCanonicalCurrentState (Sprint 1)",
+    "resolveOperationalDependencies (Sprint 4)",
+    "buildCanonicalOperationalActions (Sprint 5/6/8/9/10/11 � current HEAD)",
+    "buildOrganisedSectionModel",
+    "buildTodaysBriefing (decision seating)",
+    "ShiftIntelligenceEngine.analyze (recommendation seating)"
+  ],
+  "scenarioMeta": {
+    "shift": "PM",
+    "operationalLoad": "Normal",
+    "ambiguity": "Low",
+    "departments": "Valet/Parking, Events, Concierge, Reception",
+    "preparedBy": "Carla Mendes — Concierge (fictional)",
+    "sourceFile": "scenario-007.md",
+    "scenarioFileSha256": "4e14eaef073010daeb95dfb9936db7488205b005839329120622c4e17f218eb8"
+  },
+  "humanExpectedTruth": {
+    "currentOperationalFacts": [
+      "Parking full; Shore M109 needs valet ticket + overflow guidance — OPEN ops.",
+      "No underground garage exists.",
+      "Hargreaves florist tomorrow 09:00 — future; chairs DONE tonight.",
+      "Spa private bridal trial is spa ops, not guest-room allocation."
+    ],
+    "open": [
+      "Issue valet tickets / implement overflow guidance for waiting cars including Shore M109."
+    ],
+    "monitor": [
+      "Sunday 09:00 florist delivery / catering walkthrough — tomorrow, not tonight chase.",
+      "Park capacity through evening peak."
+    ],
+    "information": [
+      "Chairs stacked DONE; spa private trial; Shore in M109 without room-move request."
+    ],
+    "unresolved": [
+      "Exact overflow lot availability minute-by-minute — operational fluidity; do not invent a named offsite garage."
+    ],
+    "completedMustNotReopen": [
+      "Pavilion chairs stacking — DONE — must not reopen as setup OPEN tonight.",
+      "Florist — scheduled tomorrow — must not become tonight OPEN."
+    ],
+    "bindings": [
+      "Shore → M109; florist Sunday 09:00; valet full since 16:10."
+    ],
+    "mustNotInfer": [
+      "Underground garage / fictional parking structure.",
+      "Tonight florist OPEN.",
+      "Room move for Shore without request.",
+      "Treating spa bridal trial as hotel room inventory."
+    ],
+    "rationale": [
+      "Normal Saturday PM: valet capacity is real OPEN; pavilion tomorrow stays MONITOR/future."
+    ],
+    "rawTruthMarkdown": "### Current operational facts\r\n- Parking full; Shore M109 needs valet ticket + overflow guidance — OPEN ops.\r\n- No underground garage exists.\r\n- Hargreaves florist tomorrow 09:00 — future; chairs DONE tonight.\r\n- Spa private bridal trial is spa ops, not guest-room allocation.\r\n\r\n### Expected OPEN actions\r\n- Issue valet tickets / implement overflow guidance for waiting cars including Shore M109.\r\n\r\n### Expected MONITOR items\r\n- Sunday 09:00 florist delivery / catering walkthrough — tomorrow, not tonight chase.\r\n- Park capacity through evening peak.\r\n\r\n### Expected INFORMATION\r\n- Chairs stacked DONE; spa private trial; Shore in M109 without room-move request.\r\n\r\n### Expected UNRESOLVED / clarifications\r\n- Exact overflow lot availability minute-by-minute — operational fluidity; do not invent a named offsite garage.\r\n\r\n### Explicit completed / resolved / superseded (must not reopen)\r\n- Pavilion chairs stacking — DONE — must not reopen as setup OPEN tonight.\r\n- Florist — scheduled tomorrow — must not become tonight OPEN.\r\n\r\n### Important entity / room / time bindings\r\n- Shore → M109; florist Sunday 09:00; valet full since 16:10.\r\n\r\n### Must not invent\r\n- Underground garage / fictional parking structure.\r\n- Tonight florist OPEN.\r\n- Room move for Shore without request.\r\n- Treating spa bridal trial as hotel room inventory.\r\n\r\n### Short human rationale\r\nNormal Saturday PM: valet capacity is real OPEN; pavilion tomorrow stays MONITOR/future."
+  },
+  "canonicalActions": [],
+  "actionStateCounts": {
+    "open": 0,
+    "monitor": 0,
+    "information": 0,
+    "unresolved": 0,
+    "blocked": 0,
+    "resolved": 0,
+    "other": 0
+  },
+  "temporalAnchor": {
+    "handoverDate": "2026-09-12",
+    "shift": "PM",
+    "createdAt": "2026-09-12T15:45:00.000Z"
+  },
+  "decisionSeats": {
+    "seats": [],
+    "seatedCanonicalIds": [],
+    "source": "canonical_decision_seats",
+    "surface": "briefing",
+    "maxN": 5
+  },
+  "inputIntegrity": {
+    "inputAuthority": "scenario-XXX.md Original Input / Raw Source Notes",
+    "scenarioFileSha256": "4e14eaef073010daeb95dfb9936db7488205b005839329120622c4e17f218eb8",
+    "sourceSha256": "f005b46f2855dfc613f858a59b1c2c9e80d886b1f17439566e29d6587aae0d7a",
+    "sourceLength": 785,
+    "lineCount": 9,
+    "brainContext": null,
+    "hotelSnapshotKeys": [],
+    "humanExpectedTruthPreserved": true,
+    "freezeStatus": "FROZEN BEFORE FIRST HF RUN"
+  },
+  "exactSourceInput": "Saturday PM — not full wedding day yet (ceremony Sunday) but prefunction tonight.\n\nVALET / PARKING\nCar park **full** as of 16:10. Valet board: 3 cars waiting on forecourt without tickets printed. Guest **Mr Shore** (M109) complaining he can’t leave keys — need tickets + overflow plan (street / nearby lot) — DM approved overflow map at Concierge. Please **action** ticket print + guide Shore; do not invent underground garage (we don’t have one).\n\nEVENTS PAVILION\nSunday wedding “Hargreaves” — florist delivery **tomorrow 09:00** to pavilion — not tonight’s OPEN. Tonight: chairs stacked already — DONE. Catering walkthrough tomorrow AM with Events.\n\nROOMS\nM109 Shore in-house. No room move requested.\n\nSPA\nClosed to day members at 18:00 for private bridal trial — spa ops, not rooms.",
+  "hotelSnapshot": {},
+  "aiSummaryBriefing": "Shift status\nNo urgent guest-impacting priorities for the incoming team.",
+  "briefingParagraphs": [
+    "Shift status\nNo urgent guest-impacting priorities for the incoming team."
+  ],
+  "organisedHandover": {
+    "urgent": [],
+    "vip": [],
+    "guest": [],
+    "maintenance": [],
+    "payments": [],
+    "events": [],
+    "preparations": [],
+    "openQuestions": [],
+    "tasks": [],
+    "inventory": [],
+    "deliveries": [],
+    "lostproperty": [],
+    "general": [
+      "M109 Shore in-house. No room move requested.",
+      "Saturday PM — not full wedding day yet (ceremony Sunday) but prefunction tonight.",
+      "VALET / PARKING",
+      "Car park **full** as of 16:10. Valet board: 3 cars waiting on forecourt without tickets printed. Guest **Mr Shore** (M109) complaining he can’t leave keys — need tickets + overflow plan (street / nearby lot) — DM approved overflow map at Concierge. Please **action** ticket print + guide Shore; do not invent underground garage (we don’t have one).",
+      "EVENTS PAVILION",
+      "ROOMS",
+      "SPA",
+      "Closed to day members at 18:00 for private bridal trial — spa ops, not rooms."
+    ],
+    "completed": [
+      "Sunday wedding “Hargreaves” — florist delivery **tomorrow 09:00** to pavilion — not tonight’s OPEN. Tonight: chairs stacked already — DONE. Catering walkthrough tomorrow AM with Events."
+    ]
+  },
+  "recommendations": [],
+  "reasoningMetadata": {
+    "noteCountAfterPipeline": 9,
+    "dependencyEdgeCount": 0,
+    "dependencyEdges": [],
+    "analyzeKeys": [
+      "engineVersion",
+      "signals",
+      "recommendations",
+      "checklist",
+      "facts",
+      "operationalMemories",
+      "guestObservations",
+      "guestObservationRejections",
+      "guestCandidates",
+      "guestCandidateRejections"
+    ],
+    "quietShift": null,
+    "decisionSeating": {
+      "briefingUsesCanonicalActions": true,
+      "recommendationsFromAnalyze": true,
+      "sharedCanonicalList": true,
+      "selectDecisionSeatsCaptured": true
+    }
+  },
+  "noteEvidence": [
+    {
+      "original": "Saturday PM — not full wedding day yet (ceremony Sunday) but prefunction tonight.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "VALET / PARKING",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Car park **full** as of 16:10. Valet board: 3 cars waiting on forecourt without tickets printed. Guest **Mr Shore** (M109) complaining he can’t leave keys — need tickets + overflow plan (street / nearby lot) — DM approved overflow map at Concierge. Please **action** ticket print + guide Shore; do not invent underground garage (we don’t have one).",
+      "section": "general",
+      "rooms": [
+        "M109"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_1",
+      "canonicalName": "Mr Shore",
+      "currentRoom": "m109",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "confirmed"
+    },
+    {
+      "original": "EVENTS PAVILION",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "ROOMS",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "M109 Shore in-house. No room move requested.",
+      "section": "general",
+      "rooms": [
+        "M109"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_1",
+      "canonicalName": "Mr Shore",
+      "currentRoom": "m109",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "requested"
+    },
+    {
+      "original": "SPA",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Closed to day members at 18:00 for private bridal trial — spa ops, not rooms.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Sunday wedding “Hargreaves” — florist delivery **tomorrow 09:00** to pavilion — not tonight’s OPEN. Tonight: chairs stacked already — DONE. Catering walkthrough tomorrow AM with Events.",
+      "section": "completed",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "delivery",
+      "factStatus": "done"
+    }
+  ],
+  "reviewPlaceholder": {
+    "status": "PENDING_HUMAN_REVIEW",
+    "note": "Sprint 13 invalid-inventory validation only. Compare to frozen Human Expected Truth. Do not modify engine or scenarios."
+  }
+}

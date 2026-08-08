@@ -1,0 +1,546 @@
+{
+  "label": "MERIDIAN GATE Sprint 13 invalid-inventory validation OUTPUT",
+  "scenarioId": "016",
+  "title": "Conditional Champagne and Genuine Twin Prep",
+  "recordId": null,
+  "gitCommit": "a5a826fb8d04393858ebd1e210ceb024e0cbc4fd",
+  "engineVersion": 1,
+  "contractVersion": "E1",
+  "ranAt": "2026-08-08T14:08:35.385Z",
+  "pipeline": [
+    "extractOperationalFact / sectionFromFact",
+    "consolidateNotesByFacts",
+    "resolveOperationalEntities (Sprint 3)",
+    "electCanonicalCurrentState (Sprint 1)",
+    "resolveOperationalDependencies (Sprint 4)",
+    "buildCanonicalOperationalActions (Sprint 5/6/8/9/10/11 � current HEAD)",
+    "buildOrganisedSectionModel",
+    "buildTodaysBriefing (decision seating)",
+    "ShiftIntelligenceEngine.analyze (recommendation seating)"
+  ],
+  "scenarioMeta": {
+    "shift": "PM",
+    "operationalLoad": "Normal",
+    "ambiguity": "Partial (conditional amenity)",
+    "departments": "Housekeeping, Reception, Concierge",
+    "preparedBy": "Tom Ellison — Front Office Supervisor (fictional)",
+    "sourceFile": "scenario-016.md",
+    "scenarioFileSha256": "336a3af5ecfee9b5d2afc3af71d26520cb43089c89559fe3c39a09ddaceff312"
+  },
+  "humanExpectedTruth": {
+    "currentOperationalFacts": [
+      "Brennan MS03: fruit + welcome card required; champagne conditional/if available — not hard OPEN champagne chase.",
+      "Nwosu M206 twin setup still needed before ~16:00 — OPEN.",
+      "Balloons M140 cancelled.",
+      "No evidenced debt collect."
+    ],
+    "open": [
+      "Prepare fruit + welcome card for Brennan MS03.",
+      "Prepare twin beds for Nwosu M206 before arrival."
+    ],
+    "monitor": [
+      "Champagne only if stock confirmed — conditional; must not be hard unpaid promise."
+    ],
+    "information": [
+      "Prepaid Brennan; POA Nwosu without extras; shuttle routine; cancelled balloons."
+    ],
+    "unresolved": [
+      "Champagne availability — unresolved/conditional."
+    ],
+    "completedMustNotReopen": [
+      "Balloons — cancelled — must not OPEN.",
+      "Champagne must not be forced as hard OPEN if stock uncertain (conditional)."
+    ],
+    "bindings": [
+      "Brennan → MS03; Nwosu → M206 twins; arrival ~16:00; balloons M140 cancelled."
+    ],
+    "mustNotInfer": [
+      "Hard OPEN champagne as guaranteed.",
+      "Balloons prep.",
+      "Payment collect without debt.",
+      "Twin DONE without evidence."
+    ],
+    "rationale": [
+      "Normal PM: genuine twin OPEN; conditional amenity fail-closed; cancelled stays closed."
+    ],
+    "rawTruthMarkdown": "### Current operational facts\r\n- Brennan MS03: fruit + welcome card required; champagne conditional/if available — not hard OPEN champagne chase.\r\n- Nwosu M206 twin setup still needed before ~16:00 — OPEN.\r\n- Balloons M140 cancelled.\r\n- No evidenced debt collect.\r\n\r\n### Expected OPEN actions\r\n- Prepare fruit + welcome card for Brennan MS03.\r\n- Prepare twin beds for Nwosu M206 before arrival.\r\n\r\n### Expected MONITOR items\r\n- Champagne only if stock confirmed — conditional; must not be hard unpaid promise.\r\n\r\n### Expected INFORMATION\r\n- Prepaid Brennan; POA Nwosu without extras; shuttle routine; cancelled balloons.\r\n\r\n### Expected UNRESOLVED / clarifications\r\n- Champagne availability — unresolved/conditional.\r\n\r\n### Explicit completed / resolved / superseded (must not reopen)\r\n- Balloons — cancelled — must not OPEN.\r\n- Champagne must not be forced as hard OPEN if stock uncertain (conditional).\r\n\r\n### Important entity / room / time bindings\r\n- Brennan → MS03; Nwosu → M206 twins; arrival ~16:00; balloons M140 cancelled.\r\n\r\n### Must not invent\r\n- Hard OPEN champagne as guaranteed.\r\n- Balloons prep.\r\n- Payment collect without debt.\r\n- Twin DONE without evidence.\r\n\r\n### Short human rationale\r\nNormal PM: genuine twin OPEN; conditional amenity fail-closed; cancelled stays closed."
+  },
+  "canonicalActions": [
+    {
+      "actionId": "act|ent_2|m206|amenity_twin|prepare_vip|meridian_baseline_6",
+      "actionState": "open",
+      "actionType": "prepare_vip",
+      "facetKey": "amenity:twin",
+      "room": "M206",
+      "rooms": [
+        "M206"
+      ],
+      "entityId": "ent_2",
+      "canonicalName": "Mrs Nwosu",
+      "actionText": "Prepare twin beds for Room M206 (Mrs Nwosu)",
+      "priorityBand": "P2",
+      "priorityScore": 28,
+      "priorityReasons": [
+        "complaint_or_guest_follow_up",
+        "amenity_room_scoped"
+      ],
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "**Mr & Mrs Nwosu** — M206 — requested **twin beds**. Not done yet. HK aware — please complete before 16:00 arrival."
+    },
+    {
+      "actionId": "act|ent_1|ms03|amenity_conditional|type|meridian_baseline_3",
+      "actionState": "unresolved",
+      "actionType": "operational_follow_up",
+      "facetKey": "amenity:conditional",
+      "room": "MS03",
+      "rooms": [
+        "MS03"
+      ],
+      "entityId": "ent_1",
+      "canonicalName": "Ms Camille Brennan",
+      "actionText": "Confirm availability before preparing champagne + fruit + welcome card for Ms Camille Brennan in Room MS03",
+      "priorityBand": "P3",
+      "priorityScore": 70,
+      "priorityReasons": [
+        "amenity_conditional_fail_closed",
+        "sprint10_state_resolution"
+      ],
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "**Ms Camille Brennan** — MS03 — anniversary. Notes say: champagne **if available**, fruit plate, handwritten welcome card. Stock check: champagne uncertain after wedding weekend — **do not hard-promise champagne**. Fruit + card still required."
+    },
+    {
+      "actionId": "act|noent|m140|vip_prep_complete|type|meridian_baseline_9",
+      "actionState": "information",
+      "actionType": "operational_follow_up",
+      "facetKey": "vip:prep_complete",
+      "room": "M140",
+      "rooms": [
+        "M140"
+      ],
+      "entityId": null,
+      "canonicalName": "",
+      "actionText": "VIP prep complete / awareness only",
+      "priorityBand": "P3",
+      "priorityScore": 78,
+      "priorityReasons": [
+        "vip_prep_complete"
+      ],
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "Balloons for M140 — guest cancelled — **cancelled**. Do not prep."
+    },
+    {
+      "actionId": "act|noent|noroom|reservation_info|type|meridian_baseline_12",
+      "actionState": "information",
+      "actionType": "operational_follow_up",
+      "facetKey": "reservation_info",
+      "room": "",
+      "rooms": [],
+      "entityId": null,
+      "canonicalName": "",
+      "actionText": "Reservation / POA information (not VIP prep)",
+      "priorityBand": "P3",
+      "priorityScore": 80,
+      "priorityReasons": [
+        "reservation_info_not_vip"
+      ],
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "Brennan prepaid. Nwosu POA room only — no outstanding extras evidenced — **no collect**."
+    },
+    {
+      "actionId": "act|noent|noroom|vip_no_active_amenity|type|meridian_baseline_2",
+      "actionState": "information",
+      "actionType": "operational_follow_up",
+      "facetKey": "vip:no_active_amenity",
+      "room": "",
+      "rooms": [],
+      "entityId": null,
+      "canonicalName": "",
+      "actionText": "No active VIP amenity outstanding",
+      "priorityBand": "P3",
+      "priorityScore": 82,
+      "priorityReasons": [
+        "no_active_vip_amenity",
+        "sprint10_state_resolution"
+      ],
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "VIP / AMENITY"
+    }
+  ],
+  "actionStateCounts": {
+    "open": 1,
+    "monitor": 0,
+    "information": 3,
+    "unresolved": 1,
+    "blocked": 0,
+    "resolved": 0,
+    "other": 0
+  },
+  "temporalAnchor": {
+    "handoverDate": "2026-09-21",
+    "shift": "PM",
+    "createdAt": "2026-09-21T15:45:00.000Z"
+  },
+  "decisionSeats": {
+    "seats": [
+      {
+        "action": {
+          "actionId": "act|ent_2|m206|amenity_twin|prepare_vip|meridian_baseline_6",
+          "objectId": "",
+          "entityId": "ent_2",
+          "resolutionState": "resolved",
+          "canonicalName": "Mrs Nwosu",
+          "room": "M206",
+          "rooms": [
+            "M206"
+          ],
+          "actionType": "prepare_vip",
+          "actionState": "open",
+          "facetKey": "amenity:twin",
+          "actionText": "Prepare twin beds for Room M206 (Mrs Nwosu)",
+          "displayLabel": "Prepare twin beds for Room M206 (Mrs Nwosu)",
+          "evidenceText": "**Mr & Mrs Nwosu** — M206 — requested **twin beds**. Not done yet. HK aware — please complete before 16:00 arrival.",
+          "actionability": "actionable",
+          "blockedBy": [],
+          "blocks": [],
+          "priorityBand": "P2",
+          "priorityScore": 28,
+          "priorityReasons": [
+            "complaint_or_guest_follow_up",
+            "amenity_room_scoped"
+          ],
+          "currentStateEligible": true,
+          "sourceFactIds": [
+            "meridian-baseline-6"
+          ],
+          "confidence": 0.85,
+          "temporalScope": "",
+          "serviceDate": "",
+          "deadlineHint": "",
+          "relativeCue": "",
+          "temporalConfidence": "",
+          "temporalReasons": []
+        },
+        "actionId": "act|ent_2|m206|amenity_twin|prepare_vip|meridian_baseline_6",
+        "facetKey": "amenity:twin",
+        "actionState": "open",
+        "priorityBand": "P2",
+        "priorityScore": 28,
+        "seatKind": "do_now",
+        "canonicalSeed": true,
+        "workKey": "amenity:twin|M206|mrs nwosu|prepare_vip",
+        "text": "Prepare twin beds for Room M206 (Mrs Nwosu)",
+        "legacy": null
+      }
+    ],
+    "seatedCanonicalIds": [
+      "act|ent_2|m206|amenity_twin|prepare_vip|meridian_baseline_6"
+    ],
+    "source": "canonical_decision_seats",
+    "surface": "briefing",
+    "maxN": 5
+  },
+  "inputIntegrity": {
+    "inputAuthority": "scenario-XXX.md Original Input / Raw Source Notes",
+    "scenarioFileSha256": "336a3af5ecfee9b5d2afc3af71d26520cb43089c89559fe3c39a09ddaceff312",
+    "sourceSha256": "5198569f80d6059f185c27ff197e6558c080fbf4237fee042863b093dc602bf3",
+    "sourceLength": 605,
+    "lineCount": 10,
+    "brainContext": null,
+    "hotelSnapshotKeys": [],
+    "humanExpectedTruthPreserved": true,
+    "freezeStatus": "FROZEN BEFORE FIRST HF RUN"
+  },
+  "exactSourceInput": "PM arrivals prep.\n\nVIP / AMENITY\n**Ms Camille Brennan** — MS03 — anniversary. Notes say: champagne **if available**, fruit plate, handwritten welcome card. Stock check: champagne uncertain after wedding weekend — **do not hard-promise champagne**. Fruit + card still required.\n\nTWINS\n**Mr & Mrs Nwosu** — M206 — requested **twin beds**. Not done yet. HK aware — please complete before 16:00 arrival.\n\nCANCELLED\nBalloons for M140 — guest cancelled — **cancelled**. Do not prep.\n\nPAYMENT\nBrennan prepaid. Nwosu POA room only — no outstanding extras evidenced — **no collect**.\n\nShuttle 15:30 half — routine.",
+  "hotelSnapshot": {},
+  "aiSummaryBriefing": "Priority 1\nPrepare twin beds for Room M206 (Mrs Nwosu).",
+  "briefingParagraphs": [
+    "Priority 1\nPrepare twin beds for Room M206 (Mrs Nwosu)."
+  ],
+  "organisedHandover": {
+    "urgent": [],
+    "vip": [
+      "**Ms Camille Brennan** — MS03 — anniversary. Notes say: champagne **if available**, fruit plate, handwritten welcome card. Stock check: champagne uncertain after wedding weekend — **do not hard-promise champagne**. Fruit + card still required.",
+      "VIP / AMENITY"
+    ],
+    "guest": [],
+    "maintenance": [],
+    "payments": [
+      "Brennan prepaid. Nwosu POA room only — no outstanding extras evidenced — **no collect**."
+    ],
+    "events": [],
+    "preparations": [
+      "**Mr & Mrs Nwosu** — M206 — requested **twin beds**. Not done yet. HK aware — please complete before 16:00 arrival."
+    ],
+    "openQuestions": [],
+    "tasks": [],
+    "inventory": [],
+    "deliveries": [],
+    "lostproperty": [],
+    "general": [
+      "PAYMENT",
+      "PM arrivals prep.",
+      "TWINS",
+      "Shuttle 15:30 half — routine."
+    ],
+    "completed": [
+      "CANCELLED",
+      "Balloons for M140 — guest cancelled — **cancelled**. Do not prep."
+    ]
+  },
+  "recommendations": [
+    {
+      "id": "act|ent_2|m206|amenity_twin|prepare_vip|meridian_baseline_6",
+      "text": "Prepare twin beds for Room M206 (Mrs Nwosu).",
+      "priority": "normal",
+      "department": "Housekeeping",
+      "status": "open",
+      "reasonCodes": [
+        "complaint_or_guest_follow_up",
+        "amenity_room_scoped",
+        "canonical_decision_seat",
+        "legacy_wording_enrich"
+      ]
+    }
+  ],
+  "reasoningMetadata": {
+    "noteCountAfterPipeline": 10,
+    "dependencyEdgeCount": 0,
+    "dependencyEdges": [],
+    "analyzeKeys": [
+      "engineVersion",
+      "signals",
+      "recommendations",
+      "checklist",
+      "facts",
+      "operationalMemories",
+      "guestObservations",
+      "guestObservationRejections",
+      "guestCandidates",
+      "guestCandidateRejections"
+    ],
+    "quietShift": null,
+    "decisionSeating": {
+      "briefingUsesCanonicalActions": true,
+      "recommendationsFromAnalyze": true,
+      "sharedCanonicalList": true,
+      "selectDecisionSeatsCaptured": true
+    }
+  },
+  "noteEvidence": [
+    {
+      "original": "**Ms Camille Brennan** — MS03 — anniversary. Notes say: champagne **if available**, fruit plate, handwritten welcome card. Stock check: champagne uncertain after wedding weekend — **do not hard-promise champagne**. Fruit + card still required.",
+      "section": "guest",
+      "rooms": [
+        "MS03"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_1",
+      "canonicalName": "Ms Camille Brennan",
+      "currentRoom": "ms03",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "guest_request",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "**Mr & Mrs Nwosu** — M206 — requested **twin beds**. Not done yet. HK aware — please complete before 16:00 arrival.",
+      "section": "tasks",
+      "rooms": [
+        "M206"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_2",
+      "canonicalName": "Mrs Nwosu",
+      "currentRoom": "m206",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "twin_setup",
+      "factStatus": "open"
+    },
+    {
+      "original": "VIP / AMENITY",
+      "section": "general",
+      "rooms": [],
+      "isVip": true,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "PM arrivals prep.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "TWINS",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "CANCELLED",
+      "section": "completed",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "done"
+    },
+    {
+      "original": "Balloons for M140 — guest cancelled — **cancelled**. Do not prep.",
+      "section": "completed",
+      "rooms": [
+        "M140"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "m140",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "done"
+    },
+    {
+      "original": "PAYMENT",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Brennan prepaid. Nwosu POA room only — no outstanding extras evidenced — **no collect**.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Shuttle 15:30 half — routine.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    }
+  ],
+  "reviewPlaceholder": {
+    "status": "PENDING_HUMAN_REVIEW",
+    "note": "Sprint 13 invalid-inventory validation only. Compare to frozen Human Expected Truth. Do not modify engine or scenarios."
+  }
+}

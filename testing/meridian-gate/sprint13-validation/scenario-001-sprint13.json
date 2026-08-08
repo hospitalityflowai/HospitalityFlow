@@ -1,0 +1,417 @@
+{
+  "label": "MERIDIAN GATE Sprint 13 invalid-inventory validation OUTPUT",
+  "scenarioId": "001",
+  "title": "Quiet Tuesday After Crew Turn",
+  "recordId": null,
+  "gitCommit": "a5a826fb8d04393858ebd1e210ceb024e0cbc4fd",
+  "engineVersion": 1,
+  "contractVersion": "E1",
+  "ranAt": "2026-08-08T14:08:35.385Z",
+  "pipeline": [
+    "extractOperationalFact / sectionFromFact",
+    "consolidateNotesByFacts",
+    "resolveOperationalEntities (Sprint 3)",
+    "electCanonicalCurrentState (Sprint 1)",
+    "resolveOperationalDependencies (Sprint 4)",
+    "buildCanonicalOperationalActions (Sprint 5/6/8/9/10/11 � current HEAD)",
+    "buildOrganisedSectionModel",
+    "buildTodaysBriefing (decision seating)",
+    "ShiftIntelligenceEngine.analyze (recommendation seating)"
+  ],
+  "scenarioMeta": {
+    "shift": "AM",
+    "operationalLoad": "Quiet / easy control",
+    "ambiguity": "No",
+    "departments": "Reception, Housekeeping, Spa",
+    "preparedBy": "Priya Nair — Duty Manager (fictional)",
+    "sourceFile": "scenario-001.md",
+    "scenarioFileSha256": "d9b8bb7097fbf6f5e2f7d5366ff884ee753fa4b0e02561c06396581ce3b1b443"
+  },
+  "humanExpectedTruth": {
+    "currentOperationalFacts": [
+      "SkyLink crew rooms M210–M215 departed; with HK; no inbound crew until tomorrow early AM.",
+      "Spa day trade opens 09:00; no overnight spa-suite arrival this morning; treatment rooms are not sellable guest rooms.",
+      "Ortega MS02 fruit DONE.",
+      "House quiet; M304 OOO multi-day is background, not live engineering chase this AM.",
+      "Lost property tagged for tomorrow flyer — information only."
+    ],
+    "open": [
+      "None material. This is an easy/quiet control: incoming AM should not invent urgent work."
+    ],
+    "monitor": [
+      "M304 multi-day OOO carpet — awareness / not released (not a live chase unless eng updates).",
+      "Tomorrow’s SkyLink inbound ~05:10 — future crew, not this AM’s OPEN."
+    ],
+    "information": [
+      "Occ ~58%; annex clean overnight; spa open routine; LP sunglasses tagged; shuttle 09:15 routine."
+    ],
+    "unresolved": [
+      "None."
+    ],
+    "completedMustNotReopen": [
+      "Ortega MS02 fruit — DONE — must not reopen as VIP prep OPEN.",
+      "SkyLink M210–M215 checkout — completed — must not reopen as crew allocation OPEN."
+    ],
+    "bindings": [
+      "Rooms: M210–M215 (crew out), MS02 (Ortega DONE), M304 (OOO multi-day), TR-2/TR-3 (treatment — not guest rooms).",
+      "Time: spa 09:00; shuttle 09:15; next crew 05:10 tomorrow."
+    ],
+    "mustNotInfer": [
+      "Inventing urgent OPEN work on a quiet control shift.",
+      "Selling spa treatment rooms as guest rooms.",
+      "Moving annex guests into Main (or vice versa) without evidence.",
+      "Reopening DONE Ortega fruit.",
+      "Inventing a payment collect with no debt evidence."
+    ],
+    "rationale": [
+      "Easy control: HF should tolerate a calm AM and avoid inventing priorities. “Nothing urgent” is acceptable here."
+    ],
+    "rawTruthMarkdown": "### Current operational facts\r\n- SkyLink crew rooms M210–M215 departed; with HK; no inbound crew until tomorrow early AM.\r\n- Spa day trade opens 09:00; no overnight spa-suite arrival this morning; treatment rooms are not sellable guest rooms.\r\n- Ortega MS02 fruit DONE.\r\n- House quiet; M304 OOO multi-day is background, not live engineering chase this AM.\r\n- Lost property tagged for tomorrow flyer — information only.\r\n\r\n### Expected OPEN actions\r\n- None material. This is an easy/quiet control: incoming AM should not invent urgent work.\r\n\r\n### Expected MONITOR items\r\n- M304 multi-day OOO carpet — awareness / not released (not a live chase unless eng updates).\r\n- Tomorrow’s SkyLink inbound ~05:10 — future crew, not this AM’s OPEN.\r\n\r\n### Expected INFORMATION\r\n- Occ ~58%; annex clean overnight; spa open routine; LP sunglasses tagged; shuttle 09:15 routine.\r\n\r\n### Expected UNRESOLVED / clarifications\r\n- None.\r\n\r\n### Explicit completed / resolved / superseded (must not reopen)\r\n- Ortega MS02 fruit — DONE — must not reopen as VIP prep OPEN.\r\n- SkyLink M210–M215 checkout — completed — must not reopen as crew allocation OPEN.\r\n\r\n### Important entity / room / time bindings\r\n- Rooms: M210–M215 (crew out), MS02 (Ortega DONE), M304 (OOO multi-day), TR-2/TR-3 (treatment — not guest rooms).\r\n- Time: spa 09:00; shuttle 09:15; next crew 05:10 tomorrow.\r\n\r\n### Must not invent\r\n- Inventing urgent OPEN work on a quiet control shift.\r\n- Selling spa treatment rooms as guest rooms.\r\n- Moving annex guests into Main (or vice versa) without evidence.\r\n- Reopening DONE Ortega fruit.\r\n- Inventing a payment collect with no debt evidence.\r\n\r\n### Short human rationale\r\nEasy control: HF should tolerate a calm AM and avoid inventing priorities. “Nothing urgent” is acceptable here."
+  },
+  "canonicalActions": [
+    {
+      "actionId": "act|ent_1|ms02|vip_prep_complete|type|meridian_baseline_10",
+      "actionState": "information",
+      "actionType": "operational_follow_up",
+      "facetKey": "vip:prep_complete",
+      "room": "MS02",
+      "rooms": [
+        "MS02"
+      ],
+      "entityId": "ent_1",
+      "canonicalName": "Ms Ortega",
+      "actionText": "Ms Ortega — VIP prep complete / awareness only",
+      "priorityBand": "P3",
+      "priorityScore": 78,
+      "priorityReasons": [
+        "vip_prep_complete"
+      ],
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "VIP fruit for MS02 (Ms Ortega) — already placed — DONE."
+    }
+  ],
+  "actionStateCounts": {
+    "open": 0,
+    "monitor": 0,
+    "information": 1,
+    "unresolved": 0,
+    "blocked": 0,
+    "resolved": 0,
+    "other": 0
+  },
+  "temporalAnchor": {
+    "handoverDate": "2026-09-08",
+    "shift": "AM",
+    "createdAt": "2026-09-08T07:15:00.000Z"
+  },
+  "decisionSeats": {
+    "seats": [],
+    "seatedCanonicalIds": [],
+    "source": "canonical_decision_seats",
+    "surface": "briefing",
+    "maxN": 5
+  },
+  "inputIntegrity": {
+    "inputAuthority": "scenario-XXX.md Original Input / Raw Source Notes",
+    "scenarioFileSha256": "d9b8bb7097fbf6f5e2f7d5366ff884ee753fa4b0e02561c06396581ce3b1b443",
+    "sourceSha256": "3aed46770187a18edb8c96b1d6dbe3e6d276c1a8ce1f340028dbc5e7b7252b6c",
+    "sourceLength": 618,
+    "lineCount": 11,
+    "brainContext": null,
+    "hotelSnapshotKeys": [],
+    "humanExpectedTruthPreserved": true,
+    "freezeStatus": "FROZEN BEFORE FIRST HF RUN"
+  },
+  "exactSourceInput": "AM handover — keep short, house is calm.\n\nCREW\nSkyLink crew block checked out of quiet wing M210–M215 on time (06:40). Rooms with HK now. No inbound crew until tomorrow 05:10.\n\nSPA\nSpa opens 09:00. Yesterday’s day-member list cleared. No hotel overnight spa suite arrivals this morning. Treatment rooms TR-2 / TR-3 are **not** guest rooms — do not sell.\n\nMAIN / ANNEX\nOcc ~58%. Annex CX board clean overnight — no carry-over tickets.\nVIP fruit for MS02 (Ms Ortega) — already placed — DONE.\n\nOTHER\nLost property sunglasses at Concierge — tagged, guest flying tomorrow — awareness only.\nBrasserie quiet; no events today.",
+  "hotelSnapshot": {},
+  "aiSummaryBriefing": "Shift status\nNo urgent guest-impacting priorities for the incoming team.",
+  "briefingParagraphs": [
+    "Shift status\nNo urgent guest-impacting priorities for the incoming team."
+  ],
+  "organisedHandover": {
+    "urgent": [],
+    "vip": [
+      "VIP fruit for MS02 (Ms Ortega) — already placed — DONE."
+    ],
+    "guest": [],
+    "maintenance": [],
+    "payments": [],
+    "events": [],
+    "preparations": [],
+    "openQuestions": [],
+    "tasks": [],
+    "inventory": [],
+    "deliveries": [],
+    "lostproperty": [
+      "Lost property sunglasses at Concierge — tagged, guest flying tomorrow — awareness only."
+    ],
+    "general": [
+      "AM handover — keep short, house is calm.",
+      "CREW",
+      "SkyLink crew block checked out of quiet wing M210–M215 on time (06:40). Rooms with HK now. No inbound crew until tomorrow 05:10.",
+      "SPA",
+      "MAIN / ANNEX",
+      "Occ ~58%. Annex CX board clean overnight — no carry-over tickets.",
+      "OTHER",
+      "Brasserie quiet; no events today."
+    ],
+    "completed": [
+      "Spa opens 09:00. Yesterday’s day-member list cleared. No hotel overnight spa suite arrivals this morning. Treatment rooms TR-2 / TR-3 are **not** guest rooms — do not sell."
+    ]
+  },
+  "recommendations": [
+    {
+      "id": "mskg8mnq-8logd",
+      "text": "Log and follow up lost item with Reception this shift.",
+      "priority": "normal",
+      "department": "Reception",
+      "status": "open",
+      "reasonCodes": [
+        "guest_follow_up",
+        "tomorrow_prep",
+        "complaint_or_guest_follow_up"
+      ]
+    }
+  ],
+  "reasoningMetadata": {
+    "noteCountAfterPipeline": 11,
+    "dependencyEdgeCount": 0,
+    "dependencyEdges": [],
+    "analyzeKeys": [
+      "engineVersion",
+      "signals",
+      "recommendations",
+      "checklist",
+      "facts",
+      "operationalMemories",
+      "guestObservations",
+      "guestObservationRejections",
+      "guestCandidates",
+      "guestCandidateRejections"
+    ],
+    "quietShift": null,
+    "decisionSeating": {
+      "briefingUsesCanonicalActions": true,
+      "recommendationsFromAnalyze": true,
+      "sharedCanonicalList": true,
+      "selectDecisionSeatsCaptured": true
+    }
+  },
+  "noteEvidence": [
+    {
+      "original": "VIP fruit for MS02 (Ms Ortega) — already placed — DONE.",
+      "section": "completed",
+      "rooms": [
+        "MS02"
+      ],
+      "isVip": true,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_1",
+      "canonicalName": "Ms Ortega",
+      "currentRoom": "ms02",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "vip_arrival",
+      "factStatus": "done"
+    },
+    {
+      "original": "Lost property sunglasses at Concierge — tagged, guest flying tomorrow — awareness only.",
+      "section": "lostproperty",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "lost_property",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "AM handover — keep short, house is calm.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "CREW",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "SkyLink crew block checked out of quiet wing M210–M215 on time (06:40). Rooms with HK now. No inbound crew until tomorrow 05:10.",
+      "section": "general",
+      "rooms": [
+        "M210",
+        "M215"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "m210",
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "SPA",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "MAIN / ANNEX",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Occ ~58%. Annex CX board clean overnight — no carry-over tickets.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "OTHER",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Brasserie quiet; no events today.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Spa opens 09:00. Yesterday’s day-member list cleared. No hotel overnight spa suite arrivals this morning. Treatment rooms TR-2 / TR-3 are **not** guest rooms — do not sell.",
+      "section": "completed",
+      "rooms": [
+        "TR-2",
+        "TR-3"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "tr-2",
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "done"
+    }
+  ],
+  "reviewPlaceholder": {
+    "status": "PENDING_HUMAN_REVIEW",
+    "note": "Sprint 13 invalid-inventory validation only. Compare to frozen Human Expected Truth. Do not modify engine or scenarios."
+  }
+}

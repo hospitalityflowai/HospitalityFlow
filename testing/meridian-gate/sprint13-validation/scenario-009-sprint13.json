@@ -1,0 +1,559 @@
+{
+  "label": "MERIDIAN GATE Sprint 13 invalid-inventory validation OUTPUT",
+  "scenarioId": "009",
+  "title": "Stale Annex Board vs Main Allocation Conflict",
+  "recordId": null,
+  "gitCommit": "a5a826fb8d04393858ebd1e210ceb024e0cbc4fd",
+  "engineVersion": 1,
+  "contractVersion": "E1",
+  "ranAt": "2026-08-08T14:08:35.385Z",
+  "pipeline": [
+    "extractOperationalFact / sectionFromFact",
+    "consolidateNotesByFacts",
+    "resolveOperationalEntities (Sprint 3)",
+    "electCanonicalCurrentState (Sprint 1)",
+    "resolveOperationalDependencies (Sprint 4)",
+    "buildCanonicalOperationalActions (Sprint 5/6/8/9/10/11 � current HEAD)",
+    "buildOrganisedSectionModel",
+    "buildTodaysBriefing (decision seating)",
+    "ShiftIntelligenceEngine.analyze (recommendation seating)"
+  ],
+  "scenarioMeta": {
+    "shift": "AM",
+    "operationalLoad": "Adversarial / ambiguous",
+    "ambiguity": "Yes (primary)",
+    "departments": "Reception, Housekeeping, Duty Manager",
+    "preparedBy": "Marcus Quinn — Duty Manager (fictional)",
+    "sourceFile": "scenario-009.md",
+    "scenarioFileSha256": "96a8a9b18cf24f2711f92f57cd52ec2547caf1e7af417e3317551788b1fa9a24"
+  },
+  "humanExpectedTruth": {
+    "currentOperationalFacts": [
+      "Talbot due ~15:00 allocated CX07; Coles appears checked out; HK treating CX07 as vacant dirty / cleaning.",
+      "Stale stayover flag conflicts with checkout + vacant dirty → clarification, not silent pick-a-winner beyond evidenced path; still must not invent Main assignment.",
+      "Talbot company billed — no £95 collect.",
+      "Adeyemi MS01 fruit DONE."
+    ],
+    "open": [
+      "Clarify / confirm CX07 readiness path for Talbot with DM/HK (conflict acknowledgement + clean completion) — allocation contradiction handling.",
+      "Continue without inventing a Main House room change unless DM writes it."
+    ],
+    "monitor": [
+      "Clean progress on CX07 toward 15:00 arrival."
+    ],
+    "information": [
+      "Adeyemi DONE; company-billed Talbot; shuttle routine."
+    ],
+    "unresolved": [
+      "Residual contradiction between stale stayover vs checked-out/vacant dirty until statuses aligned — intentional; do not invent “correct” Main room."
+    ],
+    "completedMustNotReopen": [
+      "Adeyemi fruit — DONE.",
+      "£95 collect stamp — void against company bill — must not OPEN collect."
+    ],
+    "bindings": [
+      "Talbot → CX07 annex; Coles prior; due ~15:00; Main move forbidden without DM writing."
+    ],
+    "mustNotInfer": [
+      "Different Main room for Talbot without written reallocation.",
+      "Silently dropping the conflict.",
+      "False £95 collect.",
+      "Reopening Adeyemi fruit."
+    ],
+    "rationale": [
+      "Adversarial annex status conflict: OPEN clarify; Meridian-native CX ID; payment fail-closed."
+    ],
+    "rawTruthMarkdown": "### Current operational facts\r\n- Talbot due ~15:00 allocated CX07; Coles appears checked out; HK treating CX07 as vacant dirty / cleaning.\r\n- Stale stayover flag conflicts with checkout + vacant dirty → clarification, not silent pick-a-winner beyond evidenced path; still must not invent Main assignment.\r\n- Talbot company billed — no £95 collect.\r\n- Adeyemi MS01 fruit DONE.\r\n\r\n### Expected OPEN actions\r\n- Clarify / confirm CX07 readiness path for Talbot with DM/HK (conflict acknowledgement + clean completion) — allocation contradiction handling.\r\n- Continue without inventing a Main House room change unless DM writes it.\r\n\r\n### Expected MONITOR items\r\n- Clean progress on CX07 toward 15:00 arrival.\r\n\r\n### Expected INFORMATION\r\n- Adeyemi DONE; company-billed Talbot; shuttle routine.\r\n\r\n### Expected UNRESOLVED / clarifications\r\n- Residual contradiction between stale stayover vs checked-out/vacant dirty until statuses aligned — intentional; do not invent “correct” Main room.\r\n\r\n### Explicit completed / resolved / superseded (must not reopen)\r\n- Adeyemi fruit — DONE.\r\n- £95 collect stamp — void against company bill — must not OPEN collect.\r\n\r\n### Important entity / room / time bindings\r\n- Talbot → CX07 annex; Coles prior; due ~15:00; Main move forbidden without DM writing.\r\n\r\n### Must not invent\r\n- Different Main room for Talbot without written reallocation.\r\n- Silently dropping the conflict.\r\n- False £95 collect.\r\n- Reopening Adeyemi fruit.\r\n\r\n### Short human rationale\r\nAdversarial annex status conflict: OPEN clarify; Meridian-native CX ID; payment fail-closed."
+  },
+  "canonicalActions": [
+    {
+      "actionId": "act|ent_1|cx07|occupancy_conflict_clarify|operational_follow_up|meridian_baseline_3",
+      "actionState": "open",
+      "actionType": "operational_follow_up",
+      "facetKey": "occupancy_conflict:clarify",
+      "room": "CX07",
+      "rooms": [
+        "CX07"
+      ],
+      "entityId": "ent_1",
+      "canonicalName": "Ms Renée",
+      "actionText": "Clarify Room CX07 status/readiness for Ms Renée — conflicting occupancy evidence (do not invent a different room)",
+      "priorityBand": "P1",
+      "priorityScore": 20,
+      "priorityReasons": [
+        "occupancy_conflict_clarify",
+        "sprint11_blocked_allocation",
+        "sprint12_room_token_identity"
+      ],
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "**Ms Renée Talbot** — booking MG-55201 — due ~15:00 — system allocation **CX07** (Courtyard Annex). | - Night report print (still pinned): CX07 **stayover dirty** — guest name **Mr Coles** | - Morning HK WhatsApp 08:10: “CX07 empty when opened — taking vacant dirty — starting cle"
+    },
+    {
+      "actionId": "act|ent_4|ms01|vip_prep_complete|type|meridian_baseline_15",
+      "actionState": "information",
+      "actionType": "operational_follow_up",
+      "facetKey": "vip:prep_complete",
+      "room": "MS01",
+      "rooms": [
+        "MS01"
+      ],
+      "entityId": "ent_4",
+      "canonicalName": "Mr Adeyemi",
+      "actionText": "Mr Adeyemi — VIP prep complete / awareness only",
+      "priorityBand": "P3",
+      "priorityScore": 78,
+      "priorityReasons": [
+        "vip_prep_complete"
+      ],
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "- Fruit MS01 (Mr Adeyemi) — already placed — DONE"
+    },
+    {
+      "actionId": "act|ent_3|noroom|payment_no_collect|type|meridian_baseline_14",
+      "actionState": "resolved",
+      "actionType": "operational_follow_up",
+      "facetKey": "payment:no_collect",
+      "room": "",
+      "rooms": [],
+      "entityId": "ent_3",
+      "canonicalName": "Northwind Legal",
+      "actionText": "Payment settled / no collect required",
+      "priorityBand": "exclude",
+      "priorityScore": 92,
+      "priorityReasons": [
+        "payment_no_collect"
+      ],
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "- “Collect £95 Talbot” — **no** — company billed (Northwind Legal) — £0 guest due"
+    }
+  ],
+  "actionStateCounts": {
+    "open": 1,
+    "monitor": 0,
+    "information": 1,
+    "unresolved": 0,
+    "blocked": 0,
+    "resolved": 1,
+    "other": 0
+  },
+  "temporalAnchor": {
+    "handoverDate": "2026-09-15",
+    "shift": "AM",
+    "createdAt": "2026-09-15T07:15:00.000Z"
+  },
+  "decisionSeats": {
+    "seats": [
+      {
+        "action": {
+          "actionId": "act|ent_1|cx07|occupancy_conflict_clarify|operational_follow_up|meridian_baseline_3",
+          "objectId": "",
+          "entityId": "ent_1",
+          "resolutionState": "unresolved",
+          "canonicalName": "Ms Renée",
+          "room": "CX07",
+          "rooms": [
+            "CX07"
+          ],
+          "actionType": "operational_follow_up",
+          "actionState": "open",
+          "facetKey": "occupancy_conflict:clarify",
+          "actionText": "Clarify Room CX07 status/readiness for Ms Renée — conflicting occupancy evidence (do not invent a different room)",
+          "displayLabel": "Clarify Room CX07 status/readiness for Ms Renée — conflicting occupancy evidence (do not invent a different room)",
+          "evidenceText": "**Ms Renée Talbot** — booking MG-55201 — due ~15:00 — system allocation **CX07** (Courtyard Annex). | - Night report print (still pinned): CX07 **stayover dirty** — guest name **Mr Coles** | - Morning HK WhatsApp 08:10: “CX07 empty when opened — taking vacant dirty — starting clean” | So: arrival assigned CX07; evidence says Coles out + HK cleaning; one stale stayover line. **Do not invent Main room** for Talbot. **Do not pretend there is no conflict** between stale stayover vs vacant dirty / checkout.",
+          "actionability": "actionable",
+          "blockedBy": [],
+          "blocks": [],
+          "priorityBand": "P1",
+          "priorityScore": 20,
+          "priorityReasons": [
+            "occupancy_conflict_clarify",
+            "sprint11_blocked_allocation",
+            "sprint12_room_token_identity"
+          ],
+          "currentStateEligible": true,
+          "sourceFactIds": [
+            "meridian-baseline-3"
+          ],
+          "confidence": 0.72,
+          "temporalScope": "",
+          "serviceDate": "",
+          "deadlineHint": "",
+          "relativeCue": "",
+          "temporalConfidence": "",
+          "temporalReasons": []
+        },
+        "actionId": "act|ent_1|cx07|occupancy_conflict_clarify|operational_follow_up|meridian_baseline_3",
+        "facetKey": "occupancy_conflict:clarify",
+        "actionState": "open",
+        "priorityBand": "P1",
+        "priorityScore": 20,
+        "seatKind": "do_now",
+        "canonicalSeed": true,
+        "workKey": "occupancy_conflict:clarify|CX07|ms renée|operational_follow_up",
+        "text": "Clarify Room CX07 status/readiness for Ms Renée — conflicting occupancy evidence (do not invent a different room)",
+        "legacy": null
+      }
+    ],
+    "seatedCanonicalIds": [
+      "act|ent_1|cx07|occupancy_conflict_clarify|operational_follow_up|meridian_baseline_3"
+    ],
+    "source": "canonical_decision_seats",
+    "surface": "briefing",
+    "maxN": 5
+  },
+  "inputIntegrity": {
+    "inputAuthority": "scenario-XXX.md Original Input / Raw Source Notes",
+    "scenarioFileSha256": "96a8a9b18cf24f2711f92f57cd52ec2547caf1e7af417e3317551788b1fa9a24",
+    "sourceSha256": "4ce7f850f7b92cb0827a34839cdd5e85b4ddcb25fc5f74f475900af14363c6d2",
+    "sourceLength": 933,
+    "lineCount": 13,
+    "brainContext": null,
+    "hotelSnapshotKeys": [],
+    "humanExpectedTruthPreserved": true,
+    "freezeStatus": "FROZEN BEFORE FIRST HF RUN"
+  },
+  "exactSourceInput": "Contradiction — escalate, don’t guess.\n\nARRIVAL\n**Ms Renée Talbot** — booking MG-55201 — due ~15:00 — system allocation **CX07** (Courtyard Annex).\n\nSTATUS CONFLICT\n- Night report print (still pinned): CX07 **stayover dirty** — guest name **Mr Coles**\n- Morning HK WhatsApp 08:10: “CX07 empty when opened — taking vacant dirty — starting clean”\n- PMS rack 08:25: Coles **checked out 07:05** express\n- Reservations chat: “Talbot must stay in annex for quiet — do not move to Main unless DM writes it”\n\nSo: arrival assigned CX07; evidence says Coles out + HK cleaning; one stale stayover line. **Do not invent Main room** for Talbot. **Do not pretend there is no conflict** between stale stayover vs vacant dirty / checkout.\n\nNoise trying to steal attention:\n- “Collect £95 Talbot” — **no** — company billed (Northwind Legal) — £0 guest due\n- Fruit MS01 (Mr Adeyemi) — already placed — DONE\n\nAlso real: shuttle 12:40 half load routine.",
+  "hotelSnapshot": {},
+  "aiSummaryBriefing": "Priority 1\nClarify Room CX07 status/readiness for Ms Renée — conflicting occupancy evidence (do not invent a different room).",
+  "briefingParagraphs": [
+    "Priority 1\nClarify Room CX07 status/readiness for Ms Renée — conflicting occupancy evidence (do not invent a different room)."
+  ],
+  "organisedHandover": {
+    "urgent": [],
+    "vip": [],
+    "guest": [
+      "- Reservations chat: “Talbot must stay in annex for quiet — do not move to Main unless DM writes it”"
+    ],
+    "maintenance": [],
+    "payments": [
+      "- “Collect £95 Talbot” — **no** — company billed (Northwind Legal) — £0 guest due"
+    ],
+    "events": [
+      "**Ms Renée Talbot** — booking MG-55201 — due ~15:00 — system allocation **CX07** (Courtyard Annex)."
+    ],
+    "preparations": [],
+    "openQuestions": [],
+    "tasks": [],
+    "inventory": [],
+    "deliveries": [],
+    "lostproperty": [],
+    "general": [
+      "So: arrival assigned CX07; evidence says Coles out + HK cleaning; one stale stayover line. **Do not invent Main room** for Talbot. **Do not pretend there is no conflict** between stale stayover vs vacant dirty / checkout.",
+      "Contradiction — escalate, don’t guess.",
+      "ARRIVAL",
+      "STATUS CONFLICT",
+      "- Night report print (still pinned): CX07 **stayover dirty** — guest name **Mr Coles**",
+      "- Morning HK WhatsApp 08:10: “CX07 empty when opened — taking vacant dirty — starting clean”",
+      "- PMS rack 08:25: Coles **checked out 07:05** express",
+      "Noise trying to steal attention:",
+      "Also real: shuttle 12:40 half load routine."
+    ],
+    "completed": [
+      "- Fruit MS01 (Mr Adeyemi) — already placed — DONE"
+    ]
+  },
+  "recommendations": [
+    {
+      "id": "act|ent_1|cx07|occupancy_conflict_clarify|operational_follow_up|meridian_baseline_3",
+      "text": "Clarify Room CX07 status/readiness for Ms Renée — conflicting occupancy evidence (do not invent a different room).",
+      "priority": "high",
+      "department": "Reception",
+      "status": "open",
+      "reasonCodes": [
+        "occupancy_conflict_clarify",
+        "sprint11_blocked_allocation",
+        "sprint12_room_token_identity",
+        "canonical_decision_seat"
+      ]
+    }
+  ],
+  "reasoningMetadata": {
+    "noteCountAfterPipeline": 13,
+    "dependencyEdgeCount": 0,
+    "dependencyEdges": [],
+    "analyzeKeys": [
+      "engineVersion",
+      "signals",
+      "recommendations",
+      "checklist",
+      "facts",
+      "operationalMemories",
+      "guestObservations",
+      "guestObservationRejections",
+      "guestCandidates",
+      "guestCandidateRejections"
+    ],
+    "quietShift": null,
+    "decisionSeating": {
+      "briefingUsesCanonicalActions": true,
+      "recommendationsFromAnalyze": true,
+      "sharedCanonicalList": true,
+      "selectDecisionSeatsCaptured": true
+    }
+  },
+  "noteEvidence": [
+    {
+      "original": "- Reservations chat: “Talbot must stay in annex for quiet — do not move to Main unless DM writes it”",
+      "section": "guest",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_2",
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "room_move",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Contradiction — escalate, don’t guess.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "ARRIVAL",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "**Ms Renée Talbot** — booking MG-55201 — due ~15:00 — system allocation **CX07** (Courtyard Annex).",
+      "section": "general",
+      "rooms": [
+        "CX07"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_1",
+      "canonicalName": "Ms Renée",
+      "currentRoom": "cx07",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "STATUS CONFLICT",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- Night report print (still pinned): CX07 **stayover dirty** — guest name **Mr Coles**",
+      "section": "general",
+      "rooms": [
+        "CX07"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_1",
+      "canonicalName": "Ms Renée",
+      "currentRoom": "cx07",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- Morning HK WhatsApp 08:10: “CX07 empty when opened — taking vacant dirty — starting clean”",
+      "section": "general",
+      "rooms": [
+        "CX07"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_1",
+      "canonicalName": "Ms Renée",
+      "currentRoom": "cx07",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- PMS rack 08:25: Coles **checked out 07:05** express",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "So: arrival assigned CX07; evidence says Coles out + HK cleaning; one stale stayover line. **Do not invent Main room** for Talbot. **Do not pretend there is no conflict** between stale stayover vs vacant dirty / checkout.",
+      "section": "general",
+      "rooms": [
+        "CX07"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_1",
+      "canonicalName": "Ms Renée",
+      "currentRoom": "cx07",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Noise trying to steal attention:",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- “Collect £95 Talbot” — **no** — company billed (Northwind Legal) — £0 guest due",
+      "section": "payments",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_3",
+      "canonicalName": "Northwind Legal",
+      "currentRoom": null,
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "done"
+    },
+    {
+      "original": "Also real: shuttle 12:40 half load routine.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- Fruit MS01 (Mr Adeyemi) — already placed — DONE",
+      "section": "completed",
+      "rooms": [
+        "MS01"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_4",
+      "canonicalName": "Mr Adeyemi",
+      "currentRoom": "ms01",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "done"
+    }
+  ],
+  "reviewPlaceholder": {
+    "status": "PENDING_HUMAN_REVIEW",
+    "note": "Sprint 13 invalid-inventory validation only. Compare to frozen Human Expected Truth. Do not modify engine or scenarios."
+  }
+}
