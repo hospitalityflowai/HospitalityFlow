@@ -1545,6 +1545,10 @@
       return "WC";
     }
     if (/\bwc\b/i.test(src) && !/\bduty\s+manager\s+safe|lost\s+prop/i.test(src)) return "WC";
+    if (/\b(?:slow\s+)?(?:basin\s+)?drain\b|\bbasin\b.{0,24}\bdrain\b|\bdrain\b.{0,24}\bbasin\b/i.test(src)) {
+      return "drain";
+    }
+    if (/\bextractor\b/i.test(src)) return "extractor";
     if (/\bshower\b|\bleak(?:ing)?\b|\bdrip(?:ping)?\b|\bmixer\b|\bbathroom\b/i.test(src)) return "shower/leak";
     if (/\btv\b|\bremote\b/i.test(src)) return "TV remote";
     if (/\bsafe\b|\bkeypad\b/i.test(src)) return "safe";
@@ -2726,8 +2730,17 @@
       if (!fact.actionVerb && fact.status === FACT_STATUS.requested) fact.actionVerb = "confirm";
     }
 
-    if (/\bwake(?:[\s-]*up)?\b/i.test(detectText) || /\bwakeup\b/i.test(detectText) ||
-        /\bwake\s*\d{3,4}\b/i.test(sourceText)) {
+    /*
+     * Wake subject — do not treat negated "don't wake eng" as a wake-up request
+     * (Sprint 15: soft maint lines must keep maintenance subject).
+     * Accept ASCII and curly apostrophes common in pasted handovers.
+     */
+    var wakeDetect = String(detectText || "").replace(/[\u2018\u2019\u02BC]/g, "'");
+    var hasWakeCue = /\bwake(?:[\s-]*up)?\b/i.test(wakeDetect) || /\bwakeup\b/i.test(wakeDetect) ||
+      /\bwake\s*\d{3,4}\b/i.test(sourceText);
+    var wakeNegated = /\b(?:do\s+not|don'?t|dont)\s+wake\b/i.test(wakeDetect) ||
+      /\b(?:do\s+not|don'?t|dont)\s+wake\s*(?:up\b|eng(?:ineer)?\b)/i.test(wakeDetect);
+    if (hasWakeCue && !wakeNegated) {
       fact.subject = "wake_up";
       if (!fact.ownerDept) fact.ownerDept = "Reception";
       if (!fact.actionVerb && fact.status !== FACT_STATUS.confirmed && fact.status !== FACT_STATUS.done) {
@@ -2776,7 +2789,7 @@
       }
     }
 
-    if (/\b(?:air\s*con|a\/c|\bac\b|wc\b|toilet|leak|leaking|broken|faulty|repair|maintenance|not cooling|heating|hot\s*water|no\s+hot\s+water|hand\s*dryer|safe\s+keypad|\bon\s+hold\s+parts)\b/i.test(detectText) &&
+    if (/\b(?:air\s*con|a\/c|\bac\b|wc\b|toilet|leak|leaking|broken|faulty|repair|maintenance|not cooling|heating|hot\s*water|no\s+hot\s+water|hand\s*dryer|safe\s+keypad|\bon\s+hold\s+parts|drain|basin|extractor|plunge[rd]?)\b/i.test(detectText) &&
         !fact.subject) {
       fact.subject = "maintenance";
       if (!fact.ownerDept) fact.ownerDept = "Maintenance";
@@ -2875,9 +2888,19 @@
 
     var faultType = extractFaultType(detectText) || extractFaultType(sourceText);
     if (faultType && (fact.subject === "maintenance" || !fact.subject ||
-        /\b(?:air\s*con|a\/c|\bac\b|leak|broken|faulty|repair|not cooling|heating|hot\s*water|safe|dryer)\b/i.test(detectText))) {
+        (fact.subject === "wake_up" && wakeNegated) ||
+        /\b(?:air\s*con|a\/c|\bac\b|leak|broken|faulty|repair|not cooling|heating|hot\s*water|safe|dryer|drain|basin|extractor)\b/i.test(detectText))) {
       fact.faultType = faultType;
-      if (!fact.subject) {
+      /*
+       * Fault evidence wins over false wake from "don't wake eng".
+       * Also reclaim drain/extractor faults that still landed on wake_up.
+       */
+      var reclaimWakeForFault = fact.subject === "wake_up" && (
+        wakeNegated ||
+        ((faultType === "drain" || faultType === "extractor") &&
+          /\b(?:monitor|ok(?:ay)?\s+for\s+tonight|not\s+a\s+release|stayable|eng(?:ineer)?)\b/i.test(detectText))
+      );
+      if (!fact.subject || reclaimWakeForFault) {
         fact.subject = "maintenance";
         if (!fact.ownerDept) fact.ownerDept = "Maintenance";
         if (!fact.actionVerb) fact.actionVerb = "follow_up";

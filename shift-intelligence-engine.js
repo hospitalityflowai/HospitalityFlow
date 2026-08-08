@@ -1632,6 +1632,8 @@
   function normalizeStateResolutionText(text) {
     return String(text || "")
       .replace(/[*_`~]+/g, " ")
+      .replace(/[\u2018\u2019\u02BC]/g, "'")
+      .replace(/[\u201C\u201D]/g, "\"")
       .replace(/\s+/g, " ")
       .trim()
       .toLowerCase();
@@ -1649,21 +1651,75 @@
     var text = normalizeStateResolutionText(src);
     if (!text) return false;
     if (textHasComfortMitigation(text)) return true;
-    return /\b(?:ok|okay)\s+to\s+stay\b/.test(text) ||
-      /\bmitigated\b/.test(text) ||
+    var softMonitor =
       /\bplease\s+monitor\b/.test(text) ||
       /\bmonitor\s+\d{1,4}\b/.test(text) ||
-      /\bmonitor\b.{0,24}\bovernight\b/.test(text) ||
+      /\bmonitor\b.{0,40}\bovernight\b/.test(text) ||
+      /\bovernight\b.{0,40}\bmonitor\b/.test(text) ||
+      (/\bmonitor\b/.test(text) &&
+        (/\bovernight\b/.test(text) ||
+          /\b(?:ok|okay)\s+(?:for\s+)?(?:tonight|overnight)\b/.test(text) ||
+          /\beng(?:ineer)?\b.{0,24}\btomorrow\b/.test(text) ||
+          /\btomorrow\b.{0,24}\beng(?:ineer)?\b/.test(text) ||
+          /\blook\s+tomorrow\b/.test(text)));
+    return /\b(?:ok|okay)\s+to\s+stay\b/.test(text) ||
+      /\b(?:ok|okay)\s+for\s+tonight\b/.test(text) ||
+      /\b(?:ok|okay)\s+overnight\b/.test(text) ||
+      /\bguest\s+(?:is\s+)?(?:ok|okay)\s+overnight\b/.test(text) ||
+      /\bmitigated\b/.test(text) ||
+      /\bnot\s+a\s+release\s+issue\b/.test(text) ||
+      /\broom\s+stayable\b/.test(text) ||
+      softMonitor ||
       /\bnot\s+a\s+live\s+chase\b/.test(text) ||
       /\bnot\s+coming\s+tonight\s+unless\s+worsens\b/.test(text) ||
+      /\b(?:do\s+not|don'?t|dont)\s+wake\s+eng(?:ineer)?\b/.test(text) ||
       /\boffered\s+room\s+move\b/.test(text) && /\bdeclined\b/.test(text) ||
       /\bdeclined\s+(?:for\s+tonight|a\s+(?:room\s+)?move|room\s+move)\b/.test(text) ||
+      (/\bextractor\b/.test(text) && /\bwindow\s+open(?:ed)?\b/.test(text)) ||
       (/\bextractor\s+switched\s+off\b/.test(text) && /\bwindow\s+opened\b/.test(text));
   }
 
   function textHasTomorrowEngineerOrWork(src) {
-    return /\b(?:engineer|contractor|supplier).{0,24}tomorrow|tomorrow.{0,24}(?:engineer|contractor|supplier|inspect|attendance)|attend(?:ance)?\s+tomorrow|eta\s+tomorrow\b/.test(src) ||
-      (/\btomorrow\b/.test(src) && /\b(?:engineer|fix|attend|inspect|repair)\b/.test(src));
+    var text = normalizeStateResolutionText(src);
+    return /\b(?:engineer|eng|contractor|supplier).{0,24}tomorrow|tomorrow.{0,24}(?:engineer|eng|contractor|supplier|inspect|attendance)|attend(?:ance)?\s+tomorrow|eta\s+tomorrow|look\s+tomorrow\b/.test(text) ||
+      (/\btomorrow\b/.test(text) && /\b(?:engineer|\beng\b|fix|attend|inspect|repair|look)\b/.test(text));
+  }
+
+  /**
+   * Sprint 15 — section headings / scaffold lines must not mint OPEN maintenance.
+   * Concrete room/fault body still harvests normally.
+   */
+  function isEmptyMaintenanceScaffold(src) {
+    var text = normalizeStateResolutionText(src);
+    if (!text) return true;
+    if (/^(?:maintenance|payments?|crew|valet|spa|rooms?|events?|pavilion|other)$/.test(text)) {
+      return true;
+    }
+    var stripped = text
+      .replace(/\b(?:maintenance|payments?|crew|valet|spa|rooms?|events?|pavilion|other|night|handover)\b/g, " ")
+      .replace(/\bone\s+real\s+maint\.?\b/g, " ")
+      .replace(/[^a-z0-9]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (!stripped) return true;
+    if (stripped.length <= 16 && !/\d/.test(stripped) &&
+        !/\b(?:leak|drain|basin|extractor|smell|buzz|shower|fault|broken|ooo|flood)\b/.test(stripped)) {
+      return true;
+    }
+    return false;
+  }
+
+  /** Active guest/safety impact that must keep maintenance OPEN (not soft MONITOR). */
+  function textHasActiveUncontrolledMaintImpact(src) {
+    var text = normalizeStateResolutionText(src);
+    if (!text) return false;
+    /* Conditional escalate language is not current uncontrolled impact. */
+    if (/\bunless\s+(?:it\s+)?worsens\b/.test(text) ||
+        /\bunless\s+worsens\b/.test(text) ||
+        /\bif\s+(?:smell\s+)?returns\b/.test(text)) {
+      return false;
+    }
+    return /\b(?:flooding|evacuat|unsafe|uncontrolled|still\s+leaking|active\s+leak|cannot\s+stay|not\s+stayable|room\s+unusable)\b/.test(text);
   }
 
   function textHasCosmeticOrNoAction(src) {
@@ -10435,7 +10491,7 @@
       if (!n) return;
       var t = noteEvidenceText(n, n.fact);
       if (!t) return;
-      if (!/\b(?:smell|maint|engineer|inspect|monitor|ooo|buzz|leak|cosmetic|airing|extractor|mitigat|shower|fault|attend)\b/i.test(t)) {
+      if (!/\b(?:smell|maint|engineer|\beng\b|inspect|monitor|ooo|buzz|leak|cosmetic|airing|extractor|mitigat|shower|fault|attend|drain|basin|plunge)\b/i.test(t)) {
         return;
       }
       var rs = ((n.fact && n.fact.rooms) || n.rooms || []).map(function (r) {
@@ -11263,11 +11319,16 @@
             new RegExp(
               "\\b(?:delivered|done|completed|resolved|placed)\\b.{0,80}\\b" + reqToken + "\\b"
             ).test(reqNorm);
-          /* Common short labels: "extra pillows" / pillows */
+          /* Common short labels: "extra pillows" / pillows; "iron" vs expanded label */
           if (!reqNearDone && /\bpillows?\b/.test(reqNorm)) {
             reqNearDone =
               /\bpillows?\b.{0,80}\b(?:delivered|done|completed)\b/.test(reqNorm) ||
               /\b(?:delivered|done|completed)\b.{0,80}\bpillows?\b/.test(reqNorm);
+          }
+          if (!reqNearDone && /\biron/.test(reqNorm)) {
+            reqNearDone =
+              /\biron(?:ing)?(?:\s+board)?\b.{0,80}\b(?:delivered|done|completed|placed)\b/.test(reqNorm) ||
+              /\b(?:delivered|done|completed|placed)\b.{0,80}\biron(?:ing)?(?:\s+board)?\b/.test(reqNorm);
           }
           var reqTerminalDone =
             reqNearDone &&
@@ -11586,11 +11647,15 @@
         return;
       }
 
-      /* Maintenance open follow-up — Sprint 6/10: tomorrow inspect / mitigated MONITOR. */
+      /* Maintenance open follow-up — Sprint 6/10/15: tomorrow inspect / mitigated MONITOR. */
       if (objectInfo.type === OPERATIONAL_OBJECT_TYPE.maintenance || subject === "maintenance") {
         var maintSrc = src;
         if (currentRoom && roomMaintCorpus[currentRoom] && roomMaintCorpus[currentRoom].length) {
           maintSrc = roomMaintCorpus[currentRoom].join(" | ");
+        }
+        /* Sprint 15: bare MAINTENANCE / scaffold headings must not mint OPEN chase. */
+        if (isEmptyMaintenanceScaffold(maintSrc) && isEmptyMaintenanceScaffold(src)) {
+          return;
         }
         var maintTemporal = resolveTemporalEligibility(maintSrc, fact, note, anchor, { deadlineHint: "inspect" });
         var maintState = actionability === ACTIONABILITY.blocked
@@ -11602,6 +11667,10 @@
         var maintPriBand = pri.priorityBand === PRIORITY_BAND.exclude ? PRIORITY_BAND.P2 : pri.priorityBand;
         var maintPriScore = Math.min(pri.priorityScore, 28);
         var maintReasons = pri.priorityReasons.slice();
+        var softMitigated = textHasExplicitOvernightMitigation(maintSrc) ||
+          textHasExplicitOvernightMitigation(src);
+        var uncontrolledImpact = textHasActiveUncontrolledMaintImpact(maintSrc) ||
+          textHasActiveUncontrolledMaintImpact(src);
         if (textHasCosmeticOrNoAction(maintSrc) || textHasCosmeticOrNoAction(src)) {
           maintState = ACTION_STATE.information;
           maintText = currentRoom
@@ -11610,18 +11679,19 @@
           maintPriBand = PRIORITY_BAND.P3;
           maintPriScore = 78;
           maintReasons = maintReasons.concat(["cosmetic_or_monitor_only", "sprint10_state_resolution"]);
-        } else if (textHasExplicitOvernightMitigation(maintSrc) ||
+        } else if (!uncontrolledImpact && (softMitigated ||
             (/\btomorrow\b/i.test(maintSrc) && /\binspect\b/i.test(maintSrc)) ||
             (temporalIsFutureOrMonitor(maintTemporal) && /\binspect\b/i.test(maintSrc)) ||
             /\bplease\s+monitor\b/i.test(maintSrc) ||
-            /\bmonitor\b.{0,32}\bovernight\b/i.test(maintSrc) ||
+            /\bmonitor\b.{0,40}\bovernight\b/i.test(maintSrc) ||
+            /\bovernight\b.{0,40}\bmonitor\b/i.test(maintSrc) ||
             (/\booo\b/i.test(maintSrc) &&
               (/\bmaybe\s+dry\s+tomorrow\b/i.test(maintSrc) ||
                 /\bnot\s+released\b/i.test(maintSrc) ||
                 /\bnot\s+a\s+release\b/i.test(maintSrc) ||
                 /\bhopefully\b/i.test(maintSrc) ||
                 /\bdo\s+not\s+(?:mark\s+)?(?:\w+\s+)?sellable\b/i.test(maintSrc) ||
-                /\bdon'?t\s+chase\s+ooo\b/i.test(maintSrc)))) {
+                /\bdon'?t\s+chase\s+ooo\b/i.test(maintSrc))))) {
           maintState = ACTION_STATE.monitor;
           if (/\btomorrow\b/i.test(maintSrc) && /\binspect\b/i.test(maintSrc)) {
             maintText = currentRoom
@@ -12049,7 +12119,10 @@
       if (a.actionState === ACTION_STATE.monitor &&
           /maintenance:tomorrow_inspect/i.test(a.facetKey || "") &&
           /before further guest impact|Follow up.*maintenance|maintenance.*this shift/i.test(text) &&
-          (!a.room || new RegExp("\\b" + a.room + "\\b").test(text))) {
+          (!a.room ||
+            new RegExp("\\b" + String(a.room).replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\b", "i").test(text) ||
+            (!/\broom\s+[a-z]{0,3}\d{1,4}\b/i.test(text) &&
+              /follow\s+up(?:\s+with)?\s+maintenance|before further guest impact|fault remains open/i.test(text)))) {
         return true;
       }
       if (a.actionState === ACTION_STATE.monitor &&
@@ -12503,7 +12576,17 @@
         var text = String(rec && rec.text || "");
         if (!/maintenance|fault|before further guest impact/i.test(text)) return true;
         return !monitorMaint.some(function (a) {
-          return !a.room || new RegExp("\\b" + a.room + "\\b").test(text);
+          if (!a.room) {
+            return /follow up with maintenance|before further guest impact/i.test(text);
+          }
+          var roomRe = new RegExp(
+            "\\b" + String(a.room).replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\b",
+            "i"
+          );
+          /* Same room chase, or roomless scaffold chase while a room MONITOR owns soft maint. */
+          return roomRe.test(text) ||
+            (!/\broom\s+[a-z]{0,3}\d{1,4}\b/i.test(text) &&
+              /follow\s+up(?:\s+with)?\s+maintenance|before further guest impact|fault remains open/i.test(text));
         });
       });
       monitorMaint.forEach(function (action) {
