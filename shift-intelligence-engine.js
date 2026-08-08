@@ -6797,9 +6797,18 @@
 
     if (subject === "wake_up" || subject === "departure_followup") {
       if (fact.status === "done") return null;
+      /* Sprint 14 — clock times alone never invent wake-up work. */
       var wakeRaw = (src.match(
         /\bwake(?:[\s-]*up)?(?:\s+call)?(?:\s+for)?(?:\s+(?:rm\.?|room)\s*\d+[a-z]?)?(?:\s+at)?\s*(\d{3,4}|\d{1,2}[:.]\d{2}|\d{1,2}\s*(?:am|pm))/i
-      ) || src.match(/\b(\d{1,2}[:.]\d{2})\b/) || [])[1];
+      ) || [])[1];
+      if (!wakeRaw && !/\bwake/i.test(src)) {
+        /* departure_followup without wake evidence — do not mint a wake from bare clock. */
+        if (subject === "departure_followup") {
+          /* fall through to taxi-only handling below via empty wakeNorm */
+        } else {
+          return null;
+        }
+      }
       var wakeNorm = wakeRaw && global.AiWritingEngine && global.AiWritingEngine.normalizeTimelineTime
         ? global.AiWritingEngine.normalizeTimelineTime(wakeRaw)
         : wakeRaw;
@@ -6816,7 +6825,7 @@
           department: resolveDepartment([dept, "Reception", "Night Team"], "Reception", departments)
         };
       }
-      if (wakeNorm || subject === "wake_up") {
+      if (wakeNorm && /\bwake/i.test(src)) {
         return {
           text: withReason(
             "Complete the" + (wakeNorm ? " " + wakeNorm : "") +
@@ -7000,14 +7009,16 @@
     }
     if (action === NEXT_ACTION_KIND.complete_timed_actions) {
       if (!roomRef) return null;
+      /* Sprint 14 — require explicit wake evidence; bare clocks are not wake work. */
       var wakeRaw = (src.match(
         /\bwake(?:[\s-]*up)?(?:\s+call)?(?:\s+for)?(?:\s+(?:rm\.?|room)\s*\d+[a-z]?)?(?:\s+at)?\s*(\d{3,4}|\d{1,2}[:.]\d{2}|\d{1,2}\s*(?:am|pm))/i
       ) || [])[1];
       var taxiRaw = (src.match(
         /\b(?:addison(?:\s+lee)?|taxi|transfer)(?:\s+booked)?(?:\s+for)?\s*(\d{3,4}|\d{1,2}[:.]\d{2}|\d{1,2}\s*(?:am|pm))/i
       ) || [])[1];
-      var wakeNorm = wakeRaw && global.AiWritingEngine && global.AiWritingEngine.normalizeTimelineTime
-        ? global.AiWritingEngine.normalizeTimelineTime(wakeRaw) : wakeRaw;
+      var wakeNorm = wakeRaw && /\bwake/i.test(src) &&
+        global.AiWritingEngine && global.AiWritingEngine.normalizeTimelineTime
+        ? global.AiWritingEngine.normalizeTimelineTime(wakeRaw) : (wakeRaw && /\bwake/i.test(src) ? wakeRaw : "");
       var taxiNorm = taxiRaw && global.AiWritingEngine && global.AiWritingEngine.normalizeTimelineTime
         ? global.AiWritingEngine.normalizeTimelineTime(taxiRaw) : taxiRaw;
       if (wakeNorm && taxiNorm) {
@@ -9996,6 +10007,401 @@
   }
 
   /**
+   * Sprint 14 — generic timed guest-transport cues (not hotel-branded keyword packs).
+   * Requires arrangement language + operational time; clock alone is never enough.
+   */
+  function hasHotelTransportArrangementCue(blob) {
+    var b = normalizeStateResolutionText(blob || "");
+    if (!b) return false;
+    if (/\bshuttle\b/.test(b)) return true;
+    if (/\bairport\s+loop\b/.test(b)) return true;
+    if (/\b(?:public\s+)?loop\b/.test(b) && /\b(?:pax|passenger|driver|seat)\b/.test(b)) return true;
+    if (/\bvan\s+returns?\b/.test(b)) return true;
+    if (/\bkeys?\b/.test(b) && /\b(?:welcome|ready)\b/.test(b) &&
+        /\b(?:return|van|shuttle|loop)\b/.test(b)) {
+      return true;
+    }
+    if (/\bcrew\s+drop\b/.test(b)) return true;
+    if (/\b(?:pick[\s-]?up|meet)\b/.test(b) && /\b(?:airport|shuttle|loop|van)\b/.test(b)) {
+      return true;
+    }
+    return false;
+  }
+
+  function hasTransportOperationalTime(blob) {
+    var b = String(blob || "");
+    return /\b\d{1,2}:\d{2}\b/.test(b) || /\b\d{1,2}\s*(?:am|pm)\b/i.test(b);
+  }
+
+  function hasTransportConflictCue(blob) {
+    var b = normalizeStateResolutionText(blob || "");
+    if (!b) return false;
+    if (!hasHotelTransportArrangementCue(b) && !/\b(?:taxi|wheelchair|accessible)\b/.test(b)) {
+      return false;
+    }
+    if (/\bnot\s+decided\b/.test(b)) return true;
+    if (/\bdo\s+not\s+remove\b/.test(b) && /\bsilent/.test(b)) return true;
+    if (/\bconfirm\s+if\b/.test(b) && /\b(?:instead|or)\b/.test(b)) return true;
+    if (/\binstead\s+or\b/.test(b)) return true;
+    if (/\bshort\s+one\b/.test(b) && /\b(?:seat|wheelchair|accessible)\b/.test(b)) return true;
+    if (/\bwheelchair[\s-]?capable\b/.test(b) ||
+        (/\baccessible\b/.test(b) && /\b(?:seat|taxi|shuttle|loop)\b/.test(b))) {
+      if (/\bvs\b/.test(b) || /\bor\b/.test(b) || /\binstead\b/.test(b) ||
+          (b.match(/\b\d{1,2}:\d{2}\b/g) || []).length >= 2) {
+        return true;
+      }
+    }
+    var times = b.match(/\b\d{1,2}:\d{2}\b/g) || [];
+    if (times.length >= 2 && hasHotelTransportArrangementCue(b) &&
+        (/\bor\b/.test(b) || /\binstead\b/.test(b) || /\bconfirm\b/.test(b))) {
+      return true;
+    }
+    return false;
+  }
+
+  function isTransportWorkDone(blob) {
+    var b = normalizeStateResolutionText(blob || "");
+    return /\b(?:completed|done)\b/.test(b) &&
+      /\b(?:shuttle|drop|loop|crew\s+drop|transport)\b/.test(b);
+  }
+
+  var _lastTimedTransportIndex = null;
+
+  function guestOrRoomInTransportConflict(index, name, room) {
+    if (!index || !index.conflicts) return false;
+    var n = String(name || "").toLowerCase();
+    var r = normalizeRoomNumber(room) || String(room || "").toUpperCase();
+    return index.conflicts.some(function (c) {
+      if (!c) return false;
+      if (r && (c.room === r || (c.rooms || []).indexOf(r) !== -1)) return true;
+      if (n && c.name && String(c.name).toLowerCase().indexOf(n.replace(/^acc\s+/, "")) !== -1) {
+        return true;
+      }
+      if (n && c.name && n.indexOf(String(c.name).toLowerCase().replace(/^mr\s+|^mrs?\s+|^ms\s+/i, "")) !== -1) {
+        return true;
+      }
+      return false;
+    });
+  }
+
+  function shouldSuppressLuggageForTransport(src, name, room, index) {
+    var blob = normalizeStateResolutionText(src || "");
+    if (/\buntil\s+shuttle\s+decision\b/.test(blob)) return true;
+    if (hasTransportConflictCue(blob)) return true;
+    if (guestOrRoomInTransportConflict(index, name, room) &&
+        (/\b(?:shuttle|loop|wheelchair|accessible\s+taxi|transport)\b/.test(blob) ||
+          /\buntil\s+shuttle\b/.test(blob))) {
+      /* EA for a different room on the same line may still be genuine — only suppress
+       * when the bound room is the transport-conflict room or no distinct EA room. */
+      var eaRoom = (blob.match(/\b((?:[A-Z]{1,3}-?\d{1,4})|(?:\d{1,4}[A-Z]?))\b(?:[^.\\n]{0,40}\bearly\s+arrival|\bEA\b)/i) ||
+        blob.match(/\bearly\s+arrival[^.\\n]{0,40}\b((?:[A-Z]{1,3}-?\d{1,4})|(?:\d{1,4}[A-Z]?))\b/i) || []);
+      var eaTok = eaRoom[1] ? (normalizeRoomNumber(eaRoom[1]) || String(eaRoom[1]).toUpperCase()) : "";
+      var bound = normalizeRoomNumber(room) || String(room || "").toUpperCase();
+      if (eaTok && bound && eaTok !== bound) return false;
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Sprint 14 — timed guest transport honour + conflict clarify.
+   * Fail closed: never invent private taxi / wake / unsupported modes from clocks alone.
+   */
+  function buildTimedTransportIndex(notes) {
+    var honourParties = []; /* { names[], rooms[], deadline, evidence, factIds[] } */
+    var conflicts = []; /* { name, room, rooms[], evidence, factId, accessible } */
+    var corpus = [];
+
+    function extractGuestNames(text) {
+      var out = [];
+      var t = String(text || "");
+      var couple = t.match(/\bMr\s*&\s*Mrs\s+([A-Z][A-Za-z.'\-]+)\b/gi) || [];
+      couple.forEach(function (m) {
+        var g = m.replace(/\s+/g, " ").trim();
+        if (out.indexOf(g) === -1) out.push(g);
+      });
+      var titled = t.match(
+        /\b((?:Mrs?|Ms|Miss|Dr)\.??\s+[A-Z][A-Za-z.'\-]+(?:\s+[A-Z][A-Za-z.'\-]+)?)\b/g
+      ) || [];
+      titled.forEach(function (m) {
+        var g = String(m).replace(/\s+/g, " ").trim();
+        if (/^(?:Mrs?|Ms|Miss|Dr)\.?$/i.test(g)) return;
+        if (out.indexOf(g) === -1) out.push(g);
+      });
+      return out;
+    }
+
+    function extractDeadline(text) {
+      var t = String(text || "");
+      var ret = t.match(/\breturns?\s*(?:~|about|around)?\s*(\d{1,2}:\d{2})\b/i) ||
+        t.match(/\bbefore\s*(?:van\s+returns?\s*)?(?:~|about|around)?\s*(\d{1,2}:\d{2})\b/i) ||
+        t.match(/\b(?:loop|shuttle|van)\s+[—\-:]?\s*(\d{1,2}:\d{2})\b/i) ||
+        t.match(/\b(\d{1,2}:\d{2})\s*[—\-].{0,40}\b(?:loop|shuttle|pax)\b/i) ||
+        t.match(/\b(\d{1,2}:\d{2})\b/);
+      return ret ? ret[1] : "";
+    }
+
+    (notes || []).forEach(function (note, index) {
+      if (!note) return;
+      var src = noteEvidenceText(note, note.fact);
+      if (!src) return;
+      var norm = normalizeStateResolutionText(src);
+      var factId = note._neutralFactId || (note.fact && note.fact.id) || ("note-" + index);
+      var rooms = ((note.fact && note.fact.rooms) || note.rooms || []).map(function (r) {
+        return normalizeRoomNumber(r) || String(r);
+      }).filter(Boolean);
+
+      if (!hasHotelTransportArrangementCue(norm) && !hasTransportConflictCue(norm) &&
+          !/\buntil\s+shuttle\s+decision\b/.test(norm)) {
+        return;
+      }
+      if (isTransportWorkDone(norm) && !hasTransportConflictCue(norm)) {
+        return;
+      }
+      corpus.push(src);
+
+      if (hasTransportConflictCue(norm) || /\buntil\s+shuttle\s+decision\b/.test(norm)) {
+        var cNames = extractGuestNames(src);
+        var cName = note.canonicalName || (note.fact && (note.fact.canonicalName || note.fact.guestName)) ||
+          cNames[0] || "";
+        if (/^acc\s+/i.test(cName)) cName = cName.replace(/^acc\s+/i, "");
+        var cRoom = rooms[0] || "";
+        var acc = /\b(?:wheelchair|accessible)\b/.test(norm) || /\bacc\b/i.test(src);
+        conflicts.push({
+          name: cName,
+          room: cRoom,
+          rooms: rooms.slice(),
+          evidence: src,
+          factId: factId,
+          accessible: acc
+        });
+      }
+
+      if (hasHotelTransportArrangementCue(norm) && hasTransportOperationalTime(norm) &&
+          !hasTransportConflictCue(norm) && !isTransportWorkDone(norm)) {
+        var honourCue =
+          /\bkeys?\b/.test(norm) ||
+          /\bwelcome\b/.test(norm) ||
+          /\bready\s+before\b/.test(norm) ||
+          /\bensure\b/.test(norm) ||
+          /\bhonour\b/.test(norm) ||
+          /\bpax\b/.test(norm) ||
+          /\b(?:named\s+)?(?:pax|passengers?)\b/.test(norm) ||
+          /\bon\s+board\b/.test(norm) ||
+          /\blast\s+(?:public\s+)?loop\b/.test(norm) ||
+          /\bthree\s+pax\b/.test(norm);
+        if (!honourCue && !/\bdriver\s+confirms\b/.test(norm)) {
+          /* Arrangement mention without honour/prepare work — skip. */
+        } else {
+          var names = extractGuestNames(src);
+          if (!names.length && (note.canonicalName || (note.fact && note.fact.guestName))) {
+            names = [note.canonicalName || note.fact.guestName];
+          }
+          honourParties.push({
+            names: names,
+            rooms: rooms.slice(),
+            deadline: extractDeadline(src),
+            evidence: src,
+            factIds: [factId],
+            honourCue: !!honourCue || /\bdriver\s+confirms\b/.test(norm)
+          });
+        }
+      }
+    });
+
+    /* Merge honour fragments (loop list + keys-before-return) into one party. */
+    var mergedHonour = null;
+    honourParties.forEach(function (p) {
+      if (!p) return;
+      if (!mergedHonour) {
+        mergedHonour = {
+          names: p.names.slice(),
+          rooms: p.rooms.slice(),
+          deadline: p.deadline,
+          evidence: [p.evidence],
+          factIds: p.factIds.slice(),
+          honourCue: p.honourCue
+        };
+        return;
+      }
+      p.names.forEach(function (n) {
+        if (n && mergedHonour.names.indexOf(n) === -1) mergedHonour.names.push(n);
+      });
+      p.rooms.forEach(function (r) {
+        if (r && mergedHonour.rooms.indexOf(r) === -1) mergedHonour.rooms.push(r);
+      });
+      if (!mergedHonour.deadline && p.deadline) mergedHonour.deadline = p.deadline;
+      if (/\breturns?\b/i.test(p.evidence) && p.deadline) mergedHonour.deadline = p.deadline;
+      mergedHonour.evidence.push(p.evidence);
+      p.factIds.forEach(function (id) {
+        if (mergedHonour.factIds.indexOf(id) === -1) mergedHonour.factIds.push(id);
+      });
+      mergedHonour.honourCue = mergedHonour.honourCue || p.honourCue;
+    });
+
+    /* Cross-note guest bind for conflicts that only say "until shuttle decision". */
+    conflicts.forEach(function (c) {
+      if (!c || (c.name && c.room)) return;
+      (notes || []).forEach(function (note) {
+        var t = noteEvidenceText(note, note.fact);
+        if (!t || !hasTransportConflictCue(normalizeStateResolutionText(t))) return;
+        if (!c.name) {
+          var ns = extractGuestNames(t);
+          if (ns[0]) c.name = ns[0];
+        }
+        if (!c.room) {
+          var rs = ((note.fact && note.fact.rooms) || note.rooms || []).map(function (r) {
+            return normalizeRoomNumber(r) || String(r);
+          }).filter(Boolean);
+          if (rs[0]) c.room = rs[0];
+          c.rooms = rs;
+        }
+      });
+    });
+
+    /*
+     * Harvest named pax / rooms from sibling bullets when a shuttle honour window
+     * is active (guests often listed on lines without the word "shuttle").
+     */
+    if (mergedHonour && corpus.length) {
+      (notes || []).forEach(function (note) {
+        var t = noteEvidenceText(note, note.fact);
+        if (!t) return;
+        var n = normalizeStateResolutionText(t);
+        if (isTransportWorkDone(n)) return;
+        if (hasTransportConflictCue(n)) return;
+        /* Do not pull DONE amenity / unrelated rooms into the shuttle party. */
+        if (/\bdone\b/.test(n) && /\b(?:champagne|amenity|fruit|flower|placed)\b/.test(n)) return;
+        if (/\bchampagne\b/.test(n) || /\bvip\b/.test(n) && /\bplaced\b/.test(n)) return;
+        var rs = ((note.fact && note.fact.rooms) || note.rooms || []).map(function (r) {
+          return normalizeRoomNumber(r) || String(r);
+        }).filter(Boolean);
+        var ns = extractGuestNames(t);
+        var looksLikePax =
+          (/\bprepaid\b/.test(n) && rs.length && !/\bcollect\b/.test(n)) ||
+          (ns.length && rs.length && /\b(?:room|booking|pax|board)\b/.test(n)) ||
+          (ns.length && rs.length && /\b(?:CX|M)\d/i.test(t) &&
+            !/\b(?:champagne|iron|flower|maint)\b/.test(n));
+        if (!looksLikePax) return;
+        ns.forEach(function (g) {
+          if (g && mergedHonour.names.indexOf(g) === -1) mergedHonour.names.push(g);
+        });
+        rs.forEach(function (r) {
+          if (r && mergedHonour.rooms.indexOf(r) === -1) mergedHonour.rooms.push(r);
+        });
+      });
+      /* Drop redundant "Mrs Lang" when "Mr & Mrs Lang" already listed. */
+      mergedHonour.names = mergedHonour.names.filter(function (g) {
+        if (!g) return false;
+        var bare = String(g).replace(/^(?:Mrs?|Ms|Miss|Dr)\.?\s+/i, "");
+        return !mergedHonour.names.some(function (other) {
+          return other !== g && /Mr\s*&\s*Mrs/i.test(other) &&
+            other.indexOf(bare) !== -1;
+        });
+      });
+    }
+
+    var honourBlob = mergedHonour
+      ? mergedHonour.evidence.join(" | ")
+      : "";
+    var honourHasPaxCount = /\b\d+\s+pax\b/.test(honourBlob) ||
+      /\bthree\s+pax\b/.test(honourBlob) ||
+      /\bpax\b/.test(honourBlob);
+
+    return {
+      honour: mergedHonour && mergedHonour.honourCue &&
+        (mergedHonour.names.length || mergedHonour.rooms.length || honourHasPaxCount) &&
+        (mergedHonour.deadline || honourBlob.match(/\b\d{1,2}:\d{2}\b/))
+        ? mergedHonour
+        : null,
+      conflicts: conflicts,
+      corpus: corpus
+    };
+  }
+
+  function pushTimedTransportActions(pushAction, index) {
+    if (!index) return;
+    var seen = {};
+
+    (index.conflicts || []).forEach(function (c) {
+      if (!c) return;
+      var key = "cf|" + (c.room || "") + "|" + String(c.name || "").toLowerCase();
+      if (seen[key]) return;
+      if (!c.name && !c.room) return;
+      seen[key] = true;
+      var guest = c.name || "";
+      var room = c.room || "";
+      var accBit = c.accessible ? " accessible" : "";
+      pushAction(createCanonicalAction({
+        entityId: null,
+        resolutionState: "unresolved",
+        canonicalName: guest,
+        room: room,
+        rooms: room ? [room] : (c.rooms || []).slice(),
+        facetKey: "transport:conflict_clarify",
+        actionType: NEXT_ACTION_KIND.operational_follow_up,
+        actionState: ACTION_STATE.open,
+        actionText: "Clarify" + accBit + " transport plan" +
+          (guest ? " for " + guest : "") +
+          (room ? " (Room " + room + ")" : "") +
+          " — conflicting options evidenced (do not invent a solved mode; do not drop silently)",
+        evidenceText: c.evidence || "",
+        actionability: ACTIONABILITY.actionable,
+        priorityBand: PRIORITY_BAND.P1,
+        priorityScore: 17,
+        priorityReasons: [
+          "transport_conflict_clarify",
+          "sprint14_timed_transport"
+        ],
+        currentStateEligible: true,
+        sourceFactIds: c.factId ? [c.factId] : [],
+        confidence: 0.74
+      }));
+    });
+
+    if (index.honour) {
+      var h = index.honour;
+      var hKey = "hon|" + (h.deadline || "") + "|" + h.rooms.slice().sort().join("+");
+      if (!seen[hKey]) {
+        seen[hKey] = true;
+        var label = h.names.length
+          ? h.names.slice(0, 3).join(" + ")
+          : (h.rooms.length ? "Rooms " + h.rooms.join("/") : "listed passengers");
+        var when = h.deadline
+          ? (/\breturn/i.test(h.evidence.join(" "))
+            ? (" before ~" + h.deadline + " return")
+            : (" for " + h.deadline + " departure / loop"))
+          : "";
+        pushAction(createCanonicalAction({
+          entityId: null,
+          resolutionState: "unresolved",
+          canonicalName: h.names[0] || "",
+          room: h.rooms[0] || "",
+          rooms: h.rooms.slice(),
+          facetKey: "transport:honour",
+          actionType: NEXT_ACTION_KIND.operational_follow_up,
+          actionState: ACTION_STATE.open,
+          actionText: "Honour timed transport meet / keys readiness for " + label +
+            when + " (do not invent private transfer)",
+          evidenceText: h.evidence.join(" | ").slice(0, 400),
+          actionability: ACTIONABILITY.actionable,
+          priorityBand: PRIORITY_BAND.P1,
+          priorityScore: 16,
+          priorityReasons: [
+            "transport_honour",
+            "sprint14_timed_transport"
+          ],
+          currentStateEligible: true,
+          sourceFactIds: h.factIds.slice(),
+          confidence: 0.73,
+          deadlineHint: h.deadline || "",
+          temporalScope: TEMPORAL_SCOPE.today
+        }));
+      }
+    }
+  }
+
+  /**
    * Build shared canonical Night Manager actions from post-Sprint-1–4 notes.
    * Sprint 6: options may include handoverDate / shift / createdAt for temporal eligibility.
    * Does not force every fact into an action.
@@ -10016,6 +10422,9 @@
     var invalidProductIndex = buildInvalidProductIndex(notes);
     _lastInvalidProductIndex = invalidProductIndex;
     notes._invalidProductIndex = invalidProductIndex;
+    var timedTransportIndex = buildTimedTransportIndex(notes);
+    _lastTimedTransportIndex = timedTransportIndex;
+    notes._timedTransportIndex = timedTransportIndex;
 
     /*
      * Sprint 10 — same-room maintenance corpus so MONITOR / tomorrow inspect /
@@ -10054,6 +10463,8 @@
 
     /* Sprint 13 — invalid inventory / impossible product (before generic note noise). */
     pushInvalidProductActions(pushAction, invalidProductIndex);
+    /* Sprint 14 — timed guest transport honour / conflict (before luggage misframe). */
+    pushTimedTransportActions(pushAction, timedTransportIndex);
     /* Sprint 11 — emit blocked-assignment / contradiction OPEN before note noise. */
     pushBlockedAllocationActions(pushAction, blockedAllocIndex, notes);
 
@@ -10935,6 +11346,10 @@
         var lugName = lugBind.canonicalName || canonicalName;
         var lugRoom = lugBind.room || currentRoom;
         var lugRooms = lugBind.rooms.length ? lugBind.rooms : rooms;
+        /* Sprint 14 — do not misclassify transport conflict work as luggage/EA. */
+        if (shouldSuppressLuggageForTransport(src, lugName, lugRoom, timedTransportIndex)) {
+          return;
+        }
         var hasFutureHold = /\b(?:after\s+check(?:ing)?\s+out|9th\s+August|09\/08|9\/08)\b/i.test(src) &&
           /\bluggage\b/i.test(src);
         var hasNearTerm = /\bEA\s*\d|\bearly\s+arrival\b|\baround\s+lunch\b|\blunch\b/i.test(src);

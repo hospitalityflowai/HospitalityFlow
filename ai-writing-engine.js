@@ -7504,11 +7504,12 @@
       var bits = [];
       (e.times || []).forEach(function (t) {
         var when = normalizeTimelineTime(t.raw) || t.raw;
+        /* Sprint 14 — only explicit wake/transport kinds; never invent from empty clocks. */
         if (t.kind === "wake_up") bits.push("wake-up at " + when);
         if (t.kind === "transport") bits.push("taxi at " + when);
       });
       if (!bits.length) {
-        return room ? "Complete wake-up / transfer actions for " + room + " before departure" : "";
+        return "";
       }
       return "Timed departure actions for " + (room ? room + ": " : "") + joinNatural(bits);
     }
