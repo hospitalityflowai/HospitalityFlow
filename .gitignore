@@ -13,6 +13,14 @@ node_modules/
 .env.*.local
 .env.rls-test
 .env.rls-test.local
+.env.test-export
+.env.test-export.local
+
+# Local raw real-hotel handover exports (may contain guest PII) — never commit.
+# Fictional Pilot Hotel CSVs under testing/pilot-hotel/exports/ may still be committed.
+# See testing/EXPORT_TEST_HANDOVERS.md
+testing/**/exports/local-raw/
+
 # Dependencies
 node_modules/
 
