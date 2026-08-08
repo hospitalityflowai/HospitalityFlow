@@ -7457,7 +7457,12 @@
     if (global.ShiftIntelligenceEngine &&
         typeof global.ShiftIntelligenceEngine.buildBriefingModel === "function") {
       model = global.ShiftIntelligenceEngine.buildBriefingModel(entries, {
-        maxBlocks: global.ShiftIntelligenceEngine.BRIEFING_MAX_BLOCKS || 5
+        maxBlocks: options.maxBlocks || global.ShiftIntelligenceEngine.BRIEFING_MAX_BLOCKS || 5,
+        handoverDate: options.handoverDate || options.handover_date || options.date || "",
+        shift: options.shiftCode || options.shift || "",
+        createdAt: options.createdAt || options.created_at || "",
+        canonicalActions: options.canonicalActions ||
+          (analyzed && analyzed._canonicalActions) || null
       });
       objects = model.objects || objects;
       var displayPriority = 0;

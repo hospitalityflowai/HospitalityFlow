@@ -393,8 +393,12 @@ console.log("\n=== Contract invariants ===\n");
   }
   assert(pp.briefing && pp.briefing.briefingModel, "Briefing model present");
   var src = pp.briefing.briefingModel && pp.briefing.briefingModel.source;
-  assert(src === "canonical_actions" || src === "operational_objects",
-    "Briefing uses shared engine seating (canonical or object+canonical overlay)");
+  assert(
+    src === "canonical_actions" ||
+      src === "operational_objects" ||
+      src === "canonical_decision_seats",
+    "Briefing uses shared engine seating (canonical or object+canonical overlay)"
+  );
   assert(Array.isArray(pp.briefing.briefingModel.canonicalActions),
     "Briefing model carries canonicalActions for shared authority");
 }

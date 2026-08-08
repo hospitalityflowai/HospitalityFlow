@@ -3224,13 +3224,13 @@
     var family = "other";
     if (/\b(maint|ac fault|heating|leak|washroom|\bwc\b|hot-water|safe fault)\b/.test(text)) {
       family = "maintenance";
-    } else if (/\b(collect|balance|payment|folio|city tax|minibar)\b/.test(text)) {
+    } else if (/\b(collect|balance|payment|folio|city tax|minibar|tokenis|guarantee)\b/.test(text)) {
       family = "payment";
-    } else if (/\bvip\b/.test(text)) {
+    } else if (/\bvip\b/.test(text) || /\barrival amenities\b/.test(text)) {
       family = "vip";
-    } else if (/\b(wake|taxi|transfer|addison)\b/.test(text)) {
+    } else if (/\b(wake|taxi|transfer|addison|airport|pickup)\b/.test(text)) {
       family = "timed";
-    } else if (/\b(extra bed|pillow|iron|adapter|towel)\b/.test(text)) {
+    } else if (/\b(extra bed|pillow|iron|adapter|towel|luggage)\b/.test(text)) {
       family = "guest_request";
     }
     return [family, room || guest || "general"].join("|");
@@ -3359,6 +3359,21 @@
     var seenFamily = {};
     (candidates || []).forEach(function (rec) {
       if (!rec) return;
+      /* Sprint 7: canonical-seeded seats survive quality/family filters. */
+      if (rec.canonicalSeed) {
+        var seeded = Object.assign({}, rec);
+        if (!seeded.text) return;
+        if (isRoboticHandoverText(seeded.text)) return;
+        var seedFamily = "seed|" + (rec.canonicalActionId || rec.id || recommendationIssueKey(seeded));
+        if (seedFamily && seenFamily[seedFamily]) return;
+        if (seedFamily) seenFamily[seedFamily] = true;
+        seeded.canonicalSeed = true;
+        seeded.canonicalActionId = rec.canonicalActionId || seeded.id;
+        seeded.confidenceLabel = recommendationConfidenceLabel(seeded);
+        if (seeded.needsReview == null) seeded.needsReview = false;
+        out.push(seeded);
+        return;
+      }
       var gated = validateDutyManagerRecommendation(rec, null);
       if (!gated) return;
       if (!wouldDutyManagerHandOver(gated)) return;
@@ -4272,8 +4287,6 @@
       BRIEFING_CANNOT_MISS_SLOT.blocker
     ];
 
-    /* Sprint 5: build shared canonical actions; prefer them when they carry P0/P1,
-     * otherwise keep Sprint 2 object seating so safety is never displaced. */
     var notesForActions = [];
     (items || []).forEach(function (item) {
       if (item && item.note) notesForActions.push(item.note);
@@ -4287,177 +4300,88 @@
         createdAt: options.createdAt || options.created_at || ""
       });
     }
-    var fromCanonical = canonicalActions && canonicalActions.length
-      ? briefingSpecsFromCanonicalActions(canonicalActions, maxBlocks)
-      : [];
-
-    var actionable = objects.filter(isPromotableOperationalObject).sort(compareOperationalObjectsByPriority);
-
-    var selected = [];
-    var seenIds = {};
-
-    /* 1) Seat true P0 / P1 opens first (band → score → id). */
-    actionable.forEach(function (obj) {
-      if (selected.length >= maxBlocks) return;
-      var band = objectPriorityBand(obj);
-      if (band !== PRIORITY_BAND.P0 && band !== PRIORITY_BAND.P1) return;
-      if (seenIds[obj.id]) return;
-      selected.push(obj);
-      seenIds[obj.id] = true;
-    });
-
-    function bestForSlot(slotId) {
-      var best = null;
-      actionable.forEach(function (obj) {
-        if (seenIds[obj.id]) return;
-        if (briefingCannotMissSlot(obj) !== slotId) return;
-        if (!best || compareOperationalObjectsByPriority(obj, best) < 0) best = obj;
-      });
-      return best;
+    if (notesForActions && canonicalActions) {
+      notesForActions._canonicalActions = canonicalActions;
     }
 
-    /* 2) Diversity slots only for remaining capacity after P0/P1. */
-    slotOrder.forEach(function (slotId) {
-      if (selected.length >= maxBlocks) return;
-      var best = bestForSlot(slotId);
-      if (best) {
-        selected.push(best);
-        seenIds[best.id] = true;
-      }
-    });
+    /* Legacy object candidates — fill-only after canonical seats. */
+    var legacyCandidates = [];
+    objects.filter(isPromotableOperationalObject).sort(compareOperationalObjectsByPriority)
+      .forEach(function (obj) {
+        var spec = buildPriorityActionSpec(obj);
+        var band = objectPriorityBand(obj);
+        spec.briefingSlot = briefingCannotMissSlot(obj) || "impact";
+        spec.priorityBand = band;
+        if (spec.operationalContext) spec.operationalContext.priorityBand = band;
+        if (!passesBriefingPriorityGate(spec)) return;
+        if (band === PRIORITY_BAND.exclude) return;
+        if (!briefingCannotMissSlot(obj) && scoreOperationalObject(obj) > 70 &&
+            priorityBandRank(band) >= priorityBandRank(PRIORITY_BAND.P3)) {
+          return;
+        }
+        var primary = objectPrimaryFact(obj);
+        var e = spec.entities || {};
+        var displayText = "";
+        if (spec.canonicalActionText) displayText = String(spec.canonicalActionText);
+        else if (spec.actionKind === "follow_up_maintenance" && e.room) {
+          displayText = "Follow up maintenance for Room " + e.room;
+        } else if (spec.actionKind === "prepare_vip" && (e.guestName || e.room)) {
+          displayText = "Prepare VIP for " + (e.guestName || ("Room " + e.room));
+        }         else if (e.requestItem && e.room) {
+          displayText = "Arrange " + e.requestItem + " for Room " + e.room;
+        } else if (e.room) {
+          displayText = "Complete outstanding guest follow-up for Room " + e.room;
+        } else if (spec.actionKind) {
+          displayText = String(spec.actionKind).replace(/_/g, " ") +
+            (e.faultType ? (" — " + e.faultType) : " follow-up");
+        } else if (objectSourceBlob(obj)) {
+          displayText = String(objectSourceBlob(obj)).replace(/\s+/g, " ").trim().slice(0, 120);
+        }
+        if (!displayText) return;
+        legacyCandidates.push({
+          id: obj.id,
+          text: displayText,
+          displayText: displayText,
+          spec: spec,
+          fact: primary && primary.fact,
+          note: primary && primary.note,
+          priorityBand: band,
+          priorityScore: scoreOperationalObject(obj)
+        });
+      });
 
-    /* 3) Fill remaining by shared priority order. */
-    actionable.forEach(function (obj) {
-      if (selected.length >= maxBlocks) return;
-      if (seenIds[obj.id]) return;
-      if (objectPriorityBand(obj) === PRIORITY_BAND.exclude) return;
-      /* Soft uncategorised noise should not fill the briefing. */
-      if (!briefingCannotMissSlot(obj) && scoreOperationalObject(obj) > 70 &&
-          priorityBandRank(objectPriorityBand(obj)) >= priorityBandRank(PRIORITY_BAND.P3)) {
-        return;
-      }
-      selected.push(obj);
-      seenIds[obj.id] = true;
+    var decision = selectDecisionSeats(canonicalActions || [], {
+      surface: "briefing",
+      maxN: maxBlocks,
+      legacyCandidates: legacyCandidates,
+      allowMonitorContinuity: true
     });
-
-    selected.sort(compareOperationalObjectsByPriority);
 
     var priorities = [];
-    selected.slice(0, maxBlocks).forEach(function (obj) {
-      var spec = buildPriorityActionSpec(obj);
-      var band = objectPriorityBand(obj);
-      spec.briefingSlot = briefingCannotMissSlot(obj) || "impact";
-      spec.priorityBand = band;
-      spec.hazardClass = (obj.operationalContext && obj.operationalContext.hazardClass) ||
-        (spec.operationalContext && spec.operationalContext.hazardClass) || "";
-      /* Set band on context before gate so P0/P1 hazards are not dropped. */
-      if (spec.operationalContext) spec.operationalContext.priorityBand = band;
-      /* Overlay faithful canonical wording — factIds or same guest+twin/request facet. */
-      if (canonicalActions && canonicalActions.length) {
-        var match = null;
-        openCanonicalActions(canonicalActions).forEach(function (action) {
-          if (match) return;
-          var overlap = (action.sourceFactIds || []).some(function (id) {
-            return (spec.factIds || []).indexOf(id) !== -1;
-          });
-          if (!overlap && action.canonicalName && spec.entities && spec.entities.guestName) {
-            var sameGuest = String(action.canonicalName).toLowerCase() ===
-              String(spec.entities.guestName).toLowerCase();
-            var twinish = /twin/i.test(action.facetKey + action.actionText) &&
-              ((spec.entities.amenities || []).some(function (a) { return /twin/i.test(a); }) ||
-                /twin|prepare_vip/i.test(spec.actionKind || ""));
-            var requestish = /guest_request|iron|pillow/i.test(action.facetKey) &&
-              /guest_follow_up|arrange/i.test(spec.actionKind || "");
-            if (sameGuest && (twinish || requestish)) overlap = true;
-          }
-          if (overlap) match = action;
-        });
-        if (match && match.actionText) {
-          spec.canonicalActionText = match.actionText;
-          spec.evidenceText = match.evidenceText || spec.evidenceText;
-          if (match.room && spec.entities) spec.entities.room = match.room;
-        }
+    (decision.seats || []).forEach(function (seat) {
+      if (!seat) return;
+      if (seat.canonicalSeed && seat.action) {
+        var canonSpec = briefingSpecFromCanonicalAction(seat.action);
+        if (canonSpec && passesBriefingPriorityGate(canonSpec)) priorities.push(canonSpec);
+        return;
       }
-      if (!passesBriefingPriorityGate(spec)) return;
-      priorities.push(spec);
-    });
-
-    var objectHasP0P1 = priorities.some(function (p) {
-      return p.priorityBand === PRIORITY_BAND.P0 || p.priorityBand === PRIORITY_BAND.P1;
-    });
-    var canonHasP0P1 = fromCanonical.some(function (p) {
-      return p.priorityBand === PRIORITY_BAND.P0 || p.priorityBand === PRIORITY_BAND.P1;
-    });
-    /*
-     * Prefer Sprint 2 object seating whenever it produced priorities (keeps P0/P1 /
-     * timed cannot-miss slots). Use canonical-only when objects yield nothing
-     * (e.g. high-touch arrival with thin subjects).
-     */
-    if (fromCanonical.length && priorities.length === 0) {
-      return {
-        priorities: fromCanonical,
-        objects: objects,
-        maxBlocks: maxBlocks,
-        generatedFromObjectCount: objects.length,
-        cannotMissSlots: slotOrder.slice(),
-        canonicalActions: canonicalActions || [],
-        source: "canonical_actions"
-      };
-    }
-
-    /* Sprint 6: suppress object-seated immediate maintenance chase when MONITOR inspect exists. */
-    var monitorMaintRooms = {};
-    (canonicalActions || []).forEach(function (a) {
-      if (a && a.actionState === ACTION_STATE.monitor &&
-          /maintenance:tomorrow_inspect/i.test(a.facetKey || "") && a.room) {
-        monitorMaintRooms[String(a.room)] = a;
+      if (seat.legacy && seat.legacy.spec) {
+        var fillSpec = seat.legacy.spec;
+        fillSpec.canonicalSeed = false;
+        fillSpec.seatKind = "fill";
+        if (passesBriefingPriorityGate(fillSpec)) priorities.push(fillSpec);
       }
     });
-    if (Object.keys(monitorMaintRooms).length) {
-      priorities = priorities.filter(function (p) {
-        var room = p.entities && p.entities.room;
-        if (!room || !monitorMaintRooms[String(room)]) return true;
-        if (/follow_up_maintenance|maintenance/i.test(p.actionKind || p.objectType || "")) {
-          return false;
-        }
-        return !/before further guest impact|Follow up.*maintenance/i.test(p.canonicalActionText || "");
-      });
-      Object.keys(monitorMaintRooms).forEach(function (room) {
-        if (priorities.some(function (p) {
-          return p.entities && String(p.entities.room) === String(room) &&
-            /Monitor|tomorrow/i.test(p.canonicalActionText || "");
-        })) return;
-        var action = monitorMaintRooms[room];
-        priorities.unshift({
-          objectId: action.actionId,
-          objectType: action.actionType,
-          actionKind: "follow_up_maintenance",
-          reasonCodes: action.priorityReasons || [],
-          factIds: action.sourceFactIds || [],
-          rooms: action.rooms || [],
-          entities: { room: action.room, guestName: action.canonicalName || "", sourceText: action.evidenceText || "" },
-          evidenceText: action.evidenceText || "",
-          canonicalActionText: action.actionText,
-          impactScore: action.priorityScore,
-          priorityBand: action.priorityBand,
-          operationalContext: {
-            priorityBand: action.priorityBand,
-            priorityScore: action.priorityScore,
-            nextAction: action.actionType
-          }
-        });
-      });
-      priorities = priorities.slice(0, maxBlocks);
-    }
 
     return {
-      priorities: priorities,
+      priorities: priorities.slice(0, maxBlocks),
       objects: objects,
       maxBlocks: maxBlocks,
       generatedFromObjectCount: objects.length,
       cannotMissSlots: slotOrder.slice(),
       canonicalActions: canonicalActions || [],
-      source: "operational_objects"
+      decisionSeats: decision,
+      source: "canonical_decision_seats"
     };
   }
 
@@ -8968,6 +8892,11 @@
    */
   function buildCanonicalOperationalActions(analyzed, options) {
     var notes = Array.isArray(analyzed) ? analyzed : [];
+    /* Sprint 7: reuse stamped canonical list when already built for this note set. */
+    if (notes._canonicalActionsBuilt && Array.isArray(notes._canonicalActions) &&
+        notes._canonicalActions.length) {
+      return notes._canonicalActions;
+    }
     var actions = [];
     var seenIds = {};
     var checkedOut = detectCheckedOutRooms(notes);
@@ -10079,6 +10008,440 @@
     });
   }
 
+  /* ─── Reasoning Sprint 7 — Canonical decision seating authority ─────────
+   * Canonical OPEN actions own Briefing + Recommendation seats.
+   * Legacy objects / recommendationFromFact are fill-only + wording enrich.
+   */
+
+  var TIMED_TODAY_FACET_RE =
+    /^(?:timed:(?:airport|am_taxi|arrival_today|late_checkout)|payment:tokenise|guest_request:ea_luggage_near)/i;
+
+  function isPaymentCollectInstruction(text) {
+    return /\bcollect\s+outstanding\b|\boutstanding\s+balance\b|\bcollect\s+(?:the\s+)?(?:balance|payment|£|\d)/i.test(
+      String(text || "")
+    );
+  }
+
+  function roomFromRecommendationText(text) {
+    var m = String(text || "").match(/\bRoom(?:s)?\s+(\d{1,4}[a-z]?)\b/i);
+    return m ? String(m[1]) : "";
+  }
+
+  function hasMatchingCanonicalPaymentOpen(canonicalActions, room) {
+    return openCanonicalActions(canonicalActions).some(function (a) {
+      if (!/payment:/i.test(a.facetKey || "")) return false;
+      if (/payment:no_collect|payment:breakfast|payment:resolved/i.test(a.facetKey || "")) return false;
+      if (room && a.room && String(a.room) !== String(room)) return false;
+      return true;
+    });
+  }
+
+  function passesPaymentSafetyGate(text, canonicalActions, fact, note) {
+    if (!isPaymentCollectInstruction(text)) return true;
+    var room = roomFromRecommendationText(text) ||
+      (fact && fact.rooms && fact.rooms[0]) ||
+      (note && note.rooms && note.rooms[0]) ||
+      "";
+    if (hasMatchingCanonicalPaymentOpen(canonicalActions, room)) return true;
+    /*
+     * Evidence must come from source notes/facts — never from the invented
+     * recommendation phrasing itself ("Collect outstanding balance…").
+     */
+    var src = String(
+      (fact && (fact.sourceText || "")) ||
+      (note && (note.original || note.sourceText)) ||
+      ""
+    );
+    if (!src) return false;
+    if (hasCollectablePaymentEvidence(src, fact || null)) return true;
+    return false;
+  }
+
+  function isDoNowEligibleCanonical(action, allActions) {
+    if (!action || !action.actionText) return false;
+    if (action.actionState !== ACTION_STATE.open) return false;
+    if (action.actionability === ACTIONABILITY.blocked) return false;
+    if (action.priorityBand === PRIORITY_BAND.exclude) return false;
+    if (action.currentStateEligible === false) return false;
+    /* Sprint 6: no immediate maint chase when tomorrow inspect MONITOR exists. */
+    if (/^maintenance$/i.test(action.facetKey || "") && action.room) {
+      var hasMonitor = (allActions || []).some(function (a) {
+        return a && a.actionState === ACTION_STATE.monitor &&
+          /maintenance:tomorrow_inspect/i.test(a.facetKey || "") &&
+          String(a.room) === String(action.room);
+      });
+      if (hasMonitor) return false;
+    }
+    return true;
+  }
+
+  function isTimedTodayGuaranteeAction(action) {
+    if (!action) return false;
+    var facet = String(action.facetKey || "");
+    if (TIMED_TODAY_FACET_RE.test(facet)) return true;
+    var scope = String(action.temporalScope || "");
+    if ((scope === TEMPORAL_SCOPE.today || scope === TEMPORAL_SCOPE.now ||
+        scope === TEMPORAL_SCOPE.this_shift) &&
+        /timed:|payment:tokenise|ea_luggage_near/i.test(facet)) {
+      return true;
+    }
+    return false;
+  }
+
+  function isContinuityMonitorCanonical(action) {
+    return !!(action && action.actionState === ACTION_STATE.monitor &&
+      /maintenance:tomorrow_inspect/i.test(action.facetKey || "") &&
+      action.actionText);
+  }
+
+  function canonicalWorkKey(action) {
+    if (!action) return "";
+    return [
+      String(action.facetKey || ""),
+      String(action.room || ""),
+      String(action.canonicalName || "").toLowerCase(),
+      String(action.actionType || "")
+    ].join("|");
+  }
+
+  function legacyTextCoversCanonicalAction(text, action) {
+    text = String(text || "");
+    if (!text || !action) return false;
+    var sameRoom = action.room && new RegExp("\\b" + action.room + "\\b").test(text);
+    var sameGuest = action.canonicalName &&
+      text.toLowerCase().indexOf(String(action.canonicalName).toLowerCase()) !== -1;
+    if (/payment:tokenise/i.test(action.facetKey || "")) {
+      return /tokenis|guarantee/i.test(text) && (sameRoom || !action.room);
+    }
+    if (/timed:airport|timed:am_taxi|timed:arrival_today|timed:late_checkout/i.test(action.facetKey || "")) {
+      return /airport|pickup|taxi|late check|arrive today|still to arrive/i.test(text) &&
+        (sameRoom || !action.room || /Heathrow|Gatwick|pickup/i.test(text));
+    }
+    if (/guest_request:ea_luggage|luggage/i.test(action.facetKey || "")) {
+      return /luggage|early arrival|\bEA\b/i.test(text);
+    }
+    if (/amenity:prep|arrival_prep/i.test(action.facetKey || "")) {
+      /* Do not treat MONITOR flower merge as covering champagne-only OPEN. */
+      if (/flower/i.test(text) && !/flower/i.test(action.actionText || "")) return false;
+      return (sameGuest || sameRoom) && /champagne|amenit|fruit|prepare|twin|loft|welcome/i.test(text);
+    }
+    if (/guest_request:iron|iron/i.test(action.facetKey || "") && /iron/i.test(text)) {
+      return !action.room || sameRoom;
+    }
+    if (/foam_pillows|pillow/i.test(action.facetKey || "") && /pillow/i.test(text)) {
+      return !action.room || sameRoom;
+    }
+    if (/amenity:twin|twin/i.test(action.facetKey || "") && /twin/i.test(text)) {
+      return !action.room || sameRoom;
+    }
+    if (/maintenance/i.test(action.facetKey || "") && /maint|safe|fault/i.test(text)) {
+      /* Roomless maint OPEN must not cover every other room's maint legacy. */
+      if (!action.room) return !roomFromRecommendationText(text) && !/\bRoom\s+\d+/i.test(text);
+      return sameRoom;
+    }
+    return (sameRoom || sameGuest) &&
+      /arrange|prepare|collect|follow up|honour|tokenis|ensure|confirm|expect/i.test(text);
+  }
+
+  function legacyConflictsWithCanonicalState(text, canonicalActions) {
+    text = String(text || "");
+    if (!text) return false;
+    return (canonicalActions || []).some(function (a) {
+      if (!a) return false;
+      if (a.actionState === ACTION_STATE.monitor &&
+          /maintenance:tomorrow_inspect/i.test(a.facetKey || "") &&
+          /before further guest impact|Follow up.*maintenance|maintenance.*this shift/i.test(text) &&
+          (!a.room || new RegExp("\\b" + a.room + "\\b").test(text))) {
+        return true;
+      }
+      if (a.actionState === ACTION_STATE.monitor &&
+          /amenity:flowers_future/i.test(a.facetKey || "") &&
+          /flower/i.test(text) &&
+          /champagne|prepare|amenit/i.test(text)) {
+        var sameGuest = a.canonicalName &&
+          text.toLowerCase().indexOf(String(a.canonicalName).toLowerCase()) !== -1;
+        var sameRoom = a.room && new RegExp("\\b" + a.room + "\\b").test(text);
+        if (sameGuest || sameRoom) return true;
+      }
+      return false;
+    });
+  }
+
+  function briefingSpecFromCanonicalAction(action) {
+    if (!action) return null;
+    return {
+      objectId: action.actionId,
+      objectType: action.actionType,
+      actionKind: action.actionType === NEXT_ACTION_KIND.collect_before_departure
+        ? "collect_payment"
+        : (action.actionType === NEXT_ACTION_KIND.prepare_vip
+          ? "prepare_vip"
+          : (action.actionType === NEXT_ACTION_KIND.guest_follow_up
+            ? "guest_follow_up"
+            : (action.actionType === NEXT_ACTION_KIND.follow_up_until_resolved
+              ? "follow_up_maintenance"
+              : (action.actionType === NEXT_ACTION_KIND.complete_timed_actions
+                ? "complete_timed_actions"
+                : "guest_follow_up")))),
+      reasonKind: "",
+      reasonCodes: (action.priorityReasons || []).concat(["canonical_decision_seat"]),
+      factIds: action.sourceFactIds || [],
+      rooms: action.rooms || [],
+      entities: {
+        room: action.room || "",
+        guestName: action.canonicalName || "",
+        amenities: [],
+        requestItem: "",
+        amount: "",
+        sourceText: action.evidenceText || ""
+      },
+      evidenceText: action.evidenceText || "",
+      canonicalActionText: action.actionText,
+      canonicalActionId: action.actionId,
+      facetKey: action.facetKey || "",
+      actionState: action.actionState,
+      impactScore: action.priorityScore,
+      canonicalPriority: action.priorityBand === PRIORITY_BAND.P0
+        ? CANONICAL_PRIORITY.critical
+        : (action.priorityBand === PRIORITY_BAND.P1
+          ? CANONICAL_PRIORITY.high
+          : CANONICAL_PRIORITY.normal),
+      confidence: action.confidence >= 0.75 ? "high" : (action.confidence >= 0.45 ? "medium" : "low"),
+      priorityBand: action.priorityBand,
+      canonicalSeed: true,
+      seatKind: action.actionState === ACTION_STATE.monitor ? "continuity" : "do_now",
+      operationalContext: {
+        priorityBand: action.priorityBand,
+        priorityScore: action.priorityScore,
+        priorityReasons: action.priorityReasons || [],
+        nextAction: action.actionType,
+        hazardClass: "none"
+      },
+      decisionTrace: {
+        sourceFactId: (action.sourceFactIds && action.sourceFactIds[0]) || "",
+        sourceFactIds: action.sourceFactIds || [],
+        objectType: action.actionType,
+        score: action.priorityScore,
+        operationalContext: {
+          priorityBand: action.priorityBand,
+          priorityScore: action.priorityScore,
+          nextAction: action.actionType
+        }
+      }
+    };
+  }
+
+  /**
+   * Shared Sprint 7 seat selector for Briefing and Recommendations.
+   * Canonical OPEN owns seats; legacyCandidates are fill-only.
+   */
+  function selectDecisionSeats(canonicalActions, options) {
+    options = options || {};
+    var surface = options.surface || "briefing";
+    var maxN = options.maxN != null ? options.maxN : BRIEFING_MAX_BLOCKS;
+    var legacyCandidates = options.legacyCandidates || [];
+    var allowMonitorContinuity = options.allowMonitorContinuity != null
+      ? !!options.allowMonitorContinuity
+      : surface === "briefing";
+    var seats = [];
+    var seatedIds = {};
+
+    function pushCanonical(action, seatKind) {
+      if (!action || !action.actionId || seatedIds[action.actionId]) return;
+      if (seats.length >= maxN) return;
+      seatedIds[action.actionId] = true;
+      seats.push({
+        action: action,
+        actionId: action.actionId,
+        facetKey: action.facetKey,
+        actionState: action.actionState,
+        priorityBand: action.priorityBand,
+        priorityScore: action.priorityScore,
+        seatKind: seatKind || "do_now",
+        canonicalSeed: true,
+        workKey: canonicalWorkKey(action),
+        text: action.actionText,
+        legacy: null
+      });
+    }
+
+    var openEligible = (canonicalActions || [])
+      .filter(function (a) { return isDoNowEligibleCanonical(a, canonicalActions); })
+      .sort(compareCanonicalActions);
+
+    openEligible.forEach(function (a) {
+      if (a.priorityBand === PRIORITY_BAND.P0 || a.priorityBand === PRIORITY_BAND.P1) {
+        pushCanonical(a, "do_now");
+      }
+    });
+    openEligible.forEach(function (a) {
+      if (seatedIds[a.actionId]) return;
+      if (isTimedTodayGuaranteeAction(a)) pushCanonical(a, "do_now");
+    });
+
+    function legacyAlreadyCovered(legacyText) {
+      return seats.some(function (seat) {
+        return seat.canonicalSeed && legacyTextCoversCanonicalAction(legacyText, seat.action);
+      });
+    }
+
+    function openCanonicalCoversLegacy(legacyText) {
+      return openEligible.some(function (a) {
+        return legacyTextCoversCanonicalAction(legacyText, a);
+      });
+    }
+
+    function legacyFillable(legacy, onlyBands) {
+      if (!legacy) return null;
+      var band = legacy.priorityBand || PRIORITY_BAND.P2;
+      if (onlyBands && onlyBands.indexOf(band) === -1) return null;
+      if (seats.some(function (s) {
+        return !s.canonicalSeed && s.legacy && s.legacy.id === legacy.id;
+      })) return null;
+      var displayText = String(legacy.text || legacy.displayText || "");
+      if (!displayText && legacy.spec) {
+        displayText = String(legacy.spec.canonicalActionText || "");
+      }
+      if (!displayText) return null;
+      if (!passesPaymentSafetyGate(displayText, canonicalActions, legacy.fact || null, legacy.note || null)) {
+        return null;
+      }
+      if (legacyConflictsWithCanonicalState(displayText, canonicalActions)) return null;
+      if (legacyAlreadyCovered(displayText) || openCanonicalCoversLegacy(displayText)) return null;
+      /*
+       * Generic guest follow-up must not fill when stronger OPEN P0/P1 or timed
+       * guarantees remain unseated. Do not let soft OPEN P2/P3 block P0 safety fills.
+       */
+      if (/outstanding guest follow-up/i.test(displayText) &&
+          openEligible.some(function (a) {
+            return !seatedIds[a.actionId] &&
+              (a.priorityBand === PRIORITY_BAND.P0 ||
+                a.priorityBand === PRIORITY_BAND.P1 ||
+                isTimedTodayGuaranteeAction(a));
+          })) {
+        return null;
+      }
+      return { band: band, displayText: displayText };
+    }
+
+    function tryLegacyFill(legacy, onlyBands) {
+      if (seats.length >= maxN) return false;
+      var ready = legacyFillable(legacy, onlyBands);
+      if (!ready) return false;
+      seats.push({
+        action: null,
+        actionId: legacy.id || ("legacy|" + seats.length),
+        facetKey: legacy.facetKey || "",
+        actionState: "legacy",
+        priorityBand: ready.band,
+        priorityScore: typeof legacy.priorityScore === "number" ? legacy.priorityScore : 70,
+        seatKind: "fill",
+        canonicalSeed: false,
+        workKey: legacy.workKey || ready.displayText.slice(0, 80),
+        text: ready.displayText,
+        legacy: legacy
+      });
+      return true;
+    }
+
+    /*
+     * After OPEN P0/P1 + timed guarantees: seat uncovered legacy P0/P1 safety
+     * objects before remaining OPEN P2 canonical, so P2 champagne cannot push
+     * unused P0 hazards off the briefing (Sprint 2 invariant).
+     */
+    (legacyCandidates || []).forEach(function (legacy) {
+      tryLegacyFill(legacy, [PRIORITY_BAND.P0, PRIORITY_BAND.P1]);
+    });
+
+    /* Remaining OPEN P2+ only after uncovered fillable legacy P0/P1 safety fills. */
+    openEligible.forEach(function (a) {
+      if (seatedIds[a.actionId]) return;
+      /* Do not let soft P3 OPEN crowd out remaining legacy capacity on briefing. */
+      if (surface === "briefing" && a.priorityBand === PRIORITY_BAND.P3) return;
+      if (surface === "briefing" &&
+          priorityBandRank(a.priorityBand) >= priorityBandRank(PRIORITY_BAND.P2)) {
+        var unusedHighLegacy = (legacyCandidates || []).some(function (leg) {
+          return !!legacyFillable(leg, [PRIORITY_BAND.P0, PRIORITY_BAND.P1]);
+        });
+        if (unusedHighLegacy) return;
+      }
+      pushCanonical(a, "do_now");
+    });
+
+    if (allowMonitorContinuity && seats.length < maxN) {
+      var monitors = (canonicalActions || [])
+        .filter(isContinuityMonitorCanonical)
+        .sort(compareCanonicalActions);
+      if (monitors[0]) pushCanonical(monitors[0], "continuity");
+    }
+
+    (legacyCandidates || []).forEach(function (legacy) {
+      tryLegacyFill(legacy, null);
+    });
+
+    /* Soft P3 OPEN only if capacity remains after safety fills. */
+    if (surface === "briefing") {
+      openEligible.forEach(function (a) {
+        if (seatedIds[a.actionId]) return;
+        if (a.priorityBand !== PRIORITY_BAND.P3) return;
+        pushCanonical(a, "do_now");
+      });
+    }
+
+    return {
+      seats: seats.slice(0, maxN),
+      seatedCanonicalIds: Object.keys(seatedIds),
+      source: "canonical_decision_seats",
+      surface: surface,
+      maxN: maxN
+    };
+  }
+
+  function recommendationFromCanonicalSeat(action, department) {
+    var band = action.priorityBand || PRIORITY_BAND.P2;
+    var legacyPriority = band === PRIORITY_BAND.P0
+      ? "urgent"
+      : (band === PRIORITY_BAND.P1 ? "high" : (band === PRIORITY_BAND.P3 ? "low" : "normal"));
+    return {
+      id: action.actionId,
+      text: String(action.actionText || "").replace(/\.+$/, "") + ".",
+      priority: legacyPriority,
+      canonicalPriority: band === PRIORITY_BAND.P0
+        ? CANONICAL_PRIORITY.critical
+        : (band === PRIORITY_BAND.P1 ? CANONICAL_PRIORITY.high : CANONICAL_PRIORITY.normal),
+      department: department ||
+        (/pillow|iron|towel|twin|amenit|fruit|champagne|flower/i.test(action.actionText || "")
+          ? "Housekeeping"
+          : (/payment|collect|folio|tokenis/i.test(action.actionText || "")
+            ? "Finance"
+            : "Reception")),
+      status: action.actionState === ACTION_STATE.monitor ? "monitor" : "open",
+      sourceFactIds: action.sourceFactIds || [],
+      reasonCodes: (action.priorityReasons || []).concat(["canonical_decision_seat"]),
+      canonicalSeed: true,
+      canonicalActionId: action.actionId,
+      facetKey: action.facetKey || "",
+      actionState: action.actionState,
+      decisionTrace: {
+        sourceFactId: (action.sourceFactIds && action.sourceFactIds[0]) || "",
+        sourceFactIds: action.sourceFactIds || [],
+        objectType: action.actionType,
+        score: action.priorityScore,
+        priority: legacyPriority,
+        recommendationKind: action.actionType,
+        nextAction: action.actionType,
+        reasonCodes: action.priorityReasons || [],
+        evidence: { room: action.room, guestName: action.canonicalName },
+        confidence: action.confidence,
+        operationalContext: {
+          priorityBand: action.priorityBand,
+          priorityScore: action.priorityScore,
+          nextAction: action.actionType
+        }
+      }
+    };
+  }
+
   /**
    * Sprint 5 consistency: replace recommendations only when they CONFLICT with a
    * canonical OPEN action (wrong room / wrong entity binding). Do not downgrade
@@ -10902,6 +11265,13 @@
       analyzed._operationalDependenciesResolved = true;
       analyzed._operationalDependencies = srcNotes._operationalDependencies;
     }
+    /* Sprint 7: preserve pre-built canonical actions across slice() so Briefing and
+     * Recommendations share stable actionIds / seats. */
+    if (srcNotes && Array.isArray(srcNotes._canonicalActions) && srcNotes._canonicalActions.length) {
+      analyzed._canonicalActions = srcNotes._canonicalActions;
+      analyzed._canonicalActionsBuilt = true;
+      analyzed._temporalAnchor = srcNotes._temporalAnchor;
+    }
     resolveOperationalDependencies(analyzed);
     if (classified && classified._analyzed) {
       classified._analyzed = analyzed;
@@ -10921,11 +11291,27 @@
     var seenIssue = {};
     var seenFamily = {};
 
-    function addCandidate(rec, factForGate) {
+    /* Sprint 5/6/7: stamp shared canonical actions before legacy candidate collection. */
+    var temporalOpts = {
+      handoverDate: input.handoverDate || input.handover_date || input.date || "",
+      shift: input.shiftCode || input.shift || input.shiftDisplayName || "",
+      createdAt: input.createdAt || input.created_at || ""
+    };
+    var canonicalActions = buildCanonicalOperationalActions(analyzed, temporalOpts);
+    analyzed._canonicalActions = canonicalActions;
+    if (classified && classified._analyzed) {
+      classified._analyzed._canonicalActions = canonicalActions;
+    }
+
+    function addCandidate(rec, factForGate, noteForGate) {
       if (!rec || !rec.text) return;
       /* Sprint 5: never recommend invented channel-payment chases without evidence. */
       if (/outstanding channel payment/i.test(rec.text) &&
           !hasChannelPaymentEvidence(rec.text + " " + ((factForGate && factForGate.sourceText) || ""))) {
+        return;
+      }
+      /* Sprint 7: payment safety gate — no collect without canonical payment OPEN or evidence. */
+      if (!passesPaymentSafetyGate(rec.text, canonicalActions, factForGate || null, noteForGate || null)) {
         return;
       }
       /* Sprint 5: never upgrade foam pillows into extra pillows. */
@@ -10935,6 +11321,7 @@
           text: String(rec.text).replace(/extra pillows/ig, "foam pillows")
         });
       }
+      if (legacyConflictsWithCanonicalState(rec.text, canonicalActions)) return;
       rec = validateDutyManagerRecommendation(rec, factForGate || null);
       if (!rec || !rec.text) return;
       var normalized = normalizeRecommendation(rec, fallbackDept);
@@ -10948,23 +11335,12 @@
       ).trim();
       if (issueSig && seenIssue[issueSig]) return;
       var familyKey = recommendationIssueKey(normalized);
-      if (familyKey && seenFamily[familyKey]) return;
+      /* Sprint 7: allow multiple legacy candidates through; seat selector owns family caps. */
+      if (!rec.canonicalSeed && familyKey && seenFamily[familyKey]) return;
       seen[signature] = true;
       if (issueSig) seenIssue[issueSig] = true;
       if (familyKey) seenFamily[familyKey] = true;
       candidates.push(normalized);
-    }
-
-    /* Sprint 5/6: stamp shared canonical actions (briefing/recs share this list). */
-    var temporalOpts = {
-      handoverDate: input.handoverDate || input.handover_date || input.date || "",
-      shift: input.shiftCode || input.shift || input.shiftDisplayName || "",
-      createdAt: input.createdAt || input.created_at || ""
-    };
-    var canonicalActions = buildCanonicalOperationalActions(analyzed, temporalOpts);
-    analyzed._canonicalActions = canonicalActions;
-    if (classified && classified._analyzed) {
-      classified._analyzed._canonicalActions = canonicalActions;
     }
 
     /* Pre-link same room/guest evidence so VIP amenity cancel/DONE siblings are visible.
@@ -11000,72 +11376,15 @@
       /* E4.2: context-driven path (DecisionTrace attached inside recommendationFromFact). */
       var fromFact = recommendationFromFact(fact, note, departments, fallbackDept, shiftType, brainContext);
       if (fromFact) {
-        addCandidate(fromFact, fact);
+        addCandidate(fromFact, fact, note);
       }
       /* Phase 2A / E4.2: do not invent from rewritten display when context forbids. */
-    });
-
-    /* Sprint 5/6: add OPEN canonical actions not already represented (fidelity fills). */
-    openCanonicalActions(canonicalActions).slice().sort(compareCanonicalActions).forEach(function (action) {
-      if (action.actionability === ACTIONABILITY.blocked) return;
-      var already = candidates.some(function (rec) {
-        var text = String(rec.text || "");
-        var sameRoom = action.room && new RegExp("\\b" + action.room + "\\b").test(text);
-        var sameGuest = action.canonicalName && text.toLowerCase().indexOf(String(action.canonicalName).toLowerCase()) !== -1;
-        var sameKind = rec.decisionTrace && rec.decisionTrace.nextAction === action.actionType;
-        /* Tokenise ≠ generic collect balance; airport ≠ generic follow-up. */
-        if (/payment:tokenise/i.test(action.facetKey || "") && !/tokenis|guarantee/i.test(text)) {
-          return false;
-        }
-        if (/timed:airport|timed:am_taxi|timed:late_checkout|timed:arrival_today/i.test(action.facetKey || "")) {
-          return /airport|pickup|taxi|late check|arrive today|still to arrive/i.test(text) &&
-            (sameRoom || !action.room);
-        }
-        return (sameRoom || sameGuest) && (sameKind || /arrange|prepare|collect|follow up|honour|tokenis/i.test(text));
-      });
-      if (already) return;
-      var band = action.priorityBand || PRIORITY_BAND.P2;
-      var legacyPriority = band === PRIORITY_BAND.P0
-        ? "urgent"
-        : (band === PRIORITY_BAND.P1 ? "high" : (band === PRIORITY_BAND.P3 ? "low" : "normal"));
-      var dept = /pillow|iron|towel|twin|amenit|fruit|champagne|flower/i.test(action.actionText || "")
-        ? "Housekeeping"
-        : (/payment|collect|folio/i.test(action.actionText || "") ? "Finance" : (fallbackDept || "Reception"));
-      var text = String(action.actionText || "").replace(/\.+$/, "") + ".";
-      addCandidate({
-        id: action.actionId,
-        text: text,
-        priority: legacyPriority,
-        canonicalPriority: band === PRIORITY_BAND.P0
-          ? CANONICAL_PRIORITY.critical
-          : (band === PRIORITY_BAND.P1 ? CANONICAL_PRIORITY.high : CANONICAL_PRIORITY.normal),
-        department: dept,
-        status: "open",
-        sourceFactIds: action.sourceFactIds || [],
-        reasonCodes: action.priorityReasons || [],
-        decisionTrace: {
-          sourceFactId: (action.sourceFactIds && action.sourceFactIds[0]) || "",
-          sourceFactIds: action.sourceFactIds || [],
-          objectType: action.actionType,
-          score: action.priorityScore,
-          priority: legacyPriority,
-          recommendationKind: action.actionType,
-          nextAction: action.actionType,
-          reasonCodes: action.priorityReasons || [],
-          evidence: { room: action.room, guestName: action.canonicalName },
-          confidence: action.confidence,
-          operationalContext: {
-            priorityBand: action.priorityBand,
-            priorityScore: action.priorityScore,
-            nextAction: action.actionType
-          }
-        }
-      }, null);
     });
 
     /*
      * Promote operational objects once (dedupe multi-component wake+taxi etc.).
      * Uses the same context-gated recommendationFromFact — no invented text.
+     * Sprint 7: legacy/object paths are fill-only; seating happens below.
      */
     var promoEntries = analyzed.map(function (note, index) {
       if (noteIsSupersededForDecision(note)) return null;
@@ -11143,7 +11462,7 @@
           ids,
           departments
         );
-        addCandidate(fromObj, primary.fact);
+        addCandidate(fromObj, primary.fact, primary.note);
       }
     });
 
@@ -11173,51 +11492,154 @@
       enrichRecommendationsWithMemory(candidates, memoryIndex.byFactId);
     }
 
-    /* Sprint 5: canonical OPEN actions win over conflicting legacy reconstructions. */
+    /* Sprint 5 residual reconcile for twin/tokenise conflict cleanup on legacy text. */
     candidates = reconcileRecommendationsWithCanonicalActions(candidates, canonicalActions);
-
-    /* Sprint 3 — final quality gate (think / validate / merge / suppress). */
-    candidates = applyFinalRecommendationQualityGate(candidates);
-
-    /* Rank by operational impact score first, then legacy priority band. */
-    function recImpactScore(rec) {
-      return rec.decisionTrace && typeof rec.decisionTrace.score === "number"
-        ? rec.decisionTrace.score : 90;
-    }
-    candidates.sort(function (a, b) {
-      var scoreA = recImpactScore(a);
-      var scoreB = recImpactScore(b);
-      if (scoreA !== scoreB) return scoreA - scoreB;
-      var rankA = PRIORITY_RANK[a.priority] != null ? PRIORITY_RANK[a.priority] : 9;
-      var rankB = PRIORITY_RANK[b.priority] != null ? PRIORITY_RANK[b.priority] : 9;
-      return rankA - rankB;
+    /* Drop legacy payment-collect invented by reconcile/cover paths without source evidence. */
+    candidates = (candidates || []).filter(function (rec) {
+      if (!rec || !isPaymentCollectInstruction(rec.text)) return true;
+      if (rec.canonicalSeed) return true;
+      if (/payment:tokenise|tokenis|guarantee/i.test(rec.text + " " + (rec.facetKey || ""))) return true;
+      if (hasMatchingCanonicalPaymentOpen(canonicalActions, roomFromRecommendationText(rec.text))) {
+        return true;
+      }
+      /* Without attached source evidence, fail closed for collect instructions. */
+      var evidence = String(
+        (rec.decisionTrace && rec.decisionTrace.evidence &&
+          (rec.decisionTrace.evidence.sourceText || "")) ||
+        ""
+      );
+      if (evidence && hasCollectablePaymentEvidence(evidence, null)) return true;
+      return false;
     });
 
-    /*
-     * Sprint 3 — cannot-miss diversity before the hard cap:
-     * keep best maintenance, timed, payment, and VIP actions so a second folio
-     * chase cannot push VIP prep off the shift-relief list.
-     */
+    /* Sprint 7: seat from canonical authority; legacy is wording enrich + fill-only. */
+    var decision = selectDecisionSeats(canonicalActions, {
+      surface: "recommendations",
+      maxN: MAX_RECOMMENDATIONS,
+      legacyCandidates: [],
+      allowMonitorContinuity: false
+    });
+
+    function recImpactScore(rec) {
+      return rec && rec.decisionTrace && typeof rec.decisionTrace.score === "number"
+        ? rec.decisionTrace.score : 90;
+    }
+
+    function findEnrichingLegacy(action) {
+      var best = null;
+      (candidates || []).forEach(function (rec) {
+        if (!rec || !legacyTextCoversCanonicalAction(rec.text, action)) return;
+        if (legacyConflictsWithCanonicalState(rec.text, canonicalActions)) return;
+        if (/flower/i.test(rec.text || "") && !/flower/i.test(action.actionText || "") &&
+            /amenity:prep|arrival_prep/i.test(action.facetKey || "")) {
+          return;
+        }
+        /* Prefer richer Duty Manager wording only when it stays shift-releasable. */
+        if (!wouldDutyManagerHandOver(rec) || isRoboticHandoverText(rec.text)) return;
+        if (!best || String(rec.text || "").length > String(best.text || "").length) best = rec;
+      });
+      return best;
+    }
+
+    var seated = [];
+    var seatedKeys = {};
+    (decision.seats || []).forEach(function (seat) {
+      if (!seat || !seat.action) return;
+      var base = recommendationFromCanonicalSeat(seat.action, fallbackDept);
+      var enrich = findEnrichingLegacy(seat.action);
+      if (enrich && enrich.text) {
+        base.text = enrich.text;
+        if (enrich.department) base.department = enrich.department;
+        base.reasonCodes = (base.reasonCodes || []).concat(["legacy_wording_enrich"]);
+      }
+      base.canonicalSeed = true;
+      base.canonicalActionId = seat.action.actionId;
+      base.id = seat.action.actionId;
+      base.facetKey = seat.action.facetKey;
+      base.actionState = seat.action.actionState;
+      if (base.decisionTrace) {
+        base.decisionTrace.score = seat.action.priorityScore;
+        base.decisionTrace.operationalContext = base.decisionTrace.operationalContext || {};
+        base.decisionTrace.operationalContext.priorityBand = seat.action.priorityBand;
+        base.decisionTrace.operationalContext.priorityScore = seat.action.priorityScore;
+      }
+      seated.push(base);
+      /* Family key for seeds uses actionId to avoid cross-facet room collisions. */
+      seatedKeys["seed|" + seat.action.actionId] = true;
+      seatedKeys[seat.action.actionId] = true;
+    });
+
+    /* Fill remaining capacity from legacy candidates not covering seated work. */
+    var legacyFills = (candidates || []).filter(function (rec) {
+      if (!rec || !rec.text) return false;
+      if (rec.canonicalSeed) return false;
+      if (!passesPaymentSafetyGate(rec.text, canonicalActions, null, null)) return false;
+      if (legacyConflictsWithCanonicalState(rec.text, canonicalActions)) return false;
+      if ((decision.seats || []).some(function (seat) {
+        return seat.action && legacyTextCoversCanonicalAction(rec.text, seat.action);
+      })) return false;
+      if (openCanonicalActions(canonicalActions).some(function (a) {
+        return legacyTextCoversCanonicalAction(rec.text, a);
+      })) return false;
+      return true;
+    }).sort(function (a, b) {
+      return recImpactScore(a) - recImpactScore(b);
+    });
+
+    var assembled = seated.slice();
+    legacyFills.forEach(function (rec) {
+      if (assembled.length >= MAX_RECOMMENDATIONS) return;
+      var key = recommendationIssueKey(rec);
+      if (key && seatedKeys[key]) return;
+      if (key) seatedKeys[key] = true;
+      assembled.push(rec);
+    });
+
+    assembled = applyFinalRecommendationQualityGate(assembled);
+
+    /* Cap with canonical seeds reserved first; diversity only among fills. */
     var capped = [];
     var cappedKeys = {};
-    function takeRec(rec) {
-      if (!rec || capped.length >= MAX_RECOMMENDATIONS) return;
-      var key = recommendationIssueKey(rec);
+    function takeRec(rec, force) {
+      if (!rec || !rec.text) return;
+      if (!force && capped.length >= MAX_RECOMMENDATIONS) return;
+      if (force && capped.length >= MAX_RECOMMENDATIONS) return;
+      /* Sprint 7: seed identity is actionId — do not collapse distinct facets by room family. */
+      var key = rec.canonicalSeed
+        ? ("seed|" + (rec.canonicalActionId || rec.id || recommendationIssueKey(rec)))
+        : recommendationIssueKey(rec);
       if (key && cappedKeys[key]) return;
       if (key) cappedKeys[key] = true;
       capped.push(rec);
     }
+    assembled.forEach(function (rec) {
+      if (rec && rec.canonicalSeed) takeRec(rec, true);
+    });
     ["maintenance", "timed", "payment", "vip"].forEach(function (family) {
+      if (capped.length >= MAX_RECOMMENDATIONS) return;
       var best = null;
-      candidates.forEach(function (rec) {
+      assembled.forEach(function (rec) {
+        if (rec && rec.canonicalSeed) return;
         var key = recommendationIssueKey(rec);
         if ((key.split("|")[0] || "") !== family) return;
         if (!best || recImpactScore(rec) < recImpactScore(best)) best = rec;
       });
-      if (best) takeRec(best);
+      if (best) takeRec(best, false);
     });
-    candidates.forEach(function (rec) { takeRec(rec); });
+    assembled.forEach(function (rec) {
+      if (rec && rec.canonicalSeed) return;
+      takeRec(rec, false);
+    });
+
+    /* If over cap, drop non-seeds first (should already be capped). */
+    if (capped.length > MAX_RECOMMENDATIONS) {
+      var seeds = capped.filter(function (r) { return r.canonicalSeed; });
+      var fills = capped.filter(function (r) { return !r.canonicalSeed; });
+      capped = seeds.concat(fills).slice(0, MAX_RECOMMENDATIONS);
+    }
+
     capped.sort(function (a, b) {
+      if (!!a.canonicalSeed !== !!b.canonicalSeed) return a.canonicalSeed ? -1 : 1;
       var scoreA = recImpactScore(a);
       var scoreB = recImpactScore(b);
       if (scoreA !== scoreB) return scoreA - scoreB;
@@ -11228,7 +11650,10 @@
 
     return capped.map(function (rec) {
       rec.text = limitRecommendationText(applyText(rec.text));
-      /* Final shift-relief check after text preferences. */
+      if (rec.canonicalSeed) {
+        if (!rec.text || isRoboticHandoverText(rec.text)) return null;
+        return rec;
+      }
       if (!wouldDutyManagerHandOver(rec) || isRoboticHandoverText(rec.text)) return null;
       return rec;
     }).filter(function (rec) { return !!rec && !!rec.text; });
@@ -11972,6 +12397,12 @@
     openCanonicalActions: openCanonicalActions,
     compareCanonicalActions: compareCanonicalActions,
     reconcileRecommendationsWithCanonicalActions: reconcileRecommendationsWithCanonicalActions,
+    /* Reasoning Sprint 7 — canonical decision seating authority */
+    selectDecisionSeats: selectDecisionSeats,
+    passesPaymentSafetyGate: passesPaymentSafetyGate,
+    isDoNowEligibleCanonical: isDoNowEligibleCanonical,
+    briefingSpecFromCanonicalAction: briefingSpecFromCanonicalAction,
+    recommendationFromCanonicalSeat: recommendationFromCanonicalSeat,
     /* Reasoning Sprint 6 — temporal / today action eligibility */
     TEMPORAL_SCOPE: TEMPORAL_SCOPE,
     TEMPORAL_CONFIDENCE: TEMPORAL_CONFIDENCE,
