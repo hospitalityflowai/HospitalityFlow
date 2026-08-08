@@ -3076,6 +3076,7 @@
   function allowsOpenRecommendation(context) {
     if (!context) return false;
     if (context.superseded === true) return false;
+    if ((context.reasoning || []).indexOf("dependency_blocked") !== -1) return false;
     if (typeof context.confidence === "number" && context.confidence < CONFIDENCE_GATE.recommendMin) {
       return false;
     }
@@ -4095,6 +4096,11 @@
     var src = objectSourceBlob(obj);
     var primary = objectPrimaryFact(obj);
     var fact = primary && primary.fact;
+    var note = primary && primary.note;
+    /* Sprint 4: do not promote blocked downstream work as briefing "do now". */
+    if (noteIsDependencyBlocked(note) || (fact && fact.actionability === ACTIONABILITY.blocked)) {
+      return false;
+    }
     var subject = normalizeSubjectToken(fact && (fact.subject || fact.subjectType) || "");
     /* Reasoning Sprint 2 — P0/P1 hazards must surface even if typed as "other". */
     var band = objectPriorityBand(obj);
@@ -6222,6 +6228,10 @@
     if (!fact || isFactClosedForRecs(fact)) return null;
     note = note || { original: fact.sourceText || "" };
     if (noteIsSupersededForDecision(note) || fact.superseded) return null;
+    /* Sprint 4: blocked/waiting downstream actions are not "do now" recommendations. */
+    if (noteIsDependencyBlocked(note) || fact.actionability === ACTIONABILITY.blocked) {
+      return null;
+    }
     if (global.AiWritingEngine && typeof global.AiWritingEngine.isPaymentNoCollectState === "function" &&
         global.AiWritingEngine.isPaymentNoCollectState(fact, note)) {
       return null;
@@ -6244,6 +6254,10 @@
       context.currentStatus = CONTEXT_STATUS.completed;
       context.nextAction = NEXT_ACTION_KIND.none;
       context.revenueImpact = IMPACT_LEVEL.none;
+    }
+    if (noteIsDependencyBlocked(note) || fact.actionability === ACTIONABILITY.blocked) {
+      context.nextAction = NEXT_ACTION_KIND.none;
+      context.reasoning = (context.reasoning || []).concat(["dependency_blocked"]);
     }
 
     if (!allowsOpenRecommendation(context)) return null;
@@ -7850,9 +7864,785 @@
     return candidates;
   }
 
+  /* ─── Reasoning Sprint 4 — operational dependencies & sequencing ─────
+   * Smallest practical gate layer. FALSE DEPENDENCY delays work — fail closed
+   * on ambiguity (keep actions independent). Safety/control unlocks are the
+   * exception: never bypass current inspection/control prerequisites.
+   *
+   * Pipeline: entity resolution → current-state election → HERE → priority/recs
+   */
+
+  var DEPENDENCY_RELATION = {
+    blocks: "blocks",
+    requires: "requires",
+    waiting_on: "waiting_on",
+    unlocks: "unlocks"
+  };
+
+  var DEPENDENCY_STATE = {
+    blocked: "blocked",
+    ready: "ready",
+    satisfied: "satisfied",
+    unresolved: "unresolved"
+  };
+
+  var ACTIONABILITY = {
+    actionable: "actionable",
+    blocked: "blocked",
+    satisfied: "satisfied",
+    unresolved: "unresolved"
+  };
+
+  var _dependencySeq = 0;
+
+  function dependencyNoteBlob(note) {
+    if (!note) return "";
+    var parts = [];
+    if (note.original) parts.push(String(note.original));
+    if (note.fact) {
+      if (note.fact.sourceText) parts.push(String(note.fact.sourceText));
+      if (note.fact.summary) parts.push(String(note.fact.summary));
+      if (note.fact.guestName) parts.push(String(note.fact.guestName));
+      if (Array.isArray(note.fact.sourceHistory)) {
+        note.fact.sourceHistory.forEach(function (h) {
+          if (h && h.sourceText) parts.push(String(h.sourceText));
+        });
+      }
+    }
+    return parts.join(" | ");
+  }
+
+  function dependencyNoteRooms(note) {
+    var rooms = [];
+    function add(r) {
+      var n = normalizeRoomNumber(r);
+      if (n && rooms.indexOf(n) === -1) rooms.push(n);
+    }
+    if (note && note.currentRoom) add(note.currentRoom);
+    if (note && note.fact && note.fact.currentRoom) add(note.fact.currentRoom);
+    if (note && note.fact && Array.isArray(note.fact.rooms)) note.fact.rooms.forEach(add);
+    if (note && Array.isArray(note.rooms)) note.rooms.forEach(add);
+    var blob = dependencyNoteBlob(note);
+    var m;
+    var re = /\b(?:rm\.?|room\s*)(\d{1,4}[a-z]?)\b/gi;
+    while ((m = re.exec(blob))) add(m[1]);
+    return rooms;
+  }
+
+  function dependencyNoteEntityId(note) {
+    if (!note) return "";
+    return String(note.entityId || (note.fact && note.fact.entityId) || "");
+  }
+
+  function dependencyObjectId(note, idx) {
+    if (note && note.fact && note.fact.id) return String(note.fact.id);
+    if (note && note.id != null) return String(note.id);
+    return "obj_" + idx;
+  }
+
+  function noteIsDecisionOpen(note) {
+    if (!note) return false;
+    if (noteIsSupersededForDecision(note)) return false;
+    if (note.fact && note.fact.superseded) return false;
+    return true;
+  }
+
+  function textHasExplicitGateLanguage(text) {
+    var t = String(text || "");
+    return /\b(?:do\s+not|must\s+not|cannot|can\s+not)\b.{0,100}\b(?:until|before|unless|without|yet)\b/i.test(t) ||
+      /\b(?:only\s+after|waiting\s+for|blocked\s+by|current\s+blocker|subject\s+to)\b/i.test(t) ||
+      /\b(?:has\s+not\s+approved|not\s+approved\s+yet|without\s+approval|management\s+approval)\b/i.test(t) ||
+      /\bonce\b.{0,60}\b(?:then|complete|deliver|move|collect|process)\b/i.test(t) ||
+      /\brequires?\b.{0,40}\bbefore\b/i.test(t) ||
+      /\b(?:remain(?:s)?\s+)?(?:ooo|out\s+of\s+(?:order|service)|locked).{0,40}\buntil\b/i.test(t) ||
+      /\buntil\b.{0,40}\b(?:inspection|engineer|approval|housekeeping|hk|f\s*&\s*b|cleared|ready)\b/i.test(t) ||
+      /\b(?:do\s+not|must\s+not)\s+tell\b.{0,40}\b(?:finance|process)\b/i.test(t);
+  }
+
+  function textLooksPrerequisiteSatisfied(text) {
+    var t = String(text || "");
+    if (/\b(?:has\s+not|not\s+yet|still\s+waiting|not\s+approved|not\s+ready|still\s+dirty|still\s+ooo)\b/i.test(t)) {
+      return false;
+    }
+    return /\b(?:COMPLETE|DONE|delivered|approved|inspection\s+passed|ready(?:\s+now)?|confirmed\s+ready|IN\s+SERVICE|NOT\s+OOO|returned\s+to\s+service|cleared|resolved|finished|passes)\b/i.test(t) ||
+      /\b(?:manager\s+approved|approval\s+(?:complete|received)|hk\s+confirmed|housekeeping\s+confirmed)\b/i.test(t);
+  }
+
+  function textLooksPrerequisiteOpen(text) {
+    var t = String(text || "");
+    return /\b(?:not\s+yet|has\s+NOT|NOT\s+placed|NOT\s+approved|waiting|dirty|being\s+cleaned|not\s+ready|still\s+unresolved|currently\s+(?:being|working)|engineer\s+(?:currently|working)|ooo|out\s+of\s+order|disputed|checking\s+signed|must\s+not|do\s+not)\b/i.test(t);
+  }
+
+  /**
+   * Classify operational roles a note may play in a dependency edge.
+   * Roles are cues for binding — edges still require strong/medium evidence.
+   */
+  function classifyDependencyRoles(note) {
+    var t = dependencyNoteBlob(note);
+    var roles = [];
+    function add(r) { if (roles.indexOf(r) === -1) roles.push(r); }
+
+    if (/\b(?:room\s+move|moved?\s+to|allocation\s+(?:changed|rm)|allocate|keys?\s+prepared|guest\s+moves?|check(?:s)?\s+into)\b/i.test(t) ||
+        /\b(?:rm\d+)\s*[>→]\s*(?:rm)?\d+/i.test(t)) {
+      add("room_move");
+    }
+    if (/\b(?:dirty|not\s+ready|being\s+cleaned|cleaning\s+after|hk\s+(?:finishes|places|confirms)|housekeeping\s+confirms?|room\s+ready|feather-free|pillows?)\b/i.test(t)) {
+      add("room_readiness");
+    }
+    if (/\bchampagne\b/i.test(t)) add("vip_champagne");
+    if (/\b(?:feather-free|pillows?)\b/i.test(t)) add("vip_pillows");
+    if (/\b(?:welcome\s+)?card\b/i.test(t) && !/\bkey\s*card\b/i.test(t)) add("vip_card");
+    if (/\b(?:disputed|f\s*&\s*b\s+(?:is\s+)?check|verif(?:y|ies|ication)|signed\s+bill|payment\s+decision\s+blocked)\b/i.test(t) ||
+        /\bmust\s+not\s+collect\b/i.test(t)) {
+      add("payment_gate");
+    }
+    if (/\b(?:collect|outstanding|folio|£\s*\d+)/i.test(t) &&
+        /\b(?:collect|outstanding|balance|payment)\b/i.test(t)) {
+      add("payment_collect");
+    }
+    if (/\brefund\b/i.test(t)) add("refund");
+    if (/\b(?:manager(?:ial)?\s+approval|waiting\s+for\s+management|management\s+approval|approves?\/rejects?)\b/i.test(t) ||
+        (/\bapprov/i.test(t) && /\b(?:manager|management|finance\s+cannot)\b/i.test(t))) {
+      add("approval_gate");
+    }
+    if (/\b(?:return\s+to\s+(?:service|inventory)|mark\s+room\s+available|do\s+not\s+mark\s+room\s+available)\b/i.test(t) ||
+        (/\booo\b|\bout\s+of\s+order\b/i.test(t) && /\b(?:until|inspect|return)\b/i.test(t))) {
+      add("rts");
+    }
+    if (/\b(?:engineer|inspection|inspect(?:s|ion)?|maintenance\s+(?:completes|repairing|working|tests?)|water\s+isolated|do\s+not\s+restore|do\s+not\s+reopen)\b/i.test(t) ||
+        /\b(?:out\s+of\s+service|oos)\b.{0,40}\buntil\b/i.test(t)) {
+      add("maint_control");
+    }
+    if (/\b(?:check-?in|complete\s+check)\b/i.test(t)) add("check_in");
+    if (/\b(?:vcc|cannot\s+be\s+charged|after\s+midnight)\b/i.test(t)) add("vcc_condition");
+    return roles;
+  }
+
+  function createDependencyEdge(opts) {
+    _dependencySeq += 1;
+    return {
+      dependencyId: "dep_" + _dependencySeq,
+      fromObjectId: opts.fromObjectId || "",
+      toObjectId: opts.toObjectId || "",
+      relation: opts.relation || DEPENDENCY_RELATION.blocks,
+      dependencyState: opts.dependencyState || DEPENDENCY_STATE.blocked,
+      evidenceStrength: opts.evidenceStrength || "explicit",
+      identityEvidence: Array.isArray(opts.identityEvidence) ? opts.identityEvidence.slice() : [],
+      entityId: opts.entityId || "",
+      currentRoom: opts.currentRoom || "",
+      reason: opts.reason || "",
+      fromIndex: opts.fromIndex,
+      toIndex: opts.toIndex
+    };
+  }
+
+  function evaluatePrerequisiteState(fromNote) {
+    if (!fromNote) return DEPENDENCY_STATE.unresolved;
+    var blob = dependencyNoteBlob(fromNote);
+    /* Sprint 1: superseded open-blocker claims that were completed → satisfied */
+    if (!noteIsDecisionOpen(fromNote)) {
+      if (textLooksPrerequisiteSatisfied(blob) ||
+          /\b(?:DONE|COMPLETE|PAID|approved|ready|IN\s+SERVICE|cleared)\b/i.test(blob)) {
+        return DEPENDENCY_STATE.satisfied;
+      }
+      /* Superseded without clear completion — do not keep as active blocker */
+      return DEPENDENCY_STATE.satisfied;
+    }
+    if (textLooksPrerequisiteSatisfied(blob) && !textLooksPrerequisiteOpen(blob)) {
+      return DEPENDENCY_STATE.satisfied;
+    }
+    if (textLooksPrerequisiteOpen(blob) || textHasExplicitGateLanguage(blob)) {
+      return DEPENDENCY_STATE.blocked;
+    }
+    if (textLooksPrerequisiteSatisfied(blob)) return DEPENDENCY_STATE.satisfied;
+    return DEPENDENCY_STATE.blocked;
+  }
+
+  function roomsCompatibleForDependency(aRooms, bRooms) {
+    if (!aRooms || !bRooms) return false;
+    /*
+     * Explicit gate sentences often omit the room on one side ("Do not mark
+     * available until Maintenance inspects"). Empty room on one side is allowed;
+     * medium inferences still require unique room overlap via caller checks.
+     */
+    if (!aRooms.length || !bRooms.length) return true;
+    return aRooms.some(function (r) { return bRooms.indexOf(r) !== -1; });
+  }
+
+  function entitiesCompatibleForDependency(a, b) {
+    var ea = dependencyNoteEntityId(a);
+    var eb = dependencyNoteEntityId(b);
+    if (ea && eb) return ea === eb;
+    return true; /* allow room-based binding when entity missing */
+  }
+
+  function attachDependencyAnnotations(notes, edges) {
+    notes.forEach(function (note, idx) {
+      if (!note) return;
+      var oid = dependencyObjectId(note, idx);
+      var blockedBy = [];
+      var blocks = [];
+      var myEdges = [];
+      edges.forEach(function (e) {
+        if (e.toObjectId === oid || e.toIndex === idx) {
+          myEdges.push(e);
+          if (e.dependencyState === DEPENDENCY_STATE.blocked) blockedBy.push(e);
+          if (e.dependencyState === DEPENDENCY_STATE.satisfied) {
+            /* unlocked */
+          }
+        }
+        if (e.fromObjectId === oid || e.fromIndex === idx) {
+          myEdges.push(e);
+          if (e.dependencyState === DEPENDENCY_STATE.blocked) blocks.push(e);
+        }
+      });
+
+      var actionability = ACTIONABILITY.actionable;
+      if (!noteIsDecisionOpen(note) && textLooksPrerequisiteSatisfied(dependencyNoteBlob(note))) {
+        actionability = ACTIONABILITY.satisfied;
+      } else if (blockedBy.length) {
+        actionability = ACTIONABILITY.blocked;
+      } else if (myEdges.some(function (e) { return e.dependencyState === DEPENDENCY_STATE.unresolved && e.toIndex === idx; })) {
+        actionability = ACTIONABILITY.unresolved;
+      }
+
+      note.actionability = actionability;
+      note.dependencyState = blockedBy.length
+        ? DEPENDENCY_STATE.blocked
+        : (actionability === ACTIONABILITY.satisfied ? DEPENDENCY_STATE.satisfied : DEPENDENCY_STATE.ready);
+      note.blockedBy = blockedBy;
+      note.blocks = blocks;
+      note.operationalDependencies = myEdges;
+      if (note.fact) {
+        note.fact.actionability = actionability;
+        note.fact.dependencyState = note.dependencyState;
+        note.fact.blockedBy = blockedBy;
+        note.fact.operationalDependencies = myEdges;
+      }
+    });
+  }
+
+  /**
+   * Resolve operational dependencies across analyzed notes.
+   * Annotates actionability / blockedBy / operationalDependencies.
+   * Fail closed: ambiguous evidence creates no suppressing edge.
+   */
+  function resolveOperationalDependencies(analyzed) {
+    var notes = Array.isArray(analyzed) ? analyzed : [];
+    if (!notes.length) return notes;
+    if (notes._operationalDependenciesResolved) return notes;
+
+    _dependencySeq = 0;
+    var edges = [];
+    var meta = notes.map(function (note, idx) {
+      return {
+        note: note,
+        idx: idx,
+        objectId: dependencyObjectId(note, idx),
+        blob: dependencyNoteBlob(note),
+        rooms: dependencyNoteRooms(note),
+        entityId: dependencyNoteEntityId(note),
+        roles: classifyDependencyRoles(note),
+        open: noteIsDecisionOpen(note),
+        explicitGate: textHasExplicitGateLanguage(dependencyNoteBlob(note))
+      };
+    });
+
+    function addEdge(fromMeta, toMeta, opts) {
+      if (!fromMeta || !toMeta || fromMeta.idx === toMeta.idx) return;
+      /* Avoid duplicate edges */
+      var exists = edges.some(function (e) {
+        return e.fromIndex === fromMeta.idx && e.toIndex === toMeta.idx && e.relation === (opts.relation || DEPENDENCY_RELATION.blocks);
+      });
+      if (exists) return;
+      var state = evaluatePrerequisiteState(fromMeta.note);
+      if (opts.forceState) state = opts.forceState;
+      edges.push(createDependencyEdge({
+        fromObjectId: fromMeta.objectId,
+        toObjectId: toMeta.objectId,
+        fromIndex: fromMeta.idx,
+        toIndex: toMeta.idx,
+        relation: opts.relation || DEPENDENCY_RELATION.blocks,
+        dependencyState: state,
+        evidenceStrength: opts.evidenceStrength || "explicit",
+        identityEvidence: opts.identityEvidence || [],
+        entityId: toMeta.entityId || fromMeta.entityId || "",
+        currentRoom: (opts.room || toMeta.rooms[0] || fromMeta.rooms[0] || ""),
+        reason: opts.reason || ""
+      }));
+    }
+
+    /* ---- Strong: explicit gate language on a note binds roles/rooms ---- */
+    meta.forEach(function (m) {
+      if (!m.explicitGate && !/\bcurrent\s+blocker\b/i.test(m.blob)) return;
+      var t = m.blob;
+
+      /* Do not collect until F&B / verification */
+      if (/\b(?:do\s+not|must\s+not)\s+collect\b/i.test(t) &&
+          /\b(?:until|before)\b/i.test(t) &&
+          /\b(?:f\s*&\s*b|verif|bill|dispute)/i.test(t)) {
+        meta.forEach(function (collectM) {
+          if (collectM.idx === m.idx) return;
+          if (collectM.roles.indexOf("payment_collect") === -1) return;
+          if (!roomsCompatibleForDependency(m.rooms, collectM.rooms) &&
+              !/\b£\s*\d+/.test(t)) {
+            /* amount-only bind when rooms missing on gate note */
+            if (!/\b£\s*\d+/.test(t) || !/\b£\s*\d+/.test(collectM.blob)) return;
+          }
+          if (!entitiesCompatibleForDependency(m.note, collectM.note)) return;
+          addEdge(m, collectM, {
+            relation: DEPENDENCY_RELATION.blocks,
+            evidenceStrength: "explicit",
+            identityEvidence: ["do_not_collect_until"],
+            reason: "payment_verification_gate"
+          });
+        });
+      }
+
+      /* Do not move/allocate until ready/inspect */
+      if (/\b(?:do\s+not|must\s+not)\b.{0,40}\b(?:move|allocate|allocation)\b/i.test(t) &&
+          /\b(?:until|before)\b/i.test(t)) {
+        meta.forEach(function (moveM) {
+          if (moveM.roles.indexOf("room_move") === -1 && !/\b(?:move|allocate)\b/i.test(moveM.blob)) return;
+          if (moveM.idx === m.idx) {
+            /* Gate on same note: find readiness sibling */
+            return;
+          }
+          if (!roomsCompatibleForDependency(m.rooms, moveM.rooms) &&
+              !entitiesCompatibleForDependency(m.note, moveM.note)) {
+            /* still allow if move mentions destination in gate rooms */
+            if (!roomsCompatibleForDependency(m.rooms, moveM.rooms)) return;
+          }
+          addEdge(m, moveM, {
+            relation: DEPENDENCY_RELATION.blocks,
+            evidenceStrength: "explicit",
+            identityEvidence: ["do_not_move_until"],
+            reason: "room_move_gate"
+          });
+        });
+      }
+
+      /* Champagne only after HK / room ready */
+      if (/\bchampagne\b/i.test(t) &&
+          /\b(?:only\s+after|after)\b/i.test(t) &&
+          /\b(?:hk|housekeeping|room\s+setup|room\s+ready|pillows?)\b/i.test(t)) {
+        var pillowBlockers = meta.filter(function (x) {
+          return x.roles.indexOf("vip_pillows") !== -1 || x.roles.indexOf("room_readiness") !== -1;
+        });
+        var champagnes = meta.filter(function (x) {
+          return x.roles.indexOf("vip_champagne") !== -1;
+        });
+        pillowBlockers.forEach(function (fromM) {
+          champagnes.forEach(function (toM) {
+            if (fromM.idx === toM.idx) return;
+            if (!entitiesCompatibleForDependency(fromM.note, toM.note) &&
+                !roomsCompatibleForDependency(fromM.rooms, toM.rooms)) return;
+            /* Prefer same entity when both resolved */
+            if (fromM.entityId && toM.entityId && fromM.entityId !== toM.entityId) return;
+            addEdge(fromM, toM, {
+              relation: DEPENDENCY_RELATION.blocks,
+              evidenceStrength: "explicit",
+              identityEvidence: ["champagne_after_hk"],
+              reason: "vip_sequence_gate"
+            });
+          });
+        });
+      }
+
+      /* Current blocker = pillows / readiness */
+      if (/\bcurrent\s+blocker\b/i.test(t)) {
+        var blockerIsPillows = /\bpillow/i.test(t);
+        var blockerIsDeparture = /\bdepart/i.test(t);
+        if (blockerIsPillows) {
+          var pillows = meta.filter(function (x) {
+            return x.roles.indexOf("vip_pillows") !== -1 || /\bpillow/i.test(x.blob);
+          });
+          var downstreamVip = meta.filter(function (x) {
+            return x.roles.indexOf("vip_champagne") !== -1 ||
+              (/\breception\b/i.test(x.blob) && /\b(?:final-?check|verif)/i.test(x.blob));
+          });
+          pillows.forEach(function (fromM) {
+            downstreamVip.forEach(function (toM) {
+              if (fromM.idx === toM.idx) return;
+              if (fromM.entityId && toM.entityId && fromM.entityId !== toM.entityId) return;
+              addEdge(fromM, toM, {
+                relation: DEPENDENCY_RELATION.waiting_on,
+                evidenceStrength: "explicit",
+                identityEvidence: ["current_blocker"],
+                reason: "current_blocker_pillows"
+              });
+            });
+          });
+        }
+        if (blockerIsDeparture) {
+          /* cot blocked on departure — mark cot placement notes blocked by departure notes */
+          var deps = meta.filter(function (x) { return /\bdepart/i.test(x.blob); });
+          var cots = meta.filter(function (x) { return /\bcot\b/i.test(x.blob); });
+          deps.forEach(function (fromM) {
+            cots.forEach(function (toM) {
+              if (fromM.idx === toM.idx) return;
+              if (!roomsCompatibleForDependency(fromM.rooms, toM.rooms) &&
+                  !/\bcot\b/i.test(fromM.blob)) {
+                /* allow if cot note references departure room */
+                if (!roomsCompatibleForDependency(fromM.rooms, toM.rooms)) return;
+              }
+              addEdge(fromM, toM, {
+                relation: DEPENDENCY_RELATION.waiting_on,
+                evidenceStrength: "explicit",
+                identityEvidence: ["current_blocker_departure"],
+                reason: "cot_wait_departure"
+              });
+            });
+          });
+        }
+      }
+
+      /* Refund waits for manager approval */
+      var refundApprovalGate =
+        (/\b(?:waiting\s+for\s+management|manager\s+has\s+not\s+approved|without\s+approval|approves?\/rejects?|management\s+approval|has\s+not\s+approved)\b/i.test(t) &&
+          (/\brefund\b/i.test(t) || /\bfinance\b.{0,40}\bprocess/i.test(t) || /\bprocess\b.{0,20}£/i.test(t))) ||
+        (/\b(?:do\s+not|must\s+not)\s+tell\b.{0,40}\bfinance\b/i.test(t) && /\bprocess\b/i.test(t));
+      if (refundApprovalGate) {
+        var approvals = meta.filter(function (x) {
+          return x.roles.indexOf("approval_gate") !== -1 ||
+            /\b(?:approv|waiting\s+for\s+management|has\s+not\s+approved)\b/i.test(x.blob) ||
+            x.idx === m.idx;
+        });
+        var refunds = meta.filter(function (x) {
+          return x.roles.indexOf("refund") !== -1 ||
+            /\b(?:refund|process\s*£|finance\s+processes)\b/i.test(x.blob);
+        });
+        approvals.forEach(function (fromM) {
+          refunds.forEach(function (toM) {
+            if (fromM.idx === toM.idx) {
+              /* Same note holds both gate + refund request — block finance-process siblings only */
+              return;
+            }
+            addEdge(fromM, toM, {
+              relation: DEPENDENCY_RELATION.blocks,
+              evidenceStrength: "explicit",
+              identityEvidence: ["manager_approval_before_refund"],
+              reason: "refund_approval_gate"
+            });
+          });
+        });
+        /* Block refund/process notes from this gate note */
+        refunds.forEach(function (toM) {
+          if (toM.idx === m.idx) return;
+          addEdge(m, toM, {
+            relation: DEPENDENCY_RELATION.blocks,
+            evidenceStrength: "explicit",
+            identityEvidence: ["manager_approval_before_refund"],
+            reason: "refund_approval_gate"
+          });
+        });
+        /* If refund+gate are consolidated on one note, mark that note blocked for process-now */
+        if (/\brefund\b/i.test(t) && /\b(?:not\s+approved|without\s+approval|waiting\s+for\s+management)\b/i.test(t)) {
+          refunds.forEach(function (toM) {
+            if (toM.idx !== m.idx) return;
+            /* Use a sibling approval/SEQUENCE note as from when available */
+            var seq = meta.filter(function (x) {
+              return x.idx !== m.idx && /\b(?:management\s+approval|approves?|waiting\s+for\s+management)\b/i.test(x.blob);
+            });
+            if (seq.length >= 1) {
+              addEdge(seq[0], m, {
+                relation: DEPENDENCY_RELATION.blocks,
+                evidenceStrength: "explicit",
+                identityEvidence: ["manager_approval_before_refund"],
+                reason: "refund_approval_gate"
+              });
+            }
+          });
+        }
+      }
+
+      /* OOO / RTS until inspection — safety */
+      if (/\b(?:ooo|out\s+of\s+order|return\s+to\s+(?:service|inventory)|do\s+not\s+(?:restore|reopen|mark\s+room\s+available))\b/i.test(t) &&
+          /\b(?:until|before)\b/i.test(t) &&
+          /\b(?:inspect|engineer|clearance|maintenance|repair)\b/i.test(t)) {
+        var controls = meta.filter(function (x) {
+          return x.roles.indexOf("maint_control") !== -1 || x.idx === m.idx;
+        });
+        var rtsNotes = meta.filter(function (x) {
+          return x.roles.indexOf("rts") !== -1 ||
+            /\b(?:return\s+to\s+(?:service|inventory)|mark\s+room\s+available|available\s+yet|reopen|restore)\b/i.test(x.blob);
+        });
+        controls.forEach(function (fromM) {
+          rtsNotes.forEach(function (toM) {
+            if (fromM.idx === toM.idx) return;
+            if (!roomsCompatibleForDependency(fromM.rooms, toM.rooms) &&
+                !roomsCompatibleForDependency(m.rooms, toM.rooms)) return;
+            addEdge(fromM, toM, {
+              relation: DEPENDENCY_RELATION.blocks,
+              evidenceStrength: "explicit",
+              identityEvidence: ["ooo_until_inspection"],
+              reason: "safety_rts_gate"
+            });
+          });
+        });
+        /* Gate note itself describes a blocked RTS action — bind to maint control sibling */
+        if (/\b(?:do\s+not|must\s+not)\b.{0,60}\b(?:return|mark\s+room\s+available|reopen|restore)\b/i.test(t)) {
+          var maintFrom = meta.filter(function (x) {
+            return x.idx !== m.idx && (x.roles.indexOf("maint_control") !== -1 ||
+              /\b(?:maintenance|engineer|ooo|repair)\b/i.test(x.blob));
+          });
+          if (maintFrom.length >= 1) {
+            var fromCtrl = maintFrom.length === 1 ? maintFrom[0] : null;
+            if (!fromCtrl && m.rooms.length) {
+              var roomMatched = maintFrom.filter(function (x) {
+                return roomsCompatibleForDependency(x.rooms, m.rooms);
+              });
+              if (roomMatched.length === 1) fromCtrl = roomMatched[0];
+            }
+            if (!fromCtrl && maintFrom.length === 1) fromCtrl = maintFrom[0];
+            if (fromCtrl) {
+              addEdge(fromCtrl, m, {
+                relation: DEPENDENCY_RELATION.blocks,
+                evidenceStrength: "explicit",
+                identityEvidence: ["ooo_until_inspection"],
+                reason: "safety_rts_gate"
+              });
+            }
+          }
+        }
+      }
+
+      /* Lift/OOS until inspection — reopen blocked */
+      if (/\b(?:lift|elevator|oos|out\s+of\s+service)\b/i.test(t) &&
+          /\buntil\b/i.test(t) &&
+          /\b(?:inspect|engineer)\b/i.test(t)) {
+        meta.forEach(function (toM) {
+          if (!/\b(?:reopen|restore|return\s+to\s+service)\b/i.test(toM.blob)) return;
+          addEdge(m, toM, {
+            relation: DEPENDENCY_RELATION.blocks,
+            evidenceStrength: "explicit",
+            identityEvidence: ["oos_until_inspection"],
+            reason: "safety_reopen_gate"
+          });
+        });
+      }
+
+      /* VCC / after midnight — waiting, not collect-now */
+      if (/\b(?:vcc|cannot\s+be\s+charged|after\s+midnight)\b/i.test(t) &&
+          /\b(?:until|after|waiting|cannot)\b/i.test(t)) {
+        meta.forEach(function (toM) {
+          if (toM.roles.indexOf("payment_collect") === -1 && toM.roles.indexOf("check_in") === -1) return;
+          if (!roomsCompatibleForDependency(m.rooms, toM.rooms) &&
+              !entitiesCompatibleForDependency(m.note, toM.note)) return;
+          addEdge(m, toM, {
+            relation: DEPENDENCY_RELATION.waiting_on,
+            evidenceStrength: "explicit",
+            identityEvidence: ["vcc_condition_wait"],
+            reason: "vcc_waiting"
+          });
+        });
+      }
+
+      /* Once payment clears, check-in — only with explicit once/after language */
+      if (/\b(?:once|after)\b.{0,40}\bpayment\b.{0,40}\b(?:check-?in|complete)\b/i.test(t) ||
+          /\bpayment\b.{0,40}\b(?:clears?|cleared)\b.{0,40}\bcheck-?in\b/i.test(t)) {
+        var pay = meta.filter(function (x) {
+          return x.roles.indexOf("payment_collect") !== -1 || x.roles.indexOf("payment_gate") !== -1;
+        });
+        var cin = meta.filter(function (x) { return x.roles.indexOf("check_in") !== -1; });
+        pay.forEach(function (fromM) {
+          cin.forEach(function (toM) {
+            if (!entitiesCompatibleForDependency(fromM.note, toM.note) &&
+                !roomsCompatibleForDependency(fromM.rooms, toM.rooms)) return;
+            addEdge(fromM, toM, {
+              relation: DEPENDENCY_RELATION.blocks,
+              evidenceStrength: "explicit",
+              identityEvidence: ["payment_before_checkin"],
+              reason: "checkin_payment_gate"
+            });
+          });
+        });
+      }
+    });
+
+    /* ---- Medium: room move + destination explicitly not ready (unique binding) ---- */
+    meta.forEach(function (moveM) {
+      if (moveM.roles.indexOf("room_move") === -1) return;
+      var destRooms = moveM.rooms.slice();
+      /* Prefer destination-looking rooms from move language */
+      var destHit = moveM.blob.match(/\b(?:to|→|>)\s*(?:rm\.?|room\s*)?(\d{1,4}[a-z]?)\b/i);
+      if (destHit) destRooms = [normalizeRoomNumber(destHit[1])].filter(Boolean);
+
+      var readiness = meta.filter(function (r) {
+        if (r.idx === moveM.idx) return false;
+        if (r.roles.indexOf("room_readiness") === -1 && r.roles.indexOf("maint_control") === -1 &&
+            r.roles.indexOf("rts") === -1) {
+          if (!/\b(?:dirty|not\s+ready|being\s+cleaned|ooo|inspect|maintenance\s+fixing)\b/i.test(r.blob)) {
+            return false;
+          }
+        }
+        return roomsCompatibleForDependency(destRooms.length ? destRooms : moveM.rooms, r.rooms);
+      });
+
+      /* Unique readiness note for destination — medium inference allowed */
+      if (readiness.length === 1 && textLooksPrerequisiteOpen(readiness[0].blob)) {
+        /* Require some gate cue in corpus for this room, or readiness is explicit dirty/ooo */
+        var room = readiness[0].rooms[0];
+        var corpusHasGate = meta.some(function (x) {
+          return textHasExplicitGateLanguage(x.blob) &&
+            roomsCompatibleForDependency(x.rooms, readiness[0].rooms);
+        }) || /\b(?:dirty|not\s+ready|being\s+cleaned|ooo|inspect)\b/i.test(readiness[0].blob);
+
+        if (corpusHasGate) {
+          addEdge(readiness[0], moveM, {
+            relation: DEPENDENCY_RELATION.blocks,
+            evidenceStrength: readiness[0].explicitGate || textHasExplicitGateLanguage(readiness[0].blob)
+              ? "explicit"
+              : "strong_inference",
+            identityEvidence: ["destination_not_ready"],
+            reason: "move_destination_readiness",
+            room: room
+          });
+        }
+      }
+    });
+
+    /* ---- Medium: VIP room-not-ready blocks room-dependent champagne when explicit ---- */
+    meta.forEach(function (vipM) {
+      if (vipM.roles.indexOf("vip_champagne") === -1) return;
+      var readiness = meta.filter(function (r) {
+        if (r.idx === vipM.idx) return false;
+        if (!(r.roles.indexOf("room_readiness") !== -1 || r.roles.indexOf("vip_pillows") !== -1)) return false;
+        if (!textLooksPrerequisiteOpen(r.blob)) return false;
+        return entitiesCompatibleForDependency(r.note, vipM.note) ||
+          roomsCompatibleForDependency(r.rooms, vipM.rooms);
+      });
+      var corpusGate = meta.some(function (x) {
+        return /\bchampagne\b/i.test(x.blob) &&
+          /\b(?:only\s+after|after|blocker)\b/i.test(x.blob) &&
+          /\b(?:hk|housekeeping|pillow|room\s+ready|setup)\b/i.test(x.blob);
+      });
+      if (corpusGate && readiness.length === 1) {
+        if (readiness[0].entityId && vipM.entityId && readiness[0].entityId !== vipM.entityId) return;
+        addEdge(readiness[0], vipM, {
+          relation: DEPENDENCY_RELATION.blocks,
+          evidenceStrength: "strong_inference",
+          identityEvidence: ["vip_room_not_ready"],
+          reason: "vip_readiness_gate"
+        });
+      }
+    });
+
+    /* ---- Safety sweep: any open maint_control/OOO-until on room blocks RTS/reopen on same room ---- */
+    meta.forEach(function (ctrl) {
+      if (ctrl.roles.indexOf("maint_control") === -1 && ctrl.roles.indexOf("rts") === -1) return;
+      if (!noteIsDecisionOpen(ctrl.note) && evaluatePrerequisiteState(ctrl.note) === DEPENDENCY_STATE.satisfied) {
+        return;
+      }
+      var safetyCue = /\b(?:do\s+not\s+(?:restore|reopen)|until\s+(?:inspect|engineer)|ooo|water\s+isolated|remain(?:s)?\s+locked|out\s+of\s+service)\b/i.test(ctrl.blob);
+      if (!safetyCue) return;
+      meta.forEach(function (toM) {
+        if (toM.idx === ctrl.idx) return;
+        if (!/\b(?:return\s+to\s+service|reopen|restore|mark\s+room\s+available)\b/i.test(toM.blob)) return;
+        if (!roomsCompatibleForDependency(ctrl.rooms, toM.rooms)) return;
+        addEdge(ctrl, toM, {
+          relation: DEPENDENCY_RELATION.blocks,
+          evidenceStrength: "explicit",
+          identityEvidence: ["safety_control_prerequisite"],
+          reason: "safety_rts_gate"
+        });
+      });
+    });
+
+    /* ---- HK completion unlocks Reception verify (explicit after HK / until HK) ---- */
+    meta.forEach(function (m) {
+      var hkThenReception =
+        (/\b(?:after\s+housekeeping|after\s+hk|hk\s+confirms?|housekeeping\s+finishes)\b/i.test(m.blob) &&
+          /\b(?:reception|verif|final-?check)\b/i.test(m.blob)) ||
+        (/\b(?:do\s+not|must\s+not)\b.{0,80}\b(?:reception|verif)/i.test(m.blob) &&
+          /\buntil\b.{0,40}\b(?:housekeeping|hk)\b/i.test(m.blob));
+      if (!hkThenReception) return;
+
+      var hkOpen = meta.filter(function (x) {
+        if (x.roles.indexOf("room_readiness") === -1 && !/\b(?:housekeeping|hk)\b/i.test(x.blob)) return false;
+        if (/\breception\b/i.test(x.blob) && !/\b(?:housekeeping|hk|pillow|not\s+ready|finishing)\b/i.test(x.blob)) {
+          return false;
+        }
+        return textLooksPrerequisiteOpen(x.blob) || x.roles.indexOf("room_readiness") !== -1;
+      });
+      var reception = meta.filter(function (x) {
+        return /\breception\b/i.test(x.blob) && /\b(?:verif|final-?check|check)\b/i.test(x.blob);
+      });
+      if (!reception.length && /\breception\b/i.test(m.blob)) reception = [m];
+
+      var fromHk = null;
+      if (hkOpen.length === 1) fromHk = hkOpen[0];
+      else if (hkOpen.length > 1 && m.rooms.length) {
+        var matchedHk = hkOpen.filter(function (x) {
+          return roomsCompatibleForDependency(x.rooms, m.rooms);
+        });
+        if (matchedHk.length === 1) fromHk = matchedHk[0];
+      }
+      if (!fromHk && hkOpen.length) {
+        /* Prefer the readiness note that is not the reception note */
+        var nonReception = hkOpen.filter(function (x) {
+          return reception.indexOf(x) === -1 && x.idx !== m.idx;
+        });
+        if (nonReception.length === 1) fromHk = nonReception[0];
+      }
+      if (!fromHk) return;
+      reception.forEach(function (toM) {
+        if (toM.idx === fromHk.idx) return;
+        addEdge(fromHk, toM, {
+          relation: DEPENDENCY_RELATION.blocks,
+          evidenceStrength: "explicit",
+          identityEvidence: ["hk_before_reception"],
+          reason: "hk_then_reception"
+        });
+      });
+    });
+
+    /* ---- Lift/OOS reopen: bind reopen notes to OOS-until-inspect controls ---- */
+    meta.forEach(function (ctrl) {
+      if (!/\b(?:lift|elevator|oos|out\s+of\s+service)\b/i.test(ctrl.blob)) return;
+      if (!/\b(?:until|before)\b/i.test(ctrl.blob)) return;
+      if (!/\b(?:inspect|engineer|reopen)\b/i.test(ctrl.blob)) return;
+      meta.forEach(function (toM) {
+        if (toM.idx === ctrl.idx) return;
+        if (!/\b(?:reopen|restore)\b/i.test(toM.blob)) return;
+        addEdge(ctrl, toM, {
+          relation: DEPENDENCY_RELATION.blocks,
+          evidenceStrength: "explicit",
+          identityEvidence: ["oos_until_inspection"],
+          reason: "safety_reopen_gate"
+        });
+      });
+    });
+
+    attachDependencyAnnotations(notes, edges);
+    notes._operationalDependenciesResolved = true;
+    notes._operationalDependencies = edges;
+    return notes;
+  }
+
+  function noteIsDependencyBlocked(note) {
+    if (!note) return false;
+    if (note.actionability === ACTIONABILITY.blocked) return true;
+    if (note.fact && note.fact.actionability === ACTIONABILITY.blocked) return true;
+    if (note.dependencyState === DEPENDENCY_STATE.blocked && note.blockedBy && note.blockedBy.length) {
+      return true;
+    }
+    return false;
+  }
+
   function generateRecommendations(input, signals) {
     var classified = input.classified || {};
     var analyzed = (classified._analyzed || input.analyzedNotes || []).slice();
+    /* Preserve dependency resolution flag across slice(); re-resolve when missing. */
+    var srcNotes = classified._analyzed || input.analyzedNotes || [];
+    if (srcNotes && srcNotes._operationalDependenciesResolved) {
+      analyzed._operationalDependenciesResolved = true;
+      analyzed._operationalDependencies = srcNotes._operationalDependencies;
+    }
+    resolveOperationalDependencies(analyzed);
+    if (classified && classified._analyzed) {
+      classified._analyzed = analyzed;
+    }
     var brainContext = input.brainContext || null;
     var departments = applyBrainDepartmentDefaults(brainContext, input.departments || []);
     var fallbackDept = input.selectedDepartment || resolveDepartment(["Reception", "Front Office"], "Reception", departments);
@@ -8823,6 +9613,12 @@
     isHighFinancialRisk: isHighFinancialRisk,
     expandSnapshotShorthand: expandSnapshotShorthand,
     extractHotelSnapshot: extractHotelSnapshot,
+    /* Reasoning Sprint 4 — dependencies & sequencing */
+    resolveOperationalDependencies: resolveOperationalDependencies,
+    DEPENDENCY_RELATION: DEPENDENCY_RELATION,
+    DEPENDENCY_STATE: DEPENDENCY_STATE,
+    ACTIONABILITY: ACTIONABILITY,
+    noteIsDependencyBlocked: noteIsDependencyBlocked,
     /* Phase 16B foundation surface */
     NEUTRAL_FACT_FIELDS: NEUTRAL_FACT_FIELDS,
     createEmptyNeutralFact: createEmptyNeutralFact,

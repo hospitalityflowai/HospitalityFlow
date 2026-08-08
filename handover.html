@@ -8805,6 +8805,17 @@
           analyzed = window.AiWritingEngine.electCanonicalCurrentState(analyzed);
         }
 
+        /*
+         * Reasoning Sprint 4: resolve operational dependencies / blockers
+         * after current-state election, before priority and recommendations.
+         */
+        if (
+          window.ShiftIntelligenceEngine &&
+          typeof window.ShiftIntelligenceEngine.resolveOperationalDependencies === "function"
+        ) {
+          analyzed = window.ShiftIntelligenceEngine.resolveOperationalDependencies(analyzed);
+        }
+
         var classified = {};
         var sectionModel = null;
 
