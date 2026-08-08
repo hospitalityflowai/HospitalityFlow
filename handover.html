@@ -2683,6 +2683,8 @@
       border: 1px solid rgba(74, 143, 196, 0.28);
       border-radius: 8px;
       background: var(--white);
+      -moz-appearance: textfield;
+      appearance: textfield;
     }
 
     .snapshot-edit-input:focus {
@@ -2791,13 +2793,42 @@
       letter-spacing: -0.03em;
       text-align: center;
       width: 100%;
+      height: 1.35em;
+      min-height: 1.35em;
       border: none;
       background: transparent;
       padding: 0;
       color: var(--navy-900);
       word-break: break-word;
       overflow-wrap: anywhere;
-      line-height: 1.1;
+      line-height: 1.35;
+      box-sizing: content-box;
+      /* Hide browser number spinners if type=number is used */
+      -moz-appearance: textfield;
+      appearance: textfield;
+    }
+
+    #preHotelSnapshotGrid .snapshot-field-input::-webkit-outer-spin-button,
+    #preHotelSnapshotGrid .snapshot-field-input::-webkit-inner-spin-button,
+    .snapshot-edit-input::-webkit-outer-spin-button,
+    .snapshot-edit-input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    #preHotelSnapshotGrid .glance-snapshot.is-readonly {
+      cursor: default;
+    }
+
+    #preHotelSnapshotGrid .glance-snapshot.is-readonly:hover {
+      transform: none;
+      border-color: rgba(18, 34, 64, 0.08);
+      box-shadow: var(--shadow-card);
+    }
+
+    #preHotelSnapshotGrid .glance-snapshot.is-readonly .snapshot-field-input {
+      cursor: default;
+      color: var(--navy-800);
     }
 
     #preHotelSnapshotGrid .glance-snapshot-label {
@@ -9947,48 +9978,30 @@
         if (generateBtn && !generateBtn.disabled) generateBtn.focus();
       }
 
-      function parseSnapshotNumericValue(statId, raw) {
-        var text = String(raw || "").trim();
-        if (!text || text === SNAPSHOT_EMPTY) return null;
-
+      function formatSnapshotFieldInputValue(statId, stored) {
+        if (stored === null || stored === undefined || stored === "" || stored === SNAPSHOT_EMPTY) {
+          return "";
+        }
+        var text = String(stored);
+        if (statId === "adr" || statId === "revpar") {
+          return text.replace(/^[£$€]\s*/, "");
+        }
         if (statId === "occupancy") {
-          return parseOccupancyNumber(text);
+          return text.replace(/%+\s*$/, "");
         }
-        if (statId === "adr") {
-          var adrNumeric = text.replace(/^adr\s*[:\-]?\s*/i, "").replace(/^[£$€]\s*/, "").replace(/,/g, "").trim();
-          if (!adrNumeric || !/\d/.test(adrNumeric)) return null;
-          var adrNum = parseFloat(adrNumeric);
-          return isNaN(adrNum) ? null : adrNum;
-        }
-        var intMatch = text.replace(/,/g, "").match(/-?\d+/);
-        if (!intMatch) return null;
-        var intNum = parseInt(intMatch[0], 10);
-        return isNaN(intNum) ? null : intNum;
+        return text;
       }
 
-      function formatSnapshotInputDisplay(statId, value) {
-        if (value === null || value === undefined || value === "") return "";
-        if (statId === "occupancy") return formatOccupancyPercent(value);
-        if (statId === "adr") return formatAdrDisplay(value);
-        return String(Math.round(value));
-      }
-
-      function incrementSnapshotFieldValue(statId, raw, direction) {
-        var step = direction < 0 ? -1 : 1;
-        var current = parseSnapshotNumericValue(statId, raw);
-        var next;
-
-        if (current === null) {
-          if (step < 0) return "";
-          next = 0;
-        } else {
-          next = current + step;
-        }
-
-        if (next < 0) next = 0;
-        if (statId === "occupancy" && next > 100) next = 100;
-
-        return formatSnapshotInputDisplay(statId, next);
+      function refreshDerivedSnapshotFieldsInPlace() {
+        if (!preHotelSnapshotGrid || !lastNormalizedSnapshot) return;
+        ["occupancy", "revpar"].forEach(function (statId) {
+          var field = preHotelSnapshotGrid.querySelector(
+            '.snapshot-field-input[data-snapshot-input="' + statId + '"]'
+          );
+          if (!field) return;
+          field.value = formatSnapshotFieldInputValue(statId, lastNormalizedSnapshot[statId]);
+          field.setAttribute("data-snapshot-committed", field.value);
+        });
       }
 
       function confirmPreSnapshotField(input, statId) {
@@ -9998,14 +10011,15 @@
           var occ = parseOccupancyNumber(input.value);
           if (occ !== null && occ > 100) showToast("Occupancy capped at 100%.");
         }
+        commitSnapshotState();
         if (hasSnapshotOverride(statId)) {
-          input.value = String(lastHotelSnapshotOverrides[statId]);
+          input.value = formatSnapshotFieldInputValue(statId, lastHotelSnapshotOverrides[statId]);
         } else {
           input.value = "";
         }
         input.setAttribute("data-snapshot-committed", input.value);
+        refreshDerivedSnapshotFieldsInPlace();
         if (lastClassified) {
-          commitSnapshotState();
           renderHotelSnapshotIntoGrid(shiftSnapshotGrid, lastNormalizedSnapshot || {});
           lastHandoverText = formatHandoverText(lastClassified);
         }
@@ -10044,22 +10058,7 @@
             return;
           }
 
-          if (key === "ArrowUp" || key === "ArrowDown") {
-            event.preventDefault();
-            input.value = incrementSnapshotFieldValue(
-              stat.id,
-              input.value,
-              key === "ArrowUp" ? 1 : -1
-            );
-            syncSnapshotOverrideFromInput(stat.id, input.value);
-            if (lastClassified) {
-              commitSnapshotState();
-              renderHotelSnapshotIntoGrid(shiftSnapshotGrid, lastNormalizedSnapshot || {});
-              lastHandoverText = formatHandoverText(lastClassified);
-            }
-            scheduleDraftSave();
-            return;
-          }
+          /* ArrowUp/Down intentionally not used as value steppers (no spinner UX). */
 
           if (key === "Enter") {
             event.preventDefault();
@@ -10249,13 +10248,7 @@
         var current = hasSnapshotOverride(stat.id)
           ? String(lastHotelSnapshotOverrides[stat.id])
           : (snapshot[stat.id] && snapshot[stat.id] !== SNAPSHOT_EMPTY ? String(snapshot[stat.id]) : "");
-        if (stat.id === "adr" || stat.id === "revpar") {
-          input.value = current ? String(current).replace(/^[£$€]\s*/, "") : "";
-        } else if (stat.id === "occupancy") {
-          input.value = current ? String(current).replace(/%+\s*$/, "") : "";
-        } else {
-          input.value = current || "";
-        }
+        input.value = formatSnapshotFieldInputValue(stat.id, current);
         input.setAttribute("data-snapshot-committed", input.value);
 
         if (stat.readOnly) {
@@ -10263,6 +10256,9 @@
           input.tabIndex = -1;
           input.setAttribute("aria-readonly", "true");
           card.classList.add("is-readonly");
+          if (stat.auto) {
+            card.setAttribute("title", "Calculated automatically");
+          }
         }
 
         function syncGeneratedSnapshotFromForm() {
@@ -10272,11 +10268,15 @@
           lastHandoverText = formatHandoverText(lastClassified);
         }
 
+        /*
+         * Live edits must not rebuild the whole grid (that destroys focus and
+         * makes ADR feel non-editable). Recompute Occupancy/RevPAR in place.
+         */
         input.addEventListener("input", function () {
           if (isDemoModeActive() || stat.readOnly) return;
           syncSnapshotOverrideFromInput(stat.id, input.value);
           commitSnapshotState();
-          renderPreHandoverSnapshot();
+          refreshDerivedSnapshotFieldsInPlace();
           syncGeneratedSnapshotFromForm();
           scheduleDraftSave();
         });
@@ -10615,15 +10615,6 @@
             if (event.key === "ArrowRight") {
               event.preventDefault();
               focusAdjacentSnapshot(1);
-              return;
-            }
-            if (event.key === "ArrowUp" || event.key === "ArrowDown") {
-              event.preventDefault();
-              input.value = incrementSnapshotFieldValue(
-                stat.id,
-                input.value,
-                event.key === "ArrowUp" ? 1 : -1
-              );
               return;
             }
             if (event.key === "Enter") {
