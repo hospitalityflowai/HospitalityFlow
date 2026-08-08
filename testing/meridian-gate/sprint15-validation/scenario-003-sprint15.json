@@ -1,0 +1,432 @@
+{
+  "label": "MERIDIAN GATE Sprint 15 state-resolution validation OUTPUT",
+  "scenarioId": "003",
+  "title": "Lean Night, Soft Leak, Early Crew Window",
+  "recordId": null,
+  "gitCommit": "4de18214bfbcd0b645c1b0b548f0e52e6c4dde22",
+  "engineVersion": 1,
+  "contractVersion": "E1",
+  "ranAt": "2026-08-08T14:51:56.907Z",
+  "pipeline": [
+    "extractOperationalFact / sectionFromFact",
+    "consolidateNotesByFacts",
+    "resolveOperationalEntities (Sprint 3)",
+    "electCanonicalCurrentState (Sprint 1)",
+    "resolveOperationalDependencies (Sprint 4)",
+    "buildCanonicalOperationalActions (Sprint 5/6/8/9/10/11 ? current HEAD)",
+    "buildOrganisedSectionModel",
+    "buildTodaysBriefing (decision seating)",
+    "ShiftIntelligenceEngine.analyze (recommendation seating)"
+  ],
+  "scenarioMeta": {
+    "shift": "Night",
+    "operationalLoad": "Normal",
+    "ambiguity": "Partial (soft eng wording)",
+    "departments": "Night Team, Engineering, Reception",
+    "preparedBy": "Jonas Berg — Night Manager (fictional)",
+    "sourceFile": "scenario-003.md",
+    "scenarioFileSha256": "1f092e98683c7e2d51a179a5483b230ee62e1acd9a2e470437aade4f2cc51575"
+  },
+  "humanExpectedTruth": {
+    "currentOperationalFacts": [
+      "CX12 soft drain mitigated overnight; stayable; eng look tomorrow — MONITOR not OPEN chase.",
+      "SkyLink crew rooms M212–M215 held for 05:20 inbound — contractual; keys ready.",
+      "Dudley M108 company billed — no guest collect.",
+      "Valet leftovers are morning handback, not Night OPEN engineering.",
+      "Lean night staffing acknowledged."
+    ],
+    "open": [
+      "None material beyond honouring the timed early-crew readiness already prepped — if any OPEN, it is only the 05:20 crew check-in readiness / wake ownership for Night (not inventing new rooms). Prefer treating prepped crew as timed honour work if still outstanding at handover; do not invent payment or eng OPEN."
+    ],
+    "monitor": [
+      "CX12 drain overnight — escalate only if worsens.",
+      "M304 multi-day OOO background.",
+      "Morning valet ticket handback for two cars."
+    ],
+    "information": [
+      "Spa closed; lean night; annex quiet since 21:30; company-billed Dudley."
+    ],
+    "unresolved": [
+      "Exact eng ETA for CX12 drain tomorrow — soft; do not invent a clock time."
+    ],
+    "completedMustNotReopen": [
+      "Porter plunge mitigation for tonight — must not reopen as uncontrolled leak OPEN.",
+      "Dudley collect ghost line — superseded by company bill / £0 due — must not OPEN collect."
+    ],
+    "bindings": [
+      "CX12 (annex drain); M212–M215 (crew); M108 Dudley; wake 04:50; crew 05:20; shuttle 05:45."
+    ],
+    "mustNotInfer": [
+      "OPEN maintenance chase on mitigated CX12.",
+      "Selling crew block rooms overnight.",
+      "Collect on company-billed Dudley.",
+      "Inventing eng on-site tonight."
+    ],
+    "rationale": [
+      "Normal lean Night: soft maint = MONITOR; crew window is real timed context; payment fail-closed."
+    ],
+    "rawTruthMarkdown": "### Current operational facts\r\n- CX12 soft drain mitigated overnight; stayable; eng look tomorrow — MONITOR not OPEN chase.\r\n- SkyLink crew rooms M212–M215 held for 05:20 inbound — contractual; keys ready.\r\n- Dudley M108 company billed — no guest collect.\r\n- Valet leftovers are morning handback, not Night OPEN engineering.\r\n- Lean night staffing acknowledged.\r\n\r\n### Expected OPEN actions\r\n- None material beyond honouring the timed early-crew readiness already prepped — if any OPEN, it is only the 05:20 crew check-in readiness / wake ownership for Night (not inventing new rooms). Prefer treating prepped crew as timed honour work if still outstanding at handover; do not invent payment or eng OPEN.\r\n\r\n### Expected MONITOR items\r\n- CX12 drain overnight — escalate only if worsens.\r\n- M304 multi-day OOO background.\r\n- Morning valet ticket handback for two cars.\r\n\r\n### Expected INFORMATION\r\n- Spa closed; lean night; annex quiet since 21:30; company-billed Dudley.\r\n\r\n### Expected UNRESOLVED / clarifications\r\n- Exact eng ETA for CX12 drain tomorrow — soft; do not invent a clock time.\r\n\r\n### Explicit completed / resolved / superseded (must not reopen)\r\n- Porter plunge mitigation for tonight — must not reopen as uncontrolled leak OPEN.\r\n- Dudley collect ghost line — superseded by company bill / £0 due — must not OPEN collect.\r\n\r\n### Important entity / room / time bindings\r\n- CX12 (annex drain); M212–M215 (crew); M108 Dudley; wake 04:50; crew 05:20; shuttle 05:45.\r\n\r\n### Must not invent\r\n- OPEN maintenance chase on mitigated CX12.\r\n- Selling crew block rooms overnight.\r\n- Collect on company-billed Dudley.\r\n- Inventing eng on-site tonight.\r\n\r\n### Short human rationale\r\nNormal lean Night: soft maint = MONITOR; crew window is real timed context; payment fail-closed."
+  },
+  "canonicalActions": [
+    {
+      "actionId": "act|noent|cx12|maintenance_tomorrow_inspect|follow_up_until_resolved|meridian_baseline_3",
+      "actionState": "monitor",
+      "actionType": "follow_up_until_resolved",
+      "facetKey": "maintenance:tomorrow_inspect",
+      "room": "CX12",
+      "rooms": [
+        "CX12"
+      ],
+      "entityId": null,
+      "canonicalName": "",
+      "actionText": "Monitor Room CX12 overnight — mitigated; escalate only if worsens",
+      "priorityBand": "P3",
+      "priorityScore": 65,
+      "priorityReasons": [
+        "mitigated_monitor_overnight",
+        "mitigated_monitor_overnight",
+        "sprint10_state_resolution",
+        "temporal:tomorrow_cue"
+      ],
+      "temporalScope": "tomorrow",
+      "serviceDate": "2026-09-11",
+      "deadlineHint": "inspect",
+      "relativeCue": "tomorrow",
+      "temporalConfidence": "high",
+      "temporalReasons": [
+        "tomorrow_cue"
+      ],
+      "evidenceText": "CX12 — guest reported slow basin drain. Porter plungered; guest “ok for tonight”. Eng soft note: “look tomorrow AM if still slow — **not a release issue**, room stayable”. Please **monitor**, don’t wake eng unless worsens / floods."
+    },
+    {
+      "actionId": "act|ent_1|m108|payment_no_collect|type|meridian_baseline_9",
+      "actionState": "resolved",
+      "actionType": "operational_follow_up",
+      "facetKey": "payment:no_collect",
+      "room": "M108",
+      "rooms": [
+        "M108"
+      ],
+      "entityId": "ent_1",
+      "canonicalName": "Mr Dudley",
+      "actionText": "Payment settled / no collect required for Room M108",
+      "priorityBand": "exclude",
+      "priorityScore": 92,
+      "priorityReasons": [
+        "payment_no_collect"
+      ],
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "M108 Mr Dudley — company billed (Apex Logistics) — folio shows £0 guest due. Ignore “outstanding” ghost line from old print."
+    }
+  ],
+  "actionStateCounts": {
+    "open": 0,
+    "monitor": 1,
+    "information": 0,
+    "unresolved": 0,
+    "blocked": 0,
+    "resolved": 1,
+    "other": 0
+  },
+  "temporalAnchor": {
+    "handoverDate": "2026-09-10",
+    "shift": "Night",
+    "createdAt": "2026-09-10T23:20:00.000Z"
+  },
+  "decisionSeats": {
+    "seats": [
+      {
+        "action": {
+          "actionId": "act|noent|cx12|maintenance_tomorrow_inspect|follow_up_until_resolved|meridian_baseline_3",
+          "objectId": "",
+          "entityId": null,
+          "resolutionState": "room_based",
+          "canonicalName": "",
+          "room": "CX12",
+          "rooms": [
+            "CX12"
+          ],
+          "actionType": "follow_up_until_resolved",
+          "actionState": "monitor",
+          "facetKey": "maintenance:tomorrow_inspect",
+          "actionText": "Monitor Room CX12 overnight — mitigated; escalate only if worsens",
+          "displayLabel": "Monitor Room CX12 overnight — mitigated; escalate only if worsens",
+          "evidenceText": "CX12 — guest reported slow basin drain. Porter plungered; guest “ok for tonight”. Eng soft note: “look tomorrow AM if still slow — **not a release issue**, room stayable”. Please **monitor**, don’t wake eng unless worsens / floods.",
+          "actionability": "actionable",
+          "blockedBy": [],
+          "blocks": [],
+          "priorityBand": "P3",
+          "priorityScore": 65,
+          "priorityReasons": [
+            "mitigated_monitor_overnight",
+            "mitigated_monitor_overnight",
+            "sprint10_state_resolution",
+            "temporal:tomorrow_cue"
+          ],
+          "currentStateEligible": true,
+          "sourceFactIds": [
+            "meridian-baseline-3"
+          ],
+          "confidence": 0.85,
+          "temporalScope": "tomorrow",
+          "serviceDate": "2026-09-11",
+          "deadlineHint": "inspect",
+          "relativeCue": "tomorrow",
+          "temporalConfidence": "high",
+          "temporalReasons": [
+            "tomorrow_cue"
+          ]
+        },
+        "actionId": "act|noent|cx12|maintenance_tomorrow_inspect|follow_up_until_resolved|meridian_baseline_3",
+        "facetKey": "maintenance:tomorrow_inspect",
+        "actionState": "monitor",
+        "priorityBand": "P3",
+        "priorityScore": 65,
+        "seatKind": "continuity",
+        "canonicalSeed": true,
+        "workKey": "maintenance:tomorrow_inspect|CX12||follow_up_until_resolved",
+        "text": "Monitor Room CX12 overnight — mitigated; escalate only if worsens",
+        "legacy": null
+      }
+    ],
+    "seatedCanonicalIds": [
+      "act|noent|cx12|maintenance_tomorrow_inspect|follow_up_until_resolved|meridian_baseline_3"
+    ],
+    "source": "canonical_decision_seats",
+    "surface": "briefing",
+    "maxN": 5
+  },
+  "inputIntegrity": {
+    "inputAuthority": "scenario-XXX.md Original Input / Raw Source Notes",
+    "scenarioFileSha256": "1f092e98683c7e2d51a179a5483b230ee62e1acd9a2e470437aade4f2cc51575",
+    "sourceSha256": "d6a83e5e793a5c7702b6e687a51a082c1277bc4281f232cf216f93ce58e5effb",
+    "sourceLength": 777,
+    "lineCount": 8,
+    "brainContext": null,
+    "hotelSnapshotKeys": [],
+    "humanExpectedTruthPreserved": true,
+    "freezeStatus": "FROZEN BEFORE FIRST HF RUN"
+  },
+  "exactSourceInput": "Night handover — lean cover (me + porter Sam). Spa closed 21:00. Valet ended 23:00 — two cars left in bay, tickets on board for morning valet (not overnight chase).\n\nMAINTENANCE\nCX12 — guest reported slow basin drain. Porter plungered; guest “ok for tonight”. Eng soft note: “look tomorrow AM if still slow — **not a release issue**, room stayable”. Please **monitor**, don’t wake eng unless worsens / floods.\n\nCREW\nSkyLink inbound **05:20** — 4 rooms quiet wing held: M212–M215. Contractual block — do not sell to walk-ins overnight. Keys prepped. Wake list set 04:50 for me.\n\nPAYMENTS\nM108 Mr Dudley — company billed (Apex Logistics) — folio shows £0 guest due. Ignore “outstanding” ghost line from old print.\n\nAnnex after 22:00 = DM/me cover. No annex incidents since 21:30.",
+  "hotelSnapshot": {},
+  "aiSummaryBriefing": "Priority 1\nMonitor Room CX12 overnight — mitigated; escalate only if worsens.",
+  "briefingParagraphs": [
+    "Priority 1\nMonitor Room CX12 overnight — mitigated; escalate only if worsens."
+  ],
+  "organisedHandover": {
+    "urgent": [
+      "CX12 — guest reported slow basin drain. Porter plungered; guest “ok for tonight”. Eng soft note: “look tomorrow AM if still slow — **not a release issue**, room stayable”. Please **monitor**, don’t wake eng unless worsens / floods."
+    ],
+    "vip": [],
+    "guest": [
+      "SkyLink inbound **05:20** — 4 rooms quiet wing held: M212–M215. Contractual block — do not sell to walk-ins overnight. Keys prepped. Wake list set 04:50 for me."
+    ],
+    "maintenance": [
+      "MAINTENANCE"
+    ],
+    "payments": [
+      "M108 Mr Dudley — company billed (Apex Logistics) — folio shows £0 guest due. Ignore “outstanding” ghost line from old print."
+    ],
+    "events": [],
+    "preparations": [],
+    "openQuestions": [],
+    "tasks": [],
+    "inventory": [],
+    "deliveries": [],
+    "lostproperty": [],
+    "general": [
+      "Night handover — lean cover (me + porter Sam). Spa closed 21:00. Valet ended 23:00 — two cars left in bay, tickets on board for morning valet (not overnight chase).",
+      "CREW",
+      "PAYMENTS",
+      "Annex after 22:00 = DM/me cover. No annex incidents since 21:30."
+    ],
+    "completed": []
+  },
+  "recommendations": [],
+  "reasoningMetadata": {
+    "noteCountAfterPipeline": 8,
+    "dependencyEdgeCount": 0,
+    "dependencyEdges": [],
+    "analyzeKeys": [
+      "engineVersion",
+      "signals",
+      "recommendations",
+      "checklist",
+      "facts",
+      "operationalMemories",
+      "guestObservations",
+      "guestObservationRejections",
+      "guestCandidates",
+      "guestCandidateRejections"
+    ],
+    "quietShift": null,
+    "decisionSeating": {
+      "briefingUsesCanonicalActions": true,
+      "recommendationsFromAnalyze": true,
+      "sharedCanonicalList": true,
+      "selectDecisionSeatsCaptured": true
+    }
+  },
+  "noteEvidence": [
+    {
+      "original": "SkyLink inbound **05:20** — 4 rooms quiet wing held: M212–M215. Contractual block — do not sell to walk-ins overnight. Keys prepped. Wake list set 04:50 for me.",
+      "section": "guest",
+      "rooms": [
+        "M212",
+        "M215"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "m212",
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "wake_up",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "MAINTENANCE",
+      "section": "maintenance",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "maintenance",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "CX12 — guest reported slow basin drain. Porter plungered; guest “ok for tonight”. Eng soft note: “look tomorrow AM if still slow — **not a release issue**, room stayable”. Please **monitor**, don’t wake eng unless worsens / floods.",
+      "section": "maintenance",
+      "rooms": [
+        "CX12"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "cx12",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "maintenance",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "M108 Mr Dudley — company billed (Apex Logistics) — folio shows £0 guest due. Ignore “outstanding” ghost line from old print.",
+      "section": "payments",
+      "rooms": [
+        "M108"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_1",
+      "canonicalName": "Mr Dudley",
+      "currentRoom": "m108",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "folio",
+      "factStatus": "done"
+    },
+    {
+      "original": "Night handover — lean cover (me + porter Sam). Spa closed 21:00. Valet ended 23:00 — two cars left in bay, tickets on board for morning valet (not overnight chase).",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "CREW",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "PAYMENTS",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Annex after 22:00 = DM/me cover. No annex incidents since 21:30.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    }
+  ],
+  "reviewPlaceholder": {
+    "status": "PENDING_HUMAN_REVIEW",
+    "note": "Sprint 15 state-resolution validation only. Compare to frozen Human Expected Truth. Do not modify engine or scenarios."
+  }
+}

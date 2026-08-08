@@ -1,0 +1,428 @@
+{
+  "label": "MERIDIAN SPRINT 14 → SPRINT 15 STATE-RESOLUTION COMPARE",
+  "focus": [
+    "003",
+    "005",
+    "014",
+    "020"
+  ],
+  "scenarios": [
+    {
+      "id": "001",
+      "title": "Quiet Tuesday After Crew Turn",
+      "focus": false,
+      "sprint14Open": [],
+      "sprint15Open": [],
+      "sprint14Monitor": [],
+      "sprint15Monitor": [],
+      "addedOpen": [],
+      "removedOpen": [],
+      "addedMonitor": [],
+      "removedMonitor": [],
+      "addedResolved": [],
+      "removedResolved": [],
+      "briefingChanged": false,
+      "sourceShaMatch": true
+    },
+    {
+      "id": "002",
+      "title": "Midweek PM Shuttle and Prepaid Arrival",
+      "focus": false,
+      "sprint14Open": [
+        "[open|transport:honour] rm=M118 :: Honour timed transport meet / keys readiness for Mr & Mrs Lang + Ms Keita before ~17:55 return (do not invent private transfer)"
+      ],
+      "sprint15Open": [
+        "[open|transport:honour] rm=M118 :: Honour timed transport meet / keys readiness for Mr & Mrs Lang + Ms Keita before ~17:55 return (do not invent private transfer)"
+      ],
+      "sprint14Monitor": [],
+      "sprint15Monitor": [],
+      "addedOpen": [],
+      "removedOpen": [],
+      "addedMonitor": [],
+      "removedMonitor": [],
+      "addedResolved": [],
+      "removedResolved": [],
+      "briefingChanged": false,
+      "sourceShaMatch": true
+    },
+    {
+      "id": "003",
+      "title": "Lean Night, Soft Leak, Early Crew Window",
+      "focus": true,
+      "sprint14Open": [
+        "[open|maintenance] rm= :: Follow up open maintenance"
+      ],
+      "sprint15Open": [],
+      "sprint14Monitor": [],
+      "sprint15Monitor": [
+        "[monitor|maintenance:tomorrow_inspect] rm=CX12 :: Monitor Room CX12 overnight — mitigated; escalate only if worsens"
+      ],
+      "addedOpen": [],
+      "removedOpen": [
+        "[open|maintenance] rm= :: Follow up open maintenance"
+      ],
+      "addedMonitor": [
+        "[monitor|maintenance:tomorrow_inspect] rm=CX12 :: Monitor Room CX12 overnight — mitigated; escalate only if worsens"
+      ],
+      "removedMonitor": [],
+      "addedResolved": [],
+      "removedResolved": [],
+      "briefingChanged": true,
+      "sourceShaMatch": true
+    },
+    {
+      "id": "004",
+      "title": "Busy AM: Annex Backlog Meets Main Arrivals",
+      "focus": false,
+      "sprint14Open": [
+        "[open|guest_request:luggage_ea] rm=M122 :: Honour luggage / early-arrival arrangements for Ms Trent (Room M122)"
+      ],
+      "sprint15Open": [
+        "[open|guest_request:luggage_ea] rm=M122 :: Honour luggage / early-arrival arrangements for Ms Trent (Room M122)"
+      ],
+      "sprint14Monitor": [],
+      "sprint15Monitor": [],
+      "addedOpen": [],
+      "removedOpen": [],
+      "addedMonitor": [],
+      "removedMonitor": [],
+      "addedResolved": [],
+      "removedResolved": [],
+      "briefingChanged": false,
+      "sourceShaMatch": true
+    },
+    {
+      "id": "005",
+      "title": "Spa Day Member Asking to Stay Overnight",
+      "focus": true,
+      "sprint14Open": [
+        "[open|guest_request:iron_and_ironing_board] rm=M203 :: Arrange iron and ironing board for Room M203"
+      ],
+      "sprint15Open": [],
+      "sprint14Monitor": [],
+      "sprint15Monitor": [],
+      "addedOpen": [],
+      "removedOpen": [
+        "[open|guest_request:iron_and_ironing_board] rm=M203 :: Arrange iron and ironing board for Room M203"
+      ],
+      "addedMonitor": [],
+      "removedMonitor": [],
+      "addedResolved": [
+        "[resolved|guest_request:iron_and_ironing_board:done] rm=M203 :: iron and ironing board already completed for Room M203"
+      ],
+      "removedResolved": [],
+      "briefingChanged": true,
+      "sourceShaMatch": true
+    },
+    {
+      "id": "006",
+      "title": "Crew Block vs Quiet-Wing Sell Pressure",
+      "focus": false,
+      "sprint14Open": [
+        "[open|allocation:blocked_assigned] rm=M212 :: Clarify / reallocate arrival for Mr Patel — assigned Room M212 is unavailable or blocked (do not invent a replacement room)"
+      ],
+      "sprint15Open": [
+        "[open|allocation:blocked_assigned] rm=M212 :: Clarify / reallocate arrival for Mr Patel — assigned Room M212 is unavailable or blocked (do not invent a replacement room)"
+      ],
+      "sprint14Monitor": [],
+      "sprint15Monitor": [],
+      "addedOpen": [],
+      "removedOpen": [],
+      "addedMonitor": [],
+      "removedMonitor": [],
+      "addedResolved": [],
+      "removedResolved": [],
+      "briefingChanged": false,
+      "sourceShaMatch": true
+    },
+    {
+      "id": "007",
+      "title": "Valet Full and Pavilion Prefunction",
+      "focus": false,
+      "sprint14Open": [],
+      "sprint15Open": [],
+      "sprint14Monitor": [],
+      "sprint15Monitor": [],
+      "addedOpen": [],
+      "removedOpen": [],
+      "addedMonitor": [],
+      "removedMonitor": [],
+      "addedResolved": [],
+      "removedResolved": [],
+      "briefingChanged": false,
+      "sourceShaMatch": true
+    },
+    {
+      "id": "008",
+      "title": "Truly Quiet Night Control",
+      "focus": false,
+      "sprint14Open": [],
+      "sprint15Open": [],
+      "sprint14Monitor": [],
+      "sprint15Monitor": [],
+      "addedOpen": [],
+      "removedOpen": [],
+      "addedMonitor": [],
+      "removedMonitor": [],
+      "addedResolved": [],
+      "removedResolved": [],
+      "briefingChanged": false,
+      "sourceShaMatch": true
+    },
+    {
+      "id": "009",
+      "title": "Stale Annex Board vs Main Allocation Conflict",
+      "focus": false,
+      "sprint14Open": [
+        "[open|occupancy_conflict:clarify] rm=CX07 :: Clarify Room CX07 status/readiness for Ms Renée — conflicting occupancy evidence (do not invent a different room)"
+      ],
+      "sprint15Open": [
+        "[open|occupancy_conflict:clarify] rm=CX07 :: Clarify Room CX07 status/readiness for Ms Renée — conflicting occupancy evidence (do not invent a different room)"
+      ],
+      "sprint14Monitor": [],
+      "sprint15Monitor": [],
+      "addedOpen": [],
+      "removedOpen": [],
+      "addedMonitor": [],
+      "removedMonitor": [],
+      "addedResolved": [],
+      "removedResolved": [],
+      "briefingChanged": false,
+      "sourceShaMatch": true
+    },
+    {
+      "id": "010",
+      "title": "Wedding Day Pavilion Pressure",
+      "focus": false,
+      "sprint14Open": [
+        "[open|payment:collect] rm=CX14 :: Collect outstanding payment for Room CX14 before departure"
+      ],
+      "sprint15Open": [
+        "[open|payment:collect] rm=CX14 :: Collect outstanding payment for Room CX14 before departure"
+      ],
+      "sprint14Monitor": [],
+      "sprint15Monitor": [],
+      "addedOpen": [],
+      "removedOpen": [],
+      "addedMonitor": [],
+      "removedMonitor": [],
+      "addedResolved": [],
+      "removedResolved": [],
+      "briefingChanged": false,
+      "sourceShaMatch": true
+    },
+    {
+      "id": "011",
+      "title": "Accessible Arrival and Interconnect Family",
+      "focus": false,
+      "sprint14Open": [],
+      "sprint15Open": [],
+      "sprint14Monitor": [],
+      "sprint15Monitor": [],
+      "addedOpen": [],
+      "removedOpen": [],
+      "addedMonitor": [],
+      "removedMonitor": [],
+      "addedResolved": [],
+      "removedResolved": [],
+      "briefingChanged": false,
+      "sourceShaMatch": true
+    },
+    {
+      "id": "012",
+      "title": "Night Information Heavy, MONITOR Only",
+      "focus": false,
+      "sprint14Open": [],
+      "sprint15Open": [],
+      "sprint14Monitor": [
+        "[monitor|maintenance:tomorrow_inspect] rm=M305 :: Monitor Room M305 overnight — engineering inspect tomorrow (not a live chase)"
+      ],
+      "sprint15Monitor": [
+        "[monitor|maintenance:tomorrow_inspect] rm=M305 :: Monitor Room M305 overnight — engineering inspect tomorrow (not a live chase)"
+      ],
+      "addedOpen": [],
+      "removedOpen": [],
+      "addedMonitor": [],
+      "removedMonitor": [],
+      "addedResolved": [],
+      "removedResolved": [],
+      "briefingChanged": true,
+      "sourceShaMatch": true
+    },
+    {
+      "id": "013",
+      "title": "Treatment Room Sold as Bedroom (Adversarial)",
+      "focus": false,
+      "sprint14Open": [
+        "[open|allocation:invalid_inventory] rm=TR-2 :: Clarify / reallocate arrival for Mr Julian Crowe — Room TR-2 is not sellable as a guest bedroom (do not invent a replacement room)"
+      ],
+      "sprint15Open": [
+        "[open|allocation:invalid_inventory] rm=TR-2 :: Clarify / reallocate arrival for Mr Julian Crowe — Room TR-2 is not sellable as a guest bedroom (do not invent a replacement room)"
+      ],
+      "sprint14Monitor": [],
+      "sprint15Monitor": [],
+      "addedOpen": [],
+      "removedOpen": [],
+      "addedMonitor": [],
+      "removedMonitor": [],
+      "addedResolved": [],
+      "removedResolved": [],
+      "briefingChanged": false,
+      "sourceShaMatch": true
+    },
+    {
+      "id": "014",
+      "title": "Night Payment Contrast and Lean Cover",
+      "focus": true,
+      "sprint14Open": [
+        "[open|maintenance] rm=M311 :: Follow up maintenance for Room M311",
+        "[open|maintenance] rm= :: Follow up open maintenance",
+        "[open|payment:collect] rm=M124 :: Collect outstanding payment for Room M124 before departure"
+      ],
+      "sprint15Open": [
+        "[open|payment:collect] rm=M124 :: Collect outstanding payment for Room M124 before departure"
+      ],
+      "sprint14Monitor": [],
+      "sprint15Monitor": [
+        "[monitor|maintenance:tomorrow_inspect] rm=M311 :: Monitor Room M311 overnight — mitigated; escalate only if worsens"
+      ],
+      "addedOpen": [],
+      "removedOpen": [
+        "[open|maintenance] rm=M311 :: Follow up maintenance for Room M311",
+        "[open|maintenance] rm= :: Follow up open maintenance"
+      ],
+      "addedMonitor": [
+        "[monitor|maintenance:tomorrow_inspect] rm=M311 :: Monitor Room M311 overnight — mitigated; escalate only if worsens"
+      ],
+      "removedMonitor": [],
+      "addedResolved": [],
+      "removedResolved": [],
+      "briefingChanged": true,
+      "sourceShaMatch": true
+    },
+    {
+      "id": "015",
+      "title": "Early-AM Airport Pressure Stack",
+      "focus": false,
+      "sprint14Open": [
+        "[open|transport:conflict_clarify] rm=CX03 :: Clarify accessible transport plan for Okonkwo (Room CX03) — conflicting options evidenced (do not invent a solved mode; do not drop silently)",
+        "[open|guest_request:luggage_ea] rm=M101 :: Honour luggage / early-arrival arrangements (Room M101)"
+      ],
+      "sprint15Open": [
+        "[open|transport:conflict_clarify] rm=CX03 :: Clarify accessible transport plan for Okonkwo (Room CX03) — conflicting options evidenced (do not invent a solved mode; do not drop silently)",
+        "[open|guest_request:luggage_ea] rm=M101 :: Honour luggage / early-arrival arrangements (Room M101)"
+      ],
+      "sprint14Monitor": [],
+      "sprint15Monitor": [],
+      "addedOpen": [],
+      "removedOpen": [],
+      "addedMonitor": [],
+      "removedMonitor": [],
+      "addedResolved": [],
+      "removedResolved": [],
+      "briefingChanged": false,
+      "sourceShaMatch": true
+    },
+    {
+      "id": "016",
+      "title": "Conditional Champagne and Genuine Twin Prep",
+      "focus": false,
+      "sprint14Open": [
+        "[open|amenity:twin] rm=M206 :: Prepare twin beds for Room M206 (Mrs Nwosu)"
+      ],
+      "sprint15Open": [
+        "[open|amenity:twin] rm=M206 :: Prepare twin beds for Room M206 (Mrs Nwosu)"
+      ],
+      "sprint14Monitor": [],
+      "sprint15Monitor": [],
+      "addedOpen": [],
+      "removedOpen": [],
+      "addedMonitor": [],
+      "removedMonitor": [],
+      "addedResolved": [],
+      "removedResolved": [],
+      "briefingChanged": false,
+      "sourceShaMatch": true
+    },
+    {
+      "id": "017",
+      "title": "Busy PM: Crew Inbound, Spa Close, Valet Leftover",
+      "focus": false,
+      "sprint14Open": [
+        "[open|transport:honour] rm= :: Honour timed transport meet / keys readiness for listed passengers for 21:15 departure / loop (do not invent private transfer)"
+      ],
+      "sprint15Open": [
+        "[open|transport:honour] rm= :: Honour timed transport meet / keys readiness for listed passengers for 21:15 departure / loop (do not invent private transfer)"
+      ],
+      "sprint14Monitor": [],
+      "sprint15Monitor": [],
+      "addedOpen": [],
+      "removedOpen": [],
+      "addedMonitor": [],
+      "removedMonitor": [],
+      "addedResolved": [],
+      "removedResolved": [],
+      "briefingChanged": false,
+      "sourceShaMatch": true
+    },
+    {
+      "id": "018",
+      "title": "Interconnect Broken Across Buildings",
+      "focus": false,
+      "sprint14Open": [
+        "[open|allocation:invalid_configuration] rm=M152 :: Clarify / reallocate for Mrs Okada — Rooms M152 & CX10 are not a valid interconnect configuration (do not invent a replacement pair)"
+      ],
+      "sprint15Open": [
+        "[open|allocation:invalid_configuration] rm=M152 :: Clarify / reallocate for Mrs Okada — Rooms M152 & CX10 are not a valid interconnect configuration (do not invent a replacement pair)"
+      ],
+      "sprint14Monitor": [],
+      "sprint15Monitor": [],
+      "addedOpen": [],
+      "removedOpen": [],
+      "addedMonitor": [],
+      "removedMonitor": [],
+      "addedResolved": [],
+      "removedResolved": [],
+      "briefingChanged": false,
+      "sourceShaMatch": true
+    },
+    {
+      "id": "019",
+      "title": "Settled Folio Afternoon, Almost Nothing To Do",
+      "focus": false,
+      "sprint14Open": [],
+      "sprint15Open": [],
+      "sprint14Monitor": [],
+      "sprint15Monitor": [],
+      "addedOpen": [],
+      "removedOpen": [],
+      "addedMonitor": [],
+      "removedMonitor": [],
+      "addedResolved": [],
+      "removedResolved": [],
+      "briefingChanged": false,
+      "sourceShaMatch": true
+    },
+    {
+      "id": "020",
+      "title": "Adversarial Night Paste: Everything Competing",
+      "focus": true,
+      "sprint14Open": [
+        "[open|payment:collect] rm=M128 :: Collect outstanding payment for Room M128 before departure"
+      ],
+      "sprint15Open": [
+        "[open|payment:collect] rm=M128 :: Collect outstanding payment for Room M128 before departure"
+      ],
+      "sprint14Monitor": [],
+      "sprint15Monitor": [],
+      "addedOpen": [],
+      "removedOpen": [],
+      "addedMonitor": [],
+      "removedMonitor": [],
+      "addedResolved": [],
+      "removedResolved": [],
+      "briefingChanged": false,
+      "sourceShaMatch": true
+    }
+  ]
+}

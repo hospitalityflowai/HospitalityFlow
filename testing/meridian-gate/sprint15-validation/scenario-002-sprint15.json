@@ -1,0 +1,639 @@
+{
+  "label": "MERIDIAN GATE Sprint 15 state-resolution validation OUTPUT",
+  "scenarioId": "002",
+  "title": "Midweek PM Shuttle and Prepaid Arrival",
+  "recordId": null,
+  "gitCommit": "4de18214bfbcd0b645c1b0b548f0e52e6c4dde22",
+  "engineVersion": 1,
+  "contractVersion": "E1",
+  "ranAt": "2026-08-08T14:51:56.907Z",
+  "pipeline": [
+    "extractOperationalFact / sectionFromFact",
+    "consolidateNotesByFacts",
+    "resolveOperationalEntities (Sprint 3)",
+    "electCanonicalCurrentState (Sprint 1)",
+    "resolveOperationalDependencies (Sprint 4)",
+    "buildCanonicalOperationalActions (Sprint 5/6/8/9/10/11 ? current HEAD)",
+    "buildOrganisedSectionModel",
+    "buildTodaysBriefing (decision seating)",
+    "ShiftIntelligenceEngine.analyze (recommendation seating)"
+  ],
+  "scenarioMeta": {
+    "shift": "PM",
+    "operationalLoad": "Normal",
+    "ambiguity": "Low",
+    "departments": "Reception, Shuttle/Transport, Concierge",
+    "preparedBy": "Tom Ellison — Front Office Supervisor (fictional)",
+    "sourceFile": "scenario-002.md",
+    "scenarioFileSha256": "4eba062458b99cd2df59df4af461d417ce8ccc56fc6724ea26f23bc2e2ebc14e"
+  },
+  "humanExpectedTruth": {
+    "currentOperationalFacts": [
+      "Timed shuttle 17:40 returning ~17:55 with Langs (M118/M119) and Keita (CX08); all prepaid.",
+      "Spa day members finishing are non-resident unless they book overnight.",
+      "Hale M301 champagne DONE.",
+      "Annex near full; walk-in declined — no promise of CX inventory."
+    ],
+    "open": [
+      "Honour / complete shuttle meet-and-keys readiness for Langs + Keita before ~17:55 return (Reception/Concierge ownership with Shuttle)."
+    ],
+    "monitor": [
+      "Spa day members to 18:30 — non-resident; taxi only if requested (not overnight conversion unless booked)."
+    ],
+    "information": [
+      "Prepaid zero-balance arrivals; valet quiet; park capacity OK; annex near-full awareness."
+    ],
+    "unresolved": [
+      "None material."
+    ],
+    "completedMustNotReopen": [
+      "Hale M301 champagne — DONE — must not reopen.",
+      "Declined annex walk-in — closed; must not invent CX allocation for them."
+    ],
+    "bindings": [
+      "Langs → M118 / M119; Keita → CX08; Hale → M301.",
+      "Shuttle 17:40 / return ~17:55.",
+      "Main vs Annex: Keita is Annex CX08 — do not “simplify” to Main."
+    ],
+    "mustNotInfer": [
+      "False payment collect on prepaid Langs/Keita.",
+      "Private taxi/transfer instead of evidenced shuttle.",
+      "Overnight stay for spa day members without booking.",
+      "Inventing free CX rooms for declined walk-in."
+    ],
+    "rationale": [
+      "Normal PM: timed shuttle + prepaid arrivals are real work; payment must stay fail-closed; spa day guests stay non-resident."
+    ],
+    "rawTruthMarkdown": "### Current operational facts\r\n- Timed shuttle 17:40 returning ~17:55 with Langs (M118/M119) and Keita (CX08); all prepaid.\r\n- Spa day members finishing are non-resident unless they book overnight.\r\n- Hale M301 champagne DONE.\r\n- Annex near full; walk-in declined — no promise of CX inventory.\r\n\r\n### Expected OPEN actions\r\n- Honour / complete shuttle meet-and-keys readiness for Langs + Keita before ~17:55 return (Reception/Concierge ownership with Shuttle).\r\n\r\n### Expected MONITOR items\r\n- Spa day members to 18:30 — non-resident; taxi only if requested (not overnight conversion unless booked).\r\n\r\n### Expected INFORMATION\r\n- Prepaid zero-balance arrivals; valet quiet; park capacity OK; annex near-full awareness.\r\n\r\n### Expected UNRESOLVED / clarifications\r\n- None material.\r\n\r\n### Explicit completed / resolved / superseded (must not reopen)\r\n- Hale M301 champagne — DONE — must not reopen.\r\n- Declined annex walk-in — closed; must not invent CX allocation for them.\r\n\r\n### Important entity / room / time bindings\r\n- Langs → M118 / M119; Keita → CX08; Hale → M301.\r\n- Shuttle 17:40 / return ~17:55.\r\n- Main vs Annex: Keita is Annex CX08 — do not “simplify” to Main.\r\n\r\n### Must not invent\r\n- False payment collect on prepaid Langs/Keita.\r\n- Private taxi/transfer instead of evidenced shuttle.\r\n- Overnight stay for spa day members without booking.\r\n- Inventing free CX rooms for declined walk-in.\r\n\r\n### Short human rationale\r\nNormal PM: timed shuttle + prepaid arrivals are real work; payment must stay fail-closed; spa day guests stay non-resident."
+  },
+  "canonicalActions": [
+    {
+      "actionId": "act|noent|m118|transport_honour|operational_follow_up|note_0",
+      "actionState": "open",
+      "actionType": "operational_follow_up",
+      "facetKey": "transport:honour",
+      "room": "M118",
+      "rooms": [
+        "M118",
+        "M119",
+        "CX08"
+      ],
+      "entityId": null,
+      "canonicalName": "Mr & Mrs Lang",
+      "actionText": "Honour timed transport meet / keys readiness for Mr & Mrs Lang + Ms Keita before ~17:55 return (do not invent private transfer)",
+      "priorityBand": "P1",
+      "priorityScore": 16,
+      "priorityReasons": [
+        "transport_honour",
+        "sprint14_timed_transport"
+      ],
+      "temporalScope": "today",
+      "serviceDate": "",
+      "deadlineHint": "17:55",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "Please ensure keys / welcome ready before van returns ~17:55. Shuttle is **not** a taxi; do not invent private transfer. | Two day members finishing 18:30 — not hotel guests — Concierge can call taxi if asked. They are **not** overnight unless they book. | Driver confirms **17:40"
+    },
+    {
+      "actionId": "act|ent_2|m301|vip_prep_complete|type|meridian_baseline_17",
+      "actionState": "information",
+      "actionType": "operational_follow_up",
+      "facetKey": "vip:prep_complete",
+      "room": "M301",
+      "rooms": [
+        "M301"
+      ],
+      "entityId": "ent_2",
+      "canonicalName": "Dr Hale",
+      "actionText": "Dr Hale — VIP prep complete / awareness only",
+      "priorityBand": "P3",
+      "priorityScore": 78,
+      "priorityReasons": [
+        "vip_prep_complete"
+      ],
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "Champagne for M301 (Dr Hale) — placed — DONE."
+    },
+    {
+      "actionId": "act|noent|noroom|payment_insufficient_evidence|type|meridian_baseline_11",
+      "actionState": "information",
+      "actionType": "operational_follow_up",
+      "facetKey": "payment:insufficient_evidence",
+      "room": "",
+      "rooms": [],
+      "entityId": null,
+      "canonicalName": "",
+      "actionText": "Payment-related note retained — insufficient evidence for collect chase",
+      "priorityBand": "P3",
+      "priorityScore": 85,
+      "priorityReasons": [
+        "fail_closed_payment"
+      ],
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "Also walk-in interest this afternoon for annex — we declined; annex near full. Do not promise CX stock."
+    },
+    {
+      "actionId": "act|ent_1|cx08|payment_no_collect|type|meridian_baseline_5",
+      "actionState": "resolved",
+      "actionType": "operational_follow_up",
+      "facetKey": "payment:no_collect",
+      "room": "CX08",
+      "rooms": [
+        "CX08"
+      ],
+      "entityId": "ent_1",
+      "canonicalName": "Ms Keita",
+      "actionText": "Payment settled / no collect required for Room CX08",
+      "priorityBand": "exclude",
+      "priorityScore": 92,
+      "priorityReasons": [
+        "payment_no_collect"
+      ],
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "- Ms Keita — prepaid — CX08"
+    },
+    {
+      "actionId": "act|noent|m118|payment_no_collect|type|meridian_baseline_9",
+      "actionState": "resolved",
+      "actionType": "operational_follow_up",
+      "facetKey": "payment:no_collect",
+      "room": "M118",
+      "rooms": [
+        "M118",
+        "M119"
+      ],
+      "entityId": null,
+      "canonicalName": "Mrs Lang",
+      "actionText": "Payment settled / no collect required for Room M118",
+      "priorityBand": "exclude",
+      "priorityScore": 92,
+      "priorityReasons": [
+        "payment_no_collect"
+      ],
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "Langs + Keita as above — all prepaid, **zero balance** on arrival. Ignore any “collect channel” stamp from OTA printouts."
+    },
+    {
+      "actionId": "act|noent|m118|payment|type|meridian_baseline_4",
+      "actionState": "resolved",
+      "actionType": "operational_follow_up",
+      "facetKey": "payment",
+      "room": "M118",
+      "rooms": [
+        "M118",
+        "M119"
+      ],
+      "entityId": null,
+      "canonicalName": "Mrs Lang",
+      "actionText": "Superseded current-state fact",
+      "priorityBand": "exclude",
+      "priorityScore": 95,
+      "priorityReasons": [
+        "superseded_excluded"
+      ],
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "- Mr & Mrs Lang (booking MG-44120) — prepaid Booking.com — rooms M118 / M119"
+    }
+  ],
+  "actionStateCounts": {
+    "open": 1,
+    "monitor": 0,
+    "information": 2,
+    "unresolved": 0,
+    "blocked": 0,
+    "resolved": 3,
+    "other": 0
+  },
+  "temporalAnchor": {
+    "handoverDate": "2026-09-09",
+    "shift": "PM",
+    "createdAt": "2026-09-09T15:45:00.000Z"
+  },
+  "decisionSeats": {
+    "seats": [
+      {
+        "action": {
+          "actionId": "act|noent|m118|transport_honour|operational_follow_up|note_0",
+          "objectId": "",
+          "entityId": null,
+          "resolutionState": "unresolved",
+          "canonicalName": "Mr & Mrs Lang",
+          "room": "M118",
+          "rooms": [
+            "M118",
+            "M119",
+            "CX08"
+          ],
+          "actionType": "operational_follow_up",
+          "actionState": "open",
+          "facetKey": "transport:honour",
+          "actionText": "Honour timed transport meet / keys readiness for Mr & Mrs Lang + Ms Keita before ~17:55 return (do not invent private transfer)",
+          "displayLabel": "Honour timed transport meet / keys readiness for Mr & Mrs Lang + Ms Keita before ~17:55 return (do not invent private transfer)",
+          "evidenceText": "Please ensure keys / welcome ready before van returns ~17:55. Shuttle is **not** a taxi; do not invent private transfer. | Two day members finishing 18:30 — not hotel guests — Concierge can call taxi if asked. They are **not** overnight unless they book. | Driver confirms **17:40 airport loop** — 3 named pax on board already:",
+          "actionability": "actionable",
+          "blockedBy": [],
+          "blocks": [],
+          "priorityBand": "P1",
+          "priorityScore": 16,
+          "priorityReasons": [
+            "transport_honour",
+            "sprint14_timed_transport"
+          ],
+          "currentStateEligible": true,
+          "sourceFactIds": [
+            "note-0",
+            "meridian-baseline-3"
+          ],
+          "confidence": 0.73,
+          "temporalScope": "today",
+          "serviceDate": "",
+          "deadlineHint": "17:55",
+          "relativeCue": "",
+          "temporalConfidence": "",
+          "temporalReasons": []
+        },
+        "actionId": "act|noent|m118|transport_honour|operational_follow_up|note_0",
+        "facetKey": "transport:honour",
+        "actionState": "open",
+        "priorityBand": "P1",
+        "priorityScore": 16,
+        "seatKind": "do_now",
+        "canonicalSeed": true,
+        "workKey": "transport:honour|M118|mr & mrs lang|operational_follow_up",
+        "text": "Honour timed transport meet / keys readiness for Mr & Mrs Lang + Ms Keita before ~17:55 return (do not invent private transfer)",
+        "legacy": null
+      }
+    ],
+    "seatedCanonicalIds": [
+      "act|noent|m118|transport_honour|operational_follow_up|note_0"
+    ],
+    "source": "canonical_decision_seats",
+    "surface": "briefing",
+    "maxN": 5
+  },
+  "inputIntegrity": {
+    "inputAuthority": "scenario-XXX.md Original Input / Raw Source Notes",
+    "scenarioFileSha256": "4eba062458b99cd2df59df4af461d417ce8ccc56fc6724ea26f23bc2e2ebc14e",
+    "sourceSha256": "9ef6579ca5fdfcc048de3a24acc6d8db90ebcbd99b46ff5973df278e277b8cde",
+    "sourceLength": 802,
+    "lineCount": 14,
+    "brainContext": null,
+    "hotelSnapshotKeys": [],
+    "humanExpectedTruthPreserved": true,
+    "freezeStatus": "FROZEN BEFORE FIRST HF RUN"
+  },
+  "exactSourceInput": "PM notes for night — normal midweek.\n\nSHUTTLE\nDriver confirms **17:40 airport loop** — 3 named pax on board already:\n- Mr & Mrs Lang (booking MG-44120) — prepaid Booking.com — rooms M118 / M119\n- Ms Keita — prepaid — CX08\nPlease ensure keys / welcome ready before van returns ~17:55. Shuttle is **not** a taxi; do not invent private transfer.\n\nARRIVALS\nLangs + Keita as above — all prepaid, **zero balance** on arrival. Ignore any “collect channel” stamp from OTA printouts.\n\nAlso walk-in interest this afternoon for annex — we declined; annex near full. Do not promise CX stock.\n\nSPA\nTwo day members finishing 18:30 — not hotel guests — Concierge can call taxi if asked. They are **not** overnight unless they book.\n\nDONE\nChampagne for M301 (Dr Hale) — placed — DONE.\n\nValet quiet; car park ~40% free.",
+  "hotelSnapshot": {},
+  "aiSummaryBriefing": "Priority 1\nHonour timed transport meet / keys readiness for Mr & Mrs Lang + Ms Keita before ~17:55 return (do not invent private transfer).",
+  "briefingParagraphs": [
+    "Priority 1\nHonour timed transport meet / keys readiness for Mr & Mrs Lang + Ms Keita before ~17:55 return (do not invent private transfer)."
+  ],
+  "organisedHandover": {
+    "urgent": [],
+    "vip": [
+      "Champagne for M301 (Dr Hale) — placed — DONE."
+    ],
+    "guest": [
+      "Please ensure keys / welcome ready before van returns ~17:55. Shuttle is **not** a taxi; do not invent private transfer. | Two day members finishing 18:30 — not hotel guests — Concierge can call taxi if asked. They are **not** overnight unless they book."
+    ],
+    "maintenance": [],
+    "payments": [
+      "Also walk-in interest this afternoon for annex — we declined; annex near full. Do not promise CX stock.",
+      "- Ms Keita — prepaid — CX08",
+      "Langs + Keita as above — all prepaid, **zero balance** on arrival. Ignore any “collect channel” stamp from OTA printouts.",
+      "- Mr & Mrs Lang (booking MG-44120) — prepaid Booking.com — rooms M118 / M119"
+    ],
+    "events": [],
+    "preparations": [],
+    "openQuestions": [],
+    "tasks": [],
+    "inventory": [],
+    "deliveries": [],
+    "lostproperty": [],
+    "general": [
+      "PM notes for night — normal midweek.",
+      "SHUTTLE",
+      "Driver confirms **17:40 airport loop** — 3 named pax on board already:",
+      "ARRIVALS",
+      "SPA",
+      "Valet quiet; car park ~40% free."
+    ],
+    "completed": [
+      "DONE"
+    ]
+  },
+  "recommendations": [
+    {
+      "id": "act|noent|m118|transport_honour|operational_follow_up|note_0",
+      "text": "Honour timed transport meet / keys readiness for Mr & Mrs Lang + Ms Keita before ~17:55 return (do not invent private transfer).",
+      "priority": "high",
+      "department": "Reception",
+      "status": "open",
+      "reasonCodes": [
+        "transport_honour",
+        "sprint14_timed_transport",
+        "canonical_decision_seat"
+      ]
+    }
+  ],
+  "reasoningMetadata": {
+    "noteCountAfterPipeline": 13,
+    "dependencyEdgeCount": 0,
+    "dependencyEdges": [],
+    "analyzeKeys": [
+      "engineVersion",
+      "signals",
+      "recommendations",
+      "checklist",
+      "facts",
+      "operationalMemories",
+      "guestObservations",
+      "guestObservationRejections",
+      "guestCandidates",
+      "guestCandidateRejections"
+    ],
+    "quietShift": null,
+    "decisionSeating": {
+      "briefingUsesCanonicalActions": true,
+      "recommendationsFromAnalyze": true,
+      "sharedCanonicalList": true,
+      "selectDecisionSeatsCaptured": true
+    }
+  },
+  "noteEvidence": [
+    {
+      "original": "Please ensure keys / welcome ready before van returns ~17:55. Shuttle is **not** a taxi; do not invent private transfer. | Two day members finishing 18:30 — not hotel guests — Concierge can call taxi if asked. They are **not** overnight unless they book.",
+      "section": "guest",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "departure_followup",
+      "factStatus": "requested"
+    },
+    {
+      "original": "- Mr & Mrs Lang (booking MG-44120) — prepaid Booking.com — rooms M118 / M119",
+      "section": "payments",
+      "rooms": [
+        "M118",
+        "M119"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "m118",
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "payment",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Langs + Keita as above — all prepaid, **zero balance** on arrival. Ignore any “collect channel” stamp from OTA printouts.",
+      "section": "payments",
+      "rooms": [
+        "M118",
+        "M119"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "outstanding_balance",
+      "factStatus": "done"
+    },
+    {
+      "original": "PM notes for night — normal midweek.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "SHUTTLE",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Driver confirms **17:40 airport loop** — 3 named pax on board already:",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- Ms Keita — prepaid — CX08",
+      "section": "payments",
+      "rooms": [
+        "CX08"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_1",
+      "canonicalName": "Ms Keita",
+      "currentRoom": "cx08",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "done"
+    },
+    {
+      "original": "ARRIVALS",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Also walk-in interest this afternoon for annex — we declined; annex near full. Do not promise CX stock.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "SPA",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Champagne for M301 (Dr Hale) — placed — DONE.",
+      "section": "completed",
+      "rooms": [
+        "M301"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_2",
+      "canonicalName": "Dr Hale",
+      "currentRoom": "m301",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "guest_request",
+      "factStatus": "done"
+    },
+    {
+      "original": "Valet quiet; car park ~40% free.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "DONE",
+      "section": "completed",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "done"
+    }
+  ],
+  "reviewPlaceholder": {
+    "status": "PENDING_HUMAN_REVIEW",
+    "note": "Sprint 15 state-resolution validation only. Compare to frozen Human Expected Truth. Do not modify engine or scenarios."
+  }
+}

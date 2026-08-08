@@ -1,0 +1,371 @@
+{
+  "label": "MERIDIAN GATE Sprint 15 state-resolution validation OUTPUT",
+  "scenarioId": "011",
+  "title": "Accessible Arrival and Interconnect Family",
+  "recordId": null,
+  "gitCommit": "4de18214bfbcd0b645c1b0b548f0e52e6c4dde22",
+  "engineVersion": 1,
+  "contractVersion": "E1",
+  "ranAt": "2026-08-08T14:51:56.907Z",
+  "pipeline": [
+    "extractOperationalFact / sectionFromFact",
+    "consolidateNotesByFacts",
+    "resolveOperationalEntities (Sprint 3)",
+    "electCanonicalCurrentState (Sprint 1)",
+    "resolveOperationalDependencies (Sprint 4)",
+    "buildCanonicalOperationalActions (Sprint 5/6/8/9/10/11 ? current HEAD)",
+    "buildOrganisedSectionModel",
+    "buildTodaysBriefing (decision seating)",
+    "ShiftIntelligenceEngine.analyze (recommendation seating)"
+  ],
+  "scenarioMeta": {
+    "shift": "AM",
+    "operationalLoad": "Normal",
+    "ambiguity": "Partial (interconnect ready)",
+    "departments": "Reception, Housekeeping, Concierge",
+    "preparedBy": "Tom Ellison — Front Office Supervisor (fictional)",
+    "sourceFile": "scenario-011.md",
+    "scenarioFileSha256": "5ffa74f6e47b1a3df206ab6dd1fa64e6dd1ebb23484b9d6b4c7f5c3885d16f7d"
+  },
+  "humanExpectedTruth": {
+    "currentOperationalFacts": [
+      "Shah → MA02 Acc clean; only three Acc rooms in hotel; others unavailable.",
+      "Farah family → M114/M115 interconnect; M115 VD unconfirmed ready-by-14:00.",
+      "Shah on 12:50 shuttle list.",
+      "Must not split family across buildings."
+    ],
+    "open": [
+      "Protect MA02 hold / check-in path for Shah (accessible).",
+      "Chase / clarify M115 readiness for interconnect before ~15:00 Farah arrival (HK/Reception).",
+      "Honour Shah 12:50 shuttle listing."
+    ],
+    "monitor": [
+      "Soft M115 ready-by-14:00 — not promised."
+    ],
+    "information": [
+      "Acc inventory scarcity; Farah self-drive; closed late c/o M201."
+    ],
+    "unresolved": [
+      "Exact M115 ready time — soft until HK confirms."
+    ],
+    "completedMustNotReopen": [
+      "M201 late c/o charge — closed — must not reopen as live late-c/o OPEN."
+    ],
+    "bindings": [
+      "Shah → MA02; Farah → M114+M115; shuttle 12:50; Acc set = MA02/MA14/CX03 only."
+    ],
+    "mustNotInfer": [
+      "Fourth accessible room.",
+      "Splitting family to Annex.",
+      "Declaring M115 ready now.",
+      "Cross-selling Acc CX03 while occupied."
+    ],
+    "rationale": [
+      "Normal AM: Acc + interconnect constraints with Meridian IDs; shuttle timed honour."
+    ],
+    "rawTruthMarkdown": "### Current operational facts\r\n- Shah → MA02 Acc clean; only three Acc rooms in hotel; others unavailable.\r\n- Farah family → M114/M115 interconnect; M115 VD unconfirmed ready-by-14:00.\r\n- Shah on 12:50 shuttle list.\r\n- Must not split family across buildings.\r\n\r\n### Expected OPEN actions\r\n- Protect MA02 hold / check-in path for Shah (accessible).\r\n- Chase / clarify M115 readiness for interconnect before ~15:00 Farah arrival (HK/Reception).\r\n- Honour Shah 12:50 shuttle listing.\r\n\r\n### Expected MONITOR items\r\n- Soft M115 ready-by-14:00 — not promised.\r\n\r\n### Expected INFORMATION\r\n- Acc inventory scarcity; Farah self-drive; closed late c/o M201.\r\n\r\n### Expected UNRESOLVED / clarifications\r\n- Exact M115 ready time — soft until HK confirms.\r\n\r\n### Explicit completed / resolved / superseded (must not reopen)\r\n- M201 late c/o charge — closed — must not reopen as live late-c/o OPEN.\r\n\r\n### Important entity / room / time bindings\r\n- Shah → MA02; Farah → M114+M115; shuttle 12:50; Acc set = MA02/MA14/CX03 only.\r\n\r\n### Must not invent\r\n- Fourth accessible room.\r\n- Splitting family to Annex.\r\n- Declaring M115 ready now.\r\n- Cross-selling Acc CX03 while occupied.\r\n\r\n### Short human rationale\r\nNormal AM: Acc + interconnect constraints with Meridian IDs; shuttle timed honour."
+  },
+  "canonicalActions": [],
+  "actionStateCounts": {
+    "open": 0,
+    "monitor": 0,
+    "information": 0,
+    "unresolved": 0,
+    "blocked": 0,
+    "resolved": 0,
+    "other": 0
+  },
+  "temporalAnchor": {
+    "handoverDate": "2026-09-16",
+    "shift": "AM",
+    "createdAt": "2026-09-16T07:15:00.000Z"
+  },
+  "decisionSeats": {
+    "seats": [],
+    "seatedCanonicalIds": [],
+    "source": "canonical_decision_seats",
+    "surface": "briefing",
+    "maxN": 5
+  },
+  "inputIntegrity": {
+    "inputAuthority": "scenario-XXX.md Original Input / Raw Source Notes",
+    "scenarioFileSha256": "5ffa74f6e47b1a3df206ab6dd1fa64e6dd1ebb23484b9d6b4c7f5c3885d16f7d",
+    "sourceSha256": "b154f065efd029a80daf640107e43cb4478e060d16c8c0d0963566b880be6e60",
+    "sourceLength": 648,
+    "lineCount": 10,
+    "brainContext": null,
+    "hotelSnapshotKeys": [],
+    "humanExpectedTruthPreserved": true,
+    "freezeStatus": "FROZEN BEFORE FIRST HF RUN"
+  },
+  "exactSourceInput": "AM — two related room products.\n\nACCESSIBLE\n**Mr Dilip Shah** arriving ~13:30 needs **Accessible**. Held **MA02** (Main). MA14 occupied stayover. CX03 Acc occupied until tomorrow. Do not invent a fourth accessible room — we only have three.\n\nHK: MA02 clean as of 10:05 — good.\n\nINTERCONNECT\n**Mrs Farah + two children** — need interconnect Main pair. System shows **M114 + M115**. HK: M114 clean; M115 vacant dirty — “aim ready by 14:00” — **not confirmed**. Family due ~15:00. Do not split them across Main/Annex.\n\nSHUTTLE\nShah requested airport shuttle **12:50** pickup — on list. Farah self-drive.\n\nDONE\nLate c/o M201 yesterday charged — closed.",
+  "hotelSnapshot": {},
+  "aiSummaryBriefing": "Priority 1\nReserve interconnecting Rooms M114 & M115 for Mrs Farah.",
+  "briefingParagraphs": [
+    "Priority 1\nReserve interconnecting Rooms M114 & M115 for Mrs Farah."
+  ],
+  "organisedHandover": {
+    "urgent": [],
+    "vip": [],
+    "guest": [
+      "Late c/o M201 yesterday charged — closed.",
+      "INTERCONNECT",
+      "**Mrs Farah + two children** — need interconnect Main pair. System shows **M114 + M115**. HK: M114 clean; M115 vacant dirty — “aim ready by 14:00” — **not confirmed**. Family due ~15:00. Do not split them across Main/Annex."
+    ],
+    "maintenance": [],
+    "payments": [],
+    "events": [],
+    "preparations": [],
+    "openQuestions": [],
+    "tasks": [],
+    "inventory": [],
+    "deliveries": [],
+    "lostproperty": [],
+    "general": [
+      "**Mr Dilip Shah** arriving ~13:30 needs **Accessible**. Held **MA02** (Main). MA14 occupied stayover. CX03 Acc occupied until tomorrow. Do not invent a fourth accessible room — we only have three.",
+      "AM — two related room products.",
+      "ACCESSIBLE",
+      "HK: MA02 clean as of 10:05 — good.",
+      "SHUTTLE",
+      "Shah requested airport shuttle **12:50** pickup — on list. Farah self-drive."
+    ],
+    "completed": [
+      "DONE"
+    ]
+  },
+  "recommendations": [
+    {
+      "id": "mskhse7a-j6zz7",
+      "text": "Reserve interconnecting rooms for tomorrow's group arrival.",
+      "priority": "low",
+      "department": "Reception",
+      "status": "open",
+      "reasonCodes": [
+        "tomorrow_prep",
+        "tomorrow_or_next_shift",
+        "cross_department_dependency"
+      ]
+    }
+  ],
+  "reasoningMetadata": {
+    "noteCountAfterPipeline": 10,
+    "dependencyEdgeCount": 0,
+    "dependencyEdges": [],
+    "analyzeKeys": [
+      "engineVersion",
+      "signals",
+      "recommendations",
+      "checklist",
+      "facts",
+      "operationalMemories",
+      "guestObservations",
+      "guestObservationRejections",
+      "guestCandidates",
+      "guestCandidateRejections"
+    ],
+    "quietShift": null,
+    "decisionSeating": {
+      "briefingUsesCanonicalActions": true,
+      "recommendationsFromAnalyze": true,
+      "sharedCanonicalList": true,
+      "selectDecisionSeatsCaptured": true
+    }
+  },
+  "noteEvidence": [
+    {
+      "original": "INTERCONNECT",
+      "section": "guest",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "interconnect",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "**Mrs Farah + two children** — need interconnect Main pair. System shows **M114 + M115**. HK: M114 clean; M115 vacant dirty — “aim ready by 14:00” — **not confirmed**. Family due ~15:00. Do not split them across Main/Annex.",
+      "section": "guest",
+      "rooms": [
+        "M114",
+        "M115"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "m114",
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "interconnect",
+      "factStatus": "open"
+    },
+    {
+      "original": "Late c/o M201 yesterday charged — closed.",
+      "section": "guest",
+      "rooms": [
+        "M201"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "m201",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "late_checkout",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "AM — two related room products.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "ACCESSIBLE",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "**Mr Dilip Shah** arriving ~13:30 needs **Accessible**. Held **MA02** (Main). MA14 occupied stayover. CX03 Acc occupied until tomorrow. Do not invent a fourth accessible room — we only have three.",
+      "section": "general",
+      "rooms": [
+        "MA02",
+        "MA14",
+        "CX03"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_1",
+      "canonicalName": "Mr Dilip Shah",
+      "currentRoom": "cx03",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "requested"
+    },
+    {
+      "original": "HK: MA02 clean as of 10:05 — good.",
+      "section": "general",
+      "rooms": [
+        "MA02"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "ma02",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "SHUTTLE",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Shah requested airport shuttle **12:50** pickup — on list. Farah self-drive.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "requested"
+    },
+    {
+      "original": "DONE",
+      "section": "completed",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "done"
+    }
+  ],
+  "reviewPlaceholder": {
+    "status": "PENDING_HUMAN_REVIEW",
+    "note": "Sprint 15 state-resolution validation only. Compare to frozen Human Expected Truth. Do not modify engine or scenarios."
+  }
+}
