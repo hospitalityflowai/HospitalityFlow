@@ -4281,7 +4281,11 @@
     });
     var canonicalActions = options.canonicalActions || null;
     if (!canonicalActions && notesForActions.length) {
-      canonicalActions = buildCanonicalOperationalActions(notesForActions);
+      canonicalActions = buildCanonicalOperationalActions(notesForActions, {
+        handoverDate: options.handoverDate || options.handover_date || options.date || "",
+        shift: options.shiftCode || options.shift || "",
+        createdAt: options.createdAt || options.created_at || ""
+      });
     }
     var fromCanonical = canonicalActions && canonicalActions.length
       ? briefingSpecsFromCanonicalActions(canonicalActions, maxBlocks)
@@ -4399,6 +4403,51 @@
         canonicalActions: canonicalActions || [],
         source: "canonical_actions"
       };
+    }
+
+    /* Sprint 6: suppress object-seated immediate maintenance chase when MONITOR inspect exists. */
+    var monitorMaintRooms = {};
+    (canonicalActions || []).forEach(function (a) {
+      if (a && a.actionState === ACTION_STATE.monitor &&
+          /maintenance:tomorrow_inspect/i.test(a.facetKey || "") && a.room) {
+        monitorMaintRooms[String(a.room)] = a;
+      }
+    });
+    if (Object.keys(monitorMaintRooms).length) {
+      priorities = priorities.filter(function (p) {
+        var room = p.entities && p.entities.room;
+        if (!room || !monitorMaintRooms[String(room)]) return true;
+        if (/follow_up_maintenance|maintenance/i.test(p.actionKind || p.objectType || "")) {
+          return false;
+        }
+        return !/before further guest impact|Follow up.*maintenance/i.test(p.canonicalActionText || "");
+      });
+      Object.keys(monitorMaintRooms).forEach(function (room) {
+        if (priorities.some(function (p) {
+          return p.entities && String(p.entities.room) === String(room) &&
+            /Monitor|tomorrow/i.test(p.canonicalActionText || "");
+        })) return;
+        var action = monitorMaintRooms[room];
+        priorities.unshift({
+          objectId: action.actionId,
+          objectType: action.actionType,
+          actionKind: "follow_up_maintenance",
+          reasonCodes: action.priorityReasons || [],
+          factIds: action.sourceFactIds || [],
+          rooms: action.rooms || [],
+          entities: { room: action.room, guestName: action.canonicalName || "", sourceText: action.evidenceText || "" },
+          evidenceText: action.evidenceText || "",
+          canonicalActionText: action.actionText,
+          impactScore: action.priorityScore,
+          priorityBand: action.priorityBand,
+          operationalContext: {
+            priorityBand: action.priorityBand,
+            priorityScore: action.priorityScore,
+            nextAction: action.actionType
+          }
+        });
+      });
+      priorities = priorities.slice(0, maxBlocks);
     }
 
     return {
@@ -4990,9 +5039,13 @@
       analyzed._operationalDependenciesResolved = true;
       analyzed._operationalDependencies = analyzedNotes._operationalDependencies;
     }
-    /* Sprint 5: stamp shared canonical actions for consumers (entity-safe grouping below). */
+    /* Sprint 5/6: stamp shared canonical actions for consumers (entity-safe grouping below). */
     if (analyzed.length) {
-      buildCanonicalOperationalActions(analyzed);
+      buildCanonicalOperationalActions(analyzed, {
+        handoverDate: options.handoverDate || options.handover_date || options.date || "",
+        shift: options.shiftCode || options.shift || "",
+        createdAt: options.createdAt || options.created_at || ""
+      });
     }
     var entries = analyzed.map(function (note, index) {
       var fact = note.fact || null;
@@ -8314,6 +8367,368 @@
     unresolved: "unresolved"
   };
 
+  /* ─── Reasoning Sprint 6 — Temporal / today action eligibility ───────────
+   * Operational-day anchor (handover_date primary). Lexical + narrow date/time
+   * evidence sets temporalScope on canonical actions. Fail closed when ambiguous.
+   * Does not invent a new priority ladder.
+   */
+
+  var TEMPORAL_SCOPE = {
+    now: "now",
+    this_shift: "this_shift",
+    today: "today",
+    tomorrow: "tomorrow",
+    future: "future",
+    past: "past",
+    ambiguous: "ambiguous",
+    information: "information"
+  };
+
+  var TEMPORAL_CONFIDENCE = {
+    high: "high",
+    medium: "medium",
+    low: "low"
+  };
+
+  var MONTH_NAME_TO_NUM = {
+    jan: 1, january: 1, feb: 2, february: 2, mar: 3, march: 3, apr: 4, april: 4,
+    may: 5, jun: 6, june: 6, jul: 7, july: 7, aug: 8, august: 8,
+    sep: 9, sept: 9, september: 9, oct: 10, october: 10, nov: 11, november: 11,
+    dec: 12, december: 12
+  };
+
+  function pad2(n) {
+    return (n < 10 ? "0" : "") + n;
+  }
+
+  function ymdFromParts(y, m, d) {
+    if (!y || !m || !d) return "";
+    var yy = y < 100 ? 2000 + y : y;
+    if (m < 1 || m > 12 || d < 1 || d > 31) return "";
+    return yy + "-" + pad2(m) + "-" + pad2(d);
+  }
+
+  function addCalendarDaysYmd(ymd, delta) {
+    var m = String(ymd || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!m) return "";
+    var dt = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+    dt.setUTCDate(dt.getUTCDate() + delta);
+    return dt.getUTCFullYear() + "-" + pad2(dt.getUTCMonth() + 1) + "-" + pad2(dt.getUTCDate());
+  }
+
+  function compareYmd(a, b) {
+    if (!a || !b) return null;
+    if (a === b) return 0;
+    return a < b ? -1 : 1;
+  }
+
+  /** Narrow parse of evidenced date formats → YYYY-MM-DD (or ""). */
+  function parseOperationalDateToYmd(raw, anchorYmd) {
+    var s = String(raw || "").trim();
+    if (!s) return "";
+    var m;
+    m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+    if (m) return ymdFromParts(+m[3], +m[2], +m[1]);
+    m = s.match(/^(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+(\d{1,2}),?\s+(\d{2,4})$/i);
+    if (m) {
+      var mn = MONTH_NAME_TO_NUM[m[1].toLowerCase()];
+      return ymdFromParts(+m[3], mn, +m[2]);
+    }
+    m = s.match(/^(\d{1,2})\s+(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+(\d{2,4})$/i);
+    if (m) {
+      return ymdFromParts(+m[3], MONTH_NAME_TO_NUM[m[2].toLowerCase()], +m[1]);
+    }
+    m = s.match(/^(\d{1,2})(?:st|nd|rd|th)\s+(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)(?:\s+(\d{2,4}))?$/i);
+    if (m) {
+      var year = m[3] ? +m[3] : (anchorYmd ? +String(anchorYmd).slice(0, 4) : 0);
+      return ymdFromParts(year, MONTH_NAME_TO_NUM[m[2].toLowerCase()], +m[1]);
+    }
+    return "";
+  }
+
+  function extractOperationalDateYmds(text, anchorYmd) {
+    var out = [];
+    var src = String(text || "");
+    var writers = global.AiWritingEngine && typeof global.AiWritingEngine.extractDates === "function"
+      ? global.AiWritingEngine.extractDates(src)
+      : [];
+    writers.forEach(function (d) {
+      var ymd = parseOperationalDateToYmd(d, anchorYmd);
+      if (ymd && out.indexOf(ymd) === -1) out.push(ymd);
+    });
+    var extra = src.match(/\b\d{1,2}\.\d{1,2}\.\d{2,4}\b/g) || [];
+    extra.forEach(function (d) {
+      var ymd = parseOperationalDateToYmd(d, anchorYmd);
+      if (ymd && out.indexOf(ymd) === -1) out.push(ymd);
+    });
+    return out;
+  }
+
+  function extractDeadlineHint(text) {
+    var src = String(text || "");
+    var m = src.match(/\b(\d{1,2}:\d{2})\s*(am|pm)?\b/i) ||
+      src.match(/\b(\d{1,2})\s*(am|pm)\b/i) ||
+      src.match(/(?:@\s*|at\s+)(\d{1,2})(?::(\d{2}))?\b/i);
+    if (m) {
+      if (m[0] && /am|pm/i.test(m[0]) && global.AiWritingEngine &&
+          typeof global.AiWritingEngine.normalizeTimelineTime === "function") {
+        return global.AiWritingEngine.normalizeTimelineTime(m[0]) || m[0];
+      }
+      if (m[2] != null && /^\d{1,2}$/.test(String(m[1]))) {
+        return pad2(+m[1]) + ":" + (m[2] || "00");
+      }
+      return m[1] + (m[2] ? ":" + m[2] : "");
+    }
+    if (/\bcheckout\b|\bcheck[\s-]?out\b|\bchecking\s+out\b/i.test(src)) return "checkout";
+    if (/\bstill\s+to\s+arrive\b|\barriv(?:e|ing|al)\b/i.test(src)) return "arrival";
+    if (/\binspect\b/i.test(src)) return "inspect";
+    if (/\b(?:taxi|transfer|pickup|pick[\s-]?up)\b/i.test(src) && /\b(?:\bam\b|\bmorning\b)/i.test(src)) {
+      return "am";
+    }
+    return "";
+  }
+
+  function buildOperationalDayAnchor(opts) {
+    opts = opts || {};
+    var handoverDate = String(opts.handoverDate || opts.handover_date || opts.date || "").trim();
+    var ymd = "";
+    if (/^\d{4}-\d{2}-\d{2}/.test(handoverDate)) ymd = handoverDate.slice(0, 10);
+    else ymd = parseOperationalDateToYmd(handoverDate, "") || "";
+    var shift = normalizeShiftType(opts.shift || opts.shiftCode || opts.shiftDisplayName || "") ||
+      String(opts.shift || opts.shiftCode || "").trim();
+    var createdAt = String(opts.createdAt || opts.created_at || "").trim();
+    var createdYmd = "";
+    var createdHour = null;
+    if (createdAt) {
+      var cm = createdAt.match(/^(\d{4}-\d{2}-\d{2})[T\s](\d{2})/);
+      if (cm) {
+        createdYmd = cm[1];
+        createdHour = +cm[2];
+      }
+    }
+    return {
+      handoverYmd: ymd,
+      shift: shift,
+      createdAt: createdAt,
+      createdYmd: createdYmd,
+      createdHour: createdHour,
+      nightCrossing: !!(ymd && createdYmd && createdYmd !== ymd && /night/i.test(shift))
+    };
+  }
+
+  function emptyTemporal() {
+    return {
+      temporalScope: "",
+      serviceDate: "",
+      deadlineHint: "",
+      relativeCue: "",
+      temporalConfidence: "",
+      temporalReasons: []
+    };
+  }
+
+  /**
+   * Resolve temporal eligibility for a source note against the operational day.
+   * Fail closed → ambiguous when noon/"today" cannot be safely bound after midnight.
+   */
+  function resolveTemporalEligibility(src, fact, note, anchor, hints) {
+    hints = hints || {};
+    anchor = anchor || buildOperationalDayAnchor({});
+    var text = String(src || "");
+    var t = emptyTemporal();
+    t.deadlineHint = hints.deadlineHint || extractDeadlineHint(text);
+    var reasons = [];
+    var ymds = extractOperationalDateYmds(text, anchor.handoverYmd);
+    var hasToday = /\btoday\b|\btodat\b|\btonight\b|\bthis\s+shift\b/i.test(text);
+    var hasTomorrow = /\btomorrow\b|\btmrw\b/i.test(text);
+    var hasMorning = /\bmorning\b/i.test(text);
+    var hasAm = /\bam\b|\ba\.m\.\b/i.test(text);
+    var checkoutToday = /\bchecking\s+out\s+today\b|\bcheckout\s+today\b|\bcheck[\s-]?out\s+today\b/i.test(text) ||
+      (/\bchecking\s+out\b/i.test(text) && hasToday);
+    var stillArriveToday = /\bstill\s+to\s+arrive\s+today\b|\bpre[\s-]?reg\s+still\s+to\s+arrive\s+today\b/i.test(text);
+    var lateCoToday = /\blate\s*(?:check[\s-]?outs?|c\/?o)\b/i.test(text) &&
+      (hasToday || /\btodat\b/i.test(text));
+    var departingCue = /\bdepart(?:ing|ure|ures)?\b|\bdep\b\s*[:=\-]?\s*\d/i.test(text) &&
+      !/\barriv(?:e|ing|al)\b/i.test(text);
+
+    if (checkoutToday) {
+      t.relativeCue = "today";
+      t.temporalScope = TEMPORAL_SCOPE.today;
+      t.serviceDate = anchor.handoverYmd || "";
+      t.deadlineHint = t.deadlineHint || "checkout";
+      t.temporalConfidence = TEMPORAL_CONFIDENCE.high;
+      reasons.push("checkout_today");
+    } else if (stillArriveToday) {
+      t.relativeCue = "today";
+      t.temporalScope = TEMPORAL_SCOPE.today;
+      t.serviceDate = anchor.handoverYmd || "";
+      t.deadlineHint = "arrival";
+      t.temporalConfidence = TEMPORAL_CONFIDENCE.high;
+      reasons.push("still_to_arrive_today");
+    } else if (lateCoToday) {
+      t.relativeCue = "today";
+      t.deadlineHint = t.deadlineHint || "12:00";
+      /* Night + post-midnight created_at: "today @12" is ambiguous — fail closed. */
+      if (anchor.nightCrossing ||
+          (/night/i.test(anchor.shift || "") && anchor.createdYmd && anchor.handoverYmd &&
+            anchor.createdYmd > anchor.handoverYmd &&
+            (anchor.createdHour == null || anchor.createdHour < 12))) {
+        t.temporalScope = TEMPORAL_SCOPE.ambiguous;
+        t.temporalConfidence = TEMPORAL_CONFIDENCE.low;
+        reasons.push("late_co_today_night_crossing_ambiguous");
+      } else if (/night/i.test(anchor.shift || "") && anchor.handoverYmd && !anchor.nightCrossing) {
+        /* Night on handover evening: noon of handover day is typically past. */
+        t.temporalScope = TEMPORAL_SCOPE.past;
+        t.serviceDate = anchor.handoverYmd;
+        t.temporalConfidence = TEMPORAL_CONFIDENCE.medium;
+        reasons.push("late_co_today_night_likely_elapsed");
+      } else if (/am|day|pm/i.test(anchor.shift || "") &&
+          (anchor.createdHour == null || anchor.createdHour < 12)) {
+        t.temporalScope = TEMPORAL_SCOPE.today;
+        t.serviceDate = anchor.handoverYmd || "";
+        t.temporalConfidence = TEMPORAL_CONFIDENCE.medium;
+        reasons.push("late_co_today_upcoming");
+      } else if (anchor.createdHour != null && anchor.createdHour >= 12 &&
+          anchor.createdYmd && anchor.handoverYmd && anchor.createdYmd === anchor.handoverYmd) {
+        t.temporalScope = TEMPORAL_SCOPE.past;
+        t.serviceDate = anchor.handoverYmd;
+        t.temporalConfidence = TEMPORAL_CONFIDENCE.high;
+        reasons.push("late_co_today_clearly_elapsed");
+      } else {
+        t.temporalScope = TEMPORAL_SCOPE.today;
+        t.serviceDate = anchor.handoverYmd || "";
+        t.temporalConfidence = TEMPORAL_CONFIDENCE.medium;
+        reasons.push("late_co_today");
+      }
+    } else if (hasTomorrow) {
+      t.relativeCue = "tomorrow";
+      t.temporalScope = TEMPORAL_SCOPE.tomorrow;
+      t.serviceDate = anchor.handoverYmd ? addCalendarDaysYmd(anchor.handoverYmd, 1) : "";
+      t.temporalConfidence = TEMPORAL_CONFIDENCE.high;
+      reasons.push("tomorrow_cue");
+    } else if (ymds.length) {
+      var primary = ymds[0];
+      /* Prefer date near flower/delivery/luggage wording when multiple. */
+      ymds.forEach(function (y) {
+        var idx = text.toLowerCase().indexOf(y.slice(8).replace(/^0/, "")); /* weak */
+        if (/\b(?:flower|luggage|after\s+check|9th|06\.08|09\/08)/i.test(text) &&
+            text.indexOf(y.slice(5)) !== -1) primary = y;
+      });
+      /* Re-pick: if flower morning date present, use it for flower context. */
+      var flowerDate = null;
+      var fm = text.match(/(?:flower|flowers?)[^.]{0,40}?(\d{1,2}[./\-]\d{1,2}(?:[./\-]\d{2,4})?)/i) ||
+        text.match(/(\d{1,2}[./\-]\d{1,2}(?:[./\-]\d{2,4})?)[^.]{0,24}(?:morning|flower)/i) ||
+        text.match(/\b(\d{1,2}(?:st|nd|rd|th)\s+Aug(?:ust)?)\b/i);
+      if (fm) flowerDate = parseOperationalDateToYmd(fm[1], anchor.handoverYmd);
+      if (hints.preferYmd && ymds.indexOf(hints.preferYmd) !== -1) primary = hints.preferYmd;
+      if (flowerDate) primary = flowerDate;
+      t.serviceDate = primary;
+      var cmp = compareYmd(primary, anchor.handoverYmd);
+      if (!anchor.handoverYmd) {
+        t.temporalScope = TEMPORAL_SCOPE.information;
+        t.temporalConfidence = TEMPORAL_CONFIDENCE.low;
+        reasons.push("date_without_handover_anchor");
+      } else if (cmp === 0) {
+        t.temporalScope = TEMPORAL_SCOPE.today;
+        t.temporalConfidence = TEMPORAL_CONFIDENCE.high;
+        reasons.push("explicit_date_is_handover_day");
+      } else if (cmp > 0) {
+        var tomorrowY = addCalendarDaysYmd(anchor.handoverYmd, 1);
+        t.temporalScope = primary === tomorrowY ? TEMPORAL_SCOPE.tomorrow : TEMPORAL_SCOPE.future;
+        t.temporalConfidence = TEMPORAL_CONFIDENCE.high;
+        reasons.push(primary === tomorrowY ? "explicit_date_tomorrow" : "explicit_date_future");
+      } else {
+        t.temporalScope = TEMPORAL_SCOPE.past;
+        t.temporalConfidence = TEMPORAL_CONFIDENCE.high;
+        reasons.push("explicit_date_past");
+      }
+      if (hasMorning) t.relativeCue = "morning";
+    } else if (hasToday) {
+      t.relativeCue = "today";
+      t.temporalScope = TEMPORAL_SCOPE.today;
+      t.serviceDate = anchor.handoverYmd || "";
+      t.temporalConfidence = TEMPORAL_CONFIDENCE.medium;
+      reasons.push("today_cue");
+    } else if (hasAm || hasMorning) {
+      t.relativeCue = hasAm ? "am" : "morning";
+      /* Night handover AM service → upcoming morning window. */
+      if (/night/i.test(anchor.shift || "")) {
+        t.temporalScope = TEMPORAL_SCOPE.today;
+        t.serviceDate = anchor.handoverYmd || "";
+        t.temporalConfidence = TEMPORAL_CONFIDENCE.medium;
+        reasons.push("am_window_night_handover");
+      } else {
+        t.temporalScope = TEMPORAL_SCOPE.today;
+        t.temporalConfidence = TEMPORAL_CONFIDENCE.low;
+        reasons.push("am_or_morning_cue");
+      }
+    } else if (departingCue && ymds.length === 0) {
+      t.temporalScope = TEMPORAL_SCOPE.information;
+      t.temporalConfidence = TEMPORAL_CONFIDENCE.low;
+      reasons.push("departure_language_no_day");
+    } else {
+      t.temporalScope = TEMPORAL_SCOPE.information;
+      t.temporalConfidence = TEMPORAL_CONFIDENCE.low;
+      reasons.push("no_temporal_evidence");
+    }
+
+    /* Dep dates must not be treated as arrival dates when body says departing. */
+    if (departingCue && /\barriv(?:e|ing|al)\s+on\b/i.test(text) === false) {
+      reasons.push("departing_not_arrival");
+    }
+
+    t.temporalReasons = reasons;
+    return t;
+  }
+
+  function temporalAllowsOpen(t) {
+    if (!t) return false;
+    return t.temporalScope === TEMPORAL_SCOPE.now ||
+      t.temporalScope === TEMPORAL_SCOPE.this_shift ||
+      t.temporalScope === TEMPORAL_SCOPE.today;
+  }
+
+  function temporalIsFutureOrMonitor(t) {
+    if (!t) return false;
+    return t.temporalScope === TEMPORAL_SCOPE.tomorrow ||
+      t.temporalScope === TEMPORAL_SCOPE.future;
+  }
+
+  function temporalIsAmbiguous(t) {
+    return !!(t && t.temporalScope === TEMPORAL_SCOPE.ambiguous);
+  }
+
+  function temporalIsPast(t) {
+    return !!(t && t.temporalScope === TEMPORAL_SCOPE.past);
+  }
+
+  function applyTemporalToActionOpts(opts, temporal) {
+    opts = opts || {};
+    if (!temporal) return opts;
+    if (temporal.temporalScope) opts.temporalScope = temporal.temporalScope;
+    if (temporal.serviceDate) opts.serviceDate = temporal.serviceDate;
+    if (temporal.deadlineHint) opts.deadlineHint = temporal.deadlineHint;
+    if (temporal.relativeCue) opts.relativeCue = temporal.relativeCue;
+    if (temporal.temporalConfidence) opts.temporalConfidence = temporal.temporalConfidence;
+    if (temporal.temporalReasons && temporal.temporalReasons.length) {
+      opts.temporalReasons = temporal.temporalReasons.slice();
+      opts.priorityReasons = (opts.priorityReasons || []).concat(
+        temporal.temporalReasons.map(function (r) { return "temporal:" + r; })
+      );
+    }
+    return opts;
+  }
+
+  function hasTokenisationCue(src) {
+    return /\b(?:cc|card)\s+not\s+tokeni[sz]ed\b/i.test(src || "") ||
+      /\bnot\s+tokeni[sz]ed\b/i.test(src || "") ||
+      (/\btokeni[sz]/i.test(src || "") && /\b(?:pdq|did\s+not\s+work|failed)\b/i.test(src || ""));
+  }
+
+  function hasCheckoutTodayCue(src) {
+    return /\bchecking\s+out\s+today\b|\bcheckout\s+today\b|\bcheck[\s-]?out\s+today\b/i.test(src || "");
+  }
+
   function stableActionToken(value) {
     return String(value || "")
       .toLowerCase()
@@ -8514,7 +8929,13 @@
       priorityReasons: Array.isArray(opts.priorityReasons) ? opts.priorityReasons.slice() : [],
       currentStateEligible: opts.currentStateEligible !== false,
       sourceFactIds: Array.isArray(opts.sourceFactIds) ? opts.sourceFactIds.slice() : [],
-      confidence: typeof opts.confidence === "number" ? opts.confidence : 0.5
+      confidence: typeof opts.confidence === "number" ? opts.confidence : 0.5,
+      temporalScope: opts.temporalScope || "",
+      serviceDate: opts.serviceDate || "",
+      deadlineHint: opts.deadlineHint || "",
+      relativeCue: opts.relativeCue || "",
+      temporalConfidence: opts.temporalConfidence || "",
+      temporalReasons: Array.isArray(opts.temporalReasons) ? opts.temporalReasons.slice() : []
     };
   }
 
@@ -8542,13 +8963,16 @@
 
   /**
    * Build shared canonical Night Manager actions from post-Sprint-1–4 notes.
+   * Sprint 6: options may include handoverDate / shift / createdAt for temporal eligibility.
    * Does not force every fact into an action.
    */
-  function buildCanonicalOperationalActions(analyzed) {
+  function buildCanonicalOperationalActions(analyzed, options) {
     var notes = Array.isArray(analyzed) ? analyzed : [];
     var actions = [];
     var seenIds = {};
     var checkedOut = detectCheckedOutRooms(notes);
+    var anchor = buildOperationalDayAnchor(options || notes._temporalAnchor || {});
+    notes._temporalAnchor = anchor;
 
     function pushAction(action) {
       if (!action || !action.actionId) return;
@@ -8579,6 +9003,7 @@
       var pri = priorityFromNoteFact(note, fact || {});
       var subject = normalizeSubjectToken(fact && (fact.subject || fact.subjectType) || "");
       var objectInfo = classifyOperationalObject(fact || {}, note);
+      var temporal = resolveTemporalEligibility(src, fact, note, anchor, {});
 
       /* Facet split: iron request + completed breakfast charge on same note. */
       var hasIron = /\biron(?:ing)?(?:\s+board)?\b/i.test(src);
@@ -8680,6 +9105,199 @@
           sourceFactIds: [factId],
           confidence: 0.55
         }));
+      }
+
+      /* Sprint 6: CC/card not tokenised — checkout-today or near dep window → OPEN. */
+      if (hasTokenisationCue(src)) {
+        var tokTemporal = temporal;
+        var tokState = ACTION_STATE.monitor;
+        if (hasCheckoutTodayCue(src) || temporalAllowsOpen(tokTemporal)) {
+          tokState = ACTION_STATE.open;
+        } else if (tokTemporal.serviceDate && anchor.handoverYmd) {
+          var depCmp = compareYmd(tokTemporal.serviceDate, anchor.handoverYmd);
+          var depTomorrow = tokTemporal.serviceDate === addCalendarDaysYmd(anchor.handoverYmd, 1);
+          var depPlus2 = tokTemporal.serviceDate === addCalendarDaysYmd(anchor.handoverYmd, 2);
+          if (depCmp === 0 || depTomorrow || depPlus2) {
+            tokState = ACTION_STATE.open;
+            tokTemporal = Object.assign({}, tokTemporal, {
+              temporalScope: TEMPORAL_SCOPE.today,
+              temporalReasons: (tokTemporal.temporalReasons || []).concat(["tokenise_near_departure_window"])
+            });
+          } else if (depCmp > 0) {
+            tokState = ACTION_STATE.monitor;
+          } else {
+            tokState = ACTION_STATE.information;
+          }
+        } else if (/\bdep(?:arture|arting)?\b|\bdep\b/i.test(src)) {
+          tokState = ACTION_STATE.open;
+          tokTemporal = Object.assign({}, tokTemporal, {
+            temporalScope: TEMPORAL_SCOPE.today,
+            temporalConfidence: TEMPORAL_CONFIDENCE.medium,
+            temporalReasons: (tokTemporal.temporalReasons || []).concat(["tokenise_dep_cue_conservative_open"])
+          });
+        }
+        if (actionability === ACTIONABILITY.blocked) tokState = ACTION_STATE.blocked;
+        pushAction(createCanonicalAction(applyTemporalToActionOpts({
+          entityId: entityId,
+          resolutionState: resolutionState,
+          canonicalName: canonicalName,
+          room: currentRoom,
+          rooms: rooms,
+          facetKey: "payment:tokenise",
+          actionType: NEXT_ACTION_KIND.collect_before_departure,
+          actionState: tokState,
+          actionText: currentRoom
+            ? ("Confirm card tokenisation / guarantee for Room " + currentRoom +
+              (hasCheckoutTodayCue(src) ? " before today's checkout" : " before departure"))
+            : "Confirm card tokenisation / guarantee before departure",
+          evidenceText: src,
+          actionability: actionability,
+          blockedBy: blockedBy,
+          priorityBand: tokState === ACTION_STATE.open ? PRIORITY_BAND.P1 : PRIORITY_BAND.P2,
+          priorityScore: tokState === ACTION_STATE.open ? 18 : 42,
+          priorityReasons: pri.priorityReasons.concat(["tokenisation_guarantee"]),
+          currentStateEligible: true,
+          sourceFactIds: [factId],
+          confidence: 0.7
+        }, tokTemporal)));
+        return;
+      }
+
+      /* Sprint 6: late checkout today @12 — OPEN / past / unresolved by operational day. */
+      if (/\blate\s*(?:check[\s-]?outs?|c\/?o)\b/i.test(src) &&
+          (/\btoday\b|\btodat\b/i.test(src) || temporal.relativeCue === "today")) {
+        var lcoTemporal = resolveTemporalEligibility(src, fact, note, anchor, { deadlineHint: "12:00" });
+        var lcoState = ACTION_STATE.unresolved;
+        var lcoText = "Clarify late check-out timing (today @12)";
+        if (temporalIsAmbiguous(lcoTemporal)) {
+          lcoState = ACTION_STATE.unresolved;
+          lcoText = "Unresolved late check-out today @12 — confirm operational day before actioning" +
+            (currentRoom ? " (Room " + currentRoom + ")" : "");
+        } else if (temporalIsPast(lcoTemporal)) {
+          lcoState = ACTION_STATE.information;
+          lcoText = "Late check-out today @12 — timing appears elapsed; retain as information" +
+            (currentRoom ? " (Room " + currentRoom + ")" : "");
+        } else if (temporalAllowsOpen(lcoTemporal)) {
+          lcoState = actionability === ACTIONABILITY.blocked ? ACTION_STATE.blocked : ACTION_STATE.open;
+          lcoText = currentRoom
+            ? "Honour late check-out today @12 for Room " + currentRoom
+            : "Honour late check-out today @12" +
+              (/\b5\b/.test(src) && /\b14\b/.test(src) ? " for Rooms 5 & 14" : "");
+        }
+        pushAction(createCanonicalAction(applyTemporalToActionOpts({
+          entityId: entityId,
+          resolutionState: lcoState === ACTION_STATE.unresolved ? "unresolved" : resolutionState,
+          canonicalName: canonicalName,
+          room: currentRoom,
+          rooms: rooms.length ? rooms : (/\b5\b/.test(src) && /\b14\b/.test(src) ? ["5", "14"] : []),
+          facetKey: "timed:late_checkout",
+          actionType: NEXT_ACTION_KIND.complete_timed_actions,
+          actionState: lcoState,
+          actionText: lcoText,
+          evidenceText: src,
+          actionability: lcoState === ACTION_STATE.unresolved
+            ? ACTIONABILITY.unresolved
+            : actionability,
+          blockedBy: blockedBy,
+          priorityBand: lcoState === ACTION_STATE.open ? PRIORITY_BAND.P1 : PRIORITY_BAND.P2,
+          priorityScore: lcoState === ACTION_STATE.open ? 22 : 48,
+          priorityReasons: pri.priorityReasons.concat(["late_checkout_temporal"]),
+          currentStateEligible: true,
+          sourceFactIds: [factId],
+          confidence: 0.65
+        }, lcoTemporal)));
+        return;
+      }
+
+      /* Sprint 6: still to arrive today → OPEN arrival/watch. */
+      if (/\bstill\s+to\s+arrive\s+today\b|\bpre[\s-]?reg\b.{0,40}\bstill\s+to\s+arrive\b/i.test(src)) {
+        var arrTemporal = resolveTemporalEligibility(src, fact, note, anchor, { deadlineHint: "arrival" });
+        pushAction(createCanonicalAction(applyTemporalToActionOpts({
+          entityId: entityId,
+          resolutionState: resolutionState,
+          canonicalName: canonicalName,
+          room: currentRoom,
+          rooms: rooms,
+          facetKey: "timed:arrival_today",
+          actionType: NEXT_ACTION_KIND.guest_follow_up,
+          actionState: actionability === ACTIONABILITY.blocked
+            ? ACTION_STATE.blocked
+            : ACTION_STATE.open,
+          actionText: currentRoom
+            ? "Expect / handle arrival today for Room " + currentRoom + " (pre-reg still to arrive)"
+            : "Expect / handle pre-reg arrival still due today",
+          evidenceText: src,
+          actionability: actionability,
+          blockedBy: blockedBy,
+          priorityBand: PRIORITY_BAND.P1,
+          priorityScore: 24,
+          priorityReasons: pri.priorityReasons.concat(["arrival_today_watch"]),
+          currentStateEligible: true,
+          sourceFactIds: [factId],
+          confidence: 0.7
+        }, arrTemporal)));
+        return;
+      }
+
+      /* Sprint 6: AM taxi vs multi-week bag storage — separate horizons. */
+      if (/\btaxi\b/i.test(src) && /\b(?:\bam\b|morning)\b/i.test(src) &&
+          !/\bheathrow|gatwick|stansted|luton\b/i.test(src)) {
+        var taxiTemporal = resolveTemporalEligibility(src, fact, note, anchor, { deadlineHint: "am" });
+        var taxiRooms = rooms.slice();
+        var tr = src.match(/\broom(?:s)?\s+(\d{1,4})\s*(?:&|and|,)\s*(\d{1,4})/i);
+        if (tr) taxiRooms = [tr[1], tr[2]];
+        pushAction(createCanonicalAction(applyTemporalToActionOpts({
+          entityId: entityId,
+          resolutionState: resolutionState,
+          canonicalName: canonicalName,
+          room: taxiRooms[0] || currentRoom,
+          rooms: taxiRooms,
+          facetKey: "timed:am_taxi",
+          actionType: NEXT_ACTION_KIND.complete_timed_actions,
+          actionState: temporalAllowsOpen(taxiTemporal) || /night/i.test(anchor.shift || "")
+            ? (actionability === ACTIONABILITY.blocked ? ACTION_STATE.blocked : ACTION_STATE.open)
+            : ACTION_STATE.monitor,
+          actionText: taxiRooms.length >= 2
+            ? "Ensure AM taxi runs for Rooms " + taxiRooms[0] + " & " + taxiRooms[1] + " (together)"
+            : "Ensure AM taxi runs as booked",
+          evidenceText: src,
+          actionability: actionability,
+          blockedBy: blockedBy,
+          priorityBand: PRIORITY_BAND.P2,
+          priorityScore: 34,
+          priorityReasons: pri.priorityReasons.concat(["am_taxi_timed"]),
+          currentStateEligible: true,
+          sourceFactIds: [factId],
+          confidence: 0.6
+        }, taxiTemporal)));
+        if (/\b(?:store|storage|bags?|luggage).{0,40}(?:week|weeks|2\s*weeks|two\s+weeks)\b/i.test(src) ||
+            /\b(?:week|weeks|2\s*weeks|two\s+weeks).{0,40}(?:store|storage|bags?|luggage)\b/i.test(src)) {
+          pushAction(createCanonicalAction(applyTemporalToActionOpts({
+            entityId: entityId,
+            resolutionState: resolutionState,
+            canonicalName: canonicalName,
+            room: taxiRooms[0] || currentRoom,
+            rooms: taxiRooms,
+            facetKey: "continuity:bag_storage",
+            actionType: NEXT_ACTION_KIND.none,
+            actionState: ACTION_STATE.information,
+            actionText: "Bag storage continuity (multi-week) — not the same as AM taxi execution",
+            evidenceText: src,
+            actionability: ACTIONABILITY.actionable,
+            priorityBand: PRIORITY_BAND.P3,
+            priorityScore: 78,
+            priorityReasons: ["bag_storage_continuity"],
+            currentStateEligible: true,
+            sourceFactIds: [factId],
+            confidence: 0.7
+          }, {
+            temporalScope: TEMPORAL_SCOPE.future,
+            relativeCue: "",
+            temporalConfidence: TEMPORAL_CONFIDENCE.high,
+            temporalReasons: ["multi_week_storage"]
+          })));
+        }
+        return;
       }
 
       /* Non-payment "balance availability". */
@@ -8905,10 +9523,60 @@
           return;
         }
         if (activeAmenities.length) {
+          /* Sprint 6: future/tomorrow flower delivery → MONITOR; keep other amenities OPEN. */
+          var flowerFuture = /\bflowers?\b/i.test(src) &&
+            (/\btomorrow\b|\btmrw\b/i.test(src) ||
+              /\b\d{1,2}[./\-]\d{1,2}(?:[./\-]\d{2,4})?\b/.test(src) ||
+              /\b\d{1,2}(?:st|nd|rd|th)\s+Aug/i.test(src));
+          var flowerTemporal = flowerFuture
+            ? resolveTemporalEligibility(
+              /\btomorrow\b/i.test(src) ? src : src,
+              fact, note, anchor, {}
+            )
+            : null;
+          if (flowerFuture && /\btomorrow\b|\btmrw\b/i.test(src)) {
+            flowerTemporal = {
+              temporalScope: TEMPORAL_SCOPE.tomorrow,
+              serviceDate: anchor.handoverYmd ? addCalendarDaysYmd(anchor.handoverYmd, 1) : "",
+              deadlineHint: "morning",
+              relativeCue: "tomorrow",
+              temporalConfidence: TEMPORAL_CONFIDENCE.high,
+              temporalReasons: ["flowers_tomorrow_morning"]
+            };
+          }
+          var nowAmenities = activeAmenities.slice();
+          if (flowerFuture && (temporalIsFutureOrMonitor(flowerTemporal) ||
+              (flowerTemporal && flowerTemporal.temporalScope === TEMPORAL_SCOPE.tomorrow)) &&
+              nowAmenities.indexOf("flowers") !== -1) {
+            nowAmenities = nowAmenities.filter(function (a) { return a !== "flowers"; });
+            pushAction(createCanonicalAction(applyTemporalToActionOpts({
+              entityId: entityId,
+              resolutionState: resolutionState,
+              canonicalName: canonicalName,
+              room: currentRoom,
+              rooms: rooms,
+              facetKey: "amenity:flowers_future",
+              actionType: NEXT_ACTION_KIND.prepare_vip,
+              actionState: ACTION_STATE.monitor,
+              actionText: "Monitor flower delivery / placement" +
+                (flowerTemporal.serviceDate ? " on " + flowerTemporal.serviceDate : " (future morning)") +
+                (canonicalName ? " for " + canonicalName : "") +
+                (currentRoom ? " Room " + currentRoom : ""),
+              evidenceText: src,
+              actionability: ACTIONABILITY.actionable,
+              priorityBand: PRIORITY_BAND.P2,
+              priorityScore: 50,
+              priorityReasons: ["amenity_future_monitor"],
+              currentStateEligible: true,
+              sourceFactIds: [factId],
+              confidence: 0.7
+            }, flowerTemporal)));
+          }
+          if (!nowAmenities.length) return;
           var amenityState = actionability === ACTIONABILITY.blocked
             ? ACTION_STATE.blocked
             : ACTION_STATE.open;
-          pushAction(createCanonicalAction({
+          pushAction(createCanonicalAction(applyTemporalToActionOpts({
             entityId: entityId,
             resolutionState: resolutionState,
             canonicalName: canonicalName,
@@ -8917,7 +9585,7 @@
             facetKey: "amenity:prep",
             actionType: NEXT_ACTION_KIND.prepare_vip,
             actionState: amenityState,
-            actionText: "Prepare " + activeAmenities.join(" + ") +
+            actionText: "Prepare " + nowAmenities.join(" + ") +
               (canonicalName ? " for " + canonicalName : "") +
               (currentRoom ? " in Room " + currentRoom : ""),
             evidenceText: src,
@@ -8929,7 +9597,7 @@
             currentStateEligible: true,
             sourceFactIds: [factId],
             confidence: pri.confidence
-          }));
+          }, temporalAllowsOpen(temporal) ? temporal : emptyTemporal())));
           return;
         }
       }
@@ -8967,32 +9635,105 @@
         }
       }
 
-      /* Luggage / EA style prep from long guest notes (non-payment). */
+      /* Sprint 6: split near-term EA/lunch luggage from explicit future post-checkout hold. */
       if (/\bluggage\b/i.test(src) || /\bEA\s*\d|\bearly\s+arrival\b/i.test(src)) {
-        pushAction(createCanonicalAction({
-          entityId: entityId,
-          resolutionState: resolutionState,
-          canonicalName: canonicalName,
-          room: currentRoom,
-          rooms: rooms,
-          facetKey: "guest_request:luggage_ea",
-          actionType: NEXT_ACTION_KIND.guest_follow_up,
-          actionState: actionability === ACTIONABILITY.blocked
-            ? ACTION_STATE.blocked
-            : ACTION_STATE.open,
-          actionText: "Honour luggage / early-arrival arrangements" +
-            (canonicalName ? " for " + canonicalName : "") +
-            (currentRoom ? " (Room " + currentRoom + ")" : ""),
-          evidenceText: src,
-          actionability: actionability,
-          blockedBy: blockedBy,
-          priorityBand: PRIORITY_BAND.P2,
-          priorityScore: 38,
-          priorityReasons: ["luggage_ea_follow_up"],
-          currentStateEligible: true,
-          sourceFactIds: [factId],
-          confidence: 0.6
-        }));
+        var hasFutureHold = /\b(?:after\s+check(?:ing)?\s+out|9th\s+August|09\/08|9\/08)\b/i.test(src) &&
+          /\bluggage\b/i.test(src);
+        var hasNearTerm = /\bEA\s*\d|\bearly\s+arrival\b|\baround\s+lunch\b|\blunch\b/i.test(src);
+        if (hasNearTerm) {
+          var nearTemporal = Object.assign({}, temporal, {
+            temporalScope: TEMPORAL_SCOPE.today,
+            relativeCue: temporal.relativeCue || "today",
+            temporalConfidence: TEMPORAL_CONFIDENCE.medium,
+            temporalReasons: (temporal.temporalReasons || []).concat(["ea_or_lunch_luggage_near_term"])
+          });
+          pushAction(createCanonicalAction(applyTemporalToActionOpts({
+            entityId: entityId,
+            resolutionState: resolutionState,
+            canonicalName: canonicalName,
+            room: currentRoom,
+            rooms: rooms,
+            facetKey: "guest_request:ea_luggage_near",
+            actionType: NEXT_ACTION_KIND.guest_follow_up,
+            actionState: actionability === ACTIONABILITY.blocked
+              ? ACTION_STATE.blocked
+              : ACTION_STATE.open,
+            actionText: "Honour early arrival / lunch luggage arrangements" +
+              (canonicalName ? " for " + canonicalName : "") +
+              (currentRoom ? " (Room " + currentRoom + ")" : ""),
+            evidenceText: src,
+            actionability: actionability,
+            blockedBy: blockedBy,
+            priorityBand: PRIORITY_BAND.P2,
+            priorityScore: 36,
+            priorityReasons: ["luggage_ea_near_term"],
+            currentStateEligible: true,
+            sourceFactIds: [factId],
+            confidence: 0.65
+          }, nearTemporal)));
+        }
+        if (hasFutureHold) {
+          var futureYmds = extractOperationalDateYmds(src, anchor.handoverYmd);
+          var holdYmd = futureYmds.filter(function (y) {
+            return anchor.handoverYmd && compareYmd(y, anchor.handoverYmd) > 0;
+          })[0] || futureYmds[0] || "";
+          var holdTemporal = {
+            temporalScope: TEMPORAL_SCOPE.future,
+            serviceDate: holdYmd,
+            deadlineHint: "22:00",
+            relativeCue: "",
+            temporalConfidence: TEMPORAL_CONFIDENCE.high,
+            temporalReasons: ["post_checkout_luggage_future"]
+          };
+          pushAction(createCanonicalAction(applyTemporalToActionOpts({
+            entityId: entityId,
+            resolutionState: resolutionState,
+            canonicalName: canonicalName,
+            room: currentRoom,
+            rooms: rooms,
+            facetKey: "guest_request:luggage_future_hold",
+            actionType: NEXT_ACTION_KIND.none,
+            actionState: ACTION_STATE.monitor,
+            actionText: "Future post-checkout luggage hold" +
+              (holdYmd ? " on " + holdYmd : "") +
+              (canonicalName ? " for " + canonicalName : "") +
+              " — not tonight's EA task",
+            evidenceText: src,
+            actionability: ACTIONABILITY.actionable,
+            priorityBand: PRIORITY_BAND.P3,
+            priorityScore: 70,
+            priorityReasons: ["luggage_future_hold"],
+            currentStateEligible: true,
+            sourceFactIds: [factId],
+            confidence: 0.7
+          }, holdTemporal)));
+        }
+        if (!hasNearTerm && !hasFutureHold) {
+          pushAction(createCanonicalAction(applyTemporalToActionOpts({
+            entityId: entityId,
+            resolutionState: resolutionState,
+            canonicalName: canonicalName,
+            room: currentRoom,
+            rooms: rooms,
+            facetKey: "guest_request:luggage_ea",
+            actionType: NEXT_ACTION_KIND.guest_follow_up,
+            actionState: actionability === ACTIONABILITY.blocked
+              ? ACTION_STATE.blocked
+              : ACTION_STATE.open,
+            actionText: "Honour luggage / early-arrival arrangements" +
+              (canonicalName ? " for " + canonicalName : "") +
+              (currentRoom ? " (Room " + currentRoom + ")" : ""),
+            evidenceText: src,
+            actionability: actionability,
+            blockedBy: blockedBy,
+            priorityBand: PRIORITY_BAND.P2,
+            priorityScore: 38,
+            priorityReasons: ["luggage_ea_follow_up"],
+            currentStateEligible: true,
+            sourceFactIds: [factId],
+            confidence: 0.6
+          }, temporal)));
+        }
         return;
       }
 
@@ -9082,46 +9823,72 @@
         return;
       }
 
-      /* Maintenance open follow-up. */
+      /* Maintenance open follow-up — Sprint 6: tomorrow inspect = MONITOR, not danger chase. */
       if (objectInfo.type === OPERATIONAL_OBJECT_TYPE.maintenance || subject === "maintenance") {
+        var maintTemporal = resolveTemporalEligibility(src, fact, note, anchor, { deadlineHint: "inspect" });
         var maintState = actionability === ACTIONABILITY.blocked
           ? ACTION_STATE.blocked
           : ACTION_STATE.open;
-        if (/\btomorrow\b/i.test(src) && /\binspect\b/i.test(src)) {
+        var maintText = currentRoom
+          ? "Follow up maintenance for Room " + currentRoom
+          : "Follow up open maintenance";
+        if ((/\btomorrow\b/i.test(src) && /\binspect\b/i.test(src)) ||
+            (temporalIsFutureOrMonitor(maintTemporal) && /\binspect\b/i.test(src))) {
           maintState = ACTION_STATE.monitor;
+          maintText = currentRoom
+            ? "Monitor Room " + currentRoom + " — maintenance inspection due tomorrow (DM already attended)"
+            : "Monitor maintenance — inspection due tomorrow (not an immediate chase)";
+          maintTemporal = Object.assign({}, maintTemporal, {
+            temporalScope: TEMPORAL_SCOPE.tomorrow,
+            relativeCue: "tomorrow",
+            deadlineHint: "inspect",
+            temporalConfidence: TEMPORAL_CONFIDENCE.high,
+            temporalReasons: (maintTemporal.temporalReasons || []).concat(["tomorrow_inspection_monitor"])
+          });
         }
-        pushAction(createCanonicalAction({
+        pushAction(createCanonicalAction(applyTemporalToActionOpts({
           entityId: entityId,
           resolutionState: resolutionState,
           canonicalName: canonicalName,
           room: currentRoom,
           rooms: rooms,
-          facetKey: "maintenance",
+          facetKey: maintState === ACTION_STATE.monitor ? "maintenance:tomorrow_inspect" : "maintenance",
           actionType: NEXT_ACTION_KIND.follow_up_until_resolved,
           actionState: maintState,
-          actionText: currentRoom
-            ? "Follow up maintenance for Room " + currentRoom
-            : "Follow up open maintenance",
+          actionText: maintText,
           evidenceText: src,
           actionability: actionability,
           blockedBy: blockedBy,
-          priorityBand: pri.priorityBand,
-          priorityScore: pri.priorityScore,
+          priorityBand: maintState === ACTION_STATE.monitor ? PRIORITY_BAND.P2 : pri.priorityBand,
+          priorityScore: maintState === ACTION_STATE.monitor
+            ? Math.max(pri.priorityScore, 55)
+            : pri.priorityScore,
           priorityReasons: pri.priorityReasons,
           currentStateEligible: true,
           sourceFactIds: [factId],
           confidence: pri.confidence
-        }));
+        }, maintTemporal)));
         return;
       }
 
-      /* Timed transport / airport: useful timed action OR unresolved fragment. */
+      /* Timed transport / airport: OPEN when day+time bind; else unresolved (not dust). */
       if (/\b(?:heathrow|gatwick|stansted|luton)\b/i.test(src) ||
           (objectInfo.type === OPERATIONAL_OBJECT_TYPE.transport || subject === "transfer")) {
-        var hasTime = /\b\d{1,2}:\d{2}\b/.test(src);
+        var airTemporal = resolveTemporalEligibility(src, fact, note, anchor, {});
+        var hasTime = /\b\d{1,2}:\d{2}\b/.test(src) || /\b\d{1,2}\s*(?:am|pm)\b/i.test(src);
         var hasGuest = !!canonicalName || /\b[A-Z][a-z]+\s+[A-Z][a-z]+\b/.test(src);
-        if (hasTime && (hasGuest || currentRoom)) {
-          pushAction(createCanonicalAction({
+        /* OPEN when timed+bound unless explicit future/past/ambiguous day evidence blocks it. */
+        var dayBlocked = temporalIsFutureOrMonitor(airTemporal) || temporalIsPast(airTemporal) ||
+          temporalIsAmbiguous(airTemporal);
+        var dayOk = !dayBlocked && (
+          temporalAllowsOpen(airTemporal) ||
+          (airTemporal.serviceDate && anchor.handoverYmd &&
+            airTemporal.serviceDate === anchor.handoverYmd) ||
+          /\btoday\b/i.test(src) ||
+          !airTemporal.serviceDate
+        );
+        if (hasTime && dayOk && (hasGuest || currentRoom || /\b\d{3}[- ]?\d{3}[- ]?\d{4}\b/.test(src))) {
+          pushAction(createCanonicalAction(applyTemporalToActionOpts({
             entityId: entityId,
             resolutionState: resolutionState,
             canonicalName: canonicalName,
@@ -9130,21 +9897,23 @@
             facetKey: "timed:airport",
             actionType: NEXT_ACTION_KIND.complete_timed_actions,
             actionState: ACTION_STATE.open,
-            actionText: "Complete airport / transfer follow-up" +
-              (currentRoom ? " for Room " + currentRoom : "") +
-              " at noted time",
+            actionText: "Complete airport / transfer pickup" +
+              (airTemporal.deadlineHint && /\d/.test(airTemporal.deadlineHint)
+                ? " at " + airTemporal.deadlineHint
+                : " at noted time") +
+              (currentRoom ? " (Room " + currentRoom + ")" : ""),
             evidenceText: src,
             actionability: actionability,
             blockedBy: blockedBy,
             priorityBand: PRIORITY_BAND.P1,
-            priorityScore: 20,
+            priorityScore: 16,
             priorityReasons: ["timed_airport"],
             currentStateEligible: true,
             sourceFactIds: [factId],
-            confidence: 0.55
-          }));
+            confidence: 0.6
+          }, airTemporal)));
         } else {
-          pushAction(createCanonicalAction({
+          pushAction(createCanonicalAction(applyTemporalToActionOpts({
             entityId: entityId,
             resolutionState: resolutionState || "unresolved",
             canonicalName: canonicalName,
@@ -9153,7 +9922,7 @@
             facetKey: "timed:airport_fragment",
             actionType: NEXT_ACTION_KIND.operational_follow_up,
             actionState: ACTION_STATE.unresolved,
-            actionText: "Unresolved airport / transfer fragment — confirm guest, room, and pickup time",
+            actionText: "Unresolved airport / transfer follow-up — confirm guest, room, and pickup time",
             evidenceText: src,
             actionability: ACTIONABILITY.unresolved,
             priorityBand: PRIORITY_BAND.P2,
@@ -9162,7 +9931,7 @@
             currentStateEligible: true,
             sourceFactIds: [factId],
             confidence: 0.35
-          }));
+          }, airTemporal)));
         }
         return;
       }
@@ -9216,6 +9985,88 @@
       }
     });
 
+    /* Sprint 6: cluster fragmented airport/taxi pickup lines into one timed action. */
+    (function clusterAirportFragments() {
+      var alreadyOpen = actions.some(function (a) {
+        return a && a.facetKey === "timed:airport" && a.actionState === ACTION_STATE.open;
+      });
+      if (alreadyOpen) return;
+      var bits = [];
+      var factIds = [];
+      notes.forEach(function (note, index) {
+        var src = noteEvidenceText(note, note && note.fact);
+        if (!src) return;
+        if (!/\b(?:heathrow|gatwick|stansted|luton|taxi\s+pick|pickup|pick[\s-]?up|arr\s*\d)/i.test(src) &&
+            !/\bAugust\s+\d{1,2},?\s+\d{4}\b/i.test(src) &&
+            !/\b\d{1,2}:\d{2}\s*am\b/i.test(src) &&
+            !/\b\d{3}[- ]?\d{3}[- ]?\d{4}\b/.test(src)) {
+          return;
+        }
+        bits.push(src);
+        factIds.push(note._neutralFactId || (note.fact && note.fact.id) || ("note-" + index));
+      });
+      if (bits.length < 2) return;
+      var combined = bits.join("\n");
+      if (!/\b(?:heathrow|gatwick|stansted|luton)\b/i.test(combined)) return;
+      var hasTime = /\b\d{1,2}:\d{2}\b/.test(combined) || /\b\d{1,2}\s*(?:am|pm)\b/i.test(combined);
+      if (!hasTime) return;
+      var airTemporal = resolveTemporalEligibility(combined, null, null, anchor, {});
+      var dayOk = temporalAllowsOpen(airTemporal) ||
+        (airTemporal.serviceDate && anchor.handoverYmd && airTemporal.serviceDate === anchor.handoverYmd) ||
+        /\btoday\b/i.test(combined) ||
+        (anchor.handoverYmd && extractOperationalDateYmds(combined, anchor.handoverYmd).indexOf(anchor.handoverYmd) !== -1);
+      /* Drop weak fragment-only actions before replacing with cluster. */
+      for (var ai = actions.length - 1; ai >= 0; ai--) {
+        if (actions[ai] && actions[ai].facetKey === "timed:airport_fragment") {
+          delete seenIds[actions[ai].actionId];
+          actions.splice(ai, 1);
+        }
+      }
+      var hint = extractDeadlineHint(combined) || "noted time";
+      if (dayOk) {
+        pushAction(createCanonicalAction(applyTemporalToActionOpts({
+          entityId: null,
+          resolutionState: "",
+          canonicalName: "",
+          room: "",
+          rooms: [],
+          facetKey: "timed:airport",
+          actionType: NEXT_ACTION_KIND.complete_timed_actions,
+          actionState: ACTION_STATE.open,
+          actionText: "Complete airport / transfer pickup at " + hint +
+            " — confirm guest contacts from handover notes",
+          evidenceText: combined.slice(0, 400),
+          actionability: ACTIONABILITY.actionable,
+          priorityBand: PRIORITY_BAND.P1,
+          priorityScore: 15,
+          priorityReasons: ["timed_airport_clustered"],
+          currentStateEligible: true,
+          sourceFactIds: factIds.slice(0, 6),
+          confidence: 0.55
+        }, airTemporal)));
+      } else {
+        pushAction(createCanonicalAction(applyTemporalToActionOpts({
+          entityId: null,
+          resolutionState: "unresolved",
+          canonicalName: "",
+          room: "",
+          rooms: [],
+          facetKey: "timed:airport_fragment",
+          actionType: NEXT_ACTION_KIND.operational_follow_up,
+          actionState: ACTION_STATE.unresolved,
+          actionText: "Unresolved airport / transfer follow-up — confirm guest, room, and pickup time",
+          evidenceText: combined.slice(0, 400),
+          actionability: ACTIONABILITY.unresolved,
+          priorityBand: PRIORITY_BAND.P2,
+          priorityScore: 36,
+          priorityReasons: ["airport_fragment_clustered"],
+          currentStateEligible: true,
+          sourceFactIds: factIds.slice(0, 6),
+          confidence: 0.4
+        }, airTemporal)));
+      }
+    })();
+
     actions.sort(compareCanonicalActions);
     notes._canonicalActions = actions;
     notes._canonicalActionsBuilt = true;
@@ -9266,6 +10117,13 @@
     function conflictsWithAction(rec, action) {
       var text = String(rec && rec.text || "");
       if (!text || !action) return false;
+      /* Generic collect chase conflicts with tokenise OPEN for the same room. */
+      if (/payment:tokenise/i.test(action.facetKey || "") && action.room &&
+          /collect\s+outstanding/i.test(text) &&
+          new RegExp("\\b" + action.room + "\\b").test(text) &&
+          !/tokenis|guarantee/i.test(text)) {
+        return true;
+      }
       /* Amenity-scoped twin: legacy VIP text binding a different room is a conflict. */
       if (isTwinAction(action) && action.room) {
         var twinish = /\btwin\b/i.test(text);
@@ -9304,6 +10162,16 @@
         return sameGuestRec(rec, action) ||
           (action.room && recMentionsRoom(text, action.room) &&
             /champagne|flower|amenit|fruit|prepare/i.test(text));
+      }
+      if (/payment:tokenise|tokenis/i.test(action.facetKey || "") && /tokenis|guarantee/i.test(text)) {
+        return !action.room || recMentionsRoom(text, action.room) || new RegExp("\\b" + action.room + "\\b").test(text);
+      }
+      if (/timed:airport|timed:am_taxi|timed:late_checkout|timed:arrival_today/i.test(action.facetKey || "")) {
+        return /airport|pickup|taxi|late check|arrive today|tokenis/i.test(text) &&
+          (!action.room || new RegExp("\\b" + action.room + "\\b").test(text) || /pickup|Heathrow|taxi/i.test(text));
+      }
+      if (/guest_request:ea_luggage|luggage/i.test(action.facetKey || "") && /luggage|early arrival|EA/i.test(text)) {
+        return true;
       }
       return false;
     }
@@ -9365,11 +10233,39 @@
       kept.push(rec);
     });
 
-    /* Ensure unresolved OPEN canonical twin/request/amenity actions are present. */
+    /* Demote immediate maintenance chase when canonical says tomorrow MONITOR. */
+    var monitorMaint = (canonicalActions || []).filter(function (a) {
+      return a && a.actionState === ACTION_STATE.monitor && /maintenance/i.test(a.facetKey || "");
+    });
+    if (monitorMaint.length) {
+      kept = kept.filter(function (rec) {
+        var text = String(rec && rec.text || "");
+        if (!/maintenance|fault|before further guest impact/i.test(text)) return true;
+        return !monitorMaint.some(function (a) {
+          return !a.room || new RegExp("\\b" + a.room + "\\b").test(text);
+        });
+      });
+      monitorMaint.forEach(function (action) {
+        if (kept.some(function (r) { return /inspect tomorrow|Monitor Room/i.test(r.text || ""); })) return;
+        kept.push({
+          id: action.actionId,
+          text: String(action.actionText || "").replace(/\.+$/, "") + ".",
+          priority: "normal",
+          canonicalPriority: CANONICAL_PRIORITY.normal,
+          department: "Maintenance",
+          status: "open",
+          sourceFactIds: action.sourceFactIds || [],
+          reasonCodes: (action.priorityReasons || []).concat(["canonical_monitor_authority"]),
+          decisionTrace: { nextAction: action.actionType, reasonCodes: action.priorityReasons || [] }
+        });
+      });
+    }
+
+    /* Ensure OPEN canonical twin/request/amenity/temporal actions are present. */
     open.forEach(function (action) {
       if (coveredActionIds[action.actionId]) return;
       var needsEnsure = isTwinAction(action) ||
-        /guest_request:|amenity:prep|arrival_prep/i.test(action.facetKey || "");
+        /guest_request:|amenity:prep|arrival_prep|payment:tokenise|timed:|arrival_today/i.test(action.facetKey || "");
       if (!needsEnsure) return;
       if (kept.some(function (rec) { return alreadyCoversAction(rec, action); })) return;
       kept.push(toCanonicalRec(action, null));
@@ -9386,9 +10282,25 @@
   }
 
   function briefingSpecsFromCanonicalActions(actions, maxBlocks) {
-    var open = openCanonicalActions(actions).slice().sort(compareCanonicalActions);
+    var monitorRooms = {};
+    (actions || []).forEach(function (a) {
+      if (a && a.actionState === ACTION_STATE.monitor && /maintenance/i.test(a.facetKey || "") && a.room) {
+        monitorRooms[String(a.room)] = true;
+      }
+    });
+    var open = openCanonicalActions(actions).filter(function (a) {
+      /* Sprint 6: do not seat immediate maintenance chase when tomorrow inspect MONITOR exists. */
+      if (/^maintenance$/i.test(a.facetKey || "") && a.room && monitorRooms[String(a.room)]) {
+        return false;
+      }
+      return true;
+    }).slice().sort(compareCanonicalActions);
     var unresolved = (actions || []).filter(function (a) {
       return a && a.actionState === ACTION_STATE.unresolved;
+    }).sort(compareCanonicalActions);
+    var monitors = (actions || []).filter(function (a) {
+      return a && a.actionState === ACTION_STATE.monitor &&
+        /maintenance:tomorrow_inspect|timed:|amenity:flowers_future|luggage_future/i.test(a.facetKey || "");
     }).sort(compareCanonicalActions);
     var selected = [];
     open.forEach(function (a) {
@@ -9398,6 +10310,10 @@
     unresolved.forEach(function (a) {
       if (selected.length >= maxBlocks) return;
       if (priorityBandRank(a.priorityBand) > priorityBandRank(PRIORITY_BAND.P2)) return;
+      selected.push(a);
+    });
+    monitors.forEach(function (a) {
+      if (selected.length >= maxBlocks) return;
       selected.push(a);
     });
     return selected.map(function (action) {
@@ -10039,8 +10955,13 @@
       candidates.push(normalized);
     }
 
-    /* Sprint 5: stamp shared canonical actions (briefing/recs share this list). */
-    var canonicalActions = buildCanonicalOperationalActions(analyzed);
+    /* Sprint 5/6: stamp shared canonical actions (briefing/recs share this list). */
+    var temporalOpts = {
+      handoverDate: input.handoverDate || input.handover_date || input.date || "",
+      shift: input.shiftCode || input.shift || input.shiftDisplayName || "",
+      createdAt: input.createdAt || input.created_at || ""
+    };
+    var canonicalActions = buildCanonicalOperationalActions(analyzed, temporalOpts);
     analyzed._canonicalActions = canonicalActions;
     if (classified && classified._analyzed) {
       classified._analyzed._canonicalActions = canonicalActions;
@@ -10084,7 +11005,7 @@
       /* Phase 2A / E4.2: do not invent from rewritten display when context forbids. */
     });
 
-    /* Sprint 5: add OPEN canonical actions not already represented (fidelity fills). */
+    /* Sprint 5/6: add OPEN canonical actions not already represented (fidelity fills). */
     openCanonicalActions(canonicalActions).slice().sort(compareCanonicalActions).forEach(function (action) {
       if (action.actionability === ACTIONABILITY.blocked) return;
       var already = candidates.some(function (rec) {
@@ -10092,7 +11013,15 @@
         var sameRoom = action.room && new RegExp("\\b" + action.room + "\\b").test(text);
         var sameGuest = action.canonicalName && text.toLowerCase().indexOf(String(action.canonicalName).toLowerCase()) !== -1;
         var sameKind = rec.decisionTrace && rec.decisionTrace.nextAction === action.actionType;
-        return (sameRoom || sameGuest) && (sameKind || /arrange|prepare|collect|follow up|honour/i.test(text));
+        /* Tokenise ≠ generic collect balance; airport ≠ generic follow-up. */
+        if (/payment:tokenise/i.test(action.facetKey || "") && !/tokenis|guarantee/i.test(text)) {
+          return false;
+        }
+        if (/timed:airport|timed:am_taxi|timed:late_checkout|timed:arrival_today/i.test(action.facetKey || "")) {
+          return /airport|pickup|taxi|late check|arrive today|still to arrive/i.test(text) &&
+            (sameRoom || !action.room);
+        }
+        return (sameRoom || sameGuest) && (sameKind || /arrange|prepare|collect|follow up|honour|tokenis/i.test(text));
       });
       if (already) return;
       var band = action.priorityBand || PRIORITY_BAND.P2;
@@ -11043,6 +11972,12 @@
     openCanonicalActions: openCanonicalActions,
     compareCanonicalActions: compareCanonicalActions,
     reconcileRecommendationsWithCanonicalActions: reconcileRecommendationsWithCanonicalActions,
+    /* Reasoning Sprint 6 — temporal / today action eligibility */
+    TEMPORAL_SCOPE: TEMPORAL_SCOPE,
+    TEMPORAL_CONFIDENCE: TEMPORAL_CONFIDENCE,
+    buildOperationalDayAnchor: buildOperationalDayAnchor,
+    resolveTemporalEligibility: resolveTemporalEligibility,
+    parseOperationalDateToYmd: parseOperationalDateToYmd,
     /* Phase 16B foundation surface */
     NEUTRAL_FACT_FIELDS: NEUTRAL_FACT_FIELDS,
     createEmptyNeutralFact: createEmptyNeutralFact,

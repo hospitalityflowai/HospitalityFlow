@@ -159,6 +159,16 @@
     while ((m = re.exec(src)) !== null) {
       matches.push(m[0]);
     }
+    /* Sprint 6 narrow: late c/o @12 / @12:00 */
+    var atBare = /(?:@\s*|at\s+)(\d{1,2})(?::(\d{2}))?\b/gi;
+    while ((m = atBare.exec(src)) !== null) {
+      var hh = parseInt(m[1], 10);
+      var mm = m[2] != null ? m[2] : "00";
+      if (hh >= 0 && hh <= 23) {
+        var stamp = hh + ":" + mm;
+        if (matches.indexOf(stamp) === -1 && matches.indexOf(m[0]) === -1) matches.push(stamp);
+      }
+    }
     /* Glued staff times before spacing: ETA2230, arr2230, wake0630 */
     var glued = /\b(?:eta|arr(?:ival)?|due|dep(?:arture)?|wake(?:-?up)?|wu)((?:[01]\d|2[0-3])[0-5]\d)\b/gi;
     while ((m = glued.exec(src)) !== null) {
@@ -6434,10 +6444,24 @@
 
   function extractDates(text) {
     var matches = [];
+    var src = String(text || "");
     var re = /\b(?:\d{1,2}[\/\-]\d{1,2}(?:[\/\-]\d{2,4})?|\d{1,2}\s+(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{2,4})\b/gi;
     var m;
-    while ((m = re.exec(String(text || ""))) !== null) {
+    while ((m = re.exec(src)) !== null) {
       matches.push(m[0]);
+    }
+    /* Sprint 6 narrow formats from real Zetter failures — not a general NLP date engine. */
+    var monthFirst = /\b((?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2},?\s+\d{2,4})\b/gi;
+    while ((m = monthFirst.exec(src)) !== null) {
+      if (matches.indexOf(m[1]) === -1) matches.push(m[1]);
+    }
+    var dotted = /\b(\d{1,2}\.\d{1,2}\.\d{2,4})\b/g;
+    while ((m = dotted.exec(src)) !== null) {
+      if (matches.indexOf(m[1]) === -1) matches.push(m[1]);
+    }
+    var ordinal = /\b(\d{1,2}(?:st|nd|rd|th)\s+(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)(?:\s+\d{2,4})?)\b/gi;
+    while ((m = ordinal.exec(src)) !== null) {
+      if (matches.indexOf(m[1]) === -1) matches.push(m[1]);
     }
     return matches;
   }
