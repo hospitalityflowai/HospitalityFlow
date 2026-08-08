@@ -2215,6 +2215,15 @@
       if (/\badapter\b/.test(src) && !/\bdeclined|outstanding|balance\b/.test(src)) {
         return NEXT_ACTION_KIND.post_or_collect_charge;
       }
+      /* Tokenisation remains a payment-path nextAction; collect OPEN is gated later. */
+      if (typeof hasTokenisationCue === "function" && hasTokenisationCue(src)) {
+        return NEXT_ACTION_KIND.collect_before_departure;
+      }
+      /* Sprint 9: do not assign collect nextAction without positive debt evidence. */
+      if (typeof hasCollectablePaymentEvidence === "function" &&
+          !hasCollectablePaymentEvidence(src, fact)) {
+        return NEXT_ACTION_KIND.none;
+      }
       return NEXT_ACTION_KIND.collect_before_departure;
     }
     if (currentStatus === CONTEXT_STATUS.informational && objectInfo.type === OPERATIONAL_OBJECT_TYPE.other) {
@@ -8703,22 +8712,173 @@
     return /\b(?:booking\.com|expedia|ota|virtual\s+card|\bvcc\b|channel\s+payment|channel\s+collect)\b/i.test(src || "");
   }
 
-  function hasCollectablePaymentEvidence(src, fact) {
+  /**
+   * Sprint 9 — extract a positive money amount for collect evidence (null if none / £0).
+   */
+  function extractCollectableMoneyAmount(src, fact) {
     var text = String(src || "");
-    if (/\bbalance\s+availability\b/i.test(text)) return false;
-    if (hasChannelPaymentEvidence(text)) return true;
-    if (/\b(?:declined|still\s+to\s+pay|balance\s+due|outstanding\s+balance|folio|minibar|city\s+tax)\b/i.test(text)) {
+    var fromEngine = null;
+    if (global.AiWritingEngine && typeof global.AiWritingEngine.extractMoney === "function") {
+      var extracted = global.AiWritingEngine.extractMoney(text) || [];
+      if (extracted.length) {
+        var raw0 = String(extracted[0]).replace(/[^\d.]/g, "");
+        var n0 = parseFloat(raw0, 10);
+        if (!isNaN(n0) && n0 > 0) fromEngine = n0;
+      }
+    }
+    if (fromEngine != null) return fromEngine;
+    if (fact && Array.isArray(fact.details)) {
+      for (var i = 0; i < fact.details.length; i += 1) {
+        var d = fact.details[i];
+        if (d && d.type === "money" && d.value != null) {
+          var n = parseFloat(String(d.value).replace(/[^\d.]/g, ""), 10);
+          if (!isNaN(n) && n > 0) return n;
+        }
+      }
+    }
+    var m = text.match(/([£$€])\s*([\d,]+(?:\.\d{1,2})?)/) ||
+      text.match(/\b(?:outstanding|balance|collect|charge|open|unpaid|due)\D{0,16}([£$€])?\s*([\d,]+(?:\.\d{1,2})?)/i);
+    if (!m) return null;
+    var raw = m[2] != null && !/^[£$€]$/.test(m[2]) ? m[2] : m[1];
+    if (raw && /^[£$€]$/.test(raw)) raw = m[2];
+    var parsed = parseFloat(String(raw || "").replace(/,/g, ""), 10);
+    return isNaN(parsed) || parsed <= 0 ? null : parsed;
+  }
+
+  /**
+   * Sprint 9 — contexts that must never become OPEN payment:collect
+   * unless a separate explicit collectable debt amount is evidenced.
+   */
+  function isPaymentCollectFailClosedSuppressed(src, fact) {
+    var text = String(src || "");
+    if (!text.trim()) return true;
+    if (/\bbalance\s+availability\b/i.test(text)) return true;
+    if (/\bto\s+balance\s+(?:availability|the\s+house|occupancy)\b/i.test(text)) return true;
+
+    /* Snapshot / KPI / payment-list noise */
+    if (/\b(?:adr|revpar|occupancy|rooms?\s+sold|sellable\s+rooms?)\b/i.test(text) &&
+        !/\b(?:collect|outstanding\s+[£$€]|still\s+to\s+pay|£\s*\d)/i.test(text)) {
       return true;
     }
-    var amount = fact && (
-      (global.AiWritingEngine && global.AiWritingEngine.extractMoney
-        ? (global.AiWritingEngine.extractMoney(text) || [])[0]
-        : null) ||
-      (fact.details || []).some(function (d) { return d && d.type === "money"; })
-    );
-    if (amount && /\b(?:collect|outstanding|unpaid|due|balance|charge|payment)\b/i.test(text) &&
+    if (/\bvoid\b/i.test(text) && /\b(?:collect|outstanding|stamp|ignore)\b/i.test(text)) return true;
+    if (/\b(?:ignore|bin)\b/i.test(text) && /\b(?:collect|untokenis|duplicate)\b/i.test(text)) return true;
+
+    /* Settled / cleared / paid / green — no collect (paid-out = cashier payout, not settled) */
+    if (/\b(?:folio\s+)?settled\b/i.test(text) || /\baccount\s+(?:now\s+)?clear\b/i.test(text)) return true;
+    if (/\b(?:fully\s+)?paid(?:\s+in\s+full)?\b/i.test(text) &&
+        !/\bpaid-?out\b/i.test(text) &&
+        !/\b(?:not\s+(?:yet\s+)?paid|unpaid|still\s+to\s+pay|still\s+open|outstanding)\b/i.test(text)) {
+      return true;
+    }
+    if (/\b(?:successfully\s+charged|vcc\s+settled|payment\s+sorted)\b/i.test(text)) return true;
+
+    /* Card on file / guarantee alone is not a folio debt */
+    if (/\bcard\s+on\s+file\b/i.test(text) &&
+        !extractCollectableMoneyAmount(text, fact) &&
+        !/\b(?:declined|still\s+to\s+pay|collect\s+outstanding|outstanding\s+[£$€])\b/i.test(text)) {
+      return true;
+    }
+
+    /* Company / direct billing without guest debt amount */
+    if (/\b(?:company\s+(?:billed|billing|pays|account|ledger)|master\s+account|direct\s+bill(?:ing)?)\b/i.test(text) &&
+        !extractCollectableMoneyAmount(text, fact)) {
+      return true;
+    }
+
+    /* Prepaid / channel prepaid — suppress unless a separate outstanding amount is evidenced */
+    if (/\bpre-?paid\b/i.test(text) ||
+        (/\bpp\b/i.test(text) && /\b(?:booking\.com|expedia|ota|channel|b\.?\s*com)\b/i.test(text))) {
+      if (!extractCollectableMoneyAmount(text, fact) ||
+          !/\b(?:outstanding|still\s+to\s+pay|unpaid|collect|still\s+open|declined)\b/i.test(text)) {
+        return true;
+      }
+    }
+
+    /* POA / room-rate guarantee without evidenced extras debt */
+    if (/\b(?:\bpoa\b|payment\s+on\s+arrival)\b/i.test(text)) {
+      if (!extractCollectableMoneyAmount(text, fact) ||
+          !/\b(?:outstanding|still\s+to\s+pay|unpaid|collect|still\s+open|declined|extras?)\b/i.test(text)) {
+        return true;
+      }
+    }
+
+    /* Future-day / deferred collect — not today's OPEN collect evidence */
+    if (/\b(?:balance|deposit|payment|amount)\s+due\s+tomorrow\b/i.test(text)) return true;
+    if (/\bnot\s+collect(?:ing)?\s+tonight\b/i.test(text)) return true;
+    if (/\bsettle(?:d)?\s+at\s+checkout\b/i.test(text) &&
+        /\b(?:thursday|friday|tomorrow|wednesday|later)\b/i.test(text) &&
+        !/\btoday\b/i.test(text)) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Sprint 9 — positive evidence gate for payment:collect OPEN.
+   * Channel / folio / minibar / POA labels alone are insufficient.
+   */
+  function hasCollectablePaymentEvidence(src, fact) {
+    var text = String(src || "");
+    if (!text.trim()) return false;
+    if (isPaymentCollectFailClosedSuppressed(text, fact)) return false;
+
+    /* Declined card/payment — actionable debt risk */
+    if (/\b(?:card|payment|pdq|pos)\s+declined\b/i.test(text) ||
+        (/\bdeclined\b/i.test(text) && /\b(?:card|payment|authoris|authoriz)\b/i.test(text))) {
+      return true;
+    }
+
+    var amount = extractCollectableMoneyAmount(text, fact);
+    var debtCue = /\b(?:collect|outstanding|unpaid|still\s+to\s+pay|still\s+open|open\s+balance|balance\s+due|owes?|please\s+settle|to\s+settle|charge\s+still|genuine\s+outstanding)\b/i.test(text);
+    if (amount != null && debtCue &&
         !/\bfixed\s+charges?\s+added\b/i.test(text) &&
         !/\bcomp(?:limentary)?\b/i.test(text)) {
+      return true;
+    }
+
+    /* Explicit collect / still-to-pay instruction (amount preferred; allow clear collect wording) */
+    if (/\b(?:still\s+to\s+pay|please\s+collect|collect\s+(?:before|outstanding|on\s+arrival)|collect\s+outstanding)\b/i.test(text) &&
+        !/\bpre-?paid\b/i.test(text)) {
+      return true;
+    }
+
+    /* Channel/OTA — only with unpaid/pending/failed evidence; never from channel name alone */
+    if (hasChannelPaymentEvidence(text)) {
+      if (/\b(?:pre-?paid|fully\s+paid|settled|successfully\s+charged|vcc\s+settled)\b/i.test(text)) {
+        return false;
+      }
+      if (/\b(?:pending|failed|declined|unpaid|outstanding|not\s+(?:yet\s+)?received|still\s+to\s+(?:charge|pay)|collect|payment\s+showing\s+pending)\b/i.test(text)) {
+        return true;
+      }
+      return false;
+    }
+
+    return false;
+  }
+
+  /**
+   * Sprint 9 + Sprint 6 — payment collect not OPEN when due day is clearly future
+   * or night explicitly deferred ("not collecting tonight").
+   */
+  function paymentCollectTemporalBlocksOpen(src, payTemporal, anchor) {
+    var text = String(src || "");
+    if (/\bnot\s+collect(?:ing)?\s+tonight\b/i.test(text)) return true;
+    if (/\b(?:balance|deposit|payment|amount)\s+due\s+tomorrow\b/i.test(text)) return true;
+    if (/\bdue\s+at\s+checkout\s+tomorrow\b/i.test(text)) return true;
+    if (/\b(?:settle|collect|due)\b.{0,40}\b(?:tomorrow|thu(?:rsday)?|fri(?:day)?|mon(?:day)?|next\s+week)\b/i.test(text) &&
+        !/\btoday\b/i.test(text) && !/\bbefore\s+(?:today'?s\s+)?departure\b/i.test(text)) {
+      return true;
+    }
+    if (/\bsettle(?:d)?\s+at\s+checkout\b/i.test(text) &&
+        /\b(?:thursday|friday|tomorrow|later|wednesday)\b/i.test(text) &&
+        !/\btoday\b/i.test(text)) {
+      return true;
+    }
+    if (payTemporal && temporalIsFutureOrMonitor(payTemporal)) return true;
+    if (payTemporal && payTemporal.serviceDate && anchor && anchor.handoverYmd &&
+        compareYmd(payTemporal.serviceDate, anchor.handoverYmd) > 0 &&
+        !/\btoday\b/i.test(text)) {
       return true;
     }
     return false;
@@ -8731,6 +8891,8 @@
         !/\bvip\b/i.test(src || "") &&
         !hasHighTouchArrivalPrep(src) &&
         !/\b(?:champagne|fruit|iron|pillow|twin|luggage|wake|taxi)\b/i.test(src || "")) {
+      /* Sprint 9: POA with evidenced collectable debt is payment work, not info-only. */
+      if (hasCollectablePaymentEvidence(src || "", fact)) return false;
       return true;
     }
     return false;
@@ -9915,37 +10077,87 @@
             confidence: 0.4
           }));
         } else {
-          var payState = actionability === ACTIONABILITY.blocked
-            ? ACTION_STATE.blocked
-            : ACTION_STATE.open;
+          /* Sprint 9: OPEN only with positive debt evidence + eligible operational day. */
+          var payTemporal = resolveTemporalEligibility(src, fact, note, anchor, {
+            deadlineHint: "collect"
+          });
           var payText = currentRoom
             ? "Collect outstanding payment for Room " + currentRoom + " before departure"
             : "Collect outstanding payment before departure";
-          if (hasChannelPaymentEvidence(src)) {
+          if (hasChannelPaymentEvidence(src) &&
+              !/\bpre-?paid\b/i.test(src) &&
+              /\b(?:pending|failed|declined|unpaid|outstanding|collect|not\s+(?:yet\s+)?received)\b/i.test(src)) {
             payText = currentRoom
               ? "Collect outstanding channel payment for Room " + currentRoom + " before departure"
               : "Collect outstanding channel payment before departure";
           }
-          pushAction(createCanonicalAction({
-            entityId: entityId,
-            resolutionState: resolutionState,
-            canonicalName: canonicalName,
-            room: currentRoom,
-            rooms: rooms,
-            facetKey: "payment:collect",
-            actionType: NEXT_ACTION_KIND.collect_before_departure,
-            actionState: payState,
-            actionText: payText,
-            evidenceText: src,
-            actionability: actionability,
-            blockedBy: blockedBy,
-            priorityBand: pri.priorityBand,
-            priorityScore: pri.priorityScore,
-            priorityReasons: pri.priorityReasons.concat(["payment_collect_evidenced"]),
-            currentStateEligible: true,
-            sourceFactIds: [factId],
-            confidence: pri.confidence
-          }));
+          if (actionability === ACTIONABILITY.blocked) {
+            pushAction(createCanonicalAction(applyTemporalToActionOpts({
+              entityId: entityId,
+              resolutionState: resolutionState,
+              canonicalName: canonicalName,
+              room: currentRoom,
+              rooms: rooms,
+              facetKey: "payment:collect",
+              actionType: NEXT_ACTION_KIND.collect_before_departure,
+              actionState: ACTION_STATE.blocked,
+              actionText: payText,
+              evidenceText: src,
+              actionability: actionability,
+              blockedBy: blockedBy,
+              priorityBand: pri.priorityBand,
+              priorityScore: pri.priorityScore,
+              priorityReasons: pri.priorityReasons.concat(["payment_collect_evidenced"]),
+              currentStateEligible: true,
+              sourceFactIds: [factId],
+              confidence: pri.confidence
+            }, payTemporal)));
+          } else if (paymentCollectTemporalBlocksOpen(src, payTemporal, anchor)) {
+            pushAction(createCanonicalAction(applyTemporalToActionOpts({
+              entityId: entityId,
+              resolutionState: resolutionState,
+              canonicalName: canonicalName,
+              room: currentRoom,
+              rooms: rooms,
+              facetKey: "payment:collect_deferred",
+              actionType: NEXT_ACTION_KIND.none,
+              actionState: ACTION_STATE.monitor,
+              actionText: "Payment follow-up retained — not an OPEN collect for this operational day" +
+                (currentRoom ? " (Room " + currentRoom + ")" : ""),
+              evidenceText: src,
+              actionability: ACTIONABILITY.actionable,
+              priorityBand: PRIORITY_BAND.P2,
+              priorityScore: Math.max(pri.priorityScore, 48),
+              priorityReasons: pri.priorityReasons.concat(["payment_collect_fail_closed_temporal"]),
+              currentStateEligible: true,
+              sourceFactIds: [factId],
+              confidence: 0.55
+            }, payTemporal)));
+          } else {
+            pushAction(createCanonicalAction(applyTemporalToActionOpts({
+              entityId: entityId,
+              resolutionState: resolutionState,
+              canonicalName: canonicalName,
+              room: currentRoom,
+              rooms: rooms,
+              facetKey: "payment:collect",
+              actionType: NEXT_ACTION_KIND.collect_before_departure,
+              actionState: ACTION_STATE.open,
+              actionText: payText,
+              evidenceText: src,
+              actionability: actionability,
+              blockedBy: blockedBy,
+              priorityBand: pri.priorityBand,
+              priorityScore: pri.priorityScore,
+              priorityReasons: pri.priorityReasons.concat([
+                "payment_collect_evidenced",
+                "sprint9_fail_closed"
+              ]),
+              currentStateEligible: true,
+              sourceFactIds: [factId],
+              confidence: pri.confidence
+            }, payTemporal)));
+          }
         }
         return;
       }
@@ -10246,8 +10458,9 @@
 
   function hasMatchingCanonicalPaymentOpen(canonicalActions, room) {
     return openCanonicalActions(canonicalActions).some(function (a) {
-      if (!/payment:/i.test(a.facetKey || "")) return false;
-      if (/payment:no_collect|payment:breakfast|payment:resolved/i.test(a.facetKey || "")) return false;
+      /* Sprint 9: only an OPEN payment:collect unlocks legacy collect fill — not tokenise/monitor. */
+      if (!/payment:collect\b/i.test(a.facetKey || "")) return false;
+      if (/payment:collect_deferred/i.test(a.facetKey || "")) return false;
       if (room && a.room && String(a.room) !== String(room)) return false;
       return true;
     });

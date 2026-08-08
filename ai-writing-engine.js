@@ -4021,7 +4021,23 @@
       /* Extras POA alone is not a room-folio clear signal. */
     }
     if (isZeroMoneyText(lower)) return true;
-    if (/\b(?:fully\s+)?paid(?:\s+in\s+full)?\b/.test(lower)) return true;
+    /* "paid-out" (cashier payout) is not a settled folio */
+    if (/\b(?:fully\s+)?paid(?:\s+in\s+full)?\b/.test(lower) && !/\bpaid-?out\b/.test(lower)) {
+      return true;
+    }
+    /* Sprint 9: settled / prepaid / company-billed clear signals (no guest collect). */
+    if (/\b(?:folio\s+)?settled\b/.test(lower) &&
+        !/\b(?:still\s+outstanding|still\s+to\s+pay|unpaid|still\s+open)\b/.test(lower)) {
+      return true;
+    }
+    if (/\bpre-?paid\b/.test(lower) &&
+        !/\b(?:outstanding|still\s+to\s+pay|unpaid|collect|still\s+open|declined)\b/.test(lower)) {
+      return true;
+    }
+    if (/\b(?:company\s+(?:billed|billing|pays)|master\s+account|direct\s+bill(?:ing)?)\b/.test(lower) &&
+        !/\b(?:outstanding|still\s+to\s+pay|unpaid|collect|£\s*\d)/.test(lower)) {
+      return true;
+    }
     if (/\baccount\s+(?:now\s+)?clear\b/.test(lower) || /\bno\s+further\s+payment\b/.test(lower)) return true;
     if (/\bpayment\s+sorted\b/.test(lower) || /\bsuccessfully\s+charged\b/.test(lower)) return true;
     if (/\breceived\s+in\s+full\b/.test(lower) || /\bpayment\s+received\s+(?:in\s+full|successfully)\b/.test(lower)) {
