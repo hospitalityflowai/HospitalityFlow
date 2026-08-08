@@ -1,0 +1,300 @@
+{
+  "label": "RIVERTON SPRINT 10 VALIDATION OUTPUT",
+  "scenarioId": "019",
+  "title": "Group Departure Cascade + Taxi Bundle",
+  "recordId": null,
+  "gitCommit": "a50b66bf962be44667c5c4bc6b3b1acaa4bbfabc",
+  "engineVersion": 1,
+  "contractVersion": "E1",
+  "ranAt": "2026-08-08T12:52:15.683Z",
+  "pipeline": [
+    "extractOperationalFact / sectionFromFact",
+    "consolidateNotesByFacts",
+    "resolveOperationalEntities (Sprint 3)",
+    "electCanonicalCurrentState (Sprint 1)",
+    "resolveOperationalDependencies (Sprint 4)",
+    "buildCanonicalOperationalActions (Sprint 5/6/8/10)",
+    "buildOrganisedSectionModel",
+    "buildTodaysBriefing (Sprint 8 decision seating)",
+    "ShiftIntelligenceEngine.analyze (Sprint 8 recommendation seating)"
+  ],
+  "scenarioMeta": {
+    "shift": "AM",
+    "operationalLoad": "Very busy",
+    "difficulty": "Hard",
+    "capability": "Multi-room party; timed taxi vs long-horizon bags (INFORMATION)",
+    "ambiguity": "Partial",
+    "departments": "Concierge, Reception, Housekeeping, F&B",
+    "sourceFile": "scenario-019.md"
+  },
+  "humanExpectedTruth": {
+    "currentOperationalFacts": [
+      "Four-room departure group **201/203/205/207**; shared taxi **10:15** St Pancras; porter pull ~09:45 from rooms for travellers.",
+      "**Ng 203** multi-week bag hold already stored — INFORMATION / not taxi cargo.",
+      "Breakfast coffee F&B continuity.",
+      "Elena Voss 207 on taxi — not Julian from elsewhere.",
+      "HK needs cascade turns after group out."
+    ],
+    "open": [
+      "Execute group departure logistics: porter pull + **10:15** shared taxi for Harlow/Ng(cabin only)/Elena Voss/Ibarra as per sheet.",
+      "HK turn sequencing for 201–207 after checkout for same-day arrivals."
+    ],
+    "monitor": [
+      "On-time 10:15 departure; restaurant coffees ~09:30 not blocking rooms."
+    ],
+    "information": [
+      "Ng **3-week** luggage hold already tagged in store (long horizon).",
+      "F&B breakfast note."
+    ],
+    "unresolved": [
+      "Minor name collision risk on “Voss” — resolved in notes as Elena 207; do not invent missing fifth room."
+    ],
+    "mustNotInfer": [
+      "Merging Ng’s multi-week bag hold into the taxi OPEN as if bags must be loaded at 10:15.",
+      "Inventing an extra room in the party.",
+      "Using wrong owner department alone as the only signal to drop taxi or HK turns.",
+      "Binding Elena Voss taxi to an unrelated Julian Voss booking."
+    ],
+    "rawTruthMarkdown": "### Current operational facts\r\n- Four-room departure group **201/203/205/207**; shared taxi **10:15** St Pancras; porter pull ~09:45 from rooms for travellers.\r\n- **Ng 203** multi-week bag hold already stored — INFORMATION / not taxi cargo.\r\n- Breakfast coffee F&B continuity.\r\n- Elena Voss 207 on taxi — not Julian from elsewhere.\r\n- HK needs cascade turns after group out.\r\n\r\n### Expected work states\r\n\r\n#### OPEN\r\n- Execute group departure logistics: porter pull + **10:15** shared taxi for Harlow/Ng(cabin only)/Elena Voss/Ibarra as per sheet.\r\n- HK turn sequencing for 201–207 after checkout for same-day arrivals.\r\n\r\n#### MONITOR\r\n- On-time 10:15 departure; restaurant coffees ~09:30 not blocking rooms.\r\n\r\n#### INFORMATION\r\n- Ng **3-week** luggage hold already tagged in store (long horizon).\r\n- F&B breakfast note.\r\n\r\n#### UNRESOLVED\r\n- Minor name collision risk on “Voss” — resolved in notes as Elena 207; do not invent missing fifth room.\r\n\r\n### Must not infer / invent\r\n- Merging Ng’s multi-week bag hold into the taxi OPEN as if bags must be loaded at 10:15.\r\n- Inventing an extra room in the party.\r\n- Using wrong owner department alone as the only signal to drop taxi or HK turns.\r\n- Binding Elena Voss taxi to an unrelated Julian Voss booking."
+  },
+  "canonicalActions": [
+    {
+      "actionId": "act|ent_3|noroom|guest_request_luggage_ea|guest_follow_up|note_0",
+      "actionState": "open",
+      "actionType": "guest_follow_up",
+      "facetKey": "guest_request:luggage_ea",
+      "room": "",
+      "entityId": "ent_3",
+      "canonicalName": "St Pancras",
+      "actionText": "Honour luggage / early-arrival arrangements for St Pancras",
+      "priorityBand": "P2",
+      "priorityScore": 38,
+      "temporalScope": "information",
+      "serviceDate": "",
+      "deadlineHint": "10:15",
+      "relativeCue": "",
+      "temporalConfidence": "low",
+      "temporalReasons": [
+        "no_temporal_evidence"
+      ],
+      "evidenceText": "Shared taxi: **one** people-carrier booked **10:15** to St Pancras — for Harlow + 3 colleagues (names on concierge sheet: Harlow, Ng, Voss, Ibarra). Porter luggage pull from all four rooms from **09:45**. | - **Mr Ng (203)** — leaving bags "
+    }
+  ],
+  "actionStateCounts": {
+    "open": 1,
+    "monitor": 0,
+    "information": 0,
+    "unresolved": 0,
+    "blocked": 0,
+    "resolved": 0,
+    "other": 0
+  },
+  "temporalAnchor": {
+    "handoverDate": "2026-08-08",
+    "shift": "AM",
+    "createdAt": "2026-08-08T07:15:00.000Z"
+  },
+  "inputIntegrity": {
+    "inputAuthority": "scenario-XXX.md Original Input / Raw Source Notes",
+    "sourceSha256": "5a76a5dae58666e0b64857f60e07107ede73b1acc4a79601b5fb6d2094a74b66",
+    "sourceLength": 990,
+    "lineCount": 9,
+    "brainContext": null,
+    "hotelSnapshotKeys": [],
+    "humanExpectedTruthPreserved": true
+  },
+  "exactSourceInput": "GROUP — “Aster Conference add-ons” (not full house block — 4 rooms)\n\nRooms: **201, 203, 205, 207** — all departing today\nContact on site: **Ms June Harlow** (in 205)\n\nShared taxi: **one** people-carrier booked **10:15** to St Pancras — for Harlow + 3 colleagues (names on concierge sheet: Harlow, Ng, Voss, Ibarra). Porter luggage pull from all four rooms from **09:45**.\n\nEXCEPT:\n- **Mr Ng (203)** — leaving bags for **3 weeks** — tagged hold “NG / ASTER / RETURN 29th” — already in luggage store as of last night — **NOT** going in the 10:15 taxi. He flies later with cabin bag only. Do not merge bag-hold into taxi OPEN count.\n\nBreakfast: group wants last coffees in restaurant ~09:30 — F&B knows — not a reception collect.\n\nHK: need all four rooms in the cascade after out — priority turns for same-day arrivals waiting on floor 2.\n\nPartial ambiguity: Voss listed on taxi sheet — is that Julian Voss from a different booking? Concierge says no, it’s **Elena Voss** from 207. Keep Elena.",
+  "hotelSnapshot": {},
+  "aiSummaryBriefing": "Priority 1\nHonour luggage / early-arrival arrangements for St Pancras.",
+  "briefingParagraphs": [
+    "Priority 1\nHonour luggage / early-arrival arrangements for St Pancras."
+  ],
+  "organisedHandover": {
+    "urgent": [],
+    "vip": [],
+    "guest": [
+      "Shared taxi: **one** people-carrier booked **10:15** to St Pancras — for Harlow + 3 colleagues (names on concierge sheet: Harlow, Ng, Voss, Ibarra). Porter luggage pull from all four rooms from **09:45**. | - **Mr Ng (203)** — leaving bags for **3 weeks** — tagged hold “NG / ASTER / RETURN 29th” — already in luggage store as of last night — **NOT** going in the 10:15 taxi. He flies later with cabin bag only. Do not merge bag-hold into taxi OPEN count. | Partial ambiguity: Voss listed on taxi sheet — is that Julian Voss from a different booking? Concierge says no, it’s **Elena Voss** from 207. Keep Elena. | - **Mr Ng (203)** — leaving bags for **3 weeks** — tagged hold “NG / ASTER / RETURN 29th” — already in luggage store as of last night — **NOT** going in the 10:15 taxi. He flies later with cabin bag only. Do not merge bag-hold into taxi OPEN count. | Partial ambiguity: Voss listed on taxi sheet — is that Julian Voss from a different booking? Concierge says no, it’s **Elena Voss** from 207. Keep Elena."
+    ],
+    "maintenance": [],
+    "payments": [],
+    "events": [],
+    "preparations": [],
+    "openQuestions": [],
+    "tasks": [],
+    "inventory": [],
+    "deliveries": [],
+    "lostproperty": [],
+    "general": [
+      "GROUP — “Aster Conference add-ons” (not full house block — 4 rooms)",
+      "Rooms: **201, 203, 205, 207** — all departing today",
+      "Contact on site: **Ms June Harlow** (in 205)",
+      "EXCEPT:",
+      "Breakfast: group wants last coffees in restaurant ~09:30 — F&B knows — not a reception collect.",
+      "HK: need all four rooms in the cascade after out — priority turns for same-day arrivals waiting on floor 2."
+    ],
+    "completed": []
+  },
+  "recommendations": [
+    {
+      "id": "act|ent_3|noroom|guest_request_luggage_ea|guest_follow_up|note_0",
+      "text": "Honour luggage / early-arrival arrangements for St Pancras.",
+      "priority": "normal",
+      "department": "Reception",
+      "status": "open",
+      "reasonCodes": [
+        "luggage_ea_follow_up",
+        "temporal:no_temporal_evidence",
+        "canonical_decision_seat",
+        "legacy_wording_enrich"
+      ]
+    }
+  ],
+  "reasoningMetadata": {
+    "noteCountAfterPipeline": 7,
+    "dependencyEdgeCount": 0,
+    "dependencyEdges": [],
+    "analyzeKeys": [
+      "engineVersion",
+      "signals",
+      "recommendations",
+      "checklist",
+      "facts",
+      "operationalMemories",
+      "guestObservations",
+      "guestObservationRejections",
+      "guestCandidates",
+      "guestCandidateRejections"
+    ],
+    "quietShift": null,
+    "decisionSeating": {
+      "briefingUsesCanonicalActions": true,
+      "recommendationsFromAnalyze": true,
+      "sharedCanonicalList": true
+    }
+  },
+  "noteEvidence": [
+    {
+      "original": "Shared taxi: **one** people-carrier booked **10:15** to St Pancras — for Harlow + 3 colleagues (names on concierge sheet: Harlow, Ng, Voss, Ibarra). Porter luggage pull from all four rooms from **09:45**. | - **Mr Ng (203)** — leaving bags for **3 weeks** — tagged hold “NG / ASTER / RETURN 29th” — already in luggage store as of last night — **NOT** going in the 10:15 taxi. He flies later with cabin bag only. Do not merge bag-hold into taxi OPEN count. | Partial ambiguity: Voss listed on taxi sheet — is that Julian Voss from a different booking? Concierge says no, it’s **Elena Voss** from 207. Keep Elena. | - **Mr Ng (203)** — leaving bags for **3 weeks** — tagged hold “NG / ASTER / RETURN 29th” — already in luggage store as of last night — **NOT** going in the 10:15 taxi. He flies later with cabin bag only. Do not merge bag-hold into taxi OPEN count. | Partial ambiguity: Voss listed on taxi sheet — is that Julian Voss from a different booking? Concierge says no, it’s **Elena Voss** from 207. Keep Elena.",
+      "section": "guest",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_3",
+      "canonicalName": "St Pancras",
+      "currentRoom": null,
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "departure_followup",
+      "factStatus": "confirmed"
+    },
+    {
+      "original": "GROUP — “Aster Conference add-ons” (not full house block — 4 rooms)",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_1",
+      "canonicalName": "Aster Conference",
+      "currentRoom": null,
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Rooms: **201, 203, 205, 207** — all departing today",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Contact on site: **Ms June Harlow** (in 205)",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_2",
+      "canonicalName": "Ms June Harlow",
+      "currentRoom": null,
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "EXCEPT:",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Breakfast: group wants last coffees in restaurant ~09:30 — F&B knows — not a reception collect.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_4",
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "requested"
+    },
+    {
+      "original": "HK: need all four rooms in the cascade after out — priority turns for same-day arrivals waiting on floor 2.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "requested"
+    }
+  ],
+  "reviewPlaceholder": {
+    "status": "PENDING_HUMAN_REVIEW",
+    "note": "Compare to sprint8-baseline-validation / sprint9-validation/; state-resolution harden is the Sprint 10 focus. Compare to frozen sprint9-validation/."
+  }
+}

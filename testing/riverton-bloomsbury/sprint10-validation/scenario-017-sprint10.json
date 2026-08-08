@@ -1,0 +1,610 @@
+{
+  "label": "RIVERTON SPRINT 10 VALIDATION OUTPUT",
+  "scenarioId": "017",
+  "title": "Arrivals Section Labels Departing Guests",
+  "recordId": null,
+  "gitCommit": "a50b66bf962be44667c5c4bc6b3b1acaa4bbfabc",
+  "engineVersion": 1,
+  "contractVersion": "E1",
+  "ranAt": "2026-08-08T12:52:15.683Z",
+  "pipeline": [
+    "extractOperationalFact / sectionFromFact",
+    "consolidateNotesByFacts",
+    "resolveOperationalEntities (Sprint 3)",
+    "electCanonicalCurrentState (Sprint 1)",
+    "resolveOperationalDependencies (Sprint 4)",
+    "buildCanonicalOperationalActions (Sprint 5/6/8/10)",
+    "buildOrganisedSectionModel",
+    "buildTodaysBriefing (Sprint 8 decision seating)",
+    "ShiftIntelligenceEngine.analyze (Sprint 8 recommendation seating)"
+  ],
+  "scenarioMeta": {
+    "shift": "PM",
+    "operationalLoad": "Busy",
+    "difficulty": "Hard",
+    "capability": "Section label vs in-line truth; near vs future luggage split",
+    "ambiguity": "Yes (which day EA applies)",
+    "departments": "Reception, Housekeeping",
+    "sourceFile": "scenario-017.md"
+  },
+  "humanExpectedTruth": {
+    "currentOperationalFacts": [
+      "Section header **Arrivals** is unreliable; in-line status wins.",
+      "**Weller 306**: departing today; late c/o 14:00; possible luggage hold to 16:30.",
+      "**Nair 411**: genuine arrival tonight prepaid.",
+      "**Okada 214**: already in-house stayover; extra towels — not an arrival.",
+      "**Mburu 503**: departing **tomorrow**; bags hold after tomorrow c/o — not a tonight arrival; day of bag work is tomorrow-oriented.",
+      "**Vale 108**: arrival 22:00; needs twin.",
+      "Ferreira next-month luggage already stored — long-horizon INFORMATION."
+    ],
+    "open": [
+      "Twin setup **108 Vale** before 22:00.",
+      "Towels for **214 Okada** if not done.",
+      "Manage **306** late c/o / same-day luggage hold as departure work (not as arrival check-in)."
+    ],
+    "monitor": [
+      "Nair arrival ETA 19:00."
+    ],
+    "information": [
+      "Ferreira multi-week/month luggage already tagged; Bergman/Ellis already out."
+    ],
+    "unresolved": [
+      "Precise interpretation of “EA” on Mburu line — but in-line “bags hold after c/o tomorrow” should prevent treating her as tonight’s arrival; avoid OPEN future luggage hold as if due tonight."
+    ],
+    "mustNotInfer": [
+      "Treating all Arrivals-section rows as check-ins.",
+      "Inventing in-house arrival status for Weller/Mburu/Okada incorrectly.",
+      "OPEN’ing next-month Ferreira bag work as tonight’s task.",
+      "Ignoring twin for Vale because of section noise."
+    ],
+    "rawTruthMarkdown": "### Current operational facts\r\n- Section header **Arrivals** is unreliable; in-line status wins.\r\n- **Weller 306**: departing today; late c/o 14:00; possible luggage hold to 16:30.\r\n- **Nair 411**: genuine arrival tonight prepaid.\r\n- **Okada 214**: already in-house stayover; extra towels — not an arrival.\r\n- **Mburu 503**: departing **tomorrow**; bags hold after tomorrow c/o — not a tonight arrival; day of bag work is tomorrow-oriented.\r\n- **Vale 108**: arrival 22:00; needs twin.\r\n- Ferreira next-month luggage already stored — long-horizon INFORMATION.\r\n\r\n### Expected work states\r\n\r\n#### OPEN\r\n- Twin setup **108 Vale** before 22:00.\r\n- Towels for **214 Okada** if not done.\r\n- Manage **306** late c/o / same-day luggage hold as departure work (not as arrival check-in).\r\n\r\n#### MONITOR\r\n- Nair arrival ETA 19:00.\r\n\r\n#### INFORMATION\r\n- Ferreira multi-week/month luggage already tagged; Bergman/Ellis already out.\r\n\r\n#### UNRESOLVED\r\n- Precise interpretation of “EA” on Mburu line — but in-line “bags hold after c/o tomorrow” should prevent treating her as tonight’s arrival; avoid OPEN future luggage hold as if due tonight.\r\n\r\n### Must not infer / invent\r\n- Treating all Arrivals-section rows as check-ins.\r\n- Inventing in-house arrival status for Weller/Mburu/Okada incorrectly.\r\n- OPEN’ing next-month Ferreira bag work as tonight’s task.\r\n- Ignoring twin for Vale because of section noise."
+  },
+  "canonicalActions": [
+    {
+      "actionId": "act|ent_8|214|guest_request_towels|guest_follow_up|riverton_baseline_5",
+      "actionState": "open",
+      "actionType": "guest_follow_up",
+      "facetKey": "guest_request:towels",
+      "room": "214",
+      "entityId": "ent_8",
+      "canonicalName": "Mrs Okada",
+      "actionText": "Arrange towels for Room 214",
+      "priorityBand": "P2",
+      "priorityScore": 35,
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "3. Mr & Mrs Okada — rm 214 — marked “arriving” on export but folio says **in-house since Tuesday** — they are stayover; asked for **extra towels only**"
+    },
+    {
+      "actionId": "act|ent_4|503|guest_request_ea_luggage_near|guest_follow_up|riverton_baseline_6",
+      "actionState": "open",
+      "actionType": "guest_follow_up",
+      "facetKey": "guest_request:ea_luggage_near",
+      "room": "503",
+      "entityId": "ent_4",
+      "canonicalName": "Dr Helen Mburu",
+      "actionText": "Honour early arrival / lunch luggage arrangements for Dr Helen Mburu (Room 503)",
+      "priorityBand": "P2",
+      "priorityScore": 36,
+      "temporalScope": "today",
+      "serviceDate": "2026-08-09",
+      "deadlineHint": "10:00",
+      "relativeCue": "tomorrow",
+      "temporalConfidence": "medium",
+      "temporalReasons": [
+        "tomorrow_cue",
+        "ea_or_lunch_luggage_near_term"
+      ],
+      "evidenceText": "4. Dr Helen Mburu — rm 503 — **DEPARTING tomorrow** — note says “EA luggage store from 10:00” — unclear if EA means early arrival for someone else or early **access for her bags tomorrow** — writing is “bags hold after c/o tomorrow AM”"
+    },
+    {
+      "actionId": "act|noent|noroom|guest_request_luggage_ea|guest_follow_up|riverton_baseline_17",
+      "actionState": "open",
+      "actionType": "guest_follow_up",
+      "facetKey": "guest_request:luggage_ea",
+      "room": "",
+      "entityId": null,
+      "canonicalName": "",
+      "actionText": "Honour luggage / early-arrival arrangements",
+      "priorityBand": "P2",
+      "priorityScore": 38,
+      "temporalScope": "today",
+      "serviceDate": "2026-08-08",
+      "deadlineHint": "",
+      "relativeCue": "today",
+      "temporalConfidence": "medium",
+      "temporalReasons": [
+        "today_cue"
+      ],
+      "evidenceText": "Concierge: long-hold luggage for a guest next **month** (Weddings — “Ferreira”) already tagged in store — INFORMATION only — not tonight’s OPEN bag run."
+    },
+    {
+      "actionId": "act|ent_2|306|timed_late_checkout|complete_timed_actions|riverton_baseline_3",
+      "actionState": "information",
+      "actionType": "complete_timed_actions",
+      "facetKey": "timed:late_checkout",
+      "room": "306",
+      "entityId": "ent_2",
+      "canonicalName": "Mr Tomasz Weller",
+      "actionText": "Late check-out today @12 — timing appears elapsed; retain as information (Room 306)",
+      "priorityBand": "P2",
+      "priorityScore": 48,
+      "temporalScope": "past",
+      "serviceDate": "2026-08-08",
+      "deadlineHint": "12:00",
+      "relativeCue": "today",
+      "temporalConfidence": "high",
+      "temporalReasons": [
+        "late_co_today_clearly_elapsed",
+        "departing_not_arrival"
+      ],
+      "evidenceText": "1. Mr Tomasz Weller — rm 306 — **DEPARTING** today — late checkout 14:00 — luggage can hold until 16:30 if needed"
+    },
+    {
+      "actionId": "act|ent_5|108|amenity_twin|prepare_vip|riverton_baseline_7",
+      "actionState": "open",
+      "actionType": "prepare_vip",
+      "facetKey": "amenity:twin",
+      "room": "108",
+      "entityId": "ent_5",
+      "canonicalName": "Mr Chris Vale",
+      "actionText": "Prepare twin beds for Room 108 (Mr Chris Vale)",
+      "priorityBand": "P3",
+      "priorityScore": 28,
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "5. Mr Chris Vale — rm 108 — arrival tonight 22:00 — twin setup please"
+    },
+    {
+      "actionId": "act|ent_3|411|payment_no_collect|type|riverton_baseline_4",
+      "actionState": "resolved",
+      "actionType": "operational_follow_up",
+      "facetKey": "payment:no_collect",
+      "room": "411",
+      "entityId": "ent_3",
+      "canonicalName": "Ms Priya Nair",
+      "actionText": "Payment settled / no collect required for Room 411",
+      "priorityBand": "exclude",
+      "priorityScore": 92,
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "2. Ms Priya Nair — rm 411 — ETA 19:00 — genuine arrival — prepaid"
+    }
+  ],
+  "actionStateCounts": {
+    "open": 4,
+    "monitor": 0,
+    "information": 1,
+    "unresolved": 0,
+    "blocked": 0,
+    "resolved": 1,
+    "other": 0
+  },
+  "temporalAnchor": {
+    "handoverDate": "2026-08-08",
+    "shift": "PM",
+    "createdAt": "2026-08-08T15:45:00.000Z"
+  },
+  "inputIntegrity": {
+    "inputAuthority": "scenario-XXX.md Original Input / Raw Source Notes",
+    "sourceSha256": "137be30e77d2a232d5086777a3bae79cdfc40af68061e8bab7db36d35912a587",
+    "sourceLength": 1154,
+    "lineCount": 15,
+    "brainContext": null,
+    "hotelSnapshotKeys": [],
+    "humanExpectedTruthPreserved": true
+  },
+  "exactSourceInput": "### Today's Arrivals\n(Front office export pasted under Arrivals header even when lines are wrong — known Opera export mess)\n\n1. Mr Tomasz Weller — rm 306 — **DEPARTING** today — late checkout 14:00 — luggage can hold until 16:30 if needed\n2. Ms Priya Nair — rm 411 — ETA 19:00 — genuine arrival — prepaid\n3. Mr & Mrs Okada — rm 214 — marked “arriving” on export but folio says **in-house since Tuesday** — they are stayover; asked for **extra towels only**\n4. Dr Helen Mburu — rm 503 — **DEPARTING tomorrow** — note says “EA luggage store from 10:00” — unclear if EA means early arrival for someone else or early **access for her bags tomorrow** — writing is “bags hold after c/o tomorrow AM”\n5. Mr Chris Vale — rm 108 — arrival tonight 22:00 — twin setup please\n\n### Today's Departures\n(export short)\n- 306 Weller — see above\n- 119 Ellis — already out\n- 220 Bergman — out 11:12\n\n### General Hotel / Shift Notes\nHK: do not make up a full arrivals board from the Arrivals header alone — read each line.\nConcierge: long-hold luggage for a guest next **month** (Weddings — “Ferreira”) already tagged in store — INFORMATION only — not tonight’s OPEN bag run.",
+  "hotelSnapshot": {},
+  "aiSummaryBriefing": "Priority 1\nHonour early arrival / lunch luggage arrangements for Dr Helen Mburu (Room 503).\n\nPriority 2\nArrange towels for Room 214.\n\nPriority 3\nHonour luggage / early-arrival arrangements.\n\nPriority 4\nComplete outstanding guest follow-up for Room 306.\n\nPriority 5\nPrepare twin beds for Room 108 (Mr Chris Vale).",
+  "briefingParagraphs": [
+    "Priority 1\nHonour early arrival / lunch luggage arrangements for Dr Helen Mburu (Room 503).",
+    "Priority 2\nArrange towels for Room 214.",
+    "Priority 3\nHonour luggage / early-arrival arrangements.",
+    "Priority 4\nComplete outstanding guest follow-up for Room 306.",
+    "Priority 5\nPrepare twin beds for Room 108 (Mr Chris Vale)."
+  ],
+  "organisedHandover": {
+    "urgent": [],
+    "vip": [],
+    "guest": [
+      "1. Mr Tomasz Weller — rm 306 — **DEPARTING** today — late checkout 14:00 — luggage can hold until 16:30 if needed"
+    ],
+    "maintenance": [],
+    "payments": [
+      "3. Mr & Mrs Okada — rm 214 — marked “arriving” on export but folio says **in-house since Tuesday** — they are stayover; asked for **extra towels only**",
+      "2. Ms Priya Nair — rm 411 — ETA 19:00 — genuine arrival — prepaid"
+    ],
+    "events": [],
+    "preparations": [
+      "5. Mr Chris Vale — rm 108 — arrival tonight 22:00 — twin setup please"
+    ],
+    "openQuestions": [],
+    "tasks": [],
+    "inventory": [],
+    "deliveries": [],
+    "lostproperty": [],
+    "general": [
+      "4. Dr Helen Mburu — rm 503 — **DEPARTING tomorrow** — note says “EA luggage store from 10:00” — unclear if EA means early arrival for someone else or early **access for her bags tomorrow** — writing is “bags hold after c/o tomorrow AM”",
+      "### Today's Arrivals",
+      "(Front office export pasted under Arrivals header even when lines are wrong — known Opera export mess)",
+      "### Today's Departures",
+      "(export short)",
+      "- 306 Weller — see above",
+      "- 119 Ellis — already out",
+      "- 220 Bergman — out 11:12",
+      "### General Hotel / Shift Notes",
+      "HK: do not make up a full arrivals board from the Arrivals header alone — read each line.",
+      "Concierge: long-hold luggage for a guest next **month** (Weddings — “Ferreira”) already tagged in store — INFORMATION only — not tonight’s OPEN bag run."
+    ],
+    "completed": []
+  },
+  "recommendations": [
+    {
+      "id": "act|ent_5|108|amenity_twin|prepare_vip|riverton_baseline_7",
+      "text": "Prepare twin beds for Room 108 (Mr Chris Vale).",
+      "priority": "low",
+      "department": "Housekeeping",
+      "status": "open",
+      "reasonCodes": [
+        "routine_or_monitor",
+        "amenity_room_scoped",
+        "canonical_decision_seat",
+        "legacy_wording_enrich"
+      ]
+    },
+    {
+      "id": "act|ent_8|214|guest_request_towels|guest_follow_up|riverton_baseline_5",
+      "text": "Arrange towels for Room 214.",
+      "priority": "normal",
+      "department": "Housekeeping",
+      "status": "open",
+      "reasonCodes": [
+        "payment_actionable",
+        "money_not_safety",
+        "guest_request_open",
+        "canonical_decision_seat",
+        "legacy_wording_enrich"
+      ]
+    },
+    {
+      "id": "act|ent_4|503|guest_request_ea_luggage_near|guest_follow_up|riverton_baseline_6",
+      "text": "Honour early arrival / lunch luggage arrangements for Dr Helen Mburu (Room 503).",
+      "priority": "normal",
+      "department": "Reception",
+      "status": "open",
+      "reasonCodes": [
+        "luggage_ea_near_term",
+        "temporal:tomorrow_cue",
+        "temporal:ea_or_lunch_luggage_near_term",
+        "canonical_decision_seat",
+        "legacy_wording_enrich"
+      ]
+    },
+    {
+      "id": "act|noent|noroom|guest_request_luggage_ea|guest_follow_up|riverton_baseline_17",
+      "text": "Honour early arrival / lunch luggage arrangements for Dr Helen Mburu (Room 503).",
+      "priority": "normal",
+      "department": "Reception",
+      "status": "open",
+      "reasonCodes": [
+        "luggage_ea_follow_up",
+        "temporal:today_cue",
+        "canonical_decision_seat",
+        "legacy_wording_enrich"
+      ]
+    }
+  ],
+  "reasoningMetadata": {
+    "noteCountAfterPipeline": 15,
+    "dependencyEdgeCount": 0,
+    "dependencyEdges": [],
+    "analyzeKeys": [
+      "engineVersion",
+      "signals",
+      "recommendations",
+      "checklist",
+      "facts",
+      "operationalMemories",
+      "guestObservations",
+      "guestObservationRejections",
+      "guestCandidates",
+      "guestCandidateRejections"
+    ],
+    "quietShift": null,
+    "decisionSeating": {
+      "briefingUsesCanonicalActions": true,
+      "recommendationsFromAnalyze": true,
+      "sharedCanonicalList": true
+    }
+  },
+  "noteEvidence": [
+    {
+      "original": "1. Mr Tomasz Weller — rm 306 — **DEPARTING** today — late checkout 14:00 — luggage can hold until 16:30 if needed",
+      "section": "guest",
+      "rooms": [
+        "306"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_2",
+      "canonicalName": "Mr Tomasz Weller",
+      "currentRoom": "306",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "late_checkout",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "3. Mr & Mrs Okada — rm 214 — marked “arriving” on export but folio says **in-house since Tuesday** — they are stayover; asked for **extra towels only**",
+      "section": "tasks",
+      "rooms": [
+        "214"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_8",
+      "canonicalName": "Mrs Okada",
+      "currentRoom": "214",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "guest_request",
+      "factStatus": "requested"
+    },
+    {
+      "original": "### Today's Arrivals",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_1",
+      "canonicalName": "Today's Arrivals",
+      "currentRoom": null,
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "(Front office export pasted under Arrivals header even when lines are wrong — known Opera export mess)",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "2. Ms Priya Nair — rm 411 — ETA 19:00 — genuine arrival — prepaid",
+      "section": "payments",
+      "rooms": [
+        "411"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_3",
+      "canonicalName": "Ms Priya Nair",
+      "currentRoom": "411",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "done"
+    },
+    {
+      "original": "4. Dr Helen Mburu — rm 503 — **DEPARTING tomorrow** — note says “EA luggage store from 10:00” — unclear if EA means early arrival for someone else or early **access for her bags tomorrow** — writing is “bags hold after c/o tomorrow AM”",
+      "section": "general",
+      "rooms": [
+        "503"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_4",
+      "canonicalName": "Dr Helen Mburu",
+      "currentRoom": "503",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "5. Mr Chris Vale — rm 108 — arrival tonight 22:00 — twin setup please",
+      "section": "general",
+      "rooms": [
+        "108"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_5",
+      "canonicalName": "Mr Chris Vale",
+      "currentRoom": "108",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "### Today's Departures",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_6",
+      "canonicalName": "Today's Departures",
+      "currentRoom": null,
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "(export short)",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- 306 Weller — see above",
+      "section": "general",
+      "rooms": [
+        "306"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_2",
+      "canonicalName": "Mr Tomasz Weller",
+      "currentRoom": "306",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- 119 Ellis — already out",
+      "section": "general",
+      "rooms": [
+        "119"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "119",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- 220 Bergman — out 11:12",
+      "section": "general",
+      "rooms": [
+        "220"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "220",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "### General Hotel / Shift Notes",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_7",
+      "canonicalName": "General Hotel",
+      "currentRoom": null,
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "HK: do not make up a full arrivals board from the Arrivals header alone — read each line.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Concierge: long-hold luggage for a guest next **month** (Weddings — “Ferreira”) already tagged in store — INFORMATION only — not tonight’s OPEN bag run.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    }
+  ],
+  "reviewPlaceholder": {
+    "status": "PENDING_HUMAN_REVIEW",
+    "note": "Compare to sprint8-baseline-validation / sprint9-validation/; state-resolution harden is the Sprint 10 focus. Compare to frozen sprint9-validation/."
+  }
+}

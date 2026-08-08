@@ -1,0 +1,533 @@
+{
+  "label": "RIVERTON SPRINT 10 VALIDATION OUTPUT",
+  "scenarioId": "010",
+  "title": "Airport Transfer Cluster — Contacts Only",
+  "recordId": null,
+  "gitCommit": "a50b66bf962be44667c5c4bc6b3b1acaa4bbfabc",
+  "engineVersion": 1,
+  "contractVersion": "E1",
+  "ranAt": "2026-08-08T12:52:15.683Z",
+  "pipeline": [
+    "extractOperationalFact / sectionFromFact",
+    "consolidateNotesByFacts",
+    "resolveOperationalEntities (Sprint 3)",
+    "electCanonicalCurrentState (Sprint 1)",
+    "resolveOperationalDependencies (Sprint 4)",
+    "buildCanonicalOperationalActions (Sprint 5/6/8/10)",
+    "buildOrganisedSectionModel",
+    "buildTodaysBriefing (Sprint 8 decision seating)",
+    "ShiftIntelligenceEngine.analyze (Sprint 8 recommendation seating)"
+  ],
+  "scenarioMeta": {
+    "shift": "Night",
+    "operationalLoad": "Busy",
+    "difficulty": "Hard",
+    "capability": "Timed transport clustering; contact binding without inventing room",
+    "ambiguity": "Yes (party vs named contacts)",
+    "departments": "Concierge, Reception, Night Manager",
+    "sourceFile": "scenario-010.md"
+  },
+  "humanExpectedTruth": {
+    "currentOperationalFacts": [
+      "Timed Heathrow T5 pickup **06:40** associated with **Dana Lutz** + mobile; possible second pax **Chen** uncertain.",
+      "**No room number** evidenced for Lutz/Chen on the transfer scraps.",
+      "In-house **Polk 320** and arrival **Luton 210** are spelling/coincidence traps — not the transfer party unless proven.",
+      "Pickup is morning-oriented (“tomorrow morning” / 06:40) — not a tonight drive."
+    ],
+    "open": [
+      "Morning timed transfer execution / driver meet for Lutz at T5 06:40 **if** day is established as the coming morning; bind **contacts/names/phone**, not invented rooms.",
+      "Clarify whether Chen shares the car (tbc)."
+    ],
+    "monitor": [
+      "Chen flight delay / join-or-not uncertainty."
+    ],
+    "information": [
+      "Polk wake-up 07:00 separate; Luton arrival separate."
+    ],
+    "unresolved": [
+      "Party composition (Chen yes/no); room binding absent; if calendar day of “tomorrow” were unclear in a given paste reading, fail closed rather than invent tonight OPEN."
+    ],
+    "mustNotInfer": [
+      "Inventing a room number for Lutz/Chen.",
+      "Binding pickup to **Polk** or **Luton**.",
+      "False OPEN as tonight transport when evidence points to morning pickup.",
+      "Collapsing Chen into confirmed passenger without evidence."
+    ],
+    "rawTruthMarkdown": "### Current operational facts\r\n- Timed Heathrow T5 pickup **06:40** associated with **Dana Lutz** + mobile; possible second pax **Chen** uncertain.\r\n- **No room number** evidenced for Lutz/Chen on the transfer scraps.\r\n- In-house **Polk 320** and arrival **Luton 210** are spelling/coincidence traps — not the transfer party unless proven.\r\n- Pickup is morning-oriented (“tomorrow morning” / 06:40) — not a tonight drive.\r\n\r\n### Expected work states\r\n\r\n#### OPEN\r\n- Morning timed transfer execution / driver meet for Lutz at T5 06:40 **if** day is established as the coming morning; bind **contacts/names/phone**, not invented rooms.\r\n- Clarify whether Chen shares the car (tbc).\r\n\r\n#### MONITOR\r\n- Chen flight delay / join-or-not uncertainty.\r\n\r\n#### INFORMATION\r\n- Polk wake-up 07:00 separate; Luton arrival separate.\r\n\r\n#### UNRESOLVED\r\n- Party composition (Chen yes/no); room binding absent; if calendar day of “tomorrow” were unclear in a given paste reading, fail closed rather than invent tonight OPEN.\r\n\r\n### Must not infer / invent\r\n- Inventing a room number for Lutz/Chen.\r\n- Binding pickup to **Polk** or **Luton**.\r\n- False OPEN as tonight transport when evidence points to morning pickup.\r\n- Collapsing Chen into confirmed passenger without evidence."
+  },
+  "canonicalActions": [
+    {
+      "actionId": "act|ent_2|noroom|timed_airport|complete_timed_actions|riverton_baseline_3",
+      "actionState": "open",
+      "actionType": "complete_timed_actions",
+      "facetKey": "timed:airport",
+      "room": "",
+      "entityId": "ent_2",
+      "canonicalName": "Pickup Heathrow",
+      "actionText": "Complete airport / transfer pickup at 06:40 — Pickup Heathrow",
+      "priorityBand": "P1",
+      "priorityScore": 16,
+      "temporalScope": "information",
+      "serviceDate": "",
+      "deadlineHint": "06:40",
+      "relativeCue": "",
+      "temporalConfidence": "low",
+      "temporalReasons": [
+        "no_temporal_evidence"
+      ],
+      "evidenceText": "Pickup Heathrow T5 — 06:40"
+    },
+    {
+      "actionId": "act|noent|210|timed_airport_fragment|operational_follow_up|riverton_baseline_19",
+      "actionState": "unresolved",
+      "actionType": "operational_follow_up",
+      "facetKey": "timed:airport_fragment",
+      "room": "210",
+      "entityId": null,
+      "canonicalName": "",
+      "actionText": "Unresolved airport / transfer follow-up — confirm guest, room, and pickup time",
+      "priorityBand": "P2",
+      "priorityScore": 36,
+      "temporalScope": "today",
+      "serviceDate": "2026-08-08",
+      "deadlineHint": "arrival",
+      "relativeCue": "today",
+      "temporalConfidence": "medium",
+      "temporalReasons": [
+        "today_cue"
+      ],
+      "evidenceText": "- Arrival tonight **rm 210** Ms **Luton** (spelling!) — Expedia — no transfer on booking"
+    }
+  ],
+  "actionStateCounts": {
+    "open": 1,
+    "monitor": 0,
+    "information": 0,
+    "unresolved": 1,
+    "blocked": 0,
+    "resolved": 0,
+    "other": 0
+  },
+  "temporalAnchor": {
+    "handoverDate": "2026-08-08",
+    "shift": "Night",
+    "createdAt": "2026-08-09T00:20:00.000Z"
+  },
+  "inputIntegrity": {
+    "inputAuthority": "scenario-XXX.md Original Input / Raw Source Notes",
+    "sourceSha256": "3654c2f4e7a4616bd04ac6a06100c6f6b0f91d80509cf699bfb71d7e1cf16d90",
+    "sourceLength": 1135,
+    "lineCount": 19,
+    "brainContext": null,
+    "hotelSnapshotKeys": [],
+    "humanExpectedTruthPreserved": true
+  },
+  "exactSourceInput": "Concierge scraps dumped on night desk — driver WhatsApp + sticky notes. No Opera room printed on any of these.\n\n---\nPickup Heathrow T5 — 06:40\nName on driver job: “ORBIT CORP — meet Ms Dana Lutz”\nMobile given to driver: 07xxx 662 014\nSecond passenger maybe? Driver asked “+1?” — office replied “tbc”\n---\n\nFrom email printout (partial):\n“Please arrange airport collection for tomorrow morning for Lutz / Chen travelling together if Chen’s flight lands. Chen flight BA raw delayed — see app. If Chen misses connection Lutz still goes.”\n\nSticky:\nLutz pickup T5 0640\nChen ??? same car ???\nno rooms on this printout\n\nAlso in-house coincidence (DO NOT BIND unless evidenced):\n- Stayover **rm 320** Mr **Polk** — different person — asked for wake-up 07:00 — unrelated\n- Arrival tonight **rm 210** Ms **Luton** (spelling!) — Expedia — no transfer on booking\n\nNight note:\nIf the operational day for the pickup is clearly **tomorrow AM**, treat as timed transport for the morning team. If someone left these scraps without which calendar morning, do not force OPEN as “tonight”.\n\nWe do **not** have a room number for Lutz or Chen on these notes.",
+  "hotelSnapshot": {},
+  "aiSummaryBriefing": "Priority 1\nComplete airport / transfer pickup at 06:40 — Pickup Heathrow.\n\nPriority 2\nComplete wake-up / transfer actions for Room 210 before departure.\n\nPriority 3\nTimed departure actions for Room 320: wake-up at 07:00.",
+  "briefingParagraphs": [
+    "Priority 1\nComplete airport / transfer pickup at 06:40 — Pickup Heathrow.",
+    "Priority 2\nComplete wake-up / transfer actions for Room 210 before departure.",
+    "Priority 3\nTimed departure actions for Room 320: wake-up at 07:00."
+  ],
+  "organisedHandover": {
+    "urgent": [],
+    "vip": [],
+    "guest": [
+      "- Arrival tonight **rm 210** Ms **Luton** (spelling!) — Expedia — no transfer on booking",
+      "- Stayover **rm 320** Mr **Polk** — different person — asked for wake-up 07:00 — unrelated"
+    ],
+    "maintenance": [],
+    "payments": [],
+    "events": [],
+    "preparations": [],
+    "openQuestions": [],
+    "tasks": [],
+    "inventory": [],
+    "deliveries": [],
+    "lostproperty": [],
+    "general": [
+      "Concierge scraps dumped on night desk — driver WhatsApp + sticky notes. No Opera room printed on any of these.",
+      "We do **not** have a room number for Lutz or Chen on these notes.",
+      "---",
+      "Pickup Heathrow T5 — 06:40",
+      "Name on driver job: “ORBIT CORP — meet Ms Dana Lutz”",
+      "Mobile given to driver: 07xxx 662 014",
+      "Second passenger maybe? Driver asked “+1?” — office replied “tbc”",
+      "From email printout (partial):",
+      "“Please arrange airport collection for tomorrow morning for Lutz / Chen travelling together if Chen’s flight lands. Chen flight BA raw delayed — see app. If Chen misses connection Lutz still goes.”",
+      "Sticky:",
+      "Lutz pickup T5 0640",
+      "Chen ??? same car ???",
+      "no rooms on this printout",
+      "Also in-house coincidence (DO NOT BIND unless evidenced):",
+      "Night note:",
+      "If the operational day for the pickup is clearly **tomorrow AM**, treat as timed transport for the morning team. If someone left these scraps without which calendar morning, do not force OPEN as “tonight”."
+    ],
+    "completed": []
+  },
+  "recommendations": [
+    {
+      "id": "act|ent_2|noroom|timed_airport|complete_timed_actions|riverton_baseline_3",
+      "text": "Complete airport / transfer pickup at 06:40 — Pickup Heathrow.",
+      "priority": "high",
+      "department": "Reception",
+      "status": "open",
+      "reasonCodes": [
+        "timed_airport",
+        "temporal:no_temporal_evidence",
+        "canonical_decision_seat",
+        "legacy_wording_enrich"
+      ]
+    },
+    {
+      "id": "mskdih8q-u1ugh",
+      "text": "Complete the 07:00 wake-up call for Room 320 — wake-up call not yet confirmed as loaded this shift.",
+      "priority": "normal",
+      "department": "Reception",
+      "status": "open",
+      "reasonCodes": [
+        "timed_action_due"
+      ]
+    }
+  ],
+  "reasoningMetadata": {
+    "noteCountAfterPipeline": 18,
+    "dependencyEdgeCount": 0,
+    "dependencyEdges": [],
+    "analyzeKeys": [
+      "engineVersion",
+      "signals",
+      "recommendations",
+      "checklist",
+      "facts",
+      "operationalMemories",
+      "guestObservations",
+      "guestObservationRejections",
+      "guestCandidates",
+      "guestCandidateRejections"
+    ],
+    "quietShift": null,
+    "decisionSeating": {
+      "briefingUsesCanonicalActions": true,
+      "recommendationsFromAnalyze": true,
+      "sharedCanonicalList": true
+    }
+  },
+  "noteEvidence": [
+    {
+      "original": "- Stayover **rm 320** Mr **Polk** — different person — asked for wake-up 07:00 — unrelated",
+      "section": "guest",
+      "rooms": [
+        "320"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "320",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "wake_up",
+      "factStatus": "requested"
+    },
+    {
+      "original": "- Arrival tonight **rm 210** Ms **Luton** (spelling!) — Expedia — no transfer on booking",
+      "section": "guest",
+      "rooms": [
+        "210"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "210",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "departure_followup",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Concierge scraps dumped on night desk — driver WhatsApp + sticky notes. No Opera room printed on any of these.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_1",
+      "canonicalName": "No Opera",
+      "currentRoom": null,
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "---",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Pickup Heathrow T5 — 06:40",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_2",
+      "canonicalName": "Pickup Heathrow",
+      "currentRoom": null,
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Name on driver job: “ORBIT CORP — meet Ms Dana Lutz”",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_3",
+      "canonicalName": "Ms Dana Lutz",
+      "currentRoom": null,
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Mobile given to driver: 07xxx 662 014",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Second passenger maybe? Driver asked “+1?” — office replied “tbc”",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "requested"
+    },
+    {
+      "original": "From email printout (partial):",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "“Please arrange airport collection for tomorrow morning for Lutz / Chen travelling together if Chen’s flight lands. Chen flight BA raw delayed — see app. If Chen misses connection Lutz still goes.”",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_4",
+      "canonicalName": "If Chen",
+      "currentRoom": null,
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Sticky:",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Lutz pickup T5 0640",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Chen ??? same car ???",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "no rooms on this printout",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Also in-house coincidence (DO NOT BIND unless evidenced):",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Night note:",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "If the operational day for the pickup is clearly **tomorrow AM**, treat as timed transport for the morning team. If someone left these scraps without which calendar morning, do not force OPEN as “tonight”.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "We do **not** have a room number for Lutz or Chen on these notes.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    }
+  ],
+  "reviewPlaceholder": {
+    "status": "PENDING_HUMAN_REVIEW",
+    "note": "Compare to sprint8-baseline-validation / sprint9-validation/; state-resolution harden is the Sprint 10 focus. Compare to frozen sprint9-validation/."
+  }
+}
