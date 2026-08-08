@@ -1,0 +1,381 @@
+{
+  "label": "MERIDIAN GATE Sprint 14 timed-transport validation OUTPUT",
+  "scenarioId": "008",
+  "title": "Truly Quiet Night Control",
+  "recordId": null,
+  "gitCommit": "8c48ea8d19b6b3dd9f42378f66702e9764949576",
+  "engineVersion": 1,
+  "contractVersion": "E1",
+  "ranAt": "2026-08-08T14:27:31.330Z",
+  "pipeline": [
+    "extractOperationalFact / sectionFromFact",
+    "consolidateNotesByFacts",
+    "resolveOperationalEntities (Sprint 3)",
+    "electCanonicalCurrentState (Sprint 1)",
+    "resolveOperationalDependencies (Sprint 4)",
+    "buildCanonicalOperationalActions (Sprint 5/6/8/9/10/11 ? current HEAD)",
+    "buildOrganisedSectionModel",
+    "buildTodaysBriefing (decision seating)",
+    "ShiftIntelligenceEngine.analyze (recommendation seating)"
+  ],
+  "scenarioMeta": {
+    "shift": "Night",
+    "operationalLoad": "Quiet / easy control",
+    "ambiguity": "No",
+    "departments": "Night Team",
+    "preparedBy": "Jonas Berg — Night Manager (fictional)",
+    "sourceFile": "scenario-008.md",
+    "scenarioFileSha256": "9777cf6d1644e083e29ee75070e6b767f3611c128ceac9a463946012cddd335c"
+  },
+  "humanExpectedTruth": {
+    "currentOperationalFacts": [
+      "No remaining arrivals; no crew; spa/valet/pavilion closed.",
+      "M304 OOO multi-day — MONITOR only.",
+      "Cho M117 welcome card DONE.",
+      "Quiet house."
+    ],
+    "open": [
+      "**None.** Correct answer may be essentially no urgent priorities."
+    ],
+    "monitor": [
+      "M304 multi-day OOO — not a live night chase."
+    ],
+    "information": [
+      "Quiet occupancy; closed outlets; DONE welcome card; clear annex rounds."
+    ],
+    "unresolved": [
+      "None."
+    ],
+    "completedMustNotReopen": [
+      "Cho welcome card — DONE — must not reopen.",
+      "Annex rounds clear — must not invent annex incidents."
+    ],
+    "bindings": [
+      "M304 OOO; M117 Cho DONE; rounds 22:15 / 01:00."
+    ],
+    "mustNotInfer": [
+      "Urgent OPEN work.",
+      "Shuttle/crew/valet tasks with no evidence.",
+      "Payment collect.",
+      "Reopening DONE amenity."
+    ],
+    "rationale": [
+      "Boring control: HF must be allowed to say nothing urgent when that is true."
+    ],
+    "rawTruthMarkdown": "### Current operational facts\r\n- No remaining arrivals; no crew; spa/valet/pavilion closed.\r\n- M304 OOO multi-day — MONITOR only.\r\n- Cho M117 welcome card DONE.\r\n- Quiet house.\r\n\r\n### Expected OPEN actions\r\n- **None.** Correct answer may be essentially no urgent priorities.\r\n\r\n### Expected MONITOR items\r\n- M304 multi-day OOO — not a live night chase.\r\n\r\n### Expected INFORMATION\r\n- Quiet occupancy; closed outlets; DONE welcome card; clear annex rounds.\r\n\r\n### Expected UNRESOLVED / clarifications\r\n- None.\r\n\r\n### Explicit completed / resolved / superseded (must not reopen)\r\n- Cho welcome card — DONE — must not reopen.\r\n- Annex rounds clear — must not invent annex incidents.\r\n\r\n### Important entity / room / time bindings\r\n- M304 OOO; M117 Cho DONE; rounds 22:15 / 01:00.\r\n\r\n### Must not invent\r\n- Urgent OPEN work.\r\n- Shuttle/crew/valet tasks with no evidence.\r\n- Payment collect.\r\n- Reopening DONE amenity.\r\n\r\n### Short human rationale\r\nBoring control: HF must be allowed to say nothing urgent when that is true."
+  },
+  "canonicalActions": [
+    {
+      "actionId": "act|ent_1|m117|vip_prep_complete|type|meridian_baseline_7",
+      "actionState": "information",
+      "actionType": "operational_follow_up",
+      "facetKey": "vip:prep_complete",
+      "room": "M117",
+      "rooms": [
+        "M117"
+      ],
+      "entityId": "ent_1",
+      "canonicalName": "Ms Cho",
+      "actionText": "Ms Cho — VIP prep complete / awareness only",
+      "priorityBand": "P3",
+      "priorityScore": 78,
+      "priorityReasons": [
+        "vip_prep_complete"
+      ],
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "- Welcome card M117 (Ms Cho) — already placed earlier — DONE."
+    },
+    {
+      "actionId": "act|noent|noroom|payment_insufficient_evidence|type|meridian_baseline_8",
+      "actionState": "information",
+      "actionType": "operational_follow_up",
+      "facetKey": "payment:insufficient_evidence",
+      "room": "",
+      "rooms": [],
+      "entityId": null,
+      "canonicalName": "",
+      "actionText": "Payment-related note retained — insufficient evidence for collect chase",
+      "priorityBand": "P3",
+      "priorityScore": 85,
+      "priorityReasons": [
+        "fail_closed_payment"
+      ],
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "- Minibar audit random — nothing due."
+    }
+  ],
+  "actionStateCounts": {
+    "open": 0,
+    "monitor": 0,
+    "information": 2,
+    "unresolved": 0,
+    "blocked": 0,
+    "resolved": 0,
+    "other": 0
+  },
+  "temporalAnchor": {
+    "handoverDate": "2026-09-14",
+    "shift": "Night",
+    "createdAt": "2026-09-14T23:20:00.000Z"
+  },
+  "decisionSeats": {
+    "seats": [],
+    "seatedCanonicalIds": [],
+    "source": "canonical_decision_seats",
+    "surface": "briefing",
+    "maxN": 5
+  },
+  "inputIntegrity": {
+    "inputAuthority": "scenario-XXX.md Original Input / Raw Source Notes",
+    "scenarioFileSha256": "9777cf6d1644e083e29ee75070e6b767f3611c128ceac9a463946012cddd335c",
+    "sourceSha256": "2b0beb60b6ec3ddb1e45354d1f6f9d022fb9b85fcd969c1ed66f167f3b9becc5",
+    "sourceLength": 432,
+    "lineCount": 9,
+    "brainContext": null,
+    "hotelSnapshotKeys": [],
+    "humanExpectedTruthPreserved": true,
+    "freezeStatus": "FROZEN BEFORE FIRST HF RUN"
+  },
+  "exactSourceInput": "Night — honestly nothing spicy. Lean cover.\n\n- No arrivals left.\n- No crew inbound until Wednesday.\n- Spa closed. Valet closed. Pavilion dark.\n- Annex silent rounds 22:15 / 01:00 — clear.\n- M304 still OOO carpet (multi-day) — eng not coming tonight — **monitor only**.\n- Welcome card M117 (Ms Cho) — already placed earlier — DONE.\n- Minibar audit random — nothing due.\n\nIf you need a status line: house is quiet. Do not invent work.",
+  "hotelSnapshot": {},
+  "aiSummaryBriefing": "Shift status\nNo urgent guest-impacting priorities for the incoming team.",
+  "briefingParagraphs": [
+    "Shift status\nNo urgent guest-impacting priorities for the incoming team."
+  ],
+  "organisedHandover": {
+    "urgent": [],
+    "vip": [
+      "- Welcome card M117 (Ms Cho) — already placed earlier — DONE."
+    ],
+    "guest": [],
+    "maintenance": [],
+    "payments": [
+      "- Minibar audit random — nothing due."
+    ],
+    "events": [
+      "- No arrivals left."
+    ],
+    "preparations": [],
+    "openQuestions": [],
+    "tasks": [],
+    "inventory": [],
+    "deliveries": [],
+    "lostproperty": [],
+    "general": [
+      "Night — honestly nothing spicy. Lean cover.",
+      "- No crew inbound until Wednesday.",
+      "- Spa closed. Valet closed. Pavilion dark.",
+      "- Annex silent rounds 22:15 / 01:00 — clear.",
+      "- M304 still OOO carpet (multi-day) — eng not coming tonight — **monitor only**.",
+      "If you need a status line: house is quiet. Do not invent work."
+    ],
+    "completed": []
+  },
+  "recommendations": [],
+  "reasoningMetadata": {
+    "noteCountAfterPipeline": 9,
+    "dependencyEdgeCount": 0,
+    "dependencyEdges": [],
+    "analyzeKeys": [
+      "engineVersion",
+      "signals",
+      "recommendations",
+      "checklist",
+      "facts",
+      "operationalMemories",
+      "guestObservations",
+      "guestObservationRejections",
+      "guestCandidates",
+      "guestCandidateRejections"
+    ],
+    "quietShift": null,
+    "decisionSeating": {
+      "briefingUsesCanonicalActions": true,
+      "recommendationsFromAnalyze": true,
+      "sharedCanonicalList": true,
+      "selectDecisionSeatsCaptured": true
+    }
+  },
+  "noteEvidence": [
+    {
+      "original": "Night — honestly nothing spicy. Lean cover.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- No arrivals left.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- No crew inbound until Wednesday.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- Spa closed. Valet closed. Pavilion dark.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- Annex silent rounds 22:15 / 01:00 — clear.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- M304 still OOO carpet (multi-day) — eng not coming tonight — **monitor only**.",
+      "section": "general",
+      "rooms": [
+        "M304"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "m304",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- Minibar audit random — nothing due.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "If you need a status line: house is quiet. Do not invent work.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "requested"
+    },
+    {
+      "original": "- Welcome card M117 (Ms Cho) — already placed earlier — DONE.",
+      "section": "completed",
+      "rooms": [
+        "M117"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_1",
+      "canonicalName": "Ms Cho",
+      "currentRoom": "m117",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "done"
+    }
+  ],
+  "reviewPlaceholder": {
+    "status": "PENDING_HUMAN_REVIEW",
+    "note": "Sprint 14 timed-transport validation only. Compare to frozen Human Expected Truth. Do not modify engine or scenarios."
+  }
+}

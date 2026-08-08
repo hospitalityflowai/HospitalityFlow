@@ -1,0 +1,692 @@
+{
+  "label": "MERIDIAN GATE Sprint 14 timed-transport validation OUTPUT",
+  "scenarioId": "014",
+  "title": "Night Payment Contrast and Lean Cover",
+  "recordId": null,
+  "gitCommit": "8c48ea8d19b6b3dd9f42378f66702e9764949576",
+  "engineVersion": 1,
+  "contractVersion": "E1",
+  "ranAt": "2026-08-08T14:27:31.330Z",
+  "pipeline": [
+    "extractOperationalFact / sectionFromFact",
+    "consolidateNotesByFacts",
+    "resolveOperationalEntities (Sprint 3)",
+    "electCanonicalCurrentState (Sprint 1)",
+    "resolveOperationalDependencies (Sprint 4)",
+    "buildCanonicalOperationalActions (Sprint 5/6/8/9/10/11 ? current HEAD)",
+    "buildOrganisedSectionModel",
+    "buildTodaysBriefing (decision seating)",
+    "ShiftIntelligenceEngine.analyze (recommendation seating)"
+  ],
+  "scenarioMeta": {
+    "shift": "Night",
+    "operationalLoad": "Normal",
+    "ambiguity": "Low",
+    "departments": "Night Team, Finance/Reception, Engineering",
+    "preparedBy": "Jonas Berg — Night Manager (fictional)",
+    "sourceFile": "scenario-014.md",
+    "scenarioFileSha256": "ab93232e930f16165e649694fa83536f787330ed47774756fb58535f05a94638"
+  },
+  "humanExpectedTruth": {
+    "currentOperationalFacts": [
+      "Calder M124 £64.80 outstanding — genuine OPEN collect.",
+      "Green prepaid — no collect; Apex company billed — no collect; M133 due tomorrow — not tonight.",
+      "M311 mitigated MONITOR tomorrow eng.",
+      "Lean night; no hotel shuttle overnight."
+    ],
+    "open": [
+      "Collect / settle £64.80 with Calder M124 (or first contact when appropriate overnight)."
+    ],
+    "monitor": [
+      "M311 extractor overnight / eng tomorrow.",
+      "M133 balance due tomorrow — future payment, not tonight OPEN collect."
+    ],
+    "information": [
+      "Prepaid Green; company Apex; lean staffing; external taxi awareness."
+    ],
+    "unresolved": [
+      "None material on debt existence for Calder — amount evidenced."
+    ],
+    "completedMustNotReopen": [
+      "Green collect stamp — void.",
+      "Apex guest collect — not applicable.",
+      "Guest’s own taxi — not hotel shuttle OPEN."
+    ],
+    "bindings": [
+      "Calder M124 £64.80; Green CX06; Apex M220; M133 tomorrow; M311 MONITOR."
+    ],
+    "mustNotInfer": [
+      "Collect on Green / Apex / M133-tonight.",
+      "OPEN eng chase on mitigated M311.",
+      "Hotel shuttle task with no shuttle evidence."
+    ],
+    "rationale": [
+      "Normal Night: payment fail-closed contrast with one true debt; soft maint MONITOR."
+    ],
+    "rawTruthMarkdown": "### Current operational facts\r\n- Calder M124 £64.80 outstanding — genuine OPEN collect.\r\n- Green prepaid — no collect; Apex company billed — no collect; M133 due tomorrow — not tonight.\r\n- M311 mitigated MONITOR tomorrow eng.\r\n- Lean night; no hotel shuttle overnight.\r\n\r\n### Expected OPEN actions\r\n- Collect / settle £64.80 with Calder M124 (or first contact when appropriate overnight).\r\n\r\n### Expected MONITOR items\r\n- M311 extractor overnight / eng tomorrow.\r\n- M133 balance due tomorrow — future payment, not tonight OPEN collect.\r\n\r\n### Expected INFORMATION\r\n- Prepaid Green; company Apex; lean staffing; external taxi awareness.\r\n\r\n### Expected UNRESOLVED / clarifications\r\n- None material on debt existence for Calder — amount evidenced.\r\n\r\n### Explicit completed / resolved / superseded (must not reopen)\r\n- Green collect stamp — void.\r\n- Apex guest collect — not applicable.\r\n- Guest’s own taxi — not hotel shuttle OPEN.\r\n\r\n### Important entity / room / time bindings\r\n- Calder M124 £64.80; Green CX06; Apex M220; M133 tomorrow; M311 MONITOR.\r\n\r\n### Must not invent\r\n- Collect on Green / Apex / M133-tonight.\r\n- OPEN eng chase on mitigated M311.\r\n- Hotel shuttle task with no shuttle evidence.\r\n\r\n### Short human rationale\r\nNormal Night: payment fail-closed contrast with one true debt; soft maint MONITOR."
+  },
+  "canonicalActions": [
+    {
+      "actionId": "act|noent|m311|maintenance|follow_up_until_resolved|meridian_baseline_9",
+      "actionState": "open",
+      "actionType": "follow_up_until_resolved",
+      "facetKey": "maintenance",
+      "room": "M311",
+      "rooms": [
+        "M311"
+      ],
+      "entityId": null,
+      "canonicalName": "",
+      "actionText": "Follow up maintenance for Room M311",
+      "priorityBand": "P1",
+      "priorityScore": 14,
+      "priorityReasons": [
+        "guest_impact_tonight",
+        "guest_impacting_maintenance",
+        "temporal:tomorrow_cue"
+      ],
+      "temporalScope": "tomorrow",
+      "serviceDate": "2026-09-20",
+      "deadlineHint": "inspect",
+      "relativeCue": "tomorrow",
+      "temporalConfidence": "high",
+      "temporalReasons": [
+        "tomorrow_cue"
+      ],
+      "evidenceText": "M311 — bathroom extractor noisy. Guest ok overnight with window open; eng tomorrow — MONITOR."
+    },
+    {
+      "actionId": "act|noent|noroom|maintenance|follow_up_until_resolved|note_1",
+      "actionState": "open",
+      "actionType": "follow_up_until_resolved",
+      "facetKey": "maintenance",
+      "room": "",
+      "rooms": [],
+      "entityId": null,
+      "canonicalName": "",
+      "actionText": "Follow up open maintenance",
+      "priorityBand": "P1",
+      "priorityScore": 14,
+      "priorityReasons": [
+        "guest_impact_tonight",
+        "guest_impacting_maintenance",
+        "temporal:no_temporal_evidence"
+      ],
+      "temporalScope": "information",
+      "serviceDate": "",
+      "deadlineHint": "inspect",
+      "relativeCue": "",
+      "temporalConfidence": "low",
+      "temporalReasons": [
+        "no_temporal_evidence"
+      ],
+      "evidenceText": "Night — payments + one real maint. | MAINTENANCE"
+    },
+    {
+      "actionId": "act|ent_1|m124|payment_collect|collect_before_departure|meridian_baseline_3",
+      "actionState": "open",
+      "actionType": "collect_before_departure",
+      "facetKey": "payment:collect",
+      "room": "M124",
+      "rooms": [
+        "M124"
+      ],
+      "entityId": "ent_1",
+      "canonicalName": "Mr Calder",
+      "actionText": "Collect outstanding payment for Room M124 before departure",
+      "priorityBand": "P2",
+      "priorityScore": 35,
+      "priorityReasons": [
+        "payment_actionable",
+        "money_not_safety",
+        "payment_collect_evidenced",
+        "sprint9_fail_closed",
+        "temporal:today_cue"
+      ],
+      "temporalScope": "today",
+      "serviceDate": "2026-09-19",
+      "deadlineHint": "collect",
+      "relativeCue": "today",
+      "temporalConfidence": "medium",
+      "temporalReasons": [
+        "today_cue"
+      ],
+      "evidenceText": "1) **M124 Mr Calder** — open folio balance **£64.80** (restaurant) — please **collect** tonight or first thing if asleep — card auth failed earlier. Genuine debt."
+    },
+    {
+      "actionId": "act|ent_2|cx06|payment_insufficient_evidence|type|meridian_baseline_4",
+      "actionState": "information",
+      "actionType": "operational_follow_up",
+      "facetKey": "payment:insufficient_evidence",
+      "room": "CX06",
+      "rooms": [
+        "CX06"
+      ],
+      "entityId": "ent_2",
+      "canonicalName": "Ms Green",
+      "actionText": "Payment-related note retained — insufficient evidence for collect chase",
+      "priorityBand": "P3",
+      "priorityScore": 85,
+      "priorityReasons": [
+        "fail_closed_payment"
+      ],
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "2) **CX06 Ms Green** — prepaid Booking.com — **ignore** green collect stamp."
+    },
+    {
+      "actionId": "act|noent|m133|payment_insufficient_evidence|type|meridian_baseline_6",
+      "actionState": "information",
+      "actionType": "operational_follow_up",
+      "facetKey": "payment:insufficient_evidence",
+      "room": "M133",
+      "rooms": [
+        "M133"
+      ],
+      "entityId": null,
+      "canonicalName": "",
+      "actionText": "Payment-related note retained — insufficient evidence for collect chase",
+      "priorityBand": "P3",
+      "priorityScore": 85,
+      "priorityReasons": [
+        "fail_closed_payment"
+      ],
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "4) **M133** — deposit / balance due **tomorrow** on extension — **not** tonight’s collect."
+    },
+    {
+      "actionId": "act|noent|m220|payment_no_collect|type|meridian_baseline_5",
+      "actionState": "resolved",
+      "actionType": "operational_follow_up",
+      "facetKey": "payment:no_collect",
+      "room": "M220",
+      "rooms": [
+        "M220"
+      ],
+      "entityId": null,
+      "canonicalName": "Mr Calder",
+      "actionText": "Payment settled / no collect required for Room M220",
+      "priorityBand": "exclude",
+      "priorityScore": 92,
+      "priorityReasons": [
+        "payment_no_collect"
+      ],
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "3) **M220 Apex crew liaison room** — company billed — £0 guest due."
+    }
+  ],
+  "actionStateCounts": {
+    "open": 3,
+    "monitor": 0,
+    "information": 2,
+    "unresolved": 0,
+    "blocked": 0,
+    "resolved": 1,
+    "other": 0
+  },
+  "temporalAnchor": {
+    "handoverDate": "2026-09-19",
+    "shift": "Night",
+    "createdAt": "2026-09-19T23:20:00.000Z"
+  },
+  "decisionSeats": {
+    "seats": [
+      {
+        "action": {
+          "actionId": "act|noent|m311|maintenance|follow_up_until_resolved|meridian_baseline_9",
+          "objectId": "",
+          "entityId": null,
+          "resolutionState": "room_based",
+          "canonicalName": "",
+          "room": "M311",
+          "rooms": [
+            "M311"
+          ],
+          "actionType": "follow_up_until_resolved",
+          "actionState": "open",
+          "facetKey": "maintenance",
+          "actionText": "Follow up maintenance for Room M311",
+          "displayLabel": "Follow up maintenance for Room M311",
+          "evidenceText": "M311 — bathroom extractor noisy. Guest ok overnight with window open; eng tomorrow — MONITOR.",
+          "actionability": "actionable",
+          "blockedBy": [],
+          "blocks": [],
+          "priorityBand": "P1",
+          "priorityScore": 14,
+          "priorityReasons": [
+            "guest_impact_tonight",
+            "guest_impacting_maintenance",
+            "temporal:tomorrow_cue"
+          ],
+          "currentStateEligible": true,
+          "sourceFactIds": [
+            "meridian-baseline-9"
+          ],
+          "confidence": 0.85,
+          "temporalScope": "tomorrow",
+          "serviceDate": "2026-09-20",
+          "deadlineHint": "inspect",
+          "relativeCue": "tomorrow",
+          "temporalConfidence": "high",
+          "temporalReasons": [
+            "tomorrow_cue"
+          ]
+        },
+        "actionId": "act|noent|m311|maintenance|follow_up_until_resolved|meridian_baseline_9",
+        "facetKey": "maintenance",
+        "actionState": "open",
+        "priorityBand": "P1",
+        "priorityScore": 14,
+        "seatKind": "do_now",
+        "canonicalSeed": true,
+        "workKey": "maintenance|M311||follow_up_until_resolved",
+        "text": "Follow up maintenance for Room M311",
+        "legacy": null
+      },
+      {
+        "action": {
+          "actionId": "act|noent|noroom|maintenance|follow_up_until_resolved|note_1",
+          "objectId": "",
+          "entityId": null,
+          "resolutionState": "unresolved",
+          "canonicalName": "",
+          "room": "",
+          "rooms": [],
+          "actionType": "follow_up_until_resolved",
+          "actionState": "open",
+          "facetKey": "maintenance",
+          "actionText": "Follow up open maintenance",
+          "displayLabel": "Follow up open maintenance",
+          "evidenceText": "Night — payments + one real maint. | MAINTENANCE",
+          "actionability": "actionable",
+          "blockedBy": [],
+          "blocks": [],
+          "priorityBand": "P1",
+          "priorityScore": 14,
+          "priorityReasons": [
+            "guest_impact_tonight",
+            "guest_impacting_maintenance",
+            "temporal:no_temporal_evidence"
+          ],
+          "currentStateEligible": true,
+          "sourceFactIds": [
+            "note-1"
+          ],
+          "confidence": 0.85,
+          "temporalScope": "information",
+          "serviceDate": "",
+          "deadlineHint": "inspect",
+          "relativeCue": "",
+          "temporalConfidence": "low",
+          "temporalReasons": [
+            "no_temporal_evidence"
+          ]
+        },
+        "actionId": "act|noent|noroom|maintenance|follow_up_until_resolved|note_1",
+        "facetKey": "maintenance",
+        "actionState": "open",
+        "priorityBand": "P1",
+        "priorityScore": 14,
+        "seatKind": "do_now",
+        "canonicalSeed": true,
+        "workKey": "maintenance|||follow_up_until_resolved",
+        "text": "Follow up open maintenance",
+        "legacy": null
+      },
+      {
+        "action": {
+          "actionId": "act|ent_1|m124|payment_collect|collect_before_departure|meridian_baseline_3",
+          "objectId": "",
+          "entityId": "ent_1",
+          "resolutionState": "resolved",
+          "canonicalName": "Mr Calder",
+          "room": "M124",
+          "rooms": [
+            "M124"
+          ],
+          "actionType": "collect_before_departure",
+          "actionState": "open",
+          "facetKey": "payment:collect",
+          "actionText": "Collect outstanding payment for Room M124 before departure",
+          "displayLabel": "Collect outstanding payment for Room M124 before departure",
+          "evidenceText": "1) **M124 Mr Calder** — open folio balance **£64.80** (restaurant) — please **collect** tonight or first thing if asleep — card auth failed earlier. Genuine debt.",
+          "actionability": "actionable",
+          "blockedBy": [],
+          "blocks": [],
+          "priorityBand": "P2",
+          "priorityScore": 35,
+          "priorityReasons": [
+            "payment_actionable",
+            "money_not_safety",
+            "payment_collect_evidenced",
+            "sprint9_fail_closed",
+            "temporal:today_cue"
+          ],
+          "currentStateEligible": true,
+          "sourceFactIds": [
+            "meridian-baseline-3"
+          ],
+          "confidence": 0.85,
+          "temporalScope": "today",
+          "serviceDate": "2026-09-19",
+          "deadlineHint": "collect",
+          "relativeCue": "today",
+          "temporalConfidence": "medium",
+          "temporalReasons": [
+            "today_cue"
+          ]
+        },
+        "actionId": "act|ent_1|m124|payment_collect|collect_before_departure|meridian_baseline_3",
+        "facetKey": "payment:collect",
+        "actionState": "open",
+        "priorityBand": "P2",
+        "priorityScore": 35,
+        "seatKind": "do_now",
+        "canonicalSeed": true,
+        "workKey": "payment:collect|M124|mr calder|collect_before_departure",
+        "text": "Collect outstanding payment for Room M124 before departure",
+        "legacy": null
+      }
+    ],
+    "seatedCanonicalIds": [
+      "act|noent|m311|maintenance|follow_up_until_resolved|meridian_baseline_9",
+      "act|noent|noroom|maintenance|follow_up_until_resolved|note_1",
+      "act|ent_1|m124|payment_collect|collect_before_departure|meridian_baseline_3"
+    ],
+    "source": "canonical_decision_seats",
+    "surface": "briefing",
+    "maxN": 5
+  },
+  "inputIntegrity": {
+    "inputAuthority": "scenario-XXX.md Original Input / Raw Source Notes",
+    "scenarioFileSha256": "ab93232e930f16165e649694fa83536f787330ed47774756fb58535f05a94638",
+    "sourceSha256": "3fcf325044851dc5a923afcba55bbfa77b16255df5aa9e7f8a8d891482d12a62",
+    "sourceLength": 673,
+    "lineCount": 9,
+    "brainContext": null,
+    "hotelSnapshotKeys": [],
+    "humanExpectedTruthPreserved": true,
+    "freezeStatus": "FROZEN BEFORE FIRST HF RUN"
+  },
+  "exactSourceInput": "Night — payments + one real maint.\n\nPAYMENTS\n1) **M124 Mr Calder** — open folio balance **£64.80** (restaurant) — please **collect** tonight or first thing if asleep — card auth failed earlier. Genuine debt.\n2) **CX06 Ms Green** — prepaid Booking.com — **ignore** green collect stamp.\n3) **M220 Apex crew liaison room** — company billed — £0 guest due.\n4) **M133** — deposit / balance due **tomorrow** on extension — **not** tonight’s collect.\n\nMAINTENANCE\nM311 — bathroom extractor noisy. Guest ok overnight with window open; eng tomorrow — MONITOR.\n\nLean: me + porter. Spa closed. No shuttle overnight. Early flyer taxi arranged externally (guest’s own) — awareness only.",
+  "hotelSnapshot": {},
+  "aiSummaryBriefing": "Priority 1\nFollow up maintenance for Room M311.\n\nPriority 2\nFollow up open maintenance.\n\nPriority 3\nCollect outstanding payment for Room M124 before departure.\n\nPriority 4\nRevenue follow-up required for Room m124 outstanding £64.80 before departures.\n\nPriority 5\nRevenue follow-up required for outstanding channel payment before departures.",
+  "briefingParagraphs": [
+    "Priority 1\nFollow up maintenance for Room M311.",
+    "Priority 2\nFollow up open maintenance.",
+    "Priority 3\nCollect outstanding payment for Room M124 before departure.",
+    "Priority 4\nRevenue follow-up required for Room m124 outstanding £64.80 before departures.",
+    "Priority 5\nRevenue follow-up required for outstanding channel payment before departures."
+  ],
+  "organisedHandover": {
+    "urgent": [],
+    "vip": [],
+    "guest": [
+      "Lean: me + porter. Spa closed. No shuttle overnight. Early flyer taxi arranged externally (guest’s own) — awareness only."
+    ],
+    "maintenance": [
+      "Night — payments + one real maint. | MAINTENANCE",
+      "M311 — bathroom extractor noisy. Guest ok overnight with window open; eng tomorrow — MONITOR."
+    ],
+    "payments": [
+      "1) **M124 Mr Calder** — open folio balance **£64.80** (restaurant) — please **collect** tonight or first thing if asleep — card auth failed earlier. Genuine debt.",
+      "2) **CX06 Ms Green** — prepaid Booking.com — **ignore** green collect stamp.",
+      "4) **M133** — deposit / balance due **tomorrow** on extension — **not** tonight’s collect.",
+      "3) **M220 Apex crew liaison room** — company billed — £0 guest due."
+    ],
+    "events": [],
+    "preparations": [],
+    "openQuestions": [],
+    "tasks": [],
+    "inventory": [],
+    "deliveries": [],
+    "lostproperty": [],
+    "general": [
+      "PAYMENTS"
+    ],
+    "completed": []
+  },
+  "recommendations": [
+    {
+      "id": "act|noent|m311|maintenance|follow_up_until_resolved|meridian_baseline_9",
+      "text": "Follow up with Maintenance regarding Room M311 shower/leak. The fault remains open and needs resolution this shift.",
+      "priority": "high",
+      "department": "Maintenance",
+      "status": "open",
+      "reasonCodes": [
+        "guest_impact_tonight",
+        "guest_impacting_maintenance",
+        "temporal:tomorrow_cue",
+        "canonical_decision_seat",
+        "legacy_wording_enrich"
+      ]
+    },
+    {
+      "id": "act|noent|noroom|maintenance|follow_up_until_resolved|note_1",
+      "text": "Follow up with Maintenance regarding Room M311 shower/leak. The fault remains open and needs resolution this shift.",
+      "priority": "high",
+      "department": "Maintenance",
+      "status": "open",
+      "reasonCodes": [
+        "guest_impact_tonight",
+        "guest_impacting_maintenance",
+        "temporal:no_temporal_evidence",
+        "canonical_decision_seat",
+        "legacy_wording_enrich"
+      ]
+    },
+    {
+      "id": "act|ent_1|m124|payment_collect|collect_before_departure|meridian_baseline_3",
+      "text": "Collect outstanding payment for Room M124 before departure.",
+      "priority": "normal",
+      "department": "Reception",
+      "status": "open",
+      "reasonCodes": [
+        "payment_actionable",
+        "money_not_safety",
+        "payment_collect_evidenced",
+        "sprint9_fail_closed",
+        "temporal:today_cue",
+        "canonical_decision_seat"
+      ]
+    }
+  ],
+  "reasoningMetadata": {
+    "noteCountAfterPipeline": 8,
+    "dependencyEdgeCount": 0,
+    "dependencyEdges": [],
+    "analyzeKeys": [
+      "engineVersion",
+      "signals",
+      "recommendations",
+      "checklist",
+      "facts",
+      "operationalMemories",
+      "guestObservations",
+      "guestObservationRejections",
+      "guestCandidates",
+      "guestCandidateRejections"
+    ],
+    "quietShift": null,
+    "decisionSeating": {
+      "briefingUsesCanonicalActions": true,
+      "recommendationsFromAnalyze": true,
+      "sharedCanonicalList": true,
+      "selectDecisionSeatsCaptured": true
+    }
+  },
+  "noteEvidence": [
+    {
+      "original": "Lean: me + porter. Spa closed. No shuttle overnight. Early flyer taxi arranged externally (guest’s own) — awareness only.",
+      "section": "guest",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "departure_followup",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Night — payments + one real maint. | MAINTENANCE",
+      "section": "maintenance",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "maintenance",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "M311 — bathroom extractor noisy. Guest ok overnight with window open; eng tomorrow — MONITOR.",
+      "section": "maintenance",
+      "rooms": [
+        "M311"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "m311",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "maintenance",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "1) **M124 Mr Calder** — open folio balance **£64.80** (restaurant) — please **collect** tonight or first thing if asleep — card auth failed earlier. Genuine debt.",
+      "section": "payments",
+      "rooms": [
+        "M124"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_1",
+      "canonicalName": "Mr Calder",
+      "currentRoom": "m124",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "folio",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "2) **CX06 Ms Green** — prepaid Booking.com — **ignore** green collect stamp.",
+      "section": "payments",
+      "rooms": [
+        "CX06"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": "ent_2",
+      "canonicalName": "Ms Green",
+      "currentRoom": "cx06",
+      "resolutionState": "resolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "payment",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "4) **M133** — deposit / balance due **tomorrow** on extension — **not** tonight’s collect.",
+      "section": "payments",
+      "rooms": [
+        "M133"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "m133",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "outstanding_balance",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "PAYMENTS",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "3) **M220 Apex crew liaison room** — company billed — £0 guest due.",
+      "section": "payments",
+      "rooms": [
+        "M220"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "m220",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "done"
+    }
+  ],
+  "reviewPlaceholder": {
+    "status": "PENDING_HUMAN_REVIEW",
+    "note": "Sprint 14 timed-transport validation only. Compare to frozen Human Expected Truth. Do not modify engine or scenarios."
+  }
+}

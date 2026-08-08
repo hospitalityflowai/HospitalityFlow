@@ -1,0 +1,510 @@
+{
+  "label": "MERIDIAN GATE Sprint 14 timed-transport validation OUTPUT",
+  "scenarioId": "017",
+  "title": "Busy PM: Crew Inbound, Spa Close, Valet Leftover",
+  "recordId": null,
+  "gitCommit": "8c48ea8d19b6b3dd9f42378f66702e9764949576",
+  "engineVersion": 1,
+  "contractVersion": "E1",
+  "ranAt": "2026-08-08T14:27:31.330Z",
+  "pipeline": [
+    "extractOperationalFact / sectionFromFact",
+    "consolidateNotesByFacts",
+    "resolveOperationalEntities (Sprint 3)",
+    "electCanonicalCurrentState (Sprint 1)",
+    "resolveOperationalDependencies (Sprint 4)",
+    "buildCanonicalOperationalActions (Sprint 5/6/8/9/10/11 ? current HEAD)",
+    "buildOrganisedSectionModel",
+    "buildTodaysBriefing (decision seating)",
+    "ShiftIntelligenceEngine.analyze (recommendation seating)"
+  ],
+  "scenarioMeta": {
+    "shift": "PM",
+    "operationalLoad": "Busy",
+    "ambiguity": "Partial",
+    "departments": "Reception, Spa, Valet, Shuttle, Night handoff",
+    "preparedBy": "Marcus Quinn — Duty Manager (fictional)",
+    "sourceFile": "scenario-017.md",
+    "scenarioFileSha256": "2ae06d1fb3081e138fb3cf3ddf64bf42ba6027bef3f1381e5ebf0a20e659399d"
+  },
+  "humanExpectedTruth": {
+    "currentOperationalFacts": [
+      "Crew M210–M213 for 22:50; M213 VD needs priority turn — OPEN HK/Reception path.",
+      "Spa closes 21:00; Pell day member non-resident; taxi DONE when she leaves.",
+      "Valet tickets for two cars before 23:00 handoff — OPEN.",
+      "Last shuttle 21:15; no overnight hotel shuttle after.",
+      "CX18 noise mitigated/declined move — MONITOR."
+    ],
+    "open": [
+      "Priority turn / readiness for M213 within crew hold before 22:50.",
+      "Complete valet tickets for two outstanding cars before 23:00 Night handoff.",
+      "Honour last 21:15 shuttle pax list."
+    ],
+    "monitor": [
+      "CX18 noise overnight unless worsens.",
+      "Crew inbound delay risk around 22:50."
+    ],
+    "information": [
+      "Spa close 21:00; Pell non-resident; no shuttle after 21:15; lean Night coming."
+    ],
+    "unresolved": [
+      "Exact M213 ready clock — soft until HK confirms."
+    ],
+    "completedMustNotReopen": [
+      "Pell as hotel arrival — must not invent.",
+      "Reloc offer declined on CX18 — must not reopen as mandatory move OPEN."
+    ],
+    "bindings": [
+      "Crew M210–M213; 22:50; spa 21:00; valet end 23:00; shuttle 21:15; CX18 MONITOR."
+    ],
+    "mustNotInfer": [
+      "Selling crew rooms.",
+      "Making Pell a resident arrival.",
+      "Overnight shuttle after 21:15.",
+      "OPEN eng chase on declined-move CX18 noise without worsening."
+    ],
+    "rationale": [
+      "Busy PM handoff into lean Night: crew + valet + shuttle cutoff + spa non-resident."
+    ],
+    "rawTruthMarkdown": "### Current operational facts\r\n- Crew M210–M213 for 22:50; M213 VD needs priority turn — OPEN HK/Reception path.\r\n- Spa closes 21:00; Pell day member non-resident; taxi DONE when she leaves.\r\n- Valet tickets for two cars before 23:00 handoff — OPEN.\r\n- Last shuttle 21:15; no overnight hotel shuttle after.\r\n- CX18 noise mitigated/declined move — MONITOR.\r\n\r\n### Expected OPEN actions\r\n- Priority turn / readiness for M213 within crew hold before 22:50.\r\n- Complete valet tickets for two outstanding cars before 23:00 Night handoff.\r\n- Honour last 21:15 shuttle pax list.\r\n\r\n### Expected MONITOR items\r\n- CX18 noise overnight unless worsens.\r\n- Crew inbound delay risk around 22:50.\r\n\r\n### Expected INFORMATION\r\n- Spa close 21:00; Pell non-resident; no shuttle after 21:15; lean Night coming.\r\n\r\n### Expected UNRESOLVED / clarifications\r\n- Exact M213 ready clock — soft until HK confirms.\r\n\r\n### Explicit completed / resolved / superseded (must not reopen)\r\n- Pell as hotel arrival — must not invent.\r\n- Reloc offer declined on CX18 — must not reopen as mandatory move OPEN.\r\n\r\n### Important entity / room / time bindings\r\n- Crew M210–M213; 22:50; spa 21:00; valet end 23:00; shuttle 21:15; CX18 MONITOR.\r\n\r\n### Must not invent\r\n- Selling crew rooms.\r\n- Making Pell a resident arrival.\r\n- Overnight shuttle after 21:15.\r\n- OPEN eng chase on declined-move CX18 noise without worsening.\r\n\r\n### Short human rationale\r\nBusy PM handoff into lean Night: crew + valet + shuttle cutoff + spa non-resident."
+  },
+  "canonicalActions": [
+    {
+      "actionId": "act|noent|noroom|transport_honour|operational_follow_up|meridian_baseline_12",
+      "actionState": "open",
+      "actionType": "operational_follow_up",
+      "facetKey": "transport:honour",
+      "room": "",
+      "rooms": [],
+      "entityId": null,
+      "canonicalName": "",
+      "actionText": "Honour timed transport meet / keys readiness for listed passengers for 21:15 departure / loop (do not invent private transfer)",
+      "priorityBand": "P1",
+      "priorityScore": 16,
+      "priorityReasons": [
+        "transport_honour",
+        "sprint14_timed_transport"
+      ],
+      "temporalScope": "today",
+      "serviceDate": "",
+      "deadlineHint": "21:15",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "Last public loop **21:15** — three pax. After that Night does not run shuttle — taxis only."
+    },
+    {
+      "actionId": "act|noent|cx18|payment_no_collect|type|meridian_baseline_15",
+      "actionState": "resolved",
+      "actionType": "operational_follow_up",
+      "facetKey": "payment:no_collect",
+      "room": "CX18",
+      "rooms": [
+        "CX18"
+      ],
+      "entityId": null,
+      "canonicalName": "Guest Shore’s",
+      "actionText": "Payment settled / no collect required for Room CX18",
+      "priorityBand": "exclude",
+      "priorityScore": 92,
+      "priorityReasons": [
+        "payment_no_collect"
+      ],
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "CX18 noise complaint earlier — guest settled with reloc offer declined — **monitor** only; eng not coming tonight unless worsens."
+    },
+    {
+      "actionId": "act|noent|noroom|superseded|type|meridian_baseline_9",
+      "actionState": "resolved",
+      "actionType": "operational_follow_up",
+      "facetKey": "superseded",
+      "room": "",
+      "rooms": [],
+      "entityId": null,
+      "canonicalName": "Guest Shore’s",
+      "actionText": "Superseded current-state fact",
+      "priorityBand": "exclude",
+      "priorityScore": 95,
+      "priorityReasons": [
+        "superseded_excluded"
+      ],
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "Valet ends **23:00**. Two cars still without overnight tickets at 18:40 — need tickets before handoff to Night or cars remain on forecourt. Guest Shore’s friend (not in-house) waiting — not a room folio issue."
+    }
+  ],
+  "actionStateCounts": {
+    "open": 1,
+    "monitor": 0,
+    "information": 0,
+    "unresolved": 0,
+    "blocked": 0,
+    "resolved": 2,
+    "other": 0
+  },
+  "temporalAnchor": {
+    "handoverDate": "2026-09-22",
+    "shift": "PM",
+    "createdAt": "2026-09-22T15:45:00.000Z"
+  },
+  "decisionSeats": {
+    "seats": [
+      {
+        "action": {
+          "actionId": "act|noent|noroom|transport_honour|operational_follow_up|meridian_baseline_12",
+          "objectId": "",
+          "entityId": null,
+          "resolutionState": "unresolved",
+          "canonicalName": "",
+          "room": "",
+          "rooms": [],
+          "actionType": "operational_follow_up",
+          "actionState": "open",
+          "facetKey": "transport:honour",
+          "actionText": "Honour timed transport meet / keys readiness for listed passengers for 21:15 departure / loop (do not invent private transfer)",
+          "displayLabel": "Honour timed transport meet / keys readiness for listed passengers for 21:15 departure / loop (do not invent private transfer)",
+          "evidenceText": "Last public loop **21:15** — three pax. After that Night does not run shuttle — taxis only.",
+          "actionability": "actionable",
+          "blockedBy": [],
+          "blocks": [],
+          "priorityBand": "P1",
+          "priorityScore": 16,
+          "priorityReasons": [
+            "transport_honour",
+            "sprint14_timed_transport"
+          ],
+          "currentStateEligible": true,
+          "sourceFactIds": [
+            "meridian-baseline-12"
+          ],
+          "confidence": 0.73,
+          "temporalScope": "today",
+          "serviceDate": "",
+          "deadlineHint": "21:15",
+          "relativeCue": "",
+          "temporalConfidence": "",
+          "temporalReasons": []
+        },
+        "actionId": "act|noent|noroom|transport_honour|operational_follow_up|meridian_baseline_12",
+        "facetKey": "transport:honour",
+        "actionState": "open",
+        "priorityBand": "P1",
+        "priorityScore": 16,
+        "seatKind": "do_now",
+        "canonicalSeed": true,
+        "workKey": "transport:honour|||operational_follow_up",
+        "text": "Honour timed transport meet / keys readiness for listed passengers for 21:15 departure / loop (do not invent private transfer)",
+        "legacy": null
+      }
+    ],
+    "seatedCanonicalIds": [
+      "act|noent|noroom|transport_honour|operational_follow_up|meridian_baseline_12"
+    ],
+    "source": "canonical_decision_seats",
+    "surface": "briefing",
+    "maxN": 5
+  },
+  "inputIntegrity": {
+    "inputAuthority": "scenario-XXX.md Original Input / Raw Source Notes",
+    "scenarioFileSha256": "2ae06d1fb3081e138fb3cf3ddf64bf42ba6027bef3f1381e5ebf0a20e659399d",
+    "sourceSha256": "9472978a3c8229e3d1ce5c68c8c53c912ce7e600359ffc2baa6be7717b630d9c",
+    "sourceLength": 901,
+    "lineCount": 11,
+    "brainContext": null,
+    "hotelSnapshotKeys": [],
+    "humanExpectedTruthPreserved": true,
+    "freezeStatus": "FROZEN BEFORE FIRST HF RUN"
+  },
+  "exactSourceInput": "Busy PM into lean Night — pack carefully.\n\nCREW\nSkyLink inbound **22:50** (delayed) — quiet wing **M210–M213** held (4 rooms tonight). Keys + quiet packs ready? HK says M213 still vacant dirty at 17:00 — **priority turn**. Do not sell these.\n\nSPA\nLast treatment 20:30; spa doors lock **21:00**. Day member Ms Pell still in robe lounge at 20:10 — **not a hotel guest** — taxi arranged by spa — DONE when she leaves. Do not make her a room arrival.\n\nVALET\nValet ends **23:00**. Two cars still without overnight tickets at 18:40 — need tickets before handoff to Night or cars remain on forecourt. Guest Shore’s friend (not in-house) waiting — not a room folio issue.\n\nSHUTTLE\nLast public loop **21:15** — three pax. After that Night does not run shuttle — taxis only.\n\nANNEX\nCX18 noise complaint earlier — guest settled with reloc offer declined — **monitor** only; eng not coming tonight unless worsens.",
+  "hotelSnapshot": {},
+  "aiSummaryBriefing": "Priority 1\nHonour timed transport meet / keys readiness for listed passengers for 21:15 departure / loop (do not invent private transfer).",
+  "briefingParagraphs": [
+    "Priority 1\nHonour timed transport meet / keys readiness for listed passengers for 21:15 departure / loop (do not invent private transfer)."
+  ],
+  "organisedHandover": {
+    "urgent": [],
+    "vip": [],
+    "guest": [],
+    "maintenance": [],
+    "payments": [
+      "CX18 noise complaint earlier — guest settled with reloc offer declined — **monitor** only; eng not coming tonight unless worsens."
+    ],
+    "events": [],
+    "preparations": [],
+    "openQuestions": [],
+    "tasks": [],
+    "inventory": [],
+    "deliveries": [],
+    "lostproperty": [],
+    "general": [
+      "Busy PM into lean Night — pack carefully.",
+      "CREW",
+      "SkyLink inbound **22:50** (delayed) — quiet wing **M210–M213** held (4 rooms tonight). Keys + quiet packs ready? HK says M213 still vacant dirty at 17:00 — **priority turn**. Do not sell these.",
+      "SPA",
+      "VALET",
+      "Valet ends **23:00**. Two cars still without overnight tickets at 18:40 — need tickets before handoff to Night or cars remain on forecourt. Guest Shore’s friend (not in-house) waiting — not a room folio issue.",
+      "SHUTTLE",
+      "Last public loop **21:15** — three pax. After that Night does not run shuttle — taxis only.",
+      "ANNEX"
+    ],
+    "completed": [
+      "Last treatment 20:30; spa doors lock **21:00**. Day member Ms Pell still in robe lounge at 20:10 — **not a hotel guest** — taxi arranged by spa — DONE when she leaves. Do not make her a room arrival."
+    ]
+  },
+  "recommendations": [
+    {
+      "id": "act|noent|noroom|transport_honour|operational_follow_up|meridian_baseline_12",
+      "text": "Honour timed transport meet / keys readiness for listed passengers for 21:15 departure / loop (do not invent private transfer).",
+      "priority": "high",
+      "department": "Reception",
+      "status": "open",
+      "reasonCodes": [
+        "transport_honour",
+        "sprint14_timed_transport",
+        "canonical_decision_seat"
+      ]
+    }
+  ],
+  "reasoningMetadata": {
+    "noteCountAfterPipeline": 11,
+    "dependencyEdgeCount": 0,
+    "dependencyEdges": [],
+    "analyzeKeys": [
+      "engineVersion",
+      "signals",
+      "recommendations",
+      "checklist",
+      "facts",
+      "operationalMemories",
+      "guestObservations",
+      "guestObservationRejections",
+      "guestCandidates",
+      "guestCandidateRejections"
+    ],
+    "quietShift": null,
+    "decisionSeating": {
+      "briefingUsesCanonicalActions": true,
+      "recommendationsFromAnalyze": true,
+      "sharedCanonicalList": true,
+      "selectDecisionSeatsCaptured": true
+    }
+  },
+  "noteEvidence": [
+    {
+      "original": "Busy PM into lean Night — pack carefully.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "CREW",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "SkyLink inbound **22:50** (delayed) — quiet wing **M210–M213** held (4 rooms tonight). Keys + quiet packs ready? HK says M213 still vacant dirty at 17:00 — **priority turn**. Do not sell these.",
+      "section": "general",
+      "rooms": [
+        "M210",
+        "M213"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "m210",
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "SPA",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Last treatment 20:30; spa doors lock **21:00**. Day member Ms Pell still in robe lounge at 20:10 — **not a hotel guest** — taxi arranged by spa — DONE when she leaves. Do not make her a room arrival.",
+      "section": "completed",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "departure_followup",
+      "factStatus": "done"
+    },
+    {
+      "original": "VALET",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Valet ends **23:00**. Two cars still without overnight tickets at 18:40 — need tickets before handoff to Night or cars remain on forecourt. Guest Shore’s friend (not in-house) waiting — not a room folio issue.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "requested"
+    },
+    {
+      "original": "SHUTTLE",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Last public loop **21:15** — three pax. After that Night does not run shuttle — taxis only.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "ANNEX",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "CX18 noise complaint earlier — guest settled with reloc offer declined — **monitor** only; eng not coming tonight unless worsens.",
+      "section": "payments",
+      "rooms": [
+        "CX18"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "cx18",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "done"
+    }
+  ],
+  "reviewPlaceholder": {
+    "status": "PENDING_HUMAN_REVIEW",
+    "note": "Sprint 14 timed-transport validation only. Compare to frozen Human Expected Truth. Do not modify engine or scenarios."
+  }
+}

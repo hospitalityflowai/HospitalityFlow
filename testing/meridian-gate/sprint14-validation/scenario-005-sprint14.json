@@ -1,0 +1,409 @@
+{
+  "label": "MERIDIAN GATE Sprint 14 timed-transport validation OUTPUT",
+  "scenarioId": "005",
+  "title": "Spa Day Member Asking to Stay Overnight",
+  "recordId": null,
+  "gitCommit": "8c48ea8d19b6b3dd9f42378f66702e9764949576",
+  "engineVersion": 1,
+  "contractVersion": "E1",
+  "ranAt": "2026-08-08T14:27:31.330Z",
+  "pipeline": [
+    "extractOperationalFact / sectionFromFact",
+    "consolidateNotesByFacts",
+    "resolveOperationalEntities (Sprint 3)",
+    "electCanonicalCurrentState (Sprint 1)",
+    "resolveOperationalDependencies (Sprint 4)",
+    "buildCanonicalOperationalActions (Sprint 5/6/8/9/10/11 ? current HEAD)",
+    "buildOrganisedSectionModel",
+    "buildTodaysBriefing (decision seating)",
+    "ShiftIntelligenceEngine.analyze (recommendation seating)"
+  ],
+  "scenarioMeta": {
+    "shift": "PM",
+    "operationalLoad": "Normal",
+    "ambiguity": "Yes (conversion not confirmed)",
+    "departments": "Spa, Reception, Duty Manager",
+    "preparedBy": "Elena Vogt — Spa Concierge (fictional) / logged by FO",
+    "sourceFile": "scenario-005.md",
+    "scenarioFileSha256": "531e01cf172e4fb1fa17afffbaff2f6c834ad2285f099afe3d15e7ce5ce2b406"
+  },
+  "humanExpectedTruth": {
+    "currentOperationalFacts": [
+      "Linden is day spa / non-resident until overnight booking is confirmed.",
+      "Interest in overnight; callback after 17:00 — choice/booking not confirmed.",
+      "MS03 vacant dirty, soft hopefully — not released; not assigned.",
+      "Treatment rooms TR-1/TR-4 are not guest rooms.",
+      "Iron M203 DONE."
+    ],
+    "open": [
+      "Clarification / conversion follow-up for Linden overnight request after daughter callback — Reception/DM with Spa; do not invent completed booking."
+    ],
+    "monitor": [
+      "MS03 readiness path if conversion happens — unconfirmed.",
+      "Callback after 17:00."
+    ],
+    "information": [
+      "Day spa status; treatment rooms not sellable; shuttle routine; iron DONE."
+    ],
+    "unresolved": [
+      "Whether Linden converts to overnight; which room if any — intentional ambiguity until booking exists."
+    ],
+    "completedMustNotReopen": [
+      "M203 iron — DONE — must not reopen.",
+      "Soft spa “interest” is not a confirmed reservation — must not treat as checked-in."
+    ],
+    "bindings": [
+      "Linden = day spa (non-resident); MS03 candidate only; TR-1/TR-4 not bedrooms; callback after 17:00."
+    ],
+    "mustNotInfer": [
+      "Checking Linden into MS03/CX/quiet wing without confirmed booking.",
+      "Treating treatment rooms as guest rooms.",
+      "Declaring MS03 ready from “hopefully”.",
+      "Inventing payment collect without a stay folio."
+    ],
+    "rationale": [
+      "Meridian-native: spa day vs resident distinction; conversion OPEN is clarify, not silent assignment."
+    ],
+    "rawTruthMarkdown": "### Current operational facts\r\n- Linden is day spa / non-resident until overnight booking is confirmed.\r\n- Interest in overnight; callback after 17:00 — choice/booking not confirmed.\r\n- MS03 vacant dirty, soft hopefully — not released; not assigned.\r\n- Treatment rooms TR-1/TR-4 are not guest rooms.\r\n- Iron M203 DONE.\r\n\r\n### Expected OPEN actions\r\n- Clarification / conversion follow-up for Linden overnight request after daughter callback — Reception/DM with Spa; do not invent completed booking.\r\n\r\n### Expected MONITOR items\r\n- MS03 readiness path if conversion happens — unconfirmed.\r\n- Callback after 17:00.\r\n\r\n### Expected INFORMATION\r\n- Day spa status; treatment rooms not sellable; shuttle routine; iron DONE.\r\n\r\n### Expected UNRESOLVED / clarifications\r\n- Whether Linden converts to overnight; which room if any — intentional ambiguity until booking exists.\r\n\r\n### Explicit completed / resolved / superseded (must not reopen)\r\n- M203 iron — DONE — must not reopen.\r\n- Soft spa “interest” is not a confirmed reservation — must not treat as checked-in.\r\n\r\n### Important entity / room / time bindings\r\n- Linden = day spa (non-resident); MS03 candidate only; TR-1/TR-4 not bedrooms; callback after 17:00.\r\n\r\n### Must not invent\r\n- Checking Linden into MS03/CX/quiet wing without confirmed booking.\r\n- Treating treatment rooms as guest rooms.\r\n- Declaring MS03 ready from “hopefully”.\r\n- Inventing payment collect without a stay folio.\r\n\r\n### Short human rationale\r\nMeridian-native: spa day vs resident distinction; conversion OPEN is clarify, not silent assignment."
+  },
+  "canonicalActions": [
+    {
+      "actionId": "act|noent|m203|guest_request_iron_and_ironing_board|guest_follow_up|meridian_baseline_10",
+      "actionState": "open",
+      "actionType": "guest_follow_up",
+      "facetKey": "guest_request:iron_and_ironing_board",
+      "room": "M203",
+      "rooms": [
+        "M203"
+      ],
+      "entityId": null,
+      "canonicalName": "",
+      "actionText": "Arrange iron and ironing board for Room M203",
+      "priorityBand": "P2",
+      "priorityScore": 45,
+      "priorityReasons": [
+        "resolved_no_action",
+        "guest_request_open"
+      ],
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "M203 iron delivered — DONE."
+    }
+  ],
+  "actionStateCounts": {
+    "open": 1,
+    "monitor": 0,
+    "information": 0,
+    "unresolved": 0,
+    "blocked": 0,
+    "resolved": 0,
+    "other": 0
+  },
+  "temporalAnchor": {
+    "handoverDate": "2026-09-11",
+    "shift": "PM",
+    "createdAt": "2026-09-11T15:45:00.000Z"
+  },
+  "decisionSeats": {
+    "seats": [
+      {
+        "action": {
+          "actionId": "act|noent|m203|guest_request_iron_and_ironing_board|guest_follow_up|meridian_baseline_10",
+          "objectId": "",
+          "entityId": null,
+          "resolutionState": "room_based",
+          "canonicalName": "",
+          "room": "M203",
+          "rooms": [
+            "M203"
+          ],
+          "actionType": "guest_follow_up",
+          "actionState": "open",
+          "facetKey": "guest_request:iron_and_ironing_board",
+          "actionText": "Arrange iron and ironing board for Room M203",
+          "displayLabel": "Arrange iron and ironing board for Room M203",
+          "evidenceText": "M203 iron delivered — DONE.",
+          "actionability": "actionable",
+          "blockedBy": [],
+          "blocks": [],
+          "priorityBand": "P2",
+          "priorityScore": 45,
+          "priorityReasons": [
+            "resolved_no_action",
+            "guest_request_open"
+          ],
+          "currentStateEligible": true,
+          "sourceFactIds": [
+            "meridian-baseline-10"
+          ],
+          "confidence": 0.85,
+          "temporalScope": "",
+          "serviceDate": "",
+          "deadlineHint": "",
+          "relativeCue": "",
+          "temporalConfidence": "",
+          "temporalReasons": []
+        },
+        "actionId": "act|noent|m203|guest_request_iron_and_ironing_board|guest_follow_up|meridian_baseline_10",
+        "facetKey": "guest_request:iron_and_ironing_board",
+        "actionState": "open",
+        "priorityBand": "P2",
+        "priorityScore": 45,
+        "seatKind": "do_now",
+        "canonicalSeed": true,
+        "workKey": "guest_request:iron_and_ironing_board|M203||guest_follow_up",
+        "text": "Arrange iron and ironing board for Room M203",
+        "legacy": null
+      }
+    ],
+    "seatedCanonicalIds": [
+      "act|noent|m203|guest_request_iron_and_ironing_board|guest_follow_up|meridian_baseline_10"
+    ],
+    "source": "canonical_decision_seats",
+    "surface": "briefing",
+    "maxN": 5
+  },
+  "inputIntegrity": {
+    "inputAuthority": "scenario-XXX.md Original Input / Raw Source Notes",
+    "scenarioFileSha256": "531e01cf172e4fb1fa17afffbaff2f6c834ad2285f099afe3d15e7ce5ce2b406",
+    "sourceSha256": "2019476f6034ae84f0007e6686c0dfd8e29e3212b7267c19a1e558d34ea06311",
+    "sourceLength": 737,
+    "lineCount": 8,
+    "brainContext": null,
+    "hotelSnapshotKeys": [],
+    "humanExpectedTruthPreserved": true,
+    "freezeStatus": "FROZEN BEFORE FIRST HF RUN"
+  },
+  "exactSourceInput": "PM — spa desk called up.\n\nSPA / RECEPTION\nMrs Linden is a **day spa member** today (treatments in TR-1 / TR-4 — again: treatment rooms are **not** bedrooms). She asked at 15:40 whether she can **stay overnight** tonight. Spa took a soft interest; Reception has **no confirmed overnight booking** yet. Daughter will “call back after 17:00”.\n\nIf she converts, preferred product is spa suite **MS03** if clean — HK says MS03 vacant dirty at 15:00, “hopefully late afternoon” — **not released**. Do not check her into MS03 or any room until booking + payment method confirmed.\n\nAlso: do not put her into crew quiet wing or CX “because it’s free on the screen” without DM.\n\nOTHER\nM203 iron delivered — DONE.\nShuttle 16:50 half load — routine.",
+  "hotelSnapshot": {},
+  "aiSummaryBriefing": "Priority 1\nArrange iron and ironing board for Room M203.",
+  "briefingParagraphs": [
+    "Priority 1\nArrange iron and ironing board for Room M203."
+  ],
+  "organisedHandover": {
+    "urgent": [],
+    "vip": [],
+    "guest": [],
+    "maintenance": [],
+    "payments": [],
+    "events": [],
+    "preparations": [],
+    "openQuestions": [],
+    "tasks": [
+      "M203 iron delivered — DONE."
+    ],
+    "inventory": [],
+    "deliveries": [],
+    "lostproperty": [],
+    "general": [
+      "If she converts, preferred product is spa suite **MS03** if clean — HK says MS03 vacant dirty at 15:00, “hopefully late afternoon” — **not released**. Do not check her into MS03 or any room until booking + payment method confirmed.",
+      "PM — spa desk called up.",
+      "SPA / RECEPTION",
+      "Mrs Linden is a **day spa member** today (treatments in TR-1 / TR-4 — again: treatment rooms are **not** bedrooms). She asked at 15:40 whether she can **stay overnight** tonight. Spa took a soft interest; Reception has **no confirmed overnight booking** yet. Daughter will “call back after 17:00”.",
+      "Also: do not put her into crew quiet wing or CX “because it’s free on the screen” without DM.",
+      "OTHER",
+      "Shuttle 16:50 half load — routine."
+    ],
+    "completed": []
+  },
+  "recommendations": [
+    {
+      "id": "act|noent|m203|guest_request_iron_and_ironing_board|guest_follow_up|meridian_baseline_10",
+      "text": "Arrange iron and ironing board for Room M203.",
+      "priority": "normal",
+      "department": "Housekeeping",
+      "status": "open",
+      "reasonCodes": [
+        "resolved_no_action",
+        "guest_request_open",
+        "canonical_decision_seat",
+        "legacy_wording_enrich"
+      ]
+    }
+  ],
+  "reasoningMetadata": {
+    "noteCountAfterPipeline": 8,
+    "dependencyEdgeCount": 0,
+    "dependencyEdges": [],
+    "analyzeKeys": [
+      "engineVersion",
+      "signals",
+      "recommendations",
+      "checklist",
+      "facts",
+      "operationalMemories",
+      "guestObservations",
+      "guestObservationRejections",
+      "guestCandidates",
+      "guestCandidateRejections"
+    ],
+    "quietShift": null,
+    "decisionSeating": {
+      "briefingUsesCanonicalActions": true,
+      "recommendationsFromAnalyze": true,
+      "sharedCanonicalList": true,
+      "selectDecisionSeatsCaptured": true
+    }
+  },
+  "noteEvidence": [
+    {
+      "original": "PM — spa desk called up.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "SPA / RECEPTION",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Mrs Linden is a **day spa member** today (treatments in TR-1 / TR-4 — again: treatment rooms are **not** bedrooms). She asked at 15:40 whether she can **stay overnight** tonight. Spa took a soft interest; Reception has **no confirmed overnight booking** yet. Daughter will “call back after 17:00”.",
+      "section": "general",
+      "rooms": [
+        "TR-1",
+        "TR-4"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "tr-1",
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "confirmed"
+    },
+    {
+      "original": "If she converts, preferred product is spa suite **MS03** if clean — HK says MS03 vacant dirty at 15:00, “hopefully late afternoon” — **not released**. Do not check her into MS03 or any room until booking + payment method confirmed.",
+      "section": "general",
+      "rooms": [
+        "MS03"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "ms03",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "confirmed"
+    },
+    {
+      "original": "Also: do not put her into crew quiet wing or CX “because it’s free on the screen” without DM.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "OTHER",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "M203 iron delivered — DONE.",
+      "section": "completed",
+      "rooms": [
+        "M203"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "m203",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "guest_request",
+      "factStatus": "done"
+    },
+    {
+      "original": "Shuttle 16:50 half load — routine.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    }
+  ],
+  "reviewPlaceholder": {
+    "status": "PENDING_HUMAN_REVIEW",
+    "note": "Sprint 14 timed-transport validation only. Compare to frozen Human Expected Truth. Do not modify engine or scenarios."
+  }
+}

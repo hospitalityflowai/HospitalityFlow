@@ -1,0 +1,449 @@
+{
+  "label": "MERIDIAN GATE Sprint 14 timed-transport validation OUTPUT",
+  "scenarioId": "012",
+  "title": "Night Information Heavy, MONITOR Only",
+  "recordId": null,
+  "gitCommit": "8c48ea8d19b6b3dd9f42378f66702e9764949576",
+  "engineVersion": 1,
+  "contractVersion": "E1",
+  "ranAt": "2026-08-08T14:27:31.330Z",
+  "pipeline": [
+    "extractOperationalFact / sectionFromFact",
+    "consolidateNotesByFacts",
+    "resolveOperationalEntities (Sprint 3)",
+    "electCanonicalCurrentState (Sprint 1)",
+    "resolveOperationalDependencies (Sprint 4)",
+    "buildCanonicalOperationalActions (Sprint 5/6/8/9/10/11 ? current HEAD)",
+    "buildOrganisedSectionModel",
+    "buildTodaysBriefing (decision seating)",
+    "ShiftIntelligenceEngine.analyze (recommendation seating)"
+  ],
+  "scenarioMeta": {
+    "shift": "Night",
+    "operationalLoad": "Quiet / easy control",
+    "ambiguity": "No",
+    "departments": "Night Team, Engineering",
+    "preparedBy": "Sam Okello — Night Porter (notes for NM) (fictional)",
+    "sourceFile": "scenario-012.md",
+    "scenarioFileSha256": "60ac2af959debe7b35c09a97e76a8715a3bb73fdc46e81e3d2d2bdeb82c0f4b4"
+  },
+  "humanExpectedTruth": {
+    "currentOperationalFacts": [
+      "Fire panel normal — information only.",
+      "Spa delivery tomorrow — future.",
+      "Towels CX09 DONE.",
+      "M305 mitigated with fan; tomorrow inspect — MONITOR.",
+      "No arrivals; quiet night."
+    ],
+    "open": [
+      "**None.**"
+    ],
+    "monitor": [
+      "M305 comfort overnight / tomorrow eng inspect.",
+      "M304 multi-day OOO background."
+    ],
+    "information": [
+      "Fire panel normal; spa delivery tomorrow; no crew tonight; quiet house; towels DONE."
+    ],
+    "unresolved": [
+      "None."
+    ],
+    "completedMustNotReopen": [
+      "CX09 towels — DONE.",
+      "Fire panel test — closed/normal — must not reopen as alarm OPEN.",
+      "Fan mitigation — must not reopen as uncontrolled AC emergency OPEN."
+    ],
+    "bindings": [
+      "CX09 towels DONE; M305 fan + tomorrow inspect; spa delivery 10:00 tomorrow."
+    ],
+    "mustNotInfer": [
+      "OPEN safety chase on normal fire panel.",
+      "OPEN maint chase on mitigated M305.",
+      "Tonight spa receiving OPEN.",
+      "Urgent priorities list on a quiet information-heavy night."
+    ],
+    "rationale": [
+      "Easy control: INFORMATION + MONITOR only; “nothing urgent” is correct."
+    ],
+    "rawTruthMarkdown": "### Current operational facts\r\n- Fire panel normal — information only.\r\n- Spa delivery tomorrow — future.\r\n- Towels CX09 DONE.\r\n- M305 mitigated with fan; tomorrow inspect — MONITOR.\r\n- No arrivals; quiet night.\r\n\r\n### Expected OPEN actions\r\n- **None.**\r\n\r\n### Expected MONITOR items\r\n- M305 comfort overnight / tomorrow eng inspect.\r\n- M304 multi-day OOO background.\r\n\r\n### Expected INFORMATION\r\n- Fire panel normal; spa delivery tomorrow; no crew tonight; quiet house; towels DONE.\r\n\r\n### Expected UNRESOLVED / clarifications\r\n- None.\r\n\r\n### Explicit completed / resolved / superseded (must not reopen)\r\n- CX09 towels — DONE.\r\n- Fire panel test — closed/normal — must not reopen as alarm OPEN.\r\n- Fan mitigation — must not reopen as uncontrolled AC emergency OPEN.\r\n\r\n### Important entity / room / time bindings\r\n- CX09 towels DONE; M305 fan + tomorrow inspect; spa delivery 10:00 tomorrow.\r\n\r\n### Must not invent\r\n- OPEN safety chase on normal fire panel.\r\n- OPEN maint chase on mitigated M305.\r\n- Tonight spa receiving OPEN.\r\n- Urgent priorities list on a quiet information-heavy night.\r\n\r\n### Short human rationale\r\nEasy control: INFORMATION + MONITOR only; “nothing urgent” is correct."
+  },
+  "canonicalActions": [
+    {
+      "actionId": "act|noent|m305|maintenance_tomorrow_inspect|follow_up_until_resolved|meridian_baseline_7",
+      "actionState": "monitor",
+      "actionType": "follow_up_until_resolved",
+      "facetKey": "maintenance:tomorrow_inspect",
+      "room": "M305",
+      "rooms": [
+        "M305"
+      ],
+      "entityId": null,
+      "canonicalName": "",
+      "actionText": "Monitor Room M305 overnight — engineering inspect tomorrow (not a live chase)",
+      "priorityBand": "P3",
+      "priorityScore": 65,
+      "priorityReasons": [
+        "mitigated_monitor_overnight",
+        "temporal:tomorrow_cue",
+        "temporal:tomorrow_inspection_monitor"
+      ],
+      "temporalScope": "tomorrow",
+      "serviceDate": "2026-09-18",
+      "deadlineHint": "inspect",
+      "relativeCue": "tomorrow",
+      "temporalConfidence": "high",
+      "temporalReasons": [
+        "tomorrow_cue",
+        "tomorrow_inspection_monitor"
+      ],
+      "evidenceText": "- M305 AC “a bit warm” — fan provided; guest comfortable; eng inspect **tomorrow** — please **monitor**, not a live chase."
+    },
+    {
+      "actionId": "act|noent|cx09|guest_request_towels_done|type|meridian_baseline_6",
+      "actionState": "resolved",
+      "actionType": "operational_follow_up",
+      "facetKey": "guest_request:towels:done",
+      "room": "CX09",
+      "rooms": [
+        "CX09"
+      ],
+      "entityId": null,
+      "canonicalName": "",
+      "actionText": "towels already completed for Room CX09",
+      "priorityBand": "exclude",
+      "priorityScore": 90,
+      "priorityReasons": [
+        "guest_request_done",
+        "sprint10_state_resolution"
+      ],
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "- CX09 guest asked for extra towels — delivered 21:40 — DONE."
+    }
+  ],
+  "actionStateCounts": {
+    "open": 0,
+    "monitor": 1,
+    "information": 0,
+    "unresolved": 0,
+    "blocked": 0,
+    "resolved": 1,
+    "other": 0
+  },
+  "temporalAnchor": {
+    "handoverDate": "2026-09-17",
+    "shift": "Night",
+    "createdAt": "2026-09-17T23:20:00.000Z"
+  },
+  "decisionSeats": {
+    "seats": [
+      {
+        "action": {
+          "actionId": "act|noent|m305|maintenance_tomorrow_inspect|follow_up_until_resolved|meridian_baseline_7",
+          "objectId": "",
+          "entityId": null,
+          "resolutionState": "room_based",
+          "canonicalName": "",
+          "room": "M305",
+          "rooms": [
+            "M305"
+          ],
+          "actionType": "follow_up_until_resolved",
+          "actionState": "monitor",
+          "facetKey": "maintenance:tomorrow_inspect",
+          "actionText": "Monitor Room M305 overnight — engineering inspect tomorrow (not a live chase)",
+          "displayLabel": "Monitor Room M305 overnight — engineering inspect tomorrow (not a live chase)",
+          "evidenceText": "- M305 AC “a bit warm” — fan provided; guest comfortable; eng inspect **tomorrow** — please **monitor**, not a live chase.",
+          "actionability": "actionable",
+          "blockedBy": [],
+          "blocks": [],
+          "priorityBand": "P3",
+          "priorityScore": 65,
+          "priorityReasons": [
+            "mitigated_monitor_overnight",
+            "temporal:tomorrow_cue",
+            "temporal:tomorrow_inspection_monitor"
+          ],
+          "currentStateEligible": true,
+          "sourceFactIds": [
+            "meridian-baseline-7"
+          ],
+          "confidence": 0.85,
+          "temporalScope": "tomorrow",
+          "serviceDate": "2026-09-18",
+          "deadlineHint": "inspect",
+          "relativeCue": "tomorrow",
+          "temporalConfidence": "high",
+          "temporalReasons": [
+            "tomorrow_cue",
+            "tomorrow_inspection_monitor"
+          ]
+        },
+        "actionId": "act|noent|m305|maintenance_tomorrow_inspect|follow_up_until_resolved|meridian_baseline_7",
+        "facetKey": "maintenance:tomorrow_inspect",
+        "actionState": "monitor",
+        "priorityBand": "P3",
+        "priorityScore": 65,
+        "seatKind": "continuity",
+        "canonicalSeed": true,
+        "workKey": "maintenance:tomorrow_inspect|M305||follow_up_until_resolved",
+        "text": "Monitor Room M305 overnight — engineering inspect tomorrow (not a live chase)",
+        "legacy": null
+      }
+    ],
+    "seatedCanonicalIds": [
+      "act|noent|m305|maintenance_tomorrow_inspect|follow_up_until_resolved|meridian_baseline_7"
+    ],
+    "source": "canonical_decision_seats",
+    "surface": "briefing",
+    "maxN": 5
+  },
+  "inputIntegrity": {
+    "inputAuthority": "scenario-XXX.md Original Input / Raw Source Notes",
+    "scenarioFileSha256": "60ac2af959debe7b35c09a97e76a8715a3bb73fdc46e81e3d2d2bdeb82c0f4b4",
+    "sourceSha256": "045cea0c031912cd3b6fad2346b5fd206d28028a06a242e1ea867f11a761ddad",
+    "sourceLength": 547,
+    "lineCount": 9,
+    "brainContext": null,
+    "hotelSnapshotKeys": [],
+    "humanExpectedTruthPreserved": true,
+    "freezeStatus": "FROZEN BEFORE FIRST HF RUN"
+  },
+  "exactSourceInput": "For Night Manager — mostly awareness.\n\nINFORMATION\n- Fire panel normal after contractor test earlier — logged — **no action**.\n- Spa chemical delivery tomorrow 10:00 — receiving bay — **not tonight**.\n- Airline crew block empty tonight (SkyLink off roster Wednesdays).\n- CX09 guest asked for extra towels — delivered 21:40 — DONE.\n- M305 AC “a bit warm” — fan provided; guest comfortable; eng inspect **tomorrow** — please **monitor**, not a live chase.\n\nNo arrivals. Valet closed. Pavilion dark.\n\nPlease don’t turn this into a busy priority list.",
+  "hotelSnapshot": {},
+  "aiSummaryBriefing": "Priority 1\nMonitor Room M305 overnight — engineering inspect tomorrow (not a live chase).\n\nPriority 2\nFollow up with Maintenance regarding Room m305 AC fault before further guest impact.",
+  "briefingParagraphs": [
+    "Priority 1\nMonitor Room M305 overnight — engineering inspect tomorrow (not a live chase).",
+    "Priority 2\nFollow up with Maintenance regarding Room m305 AC fault before further guest impact."
+  ],
+  "organisedHandover": {
+    "urgent": [],
+    "vip": [],
+    "guest": [],
+    "maintenance": [
+      "- M305 AC “a bit warm” — fan provided; guest comfortable; eng inspect **tomorrow** — please **monitor**, not a live chase."
+    ],
+    "payments": [],
+    "events": [],
+    "preparations": [],
+    "openQuestions": [],
+    "tasks": [],
+    "inventory": [],
+    "deliveries": [
+      "- Spa chemical delivery tomorrow 10:00 — receiving bay — **not tonight**."
+    ],
+    "lostproperty": [],
+    "general": [
+      "For Night Manager — mostly awareness.",
+      "INFORMATION",
+      "- Fire panel normal after contractor test earlier — logged — **no action**.",
+      "- Airline crew block empty tonight (SkyLink off roster Wednesdays).",
+      "No arrivals. Valet closed. Pavilion dark.",
+      "Please don’t turn this into a busy priority list."
+    ],
+    "completed": [
+      "- CX09 guest asked for extra towels — delivered 21:40 — DONE."
+    ]
+  },
+  "recommendations": [],
+  "reasoningMetadata": {
+    "noteCountAfterPipeline": 9,
+    "dependencyEdgeCount": 0,
+    "dependencyEdges": [],
+    "analyzeKeys": [
+      "engineVersion",
+      "signals",
+      "recommendations",
+      "checklist",
+      "facts",
+      "operationalMemories",
+      "guestObservations",
+      "guestObservationRejections",
+      "guestCandidates",
+      "guestCandidateRejections"
+    ],
+    "quietShift": null,
+    "decisionSeating": {
+      "briefingUsesCanonicalActions": true,
+      "recommendationsFromAnalyze": true,
+      "sharedCanonicalList": true,
+      "selectDecisionSeatsCaptured": true
+    }
+  },
+  "noteEvidence": [
+    {
+      "original": "- M305 AC “a bit warm” — fan provided; guest comfortable; eng inspect **tomorrow** — please **monitor**, not a live chase.",
+      "section": "maintenance",
+      "rooms": [
+        "M305"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "m305",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "maintenance",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- Spa chemical delivery tomorrow 10:00 — receiving bay — **not tonight**.",
+      "section": "deliveries",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "delivery",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "For Night Manager — mostly awareness.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "INFORMATION",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- Fire panel normal after contractor test earlier — logged — **no action**.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- Airline crew block empty tonight (SkyLink off roster Wednesdays).",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "No arrivals. Valet closed. Pavilion dark.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "Please don’t turn this into a busy priority list.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- CX09 guest asked for extra towels — delivered 21:40 — DONE.",
+      "section": "completed",
+      "rooms": [
+        "CX09"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "cx09",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "guest_request",
+      "factStatus": "done"
+    }
+  ],
+  "reviewPlaceholder": {
+    "status": "PENDING_HUMAN_REVIEW",
+    "note": "Sprint 14 timed-transport validation only. Compare to frozen Human Expected Truth. Do not modify engine or scenarios."
+  }
+}

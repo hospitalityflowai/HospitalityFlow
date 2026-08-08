@@ -1,0 +1,376 @@
+{
+  "label": "MERIDIAN GATE Sprint 14 timed-transport validation OUTPUT",
+  "scenarioId": "019",
+  "title": "Settled Folio Afternoon, Almost Nothing To Do",
+  "recordId": null,
+  "gitCommit": "8c48ea8d19b6b3dd9f42378f66702e9764949576",
+  "engineVersion": 1,
+  "contractVersion": "E1",
+  "ranAt": "2026-08-08T14:27:31.330Z",
+  "pipeline": [
+    "extractOperationalFact / sectionFromFact",
+    "consolidateNotesByFacts",
+    "resolveOperationalEntities (Sprint 3)",
+    "electCanonicalCurrentState (Sprint 1)",
+    "resolveOperationalDependencies (Sprint 4)",
+    "buildCanonicalOperationalActions (Sprint 5/6/8/9/10/11 ? current HEAD)",
+    "buildOrganisedSectionModel",
+    "buildTodaysBriefing (decision seating)",
+    "ShiftIntelligenceEngine.analyze (recommendation seating)"
+  ],
+  "scenarioMeta": {
+    "shift": "PM",
+    "operationalLoad": "Quiet / easy control",
+    "ambiguity": "No",
+    "departments": "Reception, Concierge",
+    "preparedBy": "Carla Mendes — Concierge (fictional)",
+    "sourceFile": "scenario-019.md",
+    "scenarioFileSha256": "bc3fb9737abfafeddce7a722b42a2aca605fc6b95fb355a7d3838664de0e8c33"
+  },
+  "humanExpectedTruth": {
+    "currentOperationalFacts": [
+      "Two prepaid late arrivals with clean rooms/keys ready — waiting, not urgent allocation crisis.",
+      "No guest balances outstanding; M108 settled.",
+      "Flowers declined; cosmetic light tomorrow AM list; shuttle cancelled with guests already informed."
+    ],
+    "open": [
+      "**None material.** Checking in two ready prepaid arrivals when they land is routine continuity, not a priority crisis. Prefer no urgent OPEN list."
+    ],
+    "monitor": [
+      "Late flyer ETAs only as awareness.",
+      "Cosmetic corridor light on tomorrow AM list — not live OPEN."
+    ],
+    "information": [
+      "Prepaid ready rooms; settled folios; declined flowers; shuttle cancelled (guests told); quiet house."
+    ],
+    "unresolved": [
+      "None."
+    ],
+    "completedMustNotReopen": [
+      "M108 settled — must not OPEN collect.",
+      "Flowers declined — must not OPEN prep.",
+      "Guest notification re shuttle cancel — DONE — must not reopen as uninformed guests."
+    ],
+    "bindings": [
+      "M111 / CX05 prepaid ready; M119 no flowers; M300 corridor cosmetic."
+    ],
+    "mustNotInfer": [
+      "Payment collects.",
+      "Flower prep.",
+      "Urgent shuttle recovery OPEN after guests already informed and taxis-only plan set.",
+      "Fabricated annex/main conflicts."
+    ],
+    "rationale": [
+      "Quiet control: INFORMATION-heavy; almost no OPEN; boring is correct."
+    ],
+    "rawTruthMarkdown": "### Current operational facts\r\n- Two prepaid late arrivals with clean rooms/keys ready — waiting, not urgent allocation crisis.\r\n- No guest balances outstanding; M108 settled.\r\n- Flowers declined; cosmetic light tomorrow AM list; shuttle cancelled with guests already informed.\r\n\r\n### Expected OPEN actions\r\n- **None material.** Checking in two ready prepaid arrivals when they land is routine continuity, not a priority crisis. Prefer no urgent OPEN list.\r\n\r\n### Expected MONITOR items\r\n- Late flyer ETAs only as awareness.\r\n- Cosmetic corridor light on tomorrow AM list — not live OPEN.\r\n\r\n### Expected INFORMATION\r\n- Prepaid ready rooms; settled folios; declined flowers; shuttle cancelled (guests told); quiet house.\r\n\r\n### Expected UNRESOLVED / clarifications\r\n- None.\r\n\r\n### Explicit completed / resolved / superseded (must not reopen)\r\n- M108 settled — must not OPEN collect.\r\n- Flowers declined — must not OPEN prep.\r\n- Guest notification re shuttle cancel — DONE — must not reopen as uninformed guests.\r\n\r\n### Important entity / room / time bindings\r\n- M111 / CX05 prepaid ready; M119 no flowers; M300 corridor cosmetic.\r\n\r\n### Must not invent\r\n- Payment collects.\r\n- Flower prep.\r\n- Urgent shuttle recovery OPEN after guests already informed and taxis-only plan set.\r\n- Fabricated annex/main conflicts.\r\n\r\n### Short human rationale\r\nQuiet control: INFORMATION-heavy; almost no OPEN; boring is correct."
+  },
+  "canonicalActions": [
+    {
+      "actionId": "act|noent|m119|vip_prep_complete|type|meridian_baseline_4",
+      "actionState": "information",
+      "actionType": "operational_follow_up",
+      "facetKey": "vip:prep_complete",
+      "room": "M119",
+      "rooms": [
+        "M119"
+      ],
+      "entityId": null,
+      "canonicalName": "",
+      "actionText": "VIP prep complete / awareness only",
+      "priorityBand": "P3",
+      "priorityScore": 78,
+      "priorityReasons": [
+        "vip_prep_complete"
+      ],
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "- Flowers M119 — guest said **no flowers** / declined — do not place."
+    },
+    {
+      "actionId": "act|noent|cx05|payment_no_collect|type|meridian_baseline_2",
+      "actionState": "resolved",
+      "actionType": "operational_follow_up",
+      "facetKey": "payment:no_collect",
+      "room": "CX05",
+      "rooms": [
+        "CX05",
+        "M111"
+      ],
+      "entityId": null,
+      "canonicalName": "",
+      "actionText": "Payment settled / no collect required for Room CX05",
+      "priorityBand": "exclude",
+      "priorityScore": 92,
+      "priorityReasons": [
+        "payment_no_collect"
+      ],
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "- Arrivals remaining: 2 late flyers, both **prepaid**, rooms clean (M111, CX05) — keys ready — essentially waiting."
+    },
+    {
+      "actionId": "act|noent|m108|payment_no_collect|type|meridian_baseline_3",
+      "actionState": "resolved",
+      "actionType": "operational_follow_up",
+      "facetKey": "payment:no_collect",
+      "room": "M108",
+      "rooms": [
+        "M108"
+      ],
+      "entityId": null,
+      "canonicalName": "",
+      "actionText": "Payment settled / no collect required for Room M108",
+      "priorityBand": "exclude",
+      "priorityScore": 92,
+      "priorityReasons": [
+        "payment_no_collect"
+      ],
+      "temporalScope": "",
+      "serviceDate": "",
+      "deadlineHint": "",
+      "relativeCue": "",
+      "temporalConfidence": "",
+      "temporalReasons": [],
+      "evidenceText": "- Folio audit: no outstanding guest balances. M108 settled this morning — DONE."
+    }
+  ],
+  "actionStateCounts": {
+    "open": 0,
+    "monitor": 0,
+    "information": 1,
+    "unresolved": 0,
+    "blocked": 0,
+    "resolved": 2,
+    "other": 0
+  },
+  "temporalAnchor": {
+    "handoverDate": "2026-09-24",
+    "shift": "PM",
+    "createdAt": "2026-09-24T15:45:00.000Z"
+  },
+  "decisionSeats": {
+    "seats": [],
+    "seatedCanonicalIds": [],
+    "source": "canonical_decision_seats",
+    "surface": "briefing",
+    "maxN": 5
+  },
+  "inputIntegrity": {
+    "inputAuthority": "scenario-XXX.md Original Input / Raw Source Notes",
+    "scenarioFileSha256": "bc3fb9737abfafeddce7a722b42a2aca605fc6b95fb355a7d3838664de0e8c33",
+    "sourceSha256": "ed700985ecaad7b500300ad2327b48a361db0df061dae415bef8c500911800cb",
+    "sourceLength": 569,
+    "lineCount": 7,
+    "brainContext": null,
+    "hotelSnapshotKeys": [],
+    "humanExpectedTruthPreserved": true,
+    "freezeStatus": "FROZEN BEFORE FIRST HF RUN"
+  },
+  "exactSourceInput": "Quiet Thursday PM.\n\n- Arrivals remaining: 2 late flyers, both **prepaid**, rooms clean (M111, CX05) — keys ready — essentially waiting.\n- Folio audit: no outstanding guest balances. M108 settled this morning — DONE.\n- Flowers M119 — guest said **no flowers** / declined — do not place.\n- Eng: corridor light cosmetic near M300 — AM list tomorrow — information / not tonight chase.\n- Shuttle cancelled last loop (driver sick) — taxis only — **information** for late flyers; Concierge already told both guests — DONE communication.\n\nHouse feels quiet. Don’t invent drama.",
+  "hotelSnapshot": {},
+  "aiSummaryBriefing": "Shift status\nNo urgent guest-impacting priorities for the incoming team.",
+  "briefingParagraphs": [
+    "Shift status\nNo urgent guest-impacting priorities for the incoming team."
+  ],
+  "organisedHandover": {
+    "urgent": [],
+    "vip": [],
+    "guest": [],
+    "maintenance": [],
+    "payments": [
+      "- Arrivals remaining: 2 late flyers, both **prepaid**, rooms clean (M111, CX05) — keys ready — essentially waiting.",
+      "- Folio audit: no outstanding guest balances. M108 settled this morning — DONE.",
+      "- Flowers M119 — guest said **no flowers** / declined — do not place."
+    ],
+    "events": [],
+    "preparations": [],
+    "openQuestions": [],
+    "tasks": [],
+    "inventory": [],
+    "deliveries": [],
+    "lostproperty": [],
+    "general": [
+      "Quiet Thursday PM.",
+      "- Eng: corridor light cosmetic near M300 — AM list tomorrow — information / not tonight chase.",
+      "House feels quiet. Don’t invent drama."
+    ],
+    "completed": [
+      "- Shuttle cancelled last loop (driver sick) — taxis only — **information** for late flyers; Concierge already told both guests — DONE communication."
+    ]
+  },
+  "recommendations": [],
+  "reasoningMetadata": {
+    "noteCountAfterPipeline": 7,
+    "dependencyEdgeCount": 0,
+    "dependencyEdges": [],
+    "analyzeKeys": [
+      "engineVersion",
+      "signals",
+      "recommendations",
+      "checklist",
+      "facts",
+      "operationalMemories",
+      "guestObservations",
+      "guestObservationRejections",
+      "guestCandidates",
+      "guestCandidateRejections"
+    ],
+    "quietShift": null,
+    "decisionSeating": {
+      "briefingUsesCanonicalActions": true,
+      "recommendationsFromAnalyze": true,
+      "sharedCanonicalList": true,
+      "selectDecisionSeatsCaptured": true
+    }
+  },
+  "noteEvidence": [
+    {
+      "original": "Quiet Thursday PM.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- Arrivals remaining: 2 late flyers, both **prepaid**, rooms clean (M111, CX05) — keys ready — essentially waiting.",
+      "section": "payments",
+      "rooms": [
+        "CX05",
+        "M111"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "cx05",
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "done"
+    },
+    {
+      "original": "- Flowers M119 — guest said **no flowers** / declined — do not place.",
+      "section": "completed",
+      "rooms": [
+        "M119"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "m119",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "done"
+    },
+    {
+      "original": "- Eng: corridor light cosmetic near M300 — AM list tomorrow — information / not tonight chase.",
+      "section": "general",
+      "rooms": [
+        "M300"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "m300",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "House feels quiet. Don’t invent drama.",
+      "section": "general",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "unknown"
+    },
+    {
+      "original": "- Folio audit: no outstanding guest balances. M108 settled this morning — DONE.",
+      "section": "payments",
+      "rooms": [
+        "M108"
+      ],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": "m108",
+      "resolutionState": "room_based",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "folio",
+      "factStatus": "done"
+    },
+    {
+      "original": "- Shuttle cancelled last loop (driver sick) — taxis only — **information** for late flyers; Concierge already told both guests — DONE communication.",
+      "section": "completed",
+      "rooms": [],
+      "isVip": false,
+      "actionability": "actionable",
+      "blockedBy": [],
+      "entityId": null,
+      "canonicalName": null,
+      "currentRoom": null,
+      "resolutionState": "unresolved",
+      "operationalState": null,
+      "supersession": null,
+      "operationalPriority": null,
+      "priorityBand": null,
+      "factSubject": "",
+      "factStatus": "done"
+    }
+  ],
+  "reviewPlaceholder": {
+    "status": "PENDING_HUMAN_REVIEW",
+    "note": "Sprint 14 timed-transport validation only. Compare to frozen Human Expected Truth. Do not modify engine or scenarios."
+  }
+}
